@@ -2,15 +2,19 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
+const mabryPro = localFont({
+  src: [
+    {
+      path: "./fonts/MabryProRegular.woff",
+      weight: "400",
+    },
+    {
+      path: "./fonts/MabryProBold.woff",
+      weight: "600",
+    },
+  ],
+  variable: "--font-mabry-pro",
+  weight: "400,600",
 });
 
 export const metadata: Metadata = {
@@ -25,9 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${mabryPro.variable} font-mabry-pro antialiased`}>
         {children}
       </body>
     </html>
