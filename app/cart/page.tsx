@@ -40,28 +40,28 @@ const CartPage: React.FC = () => {
 
   const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  return (
-    <div className="container mx-auto p-4">
-      <div className="flex flex-col md:flex-row gap-8">
-        {/* Left Column: Cart Items */}
-        <div className="w-full md:w-2/3 max-h-[70vh] overflow-y-auto">
-          {cartItems.map((item) => (
-            <CartItem
-              key={item.id}
-              item={item}
-              onDelete={handleDelete}
-              onQuantityChange={handleQuantityChange}
-            />
-          ))}
-        </div>
+    return (
+        <div className="container mx-auto p-4 mt-16">
+            <div className="flex flex-col md:flex-row gap-8">
+            {/* Left Column: Cart Items */}
+            <div className="w-full md:w-2/3 max-h-[70vh] overflow-y-auto">
+                {cartItems.map((item) => (
+                <CartItem
+                    key={item.id}
+                    item={item}
+                    onDelete={handleDelete}
+                    onQuantityChange={handleQuantityChange}
+                />
+                ))}
+            </div>
 
-        {/* Right Column: Order Summary */}
-        <div className="w-full md:w-1/3">
-          <OrderSummary totalPrice={totalPrice} />
+            {/* Right Column: Order Summary */}
+            <div className="w-full md:w-1/3">
+                <OrderSummary totalPrice={totalPrice} />
+            </div>
+            </div>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default CartPage;
