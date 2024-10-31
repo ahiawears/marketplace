@@ -9,6 +9,10 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      container: {
+        center: true,
+        padding: "2rem",
+      },
       fontFamily: {
         "mabry-pro": ["var(--font-mabry-pro)"],
       },
