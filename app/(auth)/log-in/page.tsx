@@ -1,5 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
+import { FaFacebook, FaApple } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
+
 
 const LoginPage = () => {
 	return (
@@ -22,7 +25,8 @@ const LoginForm = () => (
 	<div>
 		<div className="text-center py-5 mb-5">
 			<Logo />
-		</div> 
+		</div>
+
 		<form action="#" method="POST" className="space-y-6">
 			<div>
 				<label htmlFor="email" className="block text-sm/6 font-bold text-gray-900">
@@ -81,6 +85,22 @@ const LoginForm = () => (
 				</div>
 			</div>
 		</form>
+
+		<div className="flex flex-col gap-3 my-10">
+			<button className="flex items-center justify-center w-full py-2 px-4 bg-white text-gray-700 border rounded-md shadow-sm hover:bg-gray-100">
+				<FcGoogle className="text-xl mr-2" />
+				Sign in with Google
+			</button>
+			<button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700">
+				<FaFacebook className="text-xl mr-2" />
+				Sign in with Facebook
+			</button>
+			<button className="flex items-center justify-center w-full py-2 px-4 bg-black text-white rounded-md shadow-sm hover:bg-gray-800">
+				<FaApple className="text-xl mr-2" />
+				Sign in with Apple
+			</button>
+		</div>
+
 	</div>
 );
 
