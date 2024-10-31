@@ -1,9 +1,9 @@
-import { TrendingSection } from "@/components/trending-section";
+import { ProductCarousel } from "@/components/product-carousel";
 
 export default function Home() {
   return (
     <>
-      <TrendingSection />
+      <ProductCarousel />
     </>
   );
 }

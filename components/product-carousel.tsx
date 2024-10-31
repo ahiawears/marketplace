@@ -8,7 +8,7 @@ import {
 
 import { ProductCard } from "./product-card";
 
-export const TrendingSection = () => {
+export const ProductCarousel = () => {
   return (
     <section className="overflow-hidden py-8">
       <div className="container flex flex-col gap-8">
