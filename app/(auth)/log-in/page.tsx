@@ -18,10 +18,10 @@ const LoginPage = () => {
 	)
 };
 
-const LoginForm = () => (
+const LoginForm = () => ( 
 	<div>
 		<div className="text-center py-5 mb-5">
-			<Logo/>
+			<Logo />
 		</div> 
 		<form action="#" method="POST" className="space-y-6">
 			<div>
