@@ -1,24 +1,27 @@
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
+import { FaFacebook, FaApple } from "react-icons/fa";
+import { FcGoogle } from "react-icons/fc";
 
-const SignupPage = () => {
+
+const LoginPage = () => {
 	return (
 		<div>
 			<div className="flex h-screen items-center justify-center">
 				<div className="container mx-auto w-2/4 hidden lg:block">
 					<div className="p-5 px-10 py-10 loginForm"> 
-						<RegisterForm />
+						<LoginForm />
 					</div>
 				</div>
 				<div className="w-full p-5 px-10 py-10 lg:hidden">
-					<RegisterForm />
+					<LoginForm />
 				</div>
 			</div>
 		</div>
 	)
 };
 
-const RegisterForm = () => ( 
+const LoginForm = () => ( 
 	<div>
 		<div className="text-center py-5 mb-5">
 			<Logo />
@@ -42,43 +45,15 @@ const RegisterForm = () => (
 			</div>
 
 			<div>
-				<label htmlFor="email" className="block text-sm/6 font-bold text-gray-900">
-					First Name:*
-				</label> 
-				<div className="mt-2">
-					<Input
-						id="firstname"
-						name="firstname"
-						type="text"
-						required
-						autoComplete="firstname"
-						className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
-					/>
-				</div>
-			</div>
-
-			<div>
-				<label htmlFor="email" className="block text-sm/6 font-bold text-gray-900">
-					Last Name:*
-				</label> 
-				<div className="mt-2">
-					<Input
-						id="lastname"
-						name="lastname"
-						type="text"
-						required
-						autoComplete="lastname"
-						className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
-					/>
-				</div>
-			</div>
-
-			<div>
 				<div className="flex items-center justify-between">
 					<label htmlFor="password" className="block text-sm/6 font-bold text-gray-900">
 						Password:*
 					</label>
-					
+					<div className="text-sm">
+						<a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500">
+							Forgot password?
+						</a>
+					</div>
 				</div>
 				<div className="mt-2">
 					<Input
@@ -111,7 +86,22 @@ const RegisterForm = () => (
 			</div>
 		</form>
 
+		<div className="flex flex-col gap-3 my-10">
+			<button className="flex items-center justify-center w-full py-2 px-4 bg-white text-gray-700 border rounded-md shadow-sm hover:bg-gray-100">
+				<FcGoogle className="text-xl mr-2" />
+				Sign in with Google
+			</button>
+			<button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 text-white rounded-md shadow-sm hover:bg-blue-700">
+				<FaFacebook className="text-xl mr-2" />
+				Sign in with Facebook
+			</button>
+			<button className="flex items-center justify-center w-full py-2 px-4 bg-black text-white rounded-md shadow-sm hover:bg-gray-800">
+				<FaApple className="text-xl mr-2" />
+				Sign in with Apple
+			</button>
+		</div>
+
 	</div>
 );
 
-export default SignupPage;
+export default LoginPage;
