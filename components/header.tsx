@@ -31,7 +31,7 @@ export const Header = () => {
                 <SheetFooter className="border-t border-border pt-4 px-3">
                   <div className="grid grid-cols-2 gap-4 w-full">
                     <Button asChild variant={"outline"} size={"lg"}>
-                      <Link href={"/login"}>Login</Link>
+                      <Link href={"/log-in"}>Login</Link>
                     </Button>
                     <Button size={"lg"}>
                       <Link href={"/signup"}>Get Started</Link>
@@ -44,7 +44,7 @@ export const Header = () => {
         </div>
         <div className="md:flex items-center gap-4 hidden">
           <Button variant={"outline"} asChild size={"lg"}>
-            <Link href={"/login"}>Login</Link>
+            <Link href={"/log-in"}>Login</Link>
           </Button>
           <Button size={"lg"}>
             <Link href={"/signup"}>Get Started</Link>
