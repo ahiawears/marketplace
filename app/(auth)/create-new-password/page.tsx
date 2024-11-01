@@ -1,13 +1,10 @@
 "use client"
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { createNewPassword } from "@/actions/create-new-password";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
 
 const NewPassword = () => {
-	const router = useRouter();
 	
 	return (
 		<div>
