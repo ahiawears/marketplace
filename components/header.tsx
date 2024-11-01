@@ -10,8 +10,12 @@ import {
   SheetTrigger,
 } from "./ui/sheet";
 import Link from "next/link";
+import { createClient } from "@/supabase/server";
 
-export const Header = () => {
+export const Header = async () => {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+
   return (
     <header className="p-8 border-b border-border fixed left-0 top-0 w-full bg-background z-50">
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
@@ -29,27 +33,35 @@ export const Header = () => {
                 <SheetTitle className="sr-only">Filters</SheetTitle>
                 <ul className="flex-1">{/* TODO: Add filters */}</ul>
                 <SheetFooter className="border-t border-border pt-4 px-3">
-                  <div className="grid grid-cols-2 gap-4 w-full">
-                    <Button asChild variant={"outline"} size={"lg"}>
-                      <Link href={"/log-in"}>Login</Link>
-                    </Button>
-                    <Button size={"lg"}>
-                      <Link href={"/signup"}>Get Started</Link>
-                    </Button>
-                  </div>
+                  {!data.user ? (
+                    <div className="grid grid-cols-2 gap-4 w-full">
+                      <Button asChild variant={"outline"} size={"lg"}>
+                        <Link href={"/log-in"}>Login</Link>
+                      </Button>
+                      <Button size={"lg"}>
+                        <Link href={"/signup"}>Get Started</Link>
+                      </Button>
+                    </div>
+                  ) : (
+                    data.user.email
+                  )}
                 </SheetFooter>
               </SheetContent>
             </Sheet>
           </div>
         </div>
-        <div className="md:flex items-center gap-4 hidden">
-          <Button variant={"outline"} asChild size={"lg"}>
-            <Link href={"/log-in"}>Login</Link>
-          </Button>
-          <Button size={"lg"}>
-            <Link href={"/signup"}>Get Started</Link>
-          </Button>
-        </div>
+        {!data.user ? (
+          <div className="md:flex items-center gap-4 hidden">
+            <Button variant={"outline"} asChild size={"lg"}>
+              <Link href={"/log-in"}>Login</Link>
+            </Button>
+            <Button size={"lg"}>
+              <Link href={"/signup"}>Get Started</Link>
+            </Button>
+          </div>
+        ) : (
+          data.user.email
+        )}
       </div>
     </header>
   );
