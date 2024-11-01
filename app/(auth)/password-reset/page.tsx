@@ -1,3 +1,4 @@
+import { passwordReset } from "@/actions/password-reset";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
 
@@ -30,7 +31,7 @@ const ResetPasswordForm = () => (
 			</p>
 		</div>
 
-		<form action="#" method="POST" className="space-y-6">
+		<form className="space-y-6">
 			<div>
 				<label htmlFor="email" className="block text-sm/6 font-bold text-gray-900">
 					Email address:*
@@ -47,14 +48,11 @@ const ResetPasswordForm = () => (
 				</div>
 			</div>
 
-
-			
-
 			<div className="flex items-center justify-between">
 				
 				<div className="text-sm">
 					<button
-						type="submit"
+						formAction={ passwordReset }
 						className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
 					>
 						Reset Password
