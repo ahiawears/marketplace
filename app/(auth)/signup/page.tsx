@@ -47,7 +47,7 @@ const RegisterForm = () => (
 
       <div>
         <label
-          htmlFor="email"
+          htmlFor="firstname"
           className="block text-sm/6 font-bold text-gray-900"
         >
           First Name:*
@@ -66,7 +66,7 @@ const RegisterForm = () => (
 
       <div>
         <label
-          htmlFor="email"
+          htmlFor="lastname"
           className="block text-sm/6 font-bold text-gray-900"
         >
           Last Name:*
@@ -106,7 +106,7 @@ const RegisterForm = () => (
 
       <div className="flex items-center justify-between">
         <p className="text-center text-sm/6 text-gray-500">
-          Alread have an account?{" "}
+          Already have an account?{" "}
           <a
             href="#"
             className="font-semibold text-indigo-600 hover:text-indigo-500"

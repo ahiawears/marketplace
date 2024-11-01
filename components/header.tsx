@@ -43,7 +43,7 @@ export const Header = async () => {
                       </Button>
                     </div>
                   ) : (
-                    data.user.email
+                    data.user.user_metadata?.first_name
                   )}
                 </SheetFooter>
               </SheetContent>
@@ -60,7 +60,7 @@ export const Header = async () => {
             </Button>
           </div>
         ) : (
-          data.user.email
+          data.user.user_metadata?.first_name
         )}
       </div>
     </header>
