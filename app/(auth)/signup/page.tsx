@@ -2,17 +2,40 @@ import { signup } from "@/actions/signup";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
 
-const SignupPage = () => {
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
+
+const SignupPage = ({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) => {
+  const errorCode = searchParams.error as string;
+
   return (
     <div>
       <div className="flex h-screen items-center justify-center">
         <div className="container mx-auto w-2/4 hidden lg:block">
           <div className="p-5 px-10 py-10 loginForm">
             <RegisterForm />
+            {errorCode && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{errorCode}</AlertDescription>
+              </Alert>
+            )}
           </div>
         </div>
         <div className="w-full p-5 px-10 py-10 lg:hidden">
           <RegisterForm />
+          {errorCode && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{errorCode}</AlertDescription>
+            </Alert>
+          )}
         </div>
       </div>
     </div>

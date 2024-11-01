@@ -11,6 +11,10 @@ import {
 } from "./ui/sheet";
 import Link from "next/link";
 import { createClient } from "@/supabase/server";
+import {
+  UserActionsDropdownDesktop,
+  UserActionsDropdownMobile,
+} from "./user-actions-dropdown";
 
 export const Header = async () => {
   const supabase = await createClient();
@@ -21,7 +25,7 @@ export const Header = async () => {
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
         <Logo />
         <div className="flex items-center gap-4 grow w-full">
-          <Input placeholder="Search products" className="grow" />
+          <Input placeholder="Search products" className="grow h-10" />
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>
@@ -33,7 +37,7 @@ export const Header = async () => {
                 <SheetTitle className="sr-only">Filters</SheetTitle>
                 <ul className="flex-1">{/* TODO: Add filters */}</ul>
                 <SheetFooter className="border-t border-border pt-4 px-3">
-                  {!data.user ? (
+                  {!data?.user ? (
                     <div className="grid grid-cols-2 gap-4 w-full">
                       <Button asChild variant={"outline"} size={"lg"}>
                         <Link href={"/log-in"}>Login</Link>
@@ -43,14 +47,14 @@ export const Header = async () => {
                       </Button>
                     </div>
                   ) : (
-                    data.user.user_metadata?.first_name
+                    <UserActionsDropdownMobile user={data.user} />
                   )}
                 </SheetFooter>
               </SheetContent>
             </Sheet>
           </div>
         </div>
-        {!data.user ? (
+        {!data?.user ? (
           <div className="md:flex items-center gap-4 hidden">
             <Button variant={"outline"} asChild size={"lg"}>
               <Link href={"/log-in"}>Login</Link>
@@ -60,7 +64,9 @@ export const Header = async () => {
             </Button>
           </div>
         ) : (
-          "Hello, " + data.user.user_metadata?.first_name
+          <div className="hidden md:block">
+            <UserActionsDropdownDesktop user={data.user} />
+          </div>
         )}
       </div>
     </header>

@@ -6,12 +6,14 @@ import { FcGoogle } from "react-icons/fc";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
-const LoginPage = ({
+const LoginPage = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) => {
-  const errorCode = searchParams.error as string;
+  const searchParamsValue = await searchParams;
+
+  const errorCode = searchParamsValue.error as string;
 
   return (
     <div>
