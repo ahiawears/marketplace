@@ -5,38 +5,38 @@ import CartItem from '@/components/ui/cart-item';
 import OrderSummary from '@/components/ui/order-summary';
 
 const CartPage: React.FC = () => {
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      image: 'https://via.placeholder.com/150',
-      name: 'Item 1',
-      color: 'Red',
-      size: 'M',
-      quantity: 1,
-      price: 29.99,
-    },
-    {
-      id: 2,
-      image: 'https://via.placeholder.com/150',
-      name: 'Item 2',
-      color: 'Blue',
-      size: 'L',
-      quantity: 2,
-      price: 49.99,
-    },
-  ]);
+    const [cartItems, setCartItems] = useState([
+        {
+            id: 1,
+            image: 'https://via.placeholder.com/150',
+            name: 'Item 1',
+            color: 'Red',
+            size: 'M',
+            quantity: 1,
+            price: 29.99,
+        },
+        {
+            id: 2,
+            image: 'https://via.placeholder.com/150',
+            name: 'Item 2',
+            color: 'Blue',
+            size: 'L',
+            quantity: 2,
+            price: 49.99,
+        },
+    ]);
 
-  const handleDelete = (id: number) => {
-    setCartItems((items) => items.filter((item) => item.id !== id));
-  };
+    const handleDelete = (id: number) => {
+        setCartItems((items) => items.filter((item) => item.id !== id));
+    };
 
-  const handleQuantityChange = (id: number, quantity: number) => {
-    setCartItems((items) =>
-      items.map((item) =>
-        item.id === id ? { ...item, quantity } : item
-      )
-    );
-  };
+    const handleQuantityChange = (id: number, quantity: number) => {
+        setCartItems((items) =>
+            items.map((item) =>
+                item.id === id ? { ...item, quantity } : item
+            )
+        );
+    };
 
   const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
