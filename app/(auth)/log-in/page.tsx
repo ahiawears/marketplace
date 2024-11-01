@@ -3,18 +3,40 @@ import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
 import { FaFacebook, FaApple } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertTriangle } from "lucide-react";
 
-const LoginPage = () => {
+const LoginPage = ({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) => {
+  const errorCode = searchParams.error as string;
+
   return (
     <div>
       <div className="flex h-screen items-center justify-center">
         <div className="container mx-auto w-2/4 hidden lg:block">
           <div className="p-5 px-10 py-10 loginForm">
             <LoginForm />
+            {errorCode && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{errorCode}</AlertDescription>
+              </Alert>
+            )}
           </div>
         </div>
         <div className="w-full p-5 px-10 py-10 lg:hidden">
           <LoginForm />
+          {errorCode && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{errorCode}</AlertDescription>
+            </Alert>
+          )}
         </div>
       </div>
     </div>
