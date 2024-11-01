@@ -1,7 +1,14 @@
+"use client"
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { createNewPassword } from "@/actions/create-new-password";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
 
 const NewPassword = () => {
+	const router = useRouter();
+	
 	return (
 		<div>
 			<div className="flex h-screen items-center justify-center">
@@ -30,7 +37,7 @@ const NewPasswordForm = () => (
 			</p>
 		</div>
 
-		<form action="#" method="POST" className="space-y-6">
+		<form className="space-y-6">
             <div>
 				<label htmlFor="newPassword" className="block text-sm/6 font-bold text-gray-900">
 					Enter New Password:*
@@ -48,13 +55,13 @@ const NewPasswordForm = () => (
 			</div>
 
             <div>
-				<label htmlFor="confirmNewPassword" className="block text-sm/6 font-bold text-gray-900">
+				<label htmlFor="validateNewPassword" className="block text-sm/6 font-bold text-gray-900">
 					Confirm New Password:*
 				</label> 
 				<div className="mt-2">
 					<Input
-						id="confirmNewPassword"
-						name="confirmNewPassword"
+						id="validateNewPassword"
+						name="validateNewPassword"
 						type="password"
 						required
 						autoComplete="current-password"
@@ -67,7 +74,7 @@ const NewPasswordForm = () => (
 				
 				<div className="text-sm">
 					<button
-						type="submit"
+						formAction={createNewPassword}
 						className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
 					>
 						Reset Password
