@@ -8,11 +8,15 @@ import {
 
 import { ProductCard } from "./product-card";
 
-export const ProductCarousel = () => {
+type Props = {
+  title?: string;
+};
+
+export const ProductCarousel = (props: Props) => {
   return (
     <section className="overflow-hidden py-8">
       <div className="container flex flex-col gap-8">
-        <h2 className="font-bold text-3xl">Trending 🔥</h2>
+        <h2 className="font-bold text-3xl">{props.title}</h2>
 
         <Carousel>
           <CarouselContent>
