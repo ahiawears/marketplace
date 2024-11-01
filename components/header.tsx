@@ -60,7 +60,7 @@ export const Header = async () => {
             </Button>
           </div>
         ) : (
-          data.user.user_metadata?.first_name
+          "Hello, " + data.user.user_metadata?.first_name
         )}
       </div>
     </header>
