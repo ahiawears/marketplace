@@ -12,7 +12,7 @@ import { User } from "@supabase/supabase-js";
 import { User as UserIcon } from "lucide-react";
 import Link from "next/link";
 
-type Props = {
+type Props = { 
   user: User;
 };
 
