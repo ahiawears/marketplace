@@ -5,12 +5,12 @@ import { Logo } from "@/components/ui/logo";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 
-const SignupPage = ({
+const SignupPage = async ({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) => {
-  const errorCode = searchParams.error as string;
+  const errorCode = (await searchParams).error as string;
 
   return (
     <div>
