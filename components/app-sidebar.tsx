@@ -1,4 +1,4 @@
-import { ArrowLeft, Home, Settings } from "lucide-react";
+import { ArrowLeft, Blocks, Home, Settings, ShoppingBasket, TicketPercent } from "lucide-react";
 
 import {
   Sidebar,
@@ -18,6 +18,24 @@ const items = [
     title: "Dashboard",
     url: "/dashboard",
     icon: Home,
+  },
+
+  {
+    title: "Add Products",
+    url: "/dashboard/add-product",
+    icon: Blocks,
+  },
+
+  {
+    title: "Products",
+    url: "/dashboard/products",
+    icon: ShoppingBasket,
+  },
+
+  {
+    title: "Add Coupon",
+    url: "/dashboard/add-coupon",
+    icon: TicketPercent,
   },
 
   {
