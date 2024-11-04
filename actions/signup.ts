@@ -33,7 +33,7 @@ export async function signup(formData: FormData) {
   }
 
   const { error: addUserError } = await AddUser({
-    user_id: data.user.id,
+    id: data.user.id, 
     email: userData.email,
   });
 

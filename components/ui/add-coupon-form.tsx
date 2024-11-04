@@ -104,7 +104,7 @@ const AddCouponForm: React.FC = () => {
                 {/* Section for step content */}
                 <div className="w-full max-w-2xl bg-white p-6 shadow-md rounded-lg">
                     {stepContent[currentStep]}  {/* Display the content for the current step */}
-                </div>
+                </div> 
 
                 {/* Navigation buttons */}
                 <div className="flex mt-4">

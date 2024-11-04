@@ -24,7 +24,7 @@ const Stepper: React.FC<StepperProps> = ({ steps, currentStep }) => {
                         className={`absolute  top-1/2 transform translate-x-1/2 -translate-y-1/2 h-1 w-full z-0 bg-gray-300`}
                     >
                         <div
-                        className={`h-full ${
+                            className={`h-full ${
                             index < currentStep ? 'bg-blue-500' : 'bg-gray-300'
                         }`}
                         ></div>

@@ -141,7 +141,7 @@ const AddProductForm = () => {
 
             {isMounted && (
                 <div className="mt-4">
-                    <label htmlFor="fileInput" className="block text-sm font-bold text-gray-900 mb-2">
+                    <label htmlFor="fileInput" className="block text-sm font-bold text-gray-900 mb-5">
                         Upload Product Image:*
                     </label>
                     <div className="relative">
@@ -149,11 +149,11 @@ const AddProductForm = () => {
                             type="file"
                             accept="image/*"
                             onChange={handleFileChange}
-                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                            className="absolute inset-0 w-[500px] h-[600px] opacity-0 cursor-pointer"
                             id="fileInput"
                         />
                         <img
-                            src={imageSrc || "https://placehold.co/500x600"}
+                            src={imageSrc || "https://placehold.co/500x600?text=Drop+the+products+main+image+here%0Aor%0Aclick+here+to+browse"}
                             alt="Product preview"
                             className="w-[500px] h-[600px] object-cover cursor-pointer"
                         />

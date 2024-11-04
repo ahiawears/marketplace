@@ -1,15 +1,15 @@
 import { createClient } from "@/supabase/server";
 
 type Props = {
-  user_id: string;
+  id: string;
   email: string;
 };
 
-export async function AddUser({ user_id, email }: Props) {
+export async function AddUser({ id, email }: Props) {
   const supabase = await createClient();
 
   const { data, error } = await supabase.from("users").insert({
-    user_id,
+    id,
     email,
   });
 
