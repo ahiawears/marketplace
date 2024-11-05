@@ -3,7 +3,8 @@
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { categoriesList } from "@/lib/categoriesList";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Textarea } from "@/components/ui/textarea";
 
 const AddProductForm = () => {
     const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -11,8 +12,12 @@ const AddProductForm = () => {
     const [customTags, setCustomTags] = useState<string[]>([]);
     const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [imageSrc, setImageSrc] = useState<string | null>(null); 
+    const [images, setImages] = useState<string[]>(["", "", "", ""]);
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [sizes, setSizes] = useState<string[]>([]);
+    const [quantities, setQuantities] = useState<{ [size: string]: number }>({});
     const [isMounted, setIsMounted] = useState(false); 
+    const carouselRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         setIsMounted(true); 
@@ -25,6 +30,15 @@ const AddProductForm = () => {
         const category = categoriesList.find((cat) => cat.name === categoryName);
         setSubcategories(category?.subcategories || []);
         setCustomTags(category ? category.tags : []); 
+
+        setSizes(category?.sizes || []); // Assuming sizes are part of categoriesList
+
+        // Initialize quantities for each size
+        const initialQuantities: { [size: string]: number } = {};
+        (category?.sizes || []).forEach((size) => {
+            initialQuantities[size] = 0; // Default quantity 0
+        });
+        setQuantities(initialQuantities);
         
         setSelectedSubcategory(null);
         setSelectedTags([]);
@@ -45,16 +59,47 @@ const AddProductForm = () => {
         });
     };
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
         if (event.target.files && event.target.files[0]) {
             const file = event.target.files[0];
-            addImage(file);
+            const imageUrl = URL.createObjectURL(file);
+            setImages((prevImages) => {
+                const newImages = [...prevImages];
+                newImages[index] = imageUrl;
+                return newImages;
+            });
         }
     };
 
-    const addImage = async (file: File) => {
-        const imageUrl = URL.createObjectURL(file);
-        setImageSrc(imageUrl); 
+    const nextSlide = () => {
+        if (currentSlide < images.length / 2 - 1) {
+            setCurrentSlide(currentSlide + 1);
+            scrollToCurrentSlide(currentSlide + 1);
+        }
+    };
+
+    const prevSlide = () => {
+        if (currentSlide > 0) {
+            setCurrentSlide(currentSlide - 1);
+            scrollToCurrentSlide(currentSlide - 1);
+        }
+    };
+
+    const scrollToCurrentSlide = (slide: number) => {
+        const scrollPosition = slide * 500; // Each image is 500px wide
+        if (carouselRef.current) {
+            carouselRef.current.scroll({
+                left: scrollPosition,
+                behavior: "smooth",
+            });
+        }
+    };
+
+    const handleQuantityChange = (size: string, value: number) => {
+        setQuantities((prevQuantities) => ({
+          ...prevQuantities,
+          [size]: value,
+        }));
     };
 
     return (
@@ -138,13 +183,13 @@ const AddProductForm = () => {
                     </div>
                 )}
             </div>
-
+            {/*upload image section */}
             {isMounted && (
                 <div className="mt-4">
                     <label htmlFor="fileInput" className="block text-sm font-bold text-gray-900 mb-5">
                         Upload Product Image:*
                     </label>
-                    <div className="relative">
+                    {/* <div className="relative">
                         <input
                             type="file"
                             accept="image/*"
@@ -157,9 +202,89 @@ const AddProductForm = () => {
                             alt="Product preview"
                             className="w-[500px] h-[600px] object-cover cursor-pointer"
                         />
+                    </div> */}
+                    <div className="relative w-full h-[600px]">
+                        {/* Left button */}
+                        {currentSlide > 0 && (
+                            <button
+                                className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-300 p-2 rounded-full"
+                                onClick={prevSlide}
+                            >
+                                ◀
+                            </button>
+                        )}
+
+                        {/* Image Carousel */}
+                        <div ref={carouselRef} className="w-full h-full flex space-x-4 overflow-x-hidden">
+                            {images.slice(currentSlide * 2, currentSlide * 2 + 2).map((image, index) => (
+                                <div key={index} className="relative w-full h-[600px]">
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => handleFileChange(e, currentSlide * 2 + index)}
+                                        className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+                                    />
+                                    <img
+                                        src={image || "https://placehold.co/500x600?text=Drop+the+products+main+image+here%0Aor%0Aclick+here+to+browse"}
+                                        alt={`Slide ${currentSlide * 2 + index + 1}`}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Right button */}
+                        {currentSlide < images.length / 2 - 1 && (
+                            <button
+                                className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-300 p-2 rounded-full"
+                                onClick={nextSlide}
+                            >
+                                ▶
+                            </button>
+                        )}
                     </div>
                 </div>
             )}
+            {/*input sizes available */}
+            {sizes.length > 0 && (
+                <div className="my-7">
+                    <p className="text-sm font-bold text-gray-900 mb-4">Enter Quantities for Sizes Available:</p>
+                    <div className="grid grid-cols-3 gap-4">
+                        {sizes.map((size, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                                <label htmlFor={`quantity-${size}`} className="block text-sm font-medium text-gray-700">
+                                    {size}:
+                                </label>
+                                <Input
+                                    id={`quantity-${size}`}
+                                    name={`quantity-${size}`}
+                                    type="number"
+                                    min={0}
+                                    value={quantities[size]}
+                                    onChange={(e) => handleQuantityChange(size, Number(e.target.value))}
+                                    className="w-20"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Enter the products description */}
+            <div>
+                <label htmlFor="productDescription" className="block text-sm font-bold text-gray-900">
+                    Enter Product Description:*
+                </label>
+                <div className="mt-2">
+                    <Textarea
+                        id="productDescription"
+                        name="productDescription"
+                        rows={4}
+                        required
+                        placeholder="Enter the product description here"
+                    />
+                </div>
+            </div>
         </form>
     );
 };

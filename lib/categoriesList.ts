@@ -1,6 +1,7 @@
 export const categoriesList = [
     {
         name: "T-Shirts",
+        sizes: ["S", "M", "L", "XL", "XXL"],
         subcategories: [
             "Plain T-Shirts",
             "Graphic T-Shirts",
@@ -20,6 +21,7 @@ export const categoriesList = [
     },
     {
         name: "Shirts",
+        sizes: ["S", "M", "L", "XL", "XXL"],
         subcategories: [
             "Plain Shirts",
             "Printed Shirts",
@@ -40,6 +42,7 @@ export const categoriesList = [
     },
     {
         name: "Hoodies & Sweatshirts",
+        sizes: ["S", "M", "L", "XL", "XXL"],
         subcategories: [
             "Hoodies",
             "Sweatshirts",
@@ -59,6 +62,7 @@ export const categoriesList = [
     },
     {
         name: "Jackets & Coats",
+        sizes: ["S", "M", "L", "XL", "XXL"],
         subcategories: [
             "Puffer Jackets",
             "Denim Coats",
@@ -77,6 +81,7 @@ export const categoriesList = [
     },
     {
         name: "Jeans",
+        sizes: ["28", "30", "32", "34", "36"],
         subcategories: [
             "Straight Jeans",
             "Ripped Jeans",
@@ -94,6 +99,7 @@ export const categoriesList = [
     },
     {
         name: "Trousers",
+        sizes: ["28", "30", "32", "34", "36"],
         subcategories: [
             "Cargo",
             "Chinos",
@@ -112,13 +118,14 @@ export const categoriesList = [
     },
     {
         name: "Skirts",
+        sizes: ["XS", "S", "M", "L", "XL"],
         subcategories: [
             "Maxi Skirts",
             "Mini Skirts",
             "Wrap Skirts",
-            "Pencil skirts",
+            "Pencil Skirts",
             "Denim Skirts",
-            "Skater Skirts"
+            "Skater Skirts",
         ],
         tags: [
             "Smart Casual", 
@@ -133,6 +140,7 @@ export const categoriesList = [
     },
     {
         name: "Co-Ord",
+        sizes: ["S", "M", "L", "XL"],
         subcategories: [],
         tags: [
             "Matching Sets", 
@@ -146,6 +154,7 @@ export const categoriesList = [
     },
     {
         name: "Polo Shirts",
+        sizes: ["S", "M", "L", "XL", "XXL"],
         subcategories: [
             "Long Sleeve Polo Shirts",
         ],
@@ -161,6 +170,7 @@ export const categoriesList = [
     },
     {
         name: "Hats & Caps",
+        sizes: ["One Size"],
         subcategories: [
             "Beanies",
             "Bucket Hats",
@@ -179,6 +189,7 @@ export const categoriesList = [
     },
     {
         name: "Accessories",
+        sizes: ["One Size"],
         subcategories: [
             "Bags",
             "Belts",
@@ -197,6 +208,7 @@ export const categoriesList = [
     },
     {
         name: "Shorts",
+        sizes: ["S", "M", "L", "XL", "XXL"],
         subcategories: [
             "Denim Shorts",
             "Cargo Shorts",
