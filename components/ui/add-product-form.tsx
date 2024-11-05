@@ -5,6 +5,7 @@ import { Select } from "@/components/ui/select";
 import { categoriesList } from "@/lib/categoriesList";
 import { useEffect, useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
+import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react';
 
 const AddProductForm = () => {
     const [selectedCategory, setSelectedCategory] = useState<string>("");
@@ -16,6 +17,9 @@ const AddProductForm = () => {
     const [currentSlide, setCurrentSlide] = useState(0);
     const [sizes, setSizes] = useState<string[]>([]);
     const [quantities, setQuantities] = useState<{ [size: string]: number }>({});
+    const [sku, setSku] = useState<string>(""); 
+    const [showQRCode, setShowQRCode] = useState<boolean>(false); 
+    const [qrCodeBase64, setQrCodeBase64] = useState<string>("");
     const [isMounted, setIsMounted] = useState(false); 
     const carouselRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +105,49 @@ const AddProductForm = () => {
           [size]: value,
         }));
     };
+
+    const handleSkuChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSku(event.target.value);
+        generateQRCode();
+    };
+
+
+    const generateQRCode = () => {
+        setShowQRCode(true);
+
+        const canvas = document.getElementById("qr-code") as HTMLCanvasElement;
+        if (canvas) {
+            const base64Image = canvas.toDataURL("image/png"); // Convert QR code to base64
+            setQrCodeBase64(base64Image);  // Set base64 image in state
+            console.log(base64Image);
+        }
+    };
+
+    {/*
+    const uploadQRCode = async () => {
+        if (qrCodeBase64) {
+            const fileName = `${sku}.png`;
+            const base64Data = qrCodeBase64.split(',')[1];  // Remove the base64 header
+
+            // Convert base64 to Blob for uploading
+            const byteCharacters = atob(base64Data);
+            const byteNumbers = new Array(byteCharacters.length).map((_, i) => byteCharacters.charCodeAt(i));
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: 'image/png' });
+
+            // Upload to Supabase Storage
+            const { data, error } = await supabase.storage
+                .from('qrcodes')  // Bucket name in Supabase Storage
+                .upload(`qrcodes/${fileName}`, blob, { contentType: 'image/png' });
+
+            if (error) {
+                console.error("Error uploading QR Code:", error);
+            } else {
+                console.log("QR Code uploaded successfully!", data);
+                // You can store `data.path` (the file path) to the Supabase database if needed
+            }
+        }
+    };*/}
 
     return (
         <form className="space-y-6">
@@ -189,20 +236,7 @@ const AddProductForm = () => {
                     <label htmlFor="fileInput" className="block text-sm font-bold text-gray-900 mb-5">
                         Upload Product Image:*
                     </label>
-                    {/* <div className="relative">
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFileChange}
-                            className="absolute inset-0 w-[500px] h-[600px] opacity-0 cursor-pointer"
-                            id="fileInput"
-                        />
-                        <img
-                            src={imageSrc || "https://placehold.co/500x600?text=Drop+the+products+main+image+here%0Aor%0Aclick+here+to+browse"}
-                            alt="Product preview"
-                            className="w-[500px] h-[600px] object-cover cursor-pointer"
-                        />
-                    </div> */}
+                    
                     <div className="relative w-full h-[600px]">
                         {/* Left button */}
                         {currentSlide > 0 && (
@@ -285,8 +319,81 @@ const AddProductForm = () => {
                     />
                 </div>
             </div>
+
+            {/* Enter the products price */}
+            <div>
+                <label htmlFor="price" className="block text-sm font-bold text-gray-900">
+                    Price:*
+                </label>
+                <div className="mt-2">
+                    <Input
+                        id="price"
+                        name="price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        required
+                        placeholder="Enter the product price"
+                    />
+                </div>
+            </div>
+
+            {/* Enter Stock keeping unit code */}
+            <div>
+                <label htmlFor="sku" className="block text-sm font-bold text-gray-900">
+                    SKU (Stock Keeping Unit):
+                </label>
+                <div className="mt-2">
+                    <Input
+                        id="sku"
+                        name="sku"
+                        type="text"
+                        required
+                        value={sku}
+                        onChange={handleSkuChange}
+                        placeholder="Enter the SKU"
+                    />
+                </div>
+
+                {sku && (
+                    <div className="mt-4">
+                        <QRCodeCanvas value={sku} size={128} id="qr-code"/>
+                    </div>
+                    
+                )}
+            </div>
+
+
+            {/* enter weight(kg) */}
+            <div>
+                <label htmlFor="weight" className="block text-sm font-bold text-gray-900">
+                    Weight in kg (Optional):
+                </label>
+                <div className="mt-2">
+                    <Input
+                        id="weight"
+                        name="weight"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="Enter the product weight in kilograms"
+                    />
+                </div>
+            </div>
+
+            {/* Submit form */}
+            <div>
+                <button
+                    //formAction={uploadProduct}
+                    className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+
+                </button>
+            </div>
         </form>
     );
 };
 
 export default AddProductForm;
+//To Do
+//Allow users to upload products for later date releases
