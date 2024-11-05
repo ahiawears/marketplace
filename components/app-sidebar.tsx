@@ -1,4 +1,10 @@
-import { ArrowLeft, Blocks, Home, Settings, ShoppingBasket, TicketPercent } from "lucide-react";
+import {
+  ArrowLeft,
+  Home,
+  Settings,
+  ShoppingBasket,
+  TicketPercent,
+} from "lucide-react";
 
 import {
   Sidebar,
@@ -10,10 +16,20 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
 import Link from "next/link";
 
-const items = [
+type SibarMenuItem = {
+  title: string;
+  url: string;
+  icon?: React.ElementType;
+  subitems?: SibarMenuItem[];
+};
+
+const items: SibarMenuItem[] = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -21,21 +37,29 @@ const items = [
   },
 
   {
-    title: "Add Products",
-    url: "/dashboard/add-product",
-    icon: Blocks,
-  },
-
-  {
     title: "Products",
     url: "/dashboard/products",
     icon: ShoppingBasket,
+    subitems: [
+      {
+        title: "Add Products",
+        url: "/dashboard/add-product",
+        icon: undefined,
+      },
+    ],
   },
 
   {
-    title: "Add Coupon",
-    url: "/dashboard/add-coupon",
+    title: "Coupons",
+    url: "/dashboard/coupons",
     icon: TicketPercent,
+    subitems: [
+      {
+        title: "Add Coupon",
+        url: "/dashboard/add-coupon",
+        icon: undefined,
+      },
+    ],
   },
 
   {
@@ -57,10 +81,22 @@ export function AppSidebar() {
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <Link href={item.url}>
-                      <item.icon />
+                      {item.icon && <item.icon />}
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
+                  {item.subitems?.map((subitem, i) => (
+                    <SidebarMenuSub key={i}>
+                      <SidebarMenuSubItem>
+                        <SidebarMenuSubButton asChild>
+                          <Link href={subitem.url}>
+                            {subitem.icon && <subitem.icon />}
+                            <span>{subitem.title}</span>
+                          </Link>
+                        </SidebarMenuSubButton>
+                      </SidebarMenuSubItem>
+                    </SidebarMenuSub>
+                  ))}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
