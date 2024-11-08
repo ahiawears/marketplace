@@ -46,6 +46,11 @@ const items: SibarMenuItem[] = [
         url: "/dashboard/add-product",
         icon: undefined,
       },
+      {
+        title: "Products List",
+        url: "/dashboard/products-list",
+        icon: undefined,
+      }
     ],
   },
 

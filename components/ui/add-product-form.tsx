@@ -5,13 +5,14 @@ import { Select } from "@/components/ui/select";
 import { categoriesList } from "@/lib/categoriesList";
 import { useEffect, useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
-import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
+import { addProduct } from "@/actions/uploadProduct";
 
 const AddProductForm = () => {
     const [selectedCategory, setSelectedCategory] = useState<string>("");
     const [subcategories, setSubcategories] = useState<string[]>([]);
     const [customTags, setCustomTags] = useState<string[]>([]);
-    const [selectedSubcategory, setSelectedSubcategory] = useState<string | null>(null);
+    const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [images, setImages] = useState<string[]>(["", "", "", ""]);
     const [currentSlide, setCurrentSlide] = useState(0);
@@ -44,7 +45,7 @@ const AddProductForm = () => {
         });
         setQuantities(initialQuantities);
         
-        setSelectedSubcategory(null);
+        setSelectedSubcategory("");
         setSelectedTags([]);
     };
 
@@ -122,35 +123,60 @@ const AddProductForm = () => {
             console.log(base64Image);
         }
     };
+    async function urlToFile(url: string): Promise<File> {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new File([blob], "image.jpg", { type: blob.type });
+    }
 
-    {/*
-    const uploadQRCode = async () => {
-        if (qrCodeBase64) {
-            const fileName = `${sku}.png`;
-            const base64Data = qrCodeBase64.split(',')[1];  // Remove the base64 header
 
-            // Convert base64 to Blob for uploading
-            const byteCharacters = atob(base64Data);
-            const byteNumbers = new Array(byteCharacters.length).map((_, i) => byteCharacters.charCodeAt(i));
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: 'image/png' });
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+    
+        const formData = new FormData(event.currentTarget); // Use currentTarget here
+    
+        // Additional data
+        //formData.append('category', selectedCategory);
+        // formData.append('subCategory', selectedSubcategory || "");
+        // formData.append('tags', JSON.stringify(selectedTags));
+        // formData.append('sku', sku);
+        // formData.append('quantity', (formData.get('quantity') as string) || ''); // Use get to retrieve quantity
+        // formData.append('weight', (formData.get('weight') as string) || ''); // Use get to retrieve weight
+        // formData.append('sizes', JSON.stringify(Object.keys(quantities).map(size => ({
+        //     name: size,
+        //     quantity: quantities[size]
+        // }))));
+        // formData.append('qrCode', qrCodeBase64);
+    
+        // // Attach images (upload files directly to the server)
+        // images.forEach((image, index) => {
+        //     if (image) {
+        //         formData.append(`images[${index}]`, image);
+        //     }
+        // });
+        formData.append('qrCode', qrCodeBase64);
+        formData.append('subCategory', selectedSubcategory || "");
+        formData.append('tags', selectedTags.join(','));
 
-            // Upload to Supabase Storage
-            const { data, error } = await supabase.storage
-                .from('qrcodes')  // Bucket name in Supabase Storage
-                .upload(`qrcodes/${fileName}`, blob, { contentType: 'image/png' });
-
-            if (error) {
-                console.error("Error uploading QR Code:", error);
-            } else {
-                console.log("QR Code uploaded successfully!", data);
-                // You can store `data.path` (the file path) to the Supabase database if needed
+        formData.append('sizes', JSON.stringify(Object.keys(quantities).map(size => ({
+            name: size,
+            quantity: quantities[size]
+        }))));
+         // Convert blob URLs to Files and attach them
+        const filePromises = images.map(async (imageUrl) => {
+            if (imageUrl) {
+                const file = await urlToFile(imageUrl);
+                formData.append('images', file);
             }
-        }
-    };*/}
+        });
+
+        await Promise.all(filePromises); // Wait for all files to be added
+        await addProduct(formData);
+    };
+    
 
     return (
-        <form className="space-y-6">
+        <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
                 <label htmlFor="productName" className="block text-sm font-bold text-gray-900">
                     Enter Product Name:*
@@ -384,10 +410,10 @@ const AddProductForm = () => {
             {/* Submit form */}
             <div>
                 <button
-                    //formAction={uploadProduct}
+                    type="submit"
                     className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
-
+                    Submit Product
                 </button>
             </div>
         </form>
