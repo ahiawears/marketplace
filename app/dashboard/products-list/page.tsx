@@ -1,36 +1,53 @@
 "use client";
 
+import PageLoading from "@/components/pageLoading";
 import ProductTable from "@/components/ui/list-product-table";
-const placeholderThumbnail = "https://placehold.co/600x400?text=Hello+World"; 
-const products = [
-	{
-		id: "1",
-		name: "Sample Product 1",
-		thumbnail: placeholderThumbnail,
-		category: "Electronics",
-	},
-	{
-			id: "2",
-			name: "Sample Product 2",
-			thumbnail: placeholderThumbnail,
-			category: "Apparel",
-	},
-];
-
-const handleHideProduct = (id: string) => {
-	console.log(`Hide product with id: ${id}`);
-};
-
-const handleEditProduct = (id: string) => {
-	console.log(`Edit product with id: ${id}`);
-};
-
-const handleDeleteProduct = (id: string) => {
-	console.log(`Delete product with id: ${id}`);
-};
+import { ProductTableType } from "@/lib/types";
+import { useEffect, useState } from "react";
 
 
 const ProductsPage = () => {
+
+	const [products, setProducts] = useState<ProductTableType[]>([]);
+	const [loading, setLoading] = useState(true);
+
+	const handleHideProduct = (id: string) => {
+		console.log(`Hide product with id: ${id}`);
+	};
+	
+	const handleEditProduct = (id: string) => {
+		console.log(`Edit product with id: ${id}`);
+	};
+	
+	const handleDeleteProduct = (id: string) => {
+		console.log(`Delete product with id: ${id}`);
+	};
+
+	useEffect(() => {
+        // Fetch cart items from the backend
+        const fetchCartItems = async () => {
+            try {    
+                const response = await fetch('/api/brandProductsList');
+                const data = await response.json();
+
+                if (response.ok) {
+                    setProducts(data.data); 
+                } else {
+                    console.error("Failed to fetch product items:", data.error);
+                }
+            } catch (error) {
+                console.error("Error fetching product items:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchCartItems();
+    }, []);
+
+	if (loading) {
+		return <PageLoading />; //add the page loading page
+	}
 	return (
 		<div>
 			<div className="hidden lg:block">

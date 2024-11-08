@@ -7,7 +7,9 @@ interface Product {
     id: string;
     name: string;
     thumbnail: string;
-    category: string;
+    category_name: string;
+    sku: string;
+
 }
 
 interface ProductTableProps {
@@ -32,37 +34,35 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
                 </thead>
                 <tbody>
                     {products.map((product) => (
-                    <tr key={product.id} className="hover:bg-gray-50">
-                        {/* Product Name and Thumbnail */}
-                        <td className="px-6 py-4 flex items-center space-x-4">
-                        <img
-                            src={product.thumbnail || placeholderThumbnail}
-                            alt={product.name}
-                            width={40}
-                            height={40}
-                            className="rounded-md"
-                        />
-                        <span className="text-sm font-medium text-gray-900">{product.name}</span>
-                        </td>
+                        <tr key={product.id} className="hover:bg-gray-50">
+                            {/* Product Name and Thumbnail */}
+                            <td className="px-3 py-1 flex items-center space-x-4">
+                                <img
+                                    src={product.thumbnail || placeholderThumbnail}
+                                    alt={product.name}
+                                    className="rounded-md w-20 h-20"
+                                />
+                                <span className="text-sm font-medium text-gray-900">{product.name}</span>
+                            </td>
 
-                        {/* Category */}
-                        <td className="px-6 py-4 text-sm text-gray-600">{product.category}</td>
+                            {/* Category */}
+                            <td className="px-6 py-4 text-sm text-gray-600">{product.category_name}</td>
 
-                        {/* Action Icons */} 
-                        <td className="px-6 py-4">
-                            <div className="flex space-x-4 text-gray-500">
-                                <button onClick={() => onHideProduct(product.id)} title="Hide Product">
-                                    <FaEyeSlash className="w-5 h-5 hover:text-gray-700" />
-                                </button>
-                                <button onClick={() => onEditProduct(product.id)} title="Edit Product">
-                                    <FaEdit className="w-5 h-5 hover:text-gray-700" />
-                                </button>
-                                <button onClick={() => onDeleteProduct(product.id)} title="Delete Product">
-                                    <FaTrash className="w-5 h-5 hover:text-gray-700" />
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
+                            {/* Action Icons */} 
+                            <td className="px-6 py-4">
+                                <div className="flex space-x-4 text-gray-500">
+                                    <button onClick={() => onHideProduct(product.id)} title="Hide Product">
+                                        <FaEyeSlash className="w-5 h-5 hover:text-gray-700" />
+                                    </button>
+                                    <button onClick={() => onEditProduct(product.id)} title="Edit Product">
+                                        <FaEdit className="w-5 h-5 hover:text-gray-700" />
+                                    </button>
+                                    <button onClick={() => onDeleteProduct(product.id)} title="Delete Product">
+                                        <FaTrash className="w-5 h-5 hover:text-gray-700" />
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     ))}
                 </tbody>
             </table>

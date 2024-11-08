@@ -8,7 +8,7 @@ interface CartItem {
     id: number;
     image: string;
     name: string;
-    color: string;
+    color: string;        
     size: string;
     quantity: number;
     price: number;
@@ -22,7 +22,7 @@ const CartPage: React.FC = () => {
     useEffect(() => {
         // Fetch cart items from the backend
         const fetchCartItems = async () => {
-            try {
+            try {    
                 const response = await fetch('/api/cart');
                 const data = await response.json();
 

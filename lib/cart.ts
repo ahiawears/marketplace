@@ -5,7 +5,7 @@ export const getCartItems = async (userId: string) => {
     const { data, error } = await supabase
                                 .from('cart_items')
                                 .select('*')
-                                .eq('user_id', userId);
+                                .eq('user_id', userId);   
 
     console.log("Fetched Data:", data);
     console.log("Fetch Error:", error);
