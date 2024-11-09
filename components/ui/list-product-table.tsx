@@ -6,7 +6,7 @@ import { FaEyeSlash, FaEdit, FaTrash } from "react-icons/fa";
 interface Product {
     id: string;
     name: string;
-    thumbnail: string;
+    main_image_url: string;
     category_name: string;
     sku: string;
 
@@ -37,11 +37,15 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
                         <tr key={product.id} className="hover:bg-gray-50">
                             {/* Product Name and Thumbnail */}
                             <td className="px-3 py-1 flex items-center space-x-4">
-                                <img
-                                    src={product.thumbnail || placeholderThumbnail}
-                                    alt={product.name}
-                                    className="rounded-md w-20 h-20"
-                                />
+                                {product.main_image_url ? (
+                                    <img
+                                        src={product.main_image_url || placeholderThumbnail}
+                                        alt={product.main_image_url ? `${product.name} thumbnail` : `No image for ${product.name}`}
+                                        className="w-16 h-16 object-cover" 
+                                    />
+                                ) : (
+                                    <p>No image available</p>
+                                )}
                                 <span className="text-sm font-medium text-gray-900">{product.name}</span>
                             </td>
 

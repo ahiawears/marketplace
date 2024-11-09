@@ -5,6 +5,11 @@ const nextConfig: NextConfig = {
   images: {
     domains: ['via.placeholder.com'], // Add the allowed domains here
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb', // Set the limit to 2 MB (adjust as needed)
+    },
+  },
 };
 
 export default nextConfig;
