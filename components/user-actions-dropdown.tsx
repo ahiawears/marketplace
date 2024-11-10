@@ -11,10 +11,32 @@ import {
 import { User } from "@supabase/supabase-js";
 import { User as UserIcon } from "lucide-react";
 import Link from "next/link";
+import { Fragment } from "react";
 
-type Props = { 
+type Props = {
   user: User;
 };
+
+const menuItems: {
+  label: string;
+  href?: string;
+  action?: () => void;
+  separator?: boolean;
+}[] = [
+  {
+    label: "Dashboard",
+    href: "/dashboard",
+  },
+  {
+    label: "Start your brand",
+    href: "/brand-onboarding",
+    separator: true,
+  },
+  {
+    label: "Log out",
+    action: signout,
+  },
+];
 
 export function UserActionsDropdownDesktop({ user }: Props) {
   return (
@@ -27,16 +49,20 @@ export function UserActionsDropdownDesktop({ user }: Props) {
 
       <DropdownMenuContent className="w-56">
         <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard">Dashboard</Link>
-        </DropdownMenuItem>
-
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>
-          <form>
-            <button formAction={signout}>Log out</button>
-          </form>
-        </DropdownMenuItem>
+        {menuItems.map((item) => (
+          <Fragment key={item.label}>
+            <DropdownMenuItem asChild>
+              {item.href ? (
+                <Link href={item.href}>{item.label}</Link>
+              ) : (
+                <form action={item.action}>
+                  <button type="submit">{item.label}</button>
+                </form>
+              )}
+            </DropdownMenuItem>
+            {item.separator && <DropdownMenuSeparator />}
+          </Fragment>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -54,15 +80,20 @@ export function UserActionsDropdownMobile({ user }: Props) {
 
       <DropdownMenuContent className="">
         <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-        <DropdownMenuItem asChild>
-          <Link href="/dashboard">Dashboard</Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <form>
-            <button formAction={signout}>Log out</button>
-          </form>
-        </DropdownMenuItem>
+        {menuItems.map((item) => (
+          <Fragment key={item.label}>
+            <DropdownMenuItem asChild>
+              {item.href ? (
+                <Link href={item.href}>{item.label}</Link>
+              ) : (
+                <form action={item.action}>
+                  <button type="submit">{item.label}</button>
+                </form>
+              )}
+            </DropdownMenuItem>
+            {item.separator && <DropdownMenuSeparator />}
+          </Fragment>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );
