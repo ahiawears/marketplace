@@ -7,9 +7,17 @@ import { useEffect, useRef, useState } from "react";
 import { Textarea } from "@/components/ui/textarea";
 import { QRCodeCanvas } from 'qrcode.react';
 import { addProduct } from "@/actions/uploadProduct";
+import { ProductData } from "@/lib/types";
 
-const AddProductForm = () => {
-    const [selectedCategory, setSelectedCategory] = useState<string>("");
+
+interface AddProductFormProps {
+    initialData?: ProductData;
+}
+
+
+const AddProductForm = ({ initialData }: AddProductFormProps) =>{
+    const [productName, setProductName] = useState(initialData?.productName || "");
+    const [selectedCategory, setSelectedCategory] = useState(initialData?.category || "");
     const [subcategories, setSubcategories] = useState<string[]>([]);
     const [customTags, setCustomTags] = useState<string[]>([]);
     const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
@@ -17,7 +25,7 @@ const AddProductForm = () => {
     const [images, setImages] = useState<string[]>(["", "", "", ""]);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [sizes, setSizes] = useState<string[]>([]);
-    const [quantities, setQuantities] = useState<{ [size: string]: number }>({});
+    const [quantities, setQuantities] = useState<{ [size: string]: number }>({});  
     const [sku, setSku] = useState<string>(""); 
     const [showQRCode, setShowQRCode] = useState<boolean>(false); 
     const [qrCodeBase64, setQrCodeBase64] = useState<string>("");
@@ -26,7 +34,16 @@ const AddProductForm = () => {
 
     useEffect(() => {
         setIsMounted(true); 
-    }, []);
+        if (initialData) {
+            setProductName(initialData.productName || "");
+            setSelectedCategory(initialData.category || "");
+            setSelectedSubcategory(initialData.subCategory || "");
+            setSelectedTags(initialData.tags || []);
+            setImages(initialData.images || ["", "", "", ""]);
+            setSku(initialData.sku || "");
+            setQuantities(initialData.quantities || {});
+        }
+    }, [initialData]);
 
     const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const categoryName = event.target.value;
@@ -187,7 +204,7 @@ const AddProductForm = () => {
                         name="productName"
                         type="text"
                         required
-                        autoComplete="product-name"
+                        onChange={(e) => setProductName(e.target.value)}
                     />
                 </div>
             </div>
@@ -312,12 +329,12 @@ const AddProductForm = () => {
                     <div className="grid grid-cols-3 gap-4">
                         {sizes.map((size, index) => (
                             <div key={index} className="flex items-center space-x-2">
-                                <label htmlFor={`quantity-${size}`} className="block text-sm font-medium text-gray-700">
+                                <label htmlFor={`${size}`} className="block text-sm font-medium text-gray-700">
                                     {size}:
                                 </label>
                                 <Input
-                                    id={`quantity-${size}`}
-                                    name={`quantity-${size}`}
+                                    id={`${size}`}   
+                                    name={`${size}`}
                                     type="number"
                                     min={0}
                                     value={quantities[size]}

@@ -1,3 +1,4 @@
+// types.ts
 export interface ProductTableType {
     id: string;
     name: string;
@@ -5,3 +6,46 @@ export interface ProductTableType {
     category_name: string;
     sku: string;
 }
+
+export type ProductDetails = {
+    id: string;
+    name: string;
+    sku: string;
+    category_name: string;
+    tags: string[];
+    price: string;
+    weight: string;
+    images: string[];
+    description: string;
+    quantities: { [size: string]: number };
+    subCategory: string;
+}
+
+export interface ProductData {
+    id: string;
+    productName: string;
+    sku: string;
+    category: string;
+    tags: string[];
+    price: string;
+    weight: string;
+    images: string[];
+    description: string;
+    quantities: { [size: string]: number };
+    subCategory: string;
+}
+
+// A helper function to map ProductDetails to ProductData
+export const mapProductDetailsToProductData = (details: ProductDetails): ProductData => ({
+    id: details.id,
+    productName: details.name,
+    sku: details.sku,
+    category: details.category_name,
+    tags: details.tags,
+    price: details.price,
+    weight: details.weight,
+    images: details.images,
+    description: details.description,
+    quantities: details.quantities,
+    subCategory: details.subCategory
+});

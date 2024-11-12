@@ -1,5 +1,7 @@
 "use client";
 
+
+import { useRouter } from "next/navigation";
 import PageLoading from "@/components/pageLoading";
 import ProductTable from "@/components/ui/list-product-table";
 import { ProductTableType } from "@/lib/types";
@@ -8,6 +10,7 @@ import { useEffect, useState } from "react";
 
 const ProductsPage = () => {
 
+	const router = useRouter();
 	const [products, setProducts] = useState<ProductTableType[]>([]);
 	const [loading, setLoading] = useState(true);
 
@@ -16,6 +19,7 @@ const ProductsPage = () => {
 	};
 	
 	const handleEditProduct = (id: string) => {
+		router.push(`./edit-product/${id}`);
 		console.log(`Edit product with id: ${id}`);
 	};
 	

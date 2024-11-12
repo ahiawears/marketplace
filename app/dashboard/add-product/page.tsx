@@ -11,7 +11,7 @@ const AddProduct = () => {
             <div className="w-full py-10 lg:hidden">
                 <AddProductForm />
             </div>
-        </div>
+        </div>  
     )
 }
 

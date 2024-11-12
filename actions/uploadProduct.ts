@@ -10,7 +10,7 @@ interface Size {
 export const addProduct = async (formData: FormData) => {
   const supabase = await createClient();
 
-  console.log("Input data:", formData);
+  console.log("Input data:", formData);  
 
   const name = formData.get("productName") as string;
   const category = formData.get("category") as string;
