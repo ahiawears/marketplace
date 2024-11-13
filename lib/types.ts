@@ -49,3 +49,9 @@ export const mapProductDetailsToProductData = (details: ProductDetails): Product
     quantities: details.quantities,
     subCategory: details.subCategory
 });
+
+export interface UserDetails {
+    firstname: string;
+    lastname: string;
+    email: string;
+}

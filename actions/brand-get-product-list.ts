@@ -14,7 +14,7 @@ export const getProductItems = async (userId: string) => { //change this to bran
     if (productError) {
         console.error("Error fetching products items:", productError);
         throw new Error('Failed to fetch products items');
-    }
+    }  
 
     if (!productData || productData.length === 0) {
         console.log("No products items found for user:", userId);
