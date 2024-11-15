@@ -1,0 +1,119 @@
+import { brandRegister } from '@/actions/brand-register';
+import { Input } from '@/components/ui/input';
+import { Logo } from '@/components/ui/logo';
+import React from 'react'
+
+const RegisterBrand = () => {
+  return (
+    <div>
+        <div className='flex h-screen items-center justify-center'>
+            <div className='container mx-auto w-2/4 hidden lg:block'>
+                <div>
+                    <div className='p-5 px-10 py-10 BrandRegisterForm'>
+                        <RegisterBrandForm />
+                    </div>
+                </div>
+            </div>
+            <div className="w-full p-5 px-10 py-10 lg:hidden">
+            <RegisterBrandForm />
+                
+            </div>
+        </div>
+    </div>
+  )
+};
+
+const RegisterBrandForm = () => (
+    <div>
+        <div className='text-center py-5 mb-5'>
+            <Logo />
+        </div>
+
+        <form className='space-y-6'>
+            <div>
+                <label 
+                    htmlFor="brandEmail"
+                    className='block text-sm/6 font-bold text-gray-900'
+                >
+                    Brand Email Address: *
+                </label>
+                <div className="mt-2">
+                    <Input
+                        id="brandEmail"
+                        name="brandEmail"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
+                    />
+                </div>
+            </div>
+
+            <div>
+                <div className="flex items-center justify-between">
+                    <label
+                        htmlFor="brandPassword"
+                        className="block text-sm/6 font-bold text-gray-900"
+                    >
+                        Password:*
+                    </label>
+                </div>
+
+                <div className='mt-2'>
+                    <Input
+                        id='brandPassword'
+                        name='brandPassword'
+                        type='password'
+                        required
+                        className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm-text-sm/6'
+                    />
+                </div>
+            </div>
+
+            <div>
+                <div className="flex items-center justify-between">
+                    <label
+                        htmlFor="brandConfirmPassword"
+                        className="block text-sm/6 font-bold text-gray-900"
+                    >
+                        Confirm Password:*
+                    </label>
+                </div>
+
+                <div className='mt-2'>
+                    <Input
+                        id='brandConfirmPassword'
+                        name='brandConfirmPassword'
+                        type='password'
+                        required
+                        className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm-text-sm/6'
+                    />
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+                <p className="text-center text-sm/6 text-gray-500">
+                    Already have an account?{" "}
+                    <a
+                        href="#"
+                        className="font-semibold text-indigo-600 hover:text-indigo-500"
+                    >
+                        Sign In
+                    </a>{" "}
+                    here
+                </p>
+                <div className="text-sm">
+                    <button
+                        formAction={brandRegister}
+                        className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                        Sign Up
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+);
+
+export default RegisterBrand

@@ -7,7 +7,7 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";  
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useRouter } from "next/navigation";
@@ -19,6 +19,7 @@ import {
   Building2,
 } from "lucide-react";
 import BlurFade from "@/components/ui/blur-fade";
+import { Logo } from "@/components/ui/logo";
 
 export default function BrandOnboardingPage() {
   const [step, setStep] = useState(1);
@@ -26,13 +27,15 @@ export default function BrandOnboardingPage() {
     brandName: "",
     description: "",
     logoUrl: "",
+    headerImage: "",
+    brandCategories: [] as string[],
   });
   const router = useRouter();
 
   const handleNext = () => {
     if (step < 3) setStep(step + 1);
     else router.push("/dashboard");
-  };
+  }; 
 
   const handleBack = () => {
     if (step > 1) setStep(step - 1);
@@ -73,7 +76,7 @@ export default function BrandOnboardingPage() {
                 }`}
               >
                 {index === 1 && "Brand Info"}
-                {index === 2 && "Logo"}
+                {index === 2 && "Logo & Header Image"}
                 {index === 3 && "Complete"}
               </div>
             </div>
