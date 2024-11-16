@@ -5,7 +5,7 @@ import { createClient } from "@/supabase/server";
 interface Size {
   name: string;
   quantity: number;
-}
+} 
 
 export const addProduct = async (formData: FormData) => {
   const supabase = await createClient();
