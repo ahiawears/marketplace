@@ -59,19 +59,19 @@ export interface UserDetails {
 }
 
 export type Product = {
-  created_at: string;
-  brand_id: string;
-  category_id: string;
-  name: string;
-  description: string;
-  price: number;
+  created_at?: string;
+  brand_id?: string;
+  category_id?: string;
+  name?: string;
+  description?: string;
+  price?: number;
   id: string;
-  updated_at?: string | null;
-  subcategory_id: string;
-  qr_code_url: string;
-  weight: number;
+  updated_at?: string;
+  subcategory_id?: string;
+  qr_code_url?: string;
+  weight?: number;
   quantity?: number;
   sku?: string;
-  image_urls?: string[] | null;
-  tags?: string[] | null;
+  image_urls?: string[];
+  tags?: string[];
 };

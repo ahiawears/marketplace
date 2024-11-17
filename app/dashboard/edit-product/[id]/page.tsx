@@ -1,100 +1,158 @@
-import { editProduct } from "@/actions/edit-product";
-import { getProduct } from "@/actions/get-product";
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { NumericInput } from "@/components/ui/numeric-input";
 import { Textarea } from "@/components/ui/textarea";
+import { useGetProductDetails } from "@/hooks/use-get-product-details";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useParams } from "next/navigation";
+import { useEffect } from "react";
+import { useEditProduct } from "@/hooks/use-edit-product";
 
-const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
-  const id = (await params).id;
+const formSchema = z.object({
+  name: z.string(),
+  description: z.string(),
+  price: z.number(),
+  weight: z.number(),
+  quantity: z.number(),
+});
 
-  const { data, error } = await getProduct(id);
+const Page = () => {
+  const params = useParams();
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+  });
 
-  if (error || !data) {
-    console.error(error);
+  const { mutate, isPending } = useEditProduct();
 
-    return null;
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    mutate({
+      ...data?.data,
+      id: params.id as string,
+      name: values!.name,
+      description: values.description,
+      price: values.price,
+      weight: values.weight,
+      quantity: values.quantity,
+    });
+  }
+
+  const { data, isLoading } = useGetProductDetails(params.id as string);
+
+  useEffect(() => {
+    if (data) {
+      form.setValue("name", data.data?.name || "");
+      form.setValue("description", data.data?.description || "");
+      form.setValue("price", data.data?.price || 0);
+      form.setValue("weight", data.data?.weight || 0);
+      form.setValue("quantity", data.data?.quantity || 0);
+    }
+  }, [data, form]);
+
+  if (isLoading) {
+    return "loading...";
   }
 
   return (
     <section className="mt-10">
       <h1 className="font-bold text-3xl mb-5">Edit Product</h1>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex flex-col gap-4 max-w-sm"
+        >
+          <input type="hidden" name="id" value={data?.data.id} />
 
-      <form className="flex flex-col gap-4 max-w-sm" action={editProduct}>
-        <input type="hidden" name="id" value={data.id} />
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="name" className="font-bold">
-            Name
-          </Label>
-          <Input
-            id="name"
-            placeholder="Name"
+          <FormField
             name="name"
-            defaultValue={data?.name}
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="T-shirt" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="description" className="font-bold">
-            Description
-          </Label>
-          <Textarea
-            id="description"
-            placeholder="Description"
+          <FormField
             name="description"
-            defaultValue={data?.description}
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Description"
+                    className="resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="price" className="font-bold">
-            Price
-          </Label>
-          <NumericInput id="price" name="price" defaultValue={data?.price} />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label className="font-bold">Images</Label>
-
-          {data?.image_urls?.length === 0 && (
-            <p className="">No images found for this product</p>
-          )}
-
-          {data?.image_urls?.map((image, index) => (
-            <div key={index}>
-              <img
-                src={image}
-                alt={`Image ${index}`}
-                className="size-24 bg-slate-200"
-              />
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="weight" className="font-bold">
-            Weight
-          </Label>
-
-          <NumericInput id="weight" name="weight" defaultValue={data?.weight} />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="quantity" className="font-bold">
-            Quantity
-          </Label>
-
-          <NumericInput
-            id="quantity"
+          <FormField
             name="quantity"
-            defaultValue={data?.quantity}
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Quantity</FormLabel>
+                <FormControl>
+                  <NumericInput {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
           />
-        </div>
 
-        <Button type="submit">Save</Button>
-      </form>
+          <FormField
+            name="price"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Price</FormLabel>
+                <FormControl>
+                  <NumericInput {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            name="weight"
+            control={form.control}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Weight</FormLabel>
+                <FormControl>
+                  <NumericInput {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <Button type="submit" disabled={isPending}>
+            Save
+          </Button>
+        </form>
+      </Form>
     </section>
   );
 };

@@ -2,22 +2,9 @@
 
 import { Product } from "@/lib/types";
 import { createClient } from "@/supabase/server";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
-export const editProduct = async (formData: FormData) => {
+export const editProduct = async (data: Product) => {
   const supabase = await createClient();
-
-  const data: Partial<Product> = {
-    id: formData.get("id") as string,
-    name: formData.get("name") as string,
-    description: formData.get("description") as string,
-    price: parseFloat(formData.get("price") as string),
-    quantity: parseInt(formData.get("quantity") as string, 10),
-    weight: parseFloat(formData.get("weight") as string),
-  };
-
-  console.log(data);
 
   const { error } = await supabase
     .from("products_list")
@@ -27,14 +14,11 @@ export const editProduct = async (formData: FormData) => {
       price: data.price,
       quantity: data.quantity,
       weight: data.weight,
-      sku: data.sku,
     })
-    .eq("id", data.id);
+    .eq("id", data.id)
+    .single();
 
-  if (error) {
-    console.error(error);
-    redirect("/dashboard/edit-product/" + data.id + "?error=" + error.code);
-  }
-
-  revalidatePath("/dashboard/edit-product/" + data.id, "layout");
+  return {
+    error,
+  };
 };
