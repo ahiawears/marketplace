@@ -6,7 +6,7 @@ const AddCoupon = () => {
             <h2 className="text-xl font-bold mb-4">Enter Coupon Details</h2>
             <div className="hidden lg:block">
                 <div className="p-4"> 
-                    <AddCouponForm />
+                    <AddCouponForm /> 
                 </div>
             </div>
             <div className="lg:hidden sm:block">
