@@ -21,7 +21,7 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
     <section className="mt-10">
       <h1 className="font-bold text-3xl mb-5">Edit Product</h1>
 
-      <form className="flex flex-col gap-4 max-w-sm" action={editProduct}>
+      <form className="flex flex-col gap-4 max-w-sm" >
         <input type="hidden" name="id" value={data.id} />
 
         <div className="flex flex-col gap-2">
@@ -58,7 +58,7 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
         <div className="flex flex-col gap-2">
           <Label className="font-bold">Images</Label>
 
-          {data?.image_urls?.length === 0 && (
+          {data?.image_urls?.length === 0 && (  
             <p className="">No images found for this product</p>
           )}
 
@@ -93,7 +93,7 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
           />
         </div>
 
-        <Button type="submit">Save</Button>
+        <Button formAction={editProduct}>Save</Button> 
       </form>
     </section>
   );
