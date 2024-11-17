@@ -15,7 +15,7 @@ const RegisterBrand = () => {
                 </div>
             </div>
             <div className="w-full p-5 px-10 py-10 lg:hidden">
-            <RegisterBrandForm />
+                <RegisterBrandForm />
                 
             </div>
         </div>
@@ -29,6 +29,7 @@ const RegisterBrandForm = () => (
             <Logo />
         </div>
 
+            
         <form className='space-y-6'>
             <div>
                 <label 
@@ -39,7 +40,6 @@ const RegisterBrandForm = () => (
                 </label>
                 <div className="mt-2">
                     <Input
-                        id="brandEmail"
                         name="brandEmail"
                         type="email"
                         required
@@ -61,7 +61,6 @@ const RegisterBrandForm = () => (
 
                 <div className='mt-2'>
                     <Input
-                        id='brandPassword'
                         name='brandPassword'
                         type='password'
                         required
@@ -82,7 +81,6 @@ const RegisterBrandForm = () => (
 
                 <div className='mt-2'>
                     <Input
-                        id='brandConfirmPassword'
                         name='brandConfirmPassword'
                         type='password'
                         required

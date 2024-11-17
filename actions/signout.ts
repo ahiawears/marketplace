@@ -2,6 +2,7 @@
 
 import { createClient } from "@/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 export const signout = async () => {
   const supabase = await createClient();
@@ -9,4 +10,5 @@ export const signout = async () => {
   await supabase.auth.signOut();
 
   revalidatePath("/", "layout");
+  redirect("/");
 };

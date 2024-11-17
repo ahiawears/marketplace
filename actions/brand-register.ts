@@ -15,6 +15,7 @@ export async function brandRegister(formData: FormData) {
         confirmPassword: formData.get("brandConfirmPassword") as string,
     };
 
+
     if (userData.password === userData.confirmPassword) {
         const { data, error } = await supabase.auth.signUp ({
             email: userData.email,
@@ -27,7 +28,7 @@ export async function brandRegister(formData: FormData) {
 
         const { error: addBrandError } = await AddBrand({
             id: data.user.id,
-            brand_email: userData.email,
+            brand_email: userData.email, 
         });
 
         if (addBrandError) {
@@ -36,10 +37,9 @@ export async function brandRegister(formData: FormData) {
         }
 
         revalidatePath("/", "layout");
-        redirect("../../../brand-onboarding");
+        redirect("/brand-onboarding");
     
     } else {
         console.log("Passwords do not match");
-        return;
     }
 }
