@@ -1,43 +1,102 @@
-"use client";
+import { editProduct } from "@/actions/edit-product";
+import { getProduct } from "@/actions/get-product";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { NumericInput } from "@/components/ui/numeric-input";
+import { Textarea } from "@/components/ui/textarea";
 
-import { useParams } from "next/navigation";
-import React, { useEffect, useState } from 'react';
-import AddProductForm from '@/components/ui/add-product-form';
-import { fetchProductById } from "@/lib/brandUpdateProduct";
-import { ProductData, ProductDetails, mapProductDetailsToProductData } from "@/lib/types";
+const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
+  const id = (await params).id;
 
-const page = () => {
-    const { id } = useParams();
-    const [data, setData] = useState(null);
+  const { data, error } = await getProduct(id);
 
-    useEffect(() => {
-        const loadProductData = async () => {
-            if (id) {
-                const response = await fetch(`/api/brandGetProductDetail?id=${id}`);
-                const productData = await response.json();
-                setData(productData);
-            }
-        };
-        loadProductData();
-    }, [id]);
+  if (error || !data) {
+    console.error(error);
 
-    return (
-        <div>
-            The current product id is {id}
-            <div className="hidden lg:block">
-                <div className="p-4"> 
-                    {data ? (
-                        <AddProductForm initialData={data} />
-                    ) : (
-                        <p>Loading product details...</p>
-                    )} 
-                </div>
-            </div>
-            <div className="w-full py-10 lg:hidden">
-                <AddProductForm  />
-            </div>
+    return null;
+  }
+
+  return (
+    <section className="mt-10">
+      <h1 className="font-bold text-3xl mb-5">Edit Product</h1>
+
+      <form className="flex flex-col gap-4 max-w-sm" action={editProduct}>
+        <input type="hidden" name="id" value={data.id} />
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="name" className="font-bold">
+            Name
+          </Label>
+          <Input
+            id="name"
+            placeholder="Name"
+            name="name"
+            defaultValue={data?.name}
+          />
         </div>
-    )
-}
 
-export default page
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="description" className="font-bold">
+            Description
+          </Label>
+          <Textarea
+            id="description"
+            placeholder="Description"
+            name="description"
+            defaultValue={data?.description}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="price" className="font-bold">
+            Price
+          </Label>
+          <NumericInput id="price" name="price" defaultValue={data?.price} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label className="font-bold">Images</Label>
+
+          {data?.image_urls?.length === 0 && (
+            <p className="">No images found for this product</p>
+          )}
+
+          {data?.image_urls?.map((image, index) => (
+            <div key={index}>
+              <img
+                src={image}
+                alt={`Image ${index}`}
+                className="size-24 bg-slate-200"
+              />
+            </div>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="weight" className="font-bold">
+            Weight
+          </Label>
+
+          <NumericInput id="weight" name="weight" defaultValue={data?.weight} />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label htmlFor="quantity" className="font-bold">
+            Quantity
+          </Label>
+
+          <NumericInput
+            id="quantity"
+            name="quantity"
+            defaultValue={data?.quantity}
+          />
+        </div>
+
+        <Button type="submit">Save</Button>
+      </form>
+    </section>
+  );
+};
+
+export default Page;
