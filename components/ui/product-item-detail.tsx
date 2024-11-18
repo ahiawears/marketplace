@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState} from 'react'
+import SelectMenu from './select-menu';
 
 const ProductItem = () => {
     const productImages = [
@@ -41,14 +42,17 @@ const ProductItem = () => {
                     </div>
                 </div>
                 <div className="lg:basis-2/5 p-4">
-                    <div className="p-6 bg-white border rounded-lg shadow-sm">
-                        <h2 className="text-lg font-semibold mb-4">Product Name</h2>
+                    <div className="px-6 bg-white rounded-lg shadow-lg">
+                        <div className="flex justify-between mb-4">
+                            <span>Product Name</span>
+                        </div>
                         <div className="flex justify-between mb-4">
                             <span>Total Price</span>
                         </div>
-                        <button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded my-5">
-                            Checkout
-                        </button>
+                        <div className='flex justify-between mb-4'>
+                            <SelectMenu />
+                        </div>
+                        
                     </div>
                 </div>
             </div> 

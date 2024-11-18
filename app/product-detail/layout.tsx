@@ -7,7 +7,7 @@ type Props = {
 
 const LandingLayout = (props: Props) => {
   return (
-    <>
+    <> 
       <Header />
       <main className="md:pt-32 pt-44">{props.children}</main>  
     </>

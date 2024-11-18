@@ -75,3 +75,13 @@ export type Product = {
   image_urls?: string[];
   tags?: string[];
 };
+
+export interface ProductsListType {
+  index: number;
+  id: number;
+  name: string;
+  main_image_url: string;
+  price: string;
+  href: '';
+
+}

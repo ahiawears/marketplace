@@ -65,7 +65,7 @@ export const getProductItems = async (userId: string) => { //change this to bran
             .from('product-images/products')
             .getPublicUrl(filename); // Use the filename now
       
-        console.log("The image publicURL is: ", publicUrlData?.publicUrl )
+        console.log("The image publicURL is: ", publicUrlData?.publicUrl );
         return [image.product_id, publicUrlData?.publicUrl || null];
       }));
 
@@ -78,6 +78,6 @@ export const getProductItems = async (userId: string) => { //change this to bran
     productsWithImages.forEach(product => {
         console.log(`Product: ${product.name}, Main Image URL: ${product.main_image_url}`);
     });
-
+   
     return productsWithImages;
 };
