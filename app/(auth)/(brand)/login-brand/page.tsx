@@ -1,6 +1,7 @@
 import { brandLogin } from "@/actions/brand-login";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const LoginBrand = () => {
     return (
@@ -61,7 +62,7 @@ const BrandLoginForm = () => (
                     </div>
                 </div>
                 <div className="mt-2">
-                    <Input
+                    <PasswordInput
                         name="brandPassword"
                         type="password"
                         required

@@ -44,7 +44,7 @@ export async function brandLogin(formData: FormData) {
         return;
     }
 
-    // Get the logged-in user's ID
+    // Get the logged-in brands's ID
     const { data: user, error: userError } = await supabase.auth.getUser();
     if (userError || !user.user) {
         redirect("/login-brand?error=auth_failed");

@@ -1,6 +1,7 @@
 import { brandRegister } from '@/actions/brand-register';
 import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/ui/logo';
+import { PasswordInput } from '@/components/ui/password-input';
 import React from 'react'
 
 const RegisterBrand = () => {
@@ -60,7 +61,7 @@ const RegisterBrandForm = () => (
                 </div>
 
                 <div className='mt-2'>
-                    <Input
+                    <PasswordInput
                         name='brandPassword'
                         type='password'
                         required
@@ -80,7 +81,7 @@ const RegisterBrandForm = () => (
                 </div>
 
                 <div className='mt-2'>
-                    <Input
+                    <PasswordInput
                         name='brandConfirmPassword'
                         type='password'
                         required

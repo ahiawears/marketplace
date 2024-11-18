@@ -4,6 +4,7 @@ import { Logo } from "@/components/ui/logo";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const SignupPage = async ({
   searchParams,
@@ -58,7 +59,6 @@ const RegisterForm = () => (
         </label>
         <div className="mt-2">
           <Input
-            id="email"
             name="email"
             type="email"
             required
@@ -77,7 +77,6 @@ const RegisterForm = () => (
         </label>
         <div className="mt-2">
           <Input
-            id="firstname"
             name="firstname"
             type="text"
             required
@@ -96,7 +95,6 @@ const RegisterForm = () => (
         </label>
         <div className="mt-2">
           <Input
-            id="lastname"
             name="lastname"
             type="text"
             required
@@ -116,8 +114,7 @@ const RegisterForm = () => (
           </label>
         </div>
         <div className="mt-2">
-          <Input
-            id="password"
+          <PasswordInput
             name="password"
             type="password"
             required
@@ -131,7 +128,7 @@ const RegisterForm = () => (
         <p className="text-center text-sm/6 text-gray-500">
           Already have an account?{" "}
           <a
-            href="#"
+            href="/log-in"
             className="font-semibold text-indigo-600 hover:text-indigo-500"
           >
             Sign In

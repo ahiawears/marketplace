@@ -5,6 +5,7 @@ import { FaFacebook, FaApple } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
+import { PasswordInput } from "@/components/ui/password-input";
 
 const LoginPage = async ({
   searchParams,
@@ -61,7 +62,6 @@ const LoginForm = () => (
         </label>
         <div className="mt-2">
           <Input
-            id="email"
             name="email"
             type="email"
             required
@@ -81,7 +81,7 @@ const LoginForm = () => (
           </label>
           <div className="text-sm">
             <a
-              href="#"
+              href="/password-reset"
               className="font-semibold text-indigo-600 hover:text-indigo-500"
             >
               Forgot password?
@@ -89,10 +89,8 @@ const LoginForm = () => (
           </div>
         </div>
         <div className="mt-2">
-          <Input
-            id="password"
+          <PasswordInput
             name="password"
-            type="password"
             required
             autoComplete="current-password"
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
