@@ -2,11 +2,12 @@ import { getProduct } from "@/actions/get-product";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  request: NextRequest,
+  request: NextRequest, 
   context: { params: { id: string } }
 ) {
   const id = context.params.id;
-  const { data, error } = await getProduct(id);
+  console.log("The Id from route is: ", id);
+  const { data, error } = await getProduct(id);  
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });

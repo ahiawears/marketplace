@@ -1,8 +1,8 @@
 import { createClient } from "@/supabase/server"
 
-export const userGetProductItems = async () => {
+export const userGetProductDetail = async () => {
     const supabase = await createClient();
-
+ 
     const { data: productData, error: productError } = await supabase
         .from('products_list')
         .select();
@@ -44,7 +44,6 @@ export const userGetProductItems = async () => {
         ...product, 
         main_image_url: imageMap.get(product.id) || null
     }));
-
-
+    
     return productsWithImages;
 }
