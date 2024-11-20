@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
+import SizeSelect from './size-select';
+import addItemToUserCart from '@/actions/add-item-to-user-cart';
 
 interface ProductItemProps {
     productId: string;
     productName: string;
     productPrice: number;
     mainImage: string;
+    description: string;
 }
 
-const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, productPrice, mainImage }) => {
+const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, productPrice, mainImage, description }) => {
     const productImages = [
         mainImage,
         'https://tailwindui.com/plus/img/ecommerce-images/product-page-01-related-product-01.jpg',
@@ -46,12 +49,26 @@ const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, produ
                     </div>
                 </div>
                 <div className="lg:basis-2/5 p-4">
-                    <div className="px-6 bg-white rounded-lg shadow-lg">
+                    <div className="px-6 bg-white rounded-lg shadow-lg py-4">
                         <div className="flex justify-between mb-4">
                             <span>{productName}</span>
                         </div>
                         <div className="flex justify-between mb-4">
                             <span>${productPrice}</span>
+                        </div>
+                        <div className="flex justify-between mb-4">
+                            <span>{description}</span>
+                        </div>
+                        {/* sizes select menu goes here */}
+                        <SizeSelect productId={productId} />
+                        <div className="text-sm">
+                            <button
+                                //formAction={brandLogin}
+                                onClick={addItemToUserCart}
+                                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                            >
+                                Add to Cart
+                            </button>
                         </div>
                     </div>
                 </div>

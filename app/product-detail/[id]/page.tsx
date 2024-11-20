@@ -32,13 +32,13 @@ const ProductDetail: React.FC = () => {
 
     return (
         <div>
-            <h1>Product Details</h1>
-            <p>Product ID: {product.name}</p>
+            
             <ProductItem 
                 productId={productId} 
                 productName={product?.name || "Unknown Product"} 
                 productPrice={product?.price || 0} 
-                mainImage={product?.main_image_url || ""} 
+                mainImage={product?.main_image_url || ""}
+                description ={product?.description || "This product has no description"} 
             /> 
             {/* This should query the products table for category with same tag */}
             {/* Featured grids */}
