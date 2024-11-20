@@ -9,9 +9,10 @@ interface Size {
 
 interface SizeSelectProps {
     productId: string;
+    onSelectSize: (size: Size | null) => void;
 }
 
-const SizeSelect: React.FC<SizeSelectProps> = ({ productId }) => {
+const SizeSelect: React.FC<SizeSelectProps> = ({ productId, onSelectSize }) => {
     const [sizes, setSizes] = useState<Size[]>([]);
     const [selected, setSelected] = useState<Size | null>(null);
     const [isOpen, setIsOpen] = useState(false);
@@ -34,6 +35,7 @@ const SizeSelect: React.FC<SizeSelectProps> = ({ productId }) => {
     const handleSelection = (size: Size) => {
         if (size.quantity > 0) {
             setSelected(size);
+            onSelectSize(size);
             setIsOpen(false);
         }
     };

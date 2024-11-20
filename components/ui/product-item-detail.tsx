@@ -8,6 +8,13 @@ interface ProductItemProps {
     productPrice: number;
     mainImage: string;
     description: string;
+    
+}
+
+interface Size {
+    size_id: string;
+    quantity: number;
+    name: string;
 }
 
 const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, productPrice, mainImage, description }) => {
@@ -17,8 +24,30 @@ const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, produ
         'https://tailwindui.com/plus/img/ecommerce-images/product-page-01-related-product-02.jpg',
     ];
 
-    // Set the main image to the first thumbnail initially
     const [selectedImage, setSelectedImage] = useState(mainImage);
+    const [selectedSize, setSelectedSize] = useState<Size | null>(null);
+
+    const handleAddToCart = async () => {
+        if (!selectedSize) {
+            alert("Please select a size first.");
+            return;
+        }
+    
+        const item = {
+            productId,
+            sizeId: selectedSize.size_id, // Correctly accessing size_id
+            quantity: 1, // Default quantity
+            price: productPrice,
+        };
+    
+        try {
+            await addItemToUserCart(item); // Call the action with the correct item
+            alert("Item added to cart!");
+        } catch (error) {
+            console.error("Error adding item to cart:", error);
+            alert("Failed to add item to cart. Please try again.");
+        }
+    };
 
     return (
         <div>
@@ -60,11 +89,11 @@ const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, produ
                             <span>{description}</span>
                         </div>
                         {/* sizes select menu goes here */}
-                        <SizeSelect productId={productId} />
+                        <SizeSelect productId={productId} onSelectSize={setSelectedSize}/>
                         <div className="text-sm">
                             <button
                                 //formAction={brandLogin}
-                                onClick={addItemToUserCart}
+                                onClick={handleAddToCart}
                                 className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                             >
                                 Add to Cart
