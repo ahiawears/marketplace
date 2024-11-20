@@ -69,6 +69,7 @@ export const getCartItems = async (userId: string) => {
     // Step 5: Combine all data into the final productsWithImages array
     const productsWithImages = data.map((product) => ({
         ...product,
+        cart_item_id: product.id,
         main_image_url: imageMap.get(product.product_id) || null,
         product_name: product.products_list?.name || null,
         size_name: sizeMap.get(product.size_id) || null, // Attach size name using sizeMap

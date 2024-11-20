@@ -16,9 +16,10 @@ interface CartItemProps {
         size_id: string;
         quantity: number;
         price: number;
+        cart_item_id: string;
     };
     onDelete: (id: number) => void;
-    onQuantityChange: (id: number, quantity: number) => void;
+    onQuantityChange: (id: number, quantity: number, cart_item_id: string) => void;
 }
 
 const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange }) => {
@@ -34,7 +35,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange })
                     <select
                         id={`quantity-${item.id}`}
                         value={item.quantity}
-                        onChange={(e) => onQuantityChange(item.id, Number(e.target.value))}
+                        onChange={(e) => onQuantityChange(item.id, Number(e.target.value), item.cart_item_id)}
                         className="border rounded px-2 py-1"
                     >
                         {[1, 2, 3, 4, 5].map((qty) => (

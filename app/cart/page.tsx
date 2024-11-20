@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import CartItem from '@/components/ui/cart-item';
 import OrderSummary from '@/components/ui/order-summary';
+import { updateCartItemQuantity } from '@/actions/updateCartItemQuantity';
 
 interface CartItem {
     id: number;
@@ -16,6 +17,7 @@ interface CartItem {
     size_id: string;
     quantity: number;
     price: number;
+    cart_item_id: string;
 }
 
 
@@ -32,6 +34,7 @@ const CartPage: React.FC = () => {
  
                 if (response.ok) {
                     setCartItems(data.data); // Assuming data.data holds the array of cart items
+                    
                 } else {
                     console.error("Failed to fetch cart items:", data.error);
                 }
@@ -48,16 +51,22 @@ const CartPage: React.FC = () => {
     const handleDelete = (id: number) => {
         // Update state locally and call API to update backend if necessary
         setCartItems((items) => items.filter((item) => item.id !== id));
+        
         // Add API call to delete item in backend here if needed
     };
 
-    const handleQuantityChange = (id: number, quantity: number) => {
+    const handleQuantityChange = (id: number, quantity: number, cart_item_id: string) => {
         setCartItems((items) =>
             items.map((item) =>
                 item.id === id ? { ...item, quantity } : item
             )
         );
         // Add API call to update quantity in backend here if needed
+        try {
+            updateCartItemQuantity(quantity, cart_item_id);
+        } catch (error) {
+            console.log("Error from the page is: ", error);
+        }
     };
 
     const totalPrice = cartItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
