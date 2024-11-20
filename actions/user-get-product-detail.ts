@@ -46,4 +46,4 @@ export const userGetProductDetail = async () => {
     }));
     
     return productsWithImages;
-}
+}  

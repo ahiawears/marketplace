@@ -6,10 +6,14 @@ import Image from 'next/image';
 interface CartItemProps {
     item: {
         id: number;
-        image: string;
-        name: string;
+        product_id: string;
+        main_image_url: string;
+        products_list: { name: string | null } | { name: any }[];
         color: string;
-        size: string;
+        product_name: string;
+        size_name: string;
+        sizes?: {size_name: string}
+        size_id: string;
         quantity: number;
         price: number;
     };
@@ -20,11 +24,11 @@ interface CartItemProps {
 const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange }) => {
     return (
         <div className="flex items-center space-x-4 p-4 border-b">
-            <Image src={item.image} alt={item.name} width={150} height={150} className="rounded" />
+            <img src={item.main_image_url} alt={item.product_name} width={150} height={150} className="rounded" />
             <div className="flex-1">
-                <p className="font-semibold">{item.name}</p>
+                <p className="font-semibold">{item.product_name}</p>
                 <p className="text-sm text-gray-500">Color: {item.color}</p>
-                <p className="text-sm text-gray-500">Size: {item.size}</p>
+                <p className="text-sm text-gray-500">Size: {item.size_name}</p>
                 <div className="flex items-center space-x-2 mt-2">
                     <label htmlFor={`quantity-${item.id}`} className="text-sm">Qty:</label>
                     <select

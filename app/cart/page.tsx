@@ -6,10 +6,14 @@ import OrderSummary from '@/components/ui/order-summary';
 
 interface CartItem {
     id: number;
-    image: string;
-    name: string;
-    color: string;        
-    size: string;
+    product_id: string;
+    main_image_url: string;
+    product_name: string;
+    products_list: { name: string | null } | { name: any }[];
+    sizes?: {size_name: string}
+    color: string;
+    size_name: string;        
+    size_id: string;
     quantity: number;
     price: number;
 }
@@ -25,7 +29,7 @@ const CartPage: React.FC = () => {
             try {    
                 const response = await fetch('/api/cart');
                 const data = await response.json();
-
+ 
                 if (response.ok) {
                     setCartItems(data.data); // Assuming data.data holds the array of cart items
                 } else {
@@ -70,7 +74,7 @@ const CartPage: React.FC = () => {
                 <div className="w-full md:w-2/3 max-h-[70vh] overflow-y-auto">
                     {cartItems.length > 0 ? (
                         cartItems.map((item) => (
-                            <CartItem
+                            <CartItem  
                                 key={item.id}
                                 item={item}
                                 onDelete={handleDelete}

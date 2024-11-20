@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
                 { error: 'User not authenticated' },
                 { status: 401 }
             );
-        }
+        }   
 
         const userId = data.user?.id;
         if (!userId) {
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
                 { status: 400 }
             );
         }
-
+  
         const cartItems = await getCartItems(userId);
 
         if (!cartItems) {
