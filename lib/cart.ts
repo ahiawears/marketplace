@@ -34,8 +34,17 @@ export const getCartItems = async (userId: string) => {
     if (sizeError) {
         console.error("Error fetching sizes: ", sizeError);
         throw new Error("Failed to fetch sizes");
-    }
+    } 
 
+    const { data: priceData, error: priceError } = await supabase
+        .from("carts")
+        .select("total_price")
+        .eq('user_id', userId);  
+
+    console.log(priceData);
+    const totalPrice = priceData && priceData.length > 0 
+        ? String(priceData[0].total_price) 
+        : null;
     // Create a map of size_id to size_name
     const sizeMap = new Map(sizeData.map((size) => [size.id, size.name]));
 
@@ -73,6 +82,7 @@ export const getCartItems = async (userId: string) => {
         main_image_url: imageMap.get(product.product_id) || null,
         product_name: product.products_list?.name || null,
         size_name: sizeMap.get(product.size_id) || null, // Attach size name using sizeMap
+        cumPrice: totalPrice, 
     }));
 
     console.log(productsWithImages);

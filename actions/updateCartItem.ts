@@ -18,3 +18,24 @@ export const updateCartItemQuantity = async (quantity: number, cart_item_id: str
         }
     //console.log("The quantity is: ", quantity, "The cartId is: ", cart_item_id);
 }
+
+export const deleteCartItem = async (id: string) => {
+    const supabase = await createClient();
+
+    try {
+        const { data, error } = await supabase
+            .from('cart_items')
+            .delete()
+            .eq('id', id);
+
+        if (error) {
+            console.error("Error deleting item:", error);
+            return;
+        }
+
+        console.log("Item deleted from Supabase:", data);
+
+    } catch (err) {
+        console.error("Unexpected error:", err);
+    }
+}

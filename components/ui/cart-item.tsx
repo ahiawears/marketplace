@@ -1,7 +1,5 @@
-// components/CartItem.tsx
 import React from 'react';
 import { AiOutlineDelete } from 'react-icons/ai';
-import Image from 'next/image';
 
 interface CartItemProps {
     item: {
@@ -17,9 +15,10 @@ interface CartItemProps {
         quantity: number;
         price: number;
         cart_item_id: string;
+        cumPrice: number;
     };
-    onDelete: (id: number) => void;
-    onQuantityChange: (id: number, quantity: number, cart_item_id: string) => void;
+    onDelete: () => void;
+    onQuantityChange: (id: number, quantity: number, cart_item_id: string, cumPrice: number) => void;
 }
 
 const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange }) => {
@@ -35,7 +34,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange })
                     <select
                         id={`quantity-${item.id}`}
                         value={item.quantity}
-                        onChange={(e) => onQuantityChange(item.id, Number(e.target.value), item.cart_item_id)}
+                        onChange={(e) => onQuantityChange(item.id, Number(e.target.value), item.cart_item_id, item.cumPrice)}
                         className="border rounded px-2 py-1"
                     >
                         {[1, 2, 3, 4, 5].map((qty) => (
@@ -45,7 +44,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange })
                 </div>
             </div>
             <p className="text-sm font-semibold">${item.price.toFixed(2)}</p>
-            <button onClick={() => onDelete(item.id)} className="text-black">
+            <button onClick={onDelete} className="text-black">
                 <AiOutlineDelete size={24} />
             </button>
         </div>
