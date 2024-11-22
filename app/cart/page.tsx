@@ -18,7 +18,7 @@ interface CartItem {
     quantity: number;
     price: number;
     cart_item_id: string;
-    cumPrice: number; // cumPrice is now a number
+    cumPrice: number; 
 }
 
 const CartPage: React.FC = () => {
@@ -46,16 +46,16 @@ const CartPage: React.FC = () => {
         fetchCartItems();
     }, []);
 
-    // Compute totalPrice as cumPrice value which type is numberic
+    // make the value of totalPrice be cumPrice which  is numberic
     const totalPrice = cartItems.length > 0 ? cartItems[0].cumPrice : 0;
     console.log(totalPrice);
 
-    const handleDelete = (id: string) => {
+    const handleDelete = (id: number, cart_product_id: string) => {
         console.log("Delete clicked for item ID:", id);
-        deleteCartItem(id);
-        //setCartItems((items) => items.filter((item) => item.id !== id));
-        // Add API call to delete item in backend here if needed
-        //get the item clicked id
+        //add a modal to ask user about certainty
+        deleteCartItem(cart_product_id);
+        setCartItems((items) => items.filter((item) => item.id !== id));
+
     };
 
     const handleQuantityChange = (
@@ -89,7 +89,7 @@ const CartPage: React.FC = () => {
                             <CartItem
                                 key={item.id}
                                 item={item}
-                                onDelete={() => handleDelete(item.cart_item_id)}
+                                onDelete={() => handleDelete(item.id, item.cart_item_id)}
                                 onQuantityChange={handleQuantityChange}
                             />
                         ))

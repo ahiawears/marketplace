@@ -1,17 +1,11 @@
-import { Header } from "@/components/header";
-import { ReactNode } from "react";
+import { ServerHeader } from "@/components/headerServerComponent";
 
-type Props = {
-  children: ReactNode;
-};
 
-const LandingLayout = (props: Props) => {
+export default function LandingLayout ({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <Header />
-      <main className="md:py-32 py-44">{props.children}</main>
+      <ServerHeader />
+      <main className="md:py-32 py-44">{children}</main>
     </>
   );
 };
-
-export default LandingLayout;
