@@ -4,17 +4,20 @@ import React, { useEffect, useState } from 'react';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 import { ProductsListType } from '@/lib/types';
 import { useRouter } from 'next/navigation';
+import { useSearchParams } from "next/navigation";
+
 
 const ProductsList = () => {
     // State to track liked items by product ID
     const [liked, setLiked] = useState<{ [key: number]: boolean }>({});
     const [productsData, setProductsData] = useState<ProductsListType[]>([]);
+    const searchParams = useSearchParams();
+    const query = searchParams.get("query");
     const router = useRouter();
 
     const handleClickedProduct = ( id: string ) => {
         console.log(`Product with id: ${id} clicked` );
     }
-
 
     // Toggle the like status for a product
     // const toggleLike = (id: number) => {
@@ -25,22 +28,24 @@ const ProductsList = () => {
     // };
 
     useEffect(() => {
-        const fetchProductsItems = async () => {
+        if (query) {
+          const fetchProductsItems = async () => {
             try {
-                const response = await fetch('/api/getProducts');
-                const data = await response.json();
-
-                if (response.ok) {
-                    setProductsData(data.data);
-                } else {
-                    console.error("Failed to fetch product items:", data.error);
-                }
+              const response = await fetch(`/api/getProducts?query=${encodeURIComponent(query)}`);
+              const data = await response.json();
+    
+              if (response.ok) {
+                setProductsData(data.data);
+              } else {
+                console.error("Failed to fetch product items:", data.error);
+              }
             } catch (error) {
-                console.error("Error fetching product items:", error);
+              console.error("Error fetching product items:", error);
             }
-        };
-        fetchProductsItems();
-    }, []);
+          };
+          fetchProductsItems();
+        }
+      }, [query]);
 
     return (
         <div>

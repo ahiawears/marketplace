@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
         if (error) {
             console.error("Error fetching brand:", error);
             return NextResponse.json(
-                { error: 'User not authenticated' },
+                { error: "User not authenticated" },
                 { status: 401 }
             );
         }
@@ -19,16 +19,26 @@ export async function GET(req: NextRequest) {
 
         if (!userId) {
             return NextResponse.json(
-                { error: 'User ID required' },
+                { error: "User ID required" },
                 { status: 400 }
             );
         }
 
-        const productsItem = await userGetProductItems();
+        const { searchParams } = new URL(req.url);
+        const query = searchParams.get("query");
 
-        if(!productsItem) {
+        if (!query) {
             return NextResponse.json(
-                { error: 'No Products items found' },
+                { error: "Query parameter is required" },
+                { status: 400 }
+            );
+        }
+
+        const productsItem = await userGetProductItems(query);
+
+        if (!productsItem) {
+            return NextResponse.json(
+                { error: "No products items found" },
                 { status: 404 }
             );
         }
@@ -37,7 +47,7 @@ export async function GET(req: NextRequest) {
     } catch (error) {
         console.error("Failed to fetch products items:", error);
         return NextResponse.json(
-            { error: 'Failed to fetch products items' },
+            { error: "Failed to fetch products items" },
             { status: 500 }
         );
     }

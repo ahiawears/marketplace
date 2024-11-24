@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
     try {
-        const productId = params.id; 
+        const productId = params.id;
 
         if (!productId) {
             return NextResponse.json(

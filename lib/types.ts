@@ -82,6 +82,6 @@ export interface ProductsListType {
   id: string;
   name: string;
   main_image_url: string;
-  price: string;
-
+  price?: string;
+  source: "brand" | "product" | "tag";
 }

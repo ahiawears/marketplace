@@ -17,16 +17,29 @@ import {
   UserActionsDropdownMobile,
 } from "./user-actions-dropdown";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+
 
 export const Header = ({ user }: { user: any }) => {
-  const [searchValue, setSearchValue] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products?query=${encodeURIComponent(searchQuery)}`);
+    }
+  };
 
   return (
     <header className="p-8 border-b border-border fixed left-0 top-0 w-full bg-background z-50">
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
         <Logo />
         <div className="flex items-center gap-4 grow w-full">
-          <Input placeholder="Search products" className="grow h-10" name="searchValue" onChange={(e) => setSearchValue(e.target.value)}/>
+          <Input placeholder="Search products" className="grow h-10" name="searchValue" onChange={(e) => setSearchQuery(e.target.value)}/>
+          <button type="submit" className="ml-2 p-2 bg-black text-white rounded" onClick={handleSearch}>
+              Search
+            </button>
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>

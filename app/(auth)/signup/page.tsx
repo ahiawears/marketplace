@@ -80,7 +80,6 @@ const RegisterForm = () => (
             name="firstname"
             type="text"
             required
-            autoComplete="firstname"
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
           />
         </div>
@@ -95,10 +94,10 @@ const RegisterForm = () => (
         </label>
         <div className="mt-2">
           <Input
+            id="lastname"
             name="lastname"
             type="text"
             required
-            autoComplete="lastname"
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
           />
         </div>
@@ -115,10 +114,9 @@ const RegisterForm = () => (
         </div>
         <div className="mt-2">
           <PasswordInput
+            id="password"
             name="password"
-            type="password"
             required
-            autoComplete="current-password"
             className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
           />
         </div>
