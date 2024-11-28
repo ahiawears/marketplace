@@ -4,7 +4,7 @@ import { createClient } from "@/supabase/server";
 
 interface Size {
   name: string;
-  quantity: number;
+  quantity: number; 
 } 
 
 export const addProduct = async (formData: FormData) => {
@@ -267,7 +267,7 @@ if (images && images.length > 0) {
         .insert({
           product_id: productId,
           image_url: imageUrl,
-          is_main: isMain
+          is_main: isMain 
         });
 
       if (imageInsertionError) {
@@ -280,5 +280,5 @@ if (images && images.length > 0) {
 }
 
 
-  return productDataInserted;  // Return the successfully inserted product
+  return productId;  // Return the successfully inserted product id
 };

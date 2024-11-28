@@ -27,9 +27,9 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
             <table className="min-w-full bg-white border border-gray-200 rounded-lg shadow-md">
                 <thead>
                     <tr className="bg-gray-100 text-left">
-                    <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Product Name</th>
-                    <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Category</th>
-                    <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Action</th>
+                        <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Product Name</th>
+                        <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Category</th>
+                        <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -38,7 +38,7 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
                             {/* Product Name and Thumbnail */}
                             <td className="px-3 py-1 flex items-center space-x-4">
                                 {product.main_image_url ? (
-                                    <img
+                                    <img  
                                         src={product.main_image_url || placeholderThumbnail}
                                         alt={product.main_image_url ? `${product.name} thumbnail` : `No image for ${product.name}`}
                                         className="w-16 h-16 object-cover" 

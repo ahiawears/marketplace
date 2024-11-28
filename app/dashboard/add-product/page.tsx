@@ -5,7 +5,7 @@ const AddProduct = () => {
         <div>
             <div className="hidden lg:block">
                 <div className="p-4"> 
-                    <AddProductForm />
+                    <AddProductForm />  
                 </div>
             </div>
             <div className="w-full py-10 lg:hidden">

@@ -24,12 +24,11 @@ const ProductsPage = () => {
 	};
 	
 	const handleDeleteProduct = (id: string) => {
-		console.log(`Delete product with id: ${id}`);
+		console.log(`Delete product with id: ${id}`); 
 	};
 
 	useEffect(() => {
-        // Fetch cart items from the backend
-        const fetchCartItems = async () => {
+        const fetchProducts = async () => {
             try {    
                 const response = await fetch('/api/brandProductsList');
                 const data = await response.json();
@@ -46,7 +45,7 @@ const ProductsPage = () => {
             }
         };
 
-        fetchCartItems();
+        fetchProducts();
     }, []);
 
 	if (loading) {

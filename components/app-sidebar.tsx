@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   Home,
+  ListOrdered,
   Settings,
   ShoppingBasket,
   TicketPercent,
@@ -68,9 +69,32 @@ const items: SibarMenuItem[] = [
   },
 
   {
+    title: "Orders",
+    url: "/dashboard/orders",
+    icon: ListOrdered,
+  },
+
+  {
     title: "Settings",
     url: "/dashboard/settings",
     icon: Settings,
+    subitems: [
+      {
+        title: "Shipping Configuration",
+        url: "/dashboard/shipping-configuration",
+        icon: undefined,
+      },
+      {
+        title: "Payment Settings",
+        url: "/dashboard/payment-settings",
+        icon: undefined,
+      },
+      {
+        title: "Notifications",
+        url: "/dashboard/notifications",
+        icon: undefined,
+      },
+    ],
   },
 ];
 
@@ -79,7 +103,7 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Application</SidebarGroupLabel>
+          <SidebarGroupLabel>ahịa</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => (

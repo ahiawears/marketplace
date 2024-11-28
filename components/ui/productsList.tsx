@@ -61,8 +61,7 @@ const ProductsList = () => {
                                     className="h-full w-full object-cover object-center"
                                     onClick={(e) => {
                                         e.preventDefault();
-                                        console.log("The id clicked: ", product.id);
-                                        router.push(`/product-detail/${product.id}`); // Navigate to product details page
+                                        router.push(`/product-detail/${product.id}`); 
                                     }}
                                 />
                                     <button

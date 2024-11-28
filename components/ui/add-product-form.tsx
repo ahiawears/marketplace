@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { QRCodeCanvas } from 'qrcode.react';
 import { addProduct } from "@/actions/uploadProduct";
 import { ProductData } from "@/lib/types";
+import { Router } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 
 interface AddProductFormProps {
@@ -31,6 +33,8 @@ const AddProductForm = ({ initialData }: AddProductFormProps) =>{
     const [qrCodeBase64, setQrCodeBase64] = useState<string>("");
     const [isMounted, setIsMounted] = useState(false); 
     const carouselRef = useRef<HTMLDivElement>(null);
+
+    const router = useRouter();
 
     useEffect(() => {
         setIsMounted(true); 
@@ -152,25 +156,6 @@ const AddProductForm = ({ initialData }: AddProductFormProps) =>{
     
         const formData = new FormData(event.currentTarget); // Use currentTarget here
     
-        // Additional data
-        //formData.append('category', selectedCategory);
-        // formData.append('subCategory', selectedSubcategory || "");
-        // formData.append('tags', JSON.stringify(selectedTags));
-        // formData.append('sku', sku);
-        // formData.append('quantity', (formData.get('quantity') as string) || ''); // Use get to retrieve quantity
-        // formData.append('weight', (formData.get('weight') as string) || ''); // Use get to retrieve weight
-        // formData.append('sizes', JSON.stringify(Object.keys(quantities).map(size => ({
-        //     name: size,
-        //     quantity: quantities[size]
-        // }))));
-        // formData.append('qrCode', qrCodeBase64);
-    
-        // // Attach images (upload files directly to the server)
-        // images.forEach((image, index) => {
-        //     if (image) {
-        //         formData.append(`images[${index}]`, image);
-        //     }
-        // });
         formData.append('qrCode', qrCodeBase64);
         formData.append('subCategory', selectedSubcategory || "");
         formData.append('tags', selectedTags.join(','));
@@ -188,7 +173,15 @@ const AddProductForm = ({ initialData }: AddProductFormProps) =>{
         });
 
         await Promise.all(filePromises); // Wait for all files to be added
-        await addProduct(formData);
+
+        try {
+            const productId = await addProduct(formData);
+            router.push(`/dashboard/product-details/${productId}`);
+        } catch (error) {
+            console.error("Error adding product:", error);
+            alert("Failed to add product. Please try again.");
+        }
+        
     };
     
 
@@ -430,7 +423,7 @@ const AddProductForm = ({ initialData }: AddProductFormProps) =>{
                     type="submit"
                     className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                 >
-                    Submit Product
+                    Submit Product 
                 </button>
             </div>
         </form>
