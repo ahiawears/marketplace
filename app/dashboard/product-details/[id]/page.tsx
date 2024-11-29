@@ -33,7 +33,6 @@ const BrandProductDetail: React.FC = () => {
     if (!product) return <p>Loading...</p>;
 
 
-    console.log("The products main image url ", product?.main_image_url);
     return (
         <div>
             <BrandProductItem 

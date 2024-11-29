@@ -55,15 +55,15 @@ const ProductsList = () => {
                         {productsData.map((product) => (
                             <div key={product.id} className="group relative">
                                 <div className="relative w-full h-[410px] rounded-md overflow-hidden bg-gray-200 group-hover:opacity-75">
-                                <img
-                                    alt={product.name}
-                                    src={product.main_image_url}
-                                    className="h-full w-full object-cover object-center"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        router.push(`/product-detail/${product.id}`); 
-                                    }}
-                                />
+                                    <img
+                                        alt={product.name}
+                                        src={product.main_image_url}
+                                        className="h-full w-full object-cover object-center"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            router.push(`/product-detail/${product.id}`); 
+                                        }}
+                                    />
                                     <button
                                         onClick={(e) => {
                                             e.preventDefault();

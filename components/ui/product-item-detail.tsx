@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import SizeSelect from './size-select';
 import addItemToUserCart from '@/actions/add-item-to-user-cart';
+import Image from 'next/image';
 
 interface ProductItemProps {
     productId: string;
     productName: string;
     productPrice: number;
     mainImage: string;
+    thumbnails: string[];
     description: string;
     
 }
@@ -17,11 +19,10 @@ interface Size {
     name: string;
 }
 
-const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, productPrice, mainImage, description }) => {
+const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, productPrice, mainImage, thumbnails, description }) => {
     const productImages = [
         mainImage,
-        'https://tailwindui.com/plus/img/ecommerce-images/product-page-01-related-product-01.jpg',
-        'https://tailwindui.com/plus/img/ecommerce-images/product-page-01-related-product-02.jpg',
+        ...thumbnails
     ];
 
     const [selectedImage, setSelectedImage] = useState(mainImage);
@@ -53,11 +54,15 @@ const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, produ
         <div>
             <div className="container mx-auto py-10 flex flex-col lg:flex-row">
                 <div className="lg:basis-3/5 p-4">
-                    <div className="flex justify-center mb-4">
-                        <img
+                    <div className="flex justify-center mb-4 h-[700px] w-[600px]">
+                        <Image
                             src={selectedImage}
                             alt="Main Product"
-                            className="w-full max-w-xl object-cover rounded-lg"
+                            height={700}
+                            width={600}
+                            priority
+                            style={{objectFit:"contain"}}
+                            //className="w-full max-w-xl object-cover rounded-lg"
                         />
                     </div>
                     {/* Thumbnails */}
@@ -65,13 +70,16 @@ const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, produ
                         {productImages.map((image, index) => (
                             <div
                                 key={index}
-                                className="cursor-pointer border-2 border-transparent hover:border-gray-400 rounded-md overflow-hidden"
+                                className="cursor-pointer border-2 border-transparent hover:border-gray-400 rounded-md overflow-hidden relative h-[80px] w-[80px]"
                                 onClick={() => setSelectedImage(image)}
                             >
-                                <img
+                                <Image
                                     src={image}
                                     alt={`Thumbnail ${index + 1}`}
-                                    className="w-20 h-20 object-cover"
+                                    height={80}
+                                    width={80}
+                                    style={{objectFit:"contain"}}
+                                    //className="w-20 h-20 object-cover"
                                 />
                             </div>
                         ))}

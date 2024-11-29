@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    domains: ['via.placeholder.com'], // Add the allowed domains here
+    domains: ['via.placeholder.com', 'qzelstvozsotobpbedfr.supabase.co'], // Add the allowed domains here
   },
   experimental: {
     serverActions: {

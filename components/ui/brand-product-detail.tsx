@@ -1,3 +1,4 @@
+import Image from "next/image";
 import React, { useState } from "react";
 
 interface ProductItemProps {
@@ -26,24 +27,32 @@ const BrandProductItem: React.FC<ProductItemProps> = ({ productId, productName, 
         <div>
             <div className="container mx-auto py-10 flex flex-col lg:flex-row">
                 <div className="lg:basis-3/5 p-4">
-                    <div className="flex justify-center mb-4">
-                        <img
+                    <div className="flex justify-center mb-4 relative h-[700px] w-[600px]">
+                        <Image
                             src={selectedImage}
                             alt="Main Product"
-                            className="w-full max-w-xl object-cover rounded-lg"
+                            height={700}
+                            width={600}
+                            priority
+                            style={{objectFit:"contain"}}
+                            //className="w-[600px] h-[700px] object-cover rounded-lg"
                         />
+                        
                     </div>
-                    <div className="flex justify-center gap-4">
+                    <div className="flex justify-center gap-4 ">
                         {productImages.map((image, index) => (
-                            <div
+                            <div 
                                 key={index}
-                                className="cursor-pointer border-2 border-transparent hover:border-gray-400 rounded-md overflow-hidden" 
+                                className="cursor-pointer border-2 border-transparent hover:border-gray-400 rounded-md overflow-hidden relative h-[80px] w-[80px]" 
                                 onClick={() => setSelectedImage(image)}   
                             >
-                                <img 
+                                <Image 
                                     src={image}
                                     alt={`Thumbnail ${index + 1}`}
-                                    className="w-20 h-20 object-cover"
+                                    height={80}
+                                    width={80}
+                                    style={{objectFit:"contain"}}
+                                    // className="w-20 h-20 object-cover"
                                 />
                             </div>
                         ))}
