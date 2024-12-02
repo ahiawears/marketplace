@@ -7,12 +7,13 @@ import { useRouter } from 'next/navigation';
 import { useSearchParams } from "next/navigation";
 
 
-const ProductsList = () => {
+const ProductsList = () => { 
     // State to track liked items by product ID
     const [liked, setLiked] = useState<{ [key: number]: boolean }>({});
     const [productsData, setProductsData] = useState<ProductsListType[]>([]);
     const searchParams = useSearchParams();
     const query = searchParams.get("query");
+    const catQuery = searchParams.get("cat");
     const router = useRouter();
 
     const handleClickedProduct = ( id: string ) => {
@@ -31,14 +32,14 @@ const ProductsList = () => {
         if (query) {
           const fetchProductsItems = async () => {
             try {
-              const response = await fetch(`/api/getProducts?query=${encodeURIComponent(query)}`);
-              const data = await response.json();
+                const response = await fetch(`/api/getProducts?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
     
-              if (response.ok) {
-                setProductsData(data.data);
-              } else {
-                console.error("Failed to fetch product items:", data.error);
-              }
+                if (response.ok) {
+                    setProductsData(data.data);
+                } else {
+                    console.error("Failed to fetch product items:", data.error);
+                }
             } catch (error) {
               console.error("Error fetching product items:", error);
             }
@@ -46,6 +47,27 @@ const ProductsList = () => {
           fetchProductsItems();
         }
       }, [query]);
+
+      useEffect(() => {
+        if(catQuery) {
+            const fetchCategoriesItems = async () => {
+                try {
+                    //console.log(catQuery);
+                    const response = await fetch(`/api/getProductsinCategory?cat=${encodeURIComponent(catQuery)}`);
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        setProductsData(data.data);
+                    } else {
+                        console.error("Failed to fetch product items:", data.error);
+                    }
+                } catch (error) {
+                    console.error("Error fetching categories items:", error);
+                }
+            }
+            fetchCategoriesItems();
+        }
+      }, [catQuery]);
 
     return (
         <div>

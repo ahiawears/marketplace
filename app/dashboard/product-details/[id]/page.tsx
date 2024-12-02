@@ -43,7 +43,7 @@ const BrandProductDetail: React.FC = () => {
                 thumbnails={product?.image_urls || []}
                 description ={product?.description || "This product has no description"} 
             />
-        </div>
+        </div> 
     )
 }
 

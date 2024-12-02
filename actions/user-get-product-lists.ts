@@ -17,7 +17,7 @@ export const userGetProductItems = async (query: string) => {
       source: "brand",
     })) || [];
 
-    // Step 2: Search in "products_list"
+    // Step 2.1: Search in "products_list"
     const { data: products, error: productError } = await supabase
       .from("products_list")
       .select("id, name, price")
@@ -31,7 +31,7 @@ export const userGetProductItems = async (query: string) => {
       source: "product",
     })) || [];
 
-    // Step 3: Fetch main images for the found products
+    // Step 2.2: Fetch main images for the found products
     const { data: imagesData, error: imagesError } = await supabase
       .from("product_images")
       .select("product_id, image_url")
@@ -49,7 +49,7 @@ export const userGetProductItems = async (query: string) => {
       main_image_url: imageMap.get(product.id) || null,
     }));
 
-    // Step 4: Search in "tags" and join with "product_tags" to get product IDs
+    // Step 3: Search in "tags" and join with "product_tags" to get product IDs
     const { data: tags, error: tagError } = await supabase
       .from("tags")
       .select("id, name, product_tags(product_id)")
