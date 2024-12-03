@@ -1,6 +1,8 @@
 "use client";
 
+import removeFavedItem from "@/actions/remove-faved-item";
 import { ProductsListType } from "@/lib/types"
+import { revalidatePath } from "next/cache";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react"
 import { FaRegTrashAlt } from "react-icons/fa";
@@ -10,31 +12,38 @@ const FavsList = () => {
     const router = useRouter();
     const [savedProductsData, setSavedProductsData] = useState<ProductsListType[]>([]);
 
-    const removeFavItem = async(id: string) => {
-        //add function to remove item
+    const fetchUserLikedItemList = async () => {
+        try {
+            const response = await fetch("/api/userFavList");
+            const { data: products } = await response.json();
 
-    }
+            if (!response.ok) throw new Error("Failed to fetch products");
+
+            const favoritesItems = products.map((product: ProductsListType) => ({
+                ...product,
+            }));
+            setSavedProductsData(favoritesItems);
+        } catch (error) {
+            console.error("Error fetching saved items", error);
+        }
+    };
+
+    const removeFavItem = async (id: string) => {
+        try {
+            console.log("Removing saved product:", id);
+            await removeFavedItem(id);
+            setSavedProductsData((prev) =>
+                prev.filter((product) => product.id !== id)
+            );
+            router.refresh();
+        } catch (error) {
+            console.error("Error removing item", error);
+        }
+    };
+
     useEffect(() => {
-        const fetchUserLikedItemList = async () => {
-            try {
-                const response = await fetch("/api/userFavList");
-                const { data: products } = await response.json();
-
-                if (!response.ok) throw new Error("Failed to fetch products");
-
-                const favoritesItems = products.map((product: ProductsListType) => ({
-                    ...product,
-                }));
-
-                console.log("The individual items are: ", favoritesItems);
-
-                setSavedProductsData(favoritesItems);
-            } catch (error) {
-                console.error("Error fetching saved items", error);
-            }
-        };
         fetchUserLikedItemList();
-    },[]);
+    }, []); // Only run once when the component mounts
 
     return (
         <div>

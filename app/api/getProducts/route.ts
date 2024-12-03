@@ -27,8 +27,6 @@ export async function GET(req: NextRequest) {
             );
         }
 
-        
-
         if (!query) {
             return NextResponse.json(
                 { error: "Query parameter is required" },

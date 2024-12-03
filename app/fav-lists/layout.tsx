@@ -1,3 +1,4 @@
+import { Footer } from "@/components/footer";
 import { ServerHeader } from "@/components/headerServerComponent";
 
 export default function LandingLayout ({ children }: { children: React.ReactNode }) {
@@ -5,6 +6,7 @@ export default function LandingLayout ({ children }: { children: React.ReactNode
         <>
             <ServerHeader />
             <main className="md:py-32 py-44">{children}</main>
+            <Footer />
         </>
     );
 }

@@ -5,16 +5,14 @@ export const getSavedItems = async (userId: string) => {
 
     const { data, error } = await supabase
         .from("user_saved_item")
-        .select(`*, products_list(name, price)`)
+        .select(`*, products_list(name, price, id)`)
         .eq("user_id", userId);
 
     if (error) {
-        console.error("Error fetching favorite items:", error);
         throw new Error("Failed to fetch favorite items");
     }
 
     if (!data || data.length === 0) {
-        console.log("No favorited items found for user: ", userId);
         return [];
     }
 
@@ -27,7 +25,6 @@ export const getSavedItems = async (userId: string) => {
         .eq("is_main", true);
 
     if (imagesError) {
-        console.error("Error fetching product images: ", imagesError);
         throw new Error("Failed to fetch product images");
     }
 
@@ -48,6 +45,7 @@ export const getSavedItems = async (userId: string) => {
         main_image_url: imageMap.get(product.product_id) || null,
         name: product.products_list?.name || null,
         price: product.products_list?.price || null,
+        id: product?.product_id || null,
     }));
 
     console.log(productsWithImages);
