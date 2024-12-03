@@ -1,0 +1,87 @@
+"use client";
+
+import { ProductsListType } from "@/lib/types"
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react"
+import { FaRegTrashAlt } from "react-icons/fa";
+
+const FavsList = () => {
+
+    const router = useRouter();
+    const [savedProductsData, setSavedProductsData] = useState<ProductsListType[]>([]);
+
+    const removeFavItem = async(id: string) => {
+        //add function to remove item
+
+    }
+    useEffect(() => {
+        const fetchUserLikedItemList = async () => {
+            try {
+                const response = await fetch("/api/userFavList");
+                const { data: products } = await response.json();
+
+                if (!response.ok) throw new Error("Failed to fetch products");
+
+                const favoritesItems = products.map((product: ProductsListType) => ({
+                    ...product,
+                }));
+
+                console.log("The individual items are: ", favoritesItems);
+
+                setSavedProductsData(favoritesItems);
+            } catch (error) {
+                console.error("Error fetching saved items", error);
+            }
+        };
+        fetchUserLikedItemList();
+    },[]);
+
+    return (
+        <div>
+            <div className="bg-white">
+                <div className="mx-auto px-4 sm:px-6 lg:w-full lg:px-8">
+                    <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-3">
+                        {savedProductsData.map((product) => (
+                            <div key={product.id} className="group relative">
+                                <div className="relative w-full h-[410px] rounded-md overflow-hidden bg-gray-200 group-hover:opacity-75">
+                                    <img 
+                                        src={product.main_image_url} 
+                                        alt={product.name}
+                                        className="h-full w-full object-cover object-center hover:cursor-pointer"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            router.push(`/product-detail/${product.id}`);
+                                        }}
+                                    />
+                                    <button
+                                        onClick={() => removeFavItem(product.id)}
+                                        className="absolute top-2 right-2 p-2 cursor-pointer z-10 text-white group-hover:opacity-100 opacity-0 transition-opacity duration-300 ease-in-out"
+                                    >
+                                        <FaRegTrashAlt className="text-black" size={24} />
+                                    </button>
+
+                                </div>
+                                <div className="mt-4 flex justify-between">
+                                    <div>
+                                        <h3 className="text-sm text-gray-700">
+                                            <a 
+                                                href={`product-detail/${product.id}`}
+                                                className="relative"
+                                            >
+                                                <span aria-hidden="true" className="absolute inset-0" />
+                                                {product?.name}
+                                            </a>
+                                        </h3>
+                                        <p className="mt-1 text-sm text-gray-500">{product?.price}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default FavsList

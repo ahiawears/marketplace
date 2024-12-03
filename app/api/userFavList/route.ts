@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getCartItems } from '@/lib/cart';
-import { createClient } from '@/supabase/server';
- 
+import { getSavedItems } from "@/actions/user-get-saved-items";
+import { createClient } from "@/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
+
 export async function GET(req: NextRequest) {
     try {
         const supabase = await createClient();
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
                 { error: 'User not authenticated' },
                 { status: 401 }
             );
-        }   
+        }
 
         const userId = data.user?.id;
         if (!userId) {
@@ -22,22 +22,23 @@ export async function GET(req: NextRequest) {
                 { status: 400 }
             );
         }
-  
-        const cartItems = await getCartItems(userId);
 
-        if (!cartItems) {
+        const savedItems = await getSavedItems(userId);
+
+        if (!savedItems) {
             return NextResponse.json(
                 { error: 'No cart items found' },
                 { status: 404 }
             );
         }
 
-        return NextResponse.json({ data: cartItems });
+        return NextResponse.json({ data: savedItems });
     } catch (error) {
-        console.error("Failed to fetch cart items:", error);
+        console.error("Failed to fetch favoritedItems: ", error);
         return NextResponse.json(
             { error: 'Failed to fetch cart items' },
             { status: 500 }
         );
     }
+
 }

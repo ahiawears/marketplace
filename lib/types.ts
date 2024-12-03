@@ -80,7 +80,7 @@ export type Product = {
 export interface ProductsListType {
   index: number;
   id: string;
-  name: string;
+  name?: string;
   main_image_url: string;
   price?: string;
   source: "brand" | "product" | "tag";

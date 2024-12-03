@@ -8,5 +8,5 @@ const ProductsPage: React.FC = () => {
         </div>
     )
 }
-
+ 
 export default ProductsPage
