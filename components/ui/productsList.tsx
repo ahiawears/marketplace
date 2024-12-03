@@ -5,69 +5,80 @@ import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 import { ProductsListType } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { useSearchParams } from "next/navigation";
+import addItemToUserLiked from '@/actions/add-to-user-saved';
+import { fetchUserLikedItems } from '@/actions/fetch-user-liked-item';
 
 
 const ProductsList = () => { 
-    // State to track liked items by product ID
-    const [liked, setLiked] = useState<{ [key: number]: boolean }>({});
+    const [liked, setLiked] = useState<{ [key: string]: boolean }>({});
     const [productsData, setProductsData] = useState<ProductsListType[]>([]);
     const searchParams = useSearchParams();
-    const query = searchParams.get("query");
-    const catQuery = searchParams.get("cat");
+    const query = searchParams.get("query") ?? "";
+    const catQuery = searchParams.get("cat") ?? "";
     const router = useRouter();
 
     const handleClickedProduct = ( id: string ) => {
         console.log(`Product with id: ${id} clicked` );
     }
 
-    // Toggle the like status for a product
-    // const toggleLike = (id: number) => {
-    //     setLiked((prevLiked) => ({
-    //         ...prevLiked,
-    //         [id]: !prevLiked[id],
-    //     }));
-    // };
+    //Toggle the like status for a product
+    const toggleLike = async (id: string) => {
+        setLiked((liked) => {
+          const isLiked = liked[id] || false;
+          return {
+            ...liked,
+            [id]: !isLiked,
+          };
+        });
+        await updateUserLikedItem(id, !liked[id]);
+    };
+
+
+    const updateUserLikedItem = async (id: string, isLiked: boolean) => {
+        const item = { id, isLiked };
+        try {
+          await addItemToUserLiked(item);
+          console.log(`Successfully updated liked status for product ID: ${id}`);
+        } catch (error) {
+          console.error(`Error updating liked status for product ID: ${id}`, error);
+        }
+    };
+
+    
 
     useEffect(() => {
-        if (query) {
-          const fetchProductsItems = async () => {
+        const fetchProductsAndLikes = async () => {
             try {
-                const response = await fetch(`/api/getProducts?query=${encodeURIComponent(query)}`);
-                const data = await response.json();
+                const endpoint = query
+                    ? `/api/getProducts?query=${encodeURIComponent(query)}`
+                    : `/api/getProductsinCategory?cat=${encodeURIComponent(catQuery)}`; 
+                const response = await fetch(endpoint);
+                const { data: products } = await response.json();
     
-                if (response.ok) {
-                    setProductsData(data.data);
-                } else {
-                    console.error("Failed to fetch product items:", data.error);
-                }
+                if (!response.ok) throw new Error("Failed to fetch products");
+    
+                const savedItems = await fetchUserLikedItems();
+                const likedMap: { [key: string]: boolean } = savedItems.reduce(
+                    (acc, item) => ({ ...acc, [item.product_id]: true }),
+                    {}
+                );
+                
+                const updatedProducts = products.map((product: ProductsListType) => ({
+                    ...product,
+                    liked: likedMap[product.id] || false,
+                }));
+    
+                setProductsData(updatedProducts);
+    
+                setLiked(likedMap);
             } catch (error) {
-              console.error("Error fetching product items:", error);
+                console.error("Error fetching products or liked items:", error);
             }
-          };
-          fetchProductsItems();
-        }
-      }, [query]);
-
-      useEffect(() => {
-        if(catQuery) {
-            const fetchCategoriesItems = async () => {
-                try {
-                    //console.log(catQuery);
-                    const response = await fetch(`/api/getProductsinCategory?cat=${encodeURIComponent(catQuery)}`);
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        setProductsData(data.data);
-                    } else {
-                        console.error("Failed to fetch product items:", data.error);
-                    }
-                } catch (error) {
-                    console.error("Error fetching categories items:", error);
-                }
-            }
-            fetchCategoriesItems();
-        }
-      }, [catQuery]);
+        };
+    
+        fetchProductsAndLikes();
+    }, [query, catQuery]);
+    
 
     return (
         <div>
@@ -80,24 +91,21 @@ const ProductsList = () => {
                                     <img
                                         alt={product.name}
                                         src={product.main_image_url}
-                                        className="h-full w-full object-cover object-center"
+                                        className="h-full w-full object-cover object-center hover:cursor-pointer"
                                         onClick={(e) => {
                                             e.preventDefault();
                                             router.push(`/product-detail/${product.id}`); 
                                         }}
                                     />
                                     <button
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            //toggleLike(product.id);
-                                        }}
+                                        onClick={() => toggleLike(product.id)}
                                         className="absolute top-2 right-2 p-2 cursor-pointer z-10 text-white group-hover:opacity-100 opacity-0 transition-opacity duration-300 ease-in-out"
                                     >
-                                        {/* {liked[product.id] ? (
+                                        {liked[product.id] ? (
                                             <AiFillHeart className="text-red-500" size={24} />
                                         ) : (
                                             <AiOutlineHeart className="text-black" size={24} />
-                                        )} */}
+                                        )} 
                                     </button>
                                     <button
                                         className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-50 text-white font-medium opacity-0 group-hover:opacity-100 duration-300 ease-in-out z-10 h-[40px] w-[200px] rounded-full"

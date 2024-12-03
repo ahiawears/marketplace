@@ -84,4 +84,5 @@ export interface ProductsListType {
   main_image_url: string;
   price?: string;
   source: "brand" | "product" | "tag";
+  liked?: boolean;
 }
