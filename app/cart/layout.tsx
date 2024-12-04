@@ -1,4 +1,4 @@
-import { Header } from "@/components/header";
+import { ServerHeader } from "@/components/headerServerComponent";
 import { ReactNode } from "react";
 
 type Props = {
@@ -8,7 +8,7 @@ type Props = {
 const LandingLayout = (props: Props) => {
   return (
     <>
-      <Header />
+      <ServerHeader />
       <main className="md:pt-32 pt-44">{props.children}</main>
     </>
   );

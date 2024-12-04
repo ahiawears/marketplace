@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter } from "lucide-react";
+import { Filter, Heart, ShoppingCart } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Logo } from "./ui/logo";
@@ -18,28 +18,45 @@ import {
 } from "./user-actions-dropdown";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { SearchInput } from "./ui/search-input";
 
 
 export const Header = ({ user }: { user: any }) => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");  
   const router = useRouter();
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = () => {
+    
     if (searchQuery.trim()) {
       router.push(`/products?query=${encodeURIComponent(searchQuery)}`);
     }
   };
 
+  const goToFavorited = () => {
+    router.push(`/fav-lists`);
+  }
+
+  const goToCart = () => {
+    router.push(`/cart`);
+  }
   return (
     <header className="p-8 border-b border-border fixed left-0 top-0 w-full bg-background z-50">
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
         <Logo />
         <div className="flex items-center gap-4 grow w-full">
-          <Input placeholder="Search products" className="grow h-10" name="searchValue" onChange={(e) => setSearchQuery(e.target.value)}/>
-          <button type="submit" className="ml-2 p-2 bg-black text-white rounded" onClick={handleSearch}>
-              Search
-            </button>
+          <SearchInput 
+            placeholder="Search products" 
+            className="grow h-10" 
+            name="searchValue" 
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onSearch={handleSearch}
+          />
+          <Button size={"icon"} variant="outline" onClick={goToFavorited}>
+            <Heart />
+          </Button>
+          <Button size={"icon"} variant="outline" onClick={goToCart}>
+            <ShoppingCart />
+          </Button>
           <div className="md:hidden">
             <Sheet>
               <SheetTrigger asChild>

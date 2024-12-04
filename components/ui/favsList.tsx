@@ -47,6 +47,9 @@ const FavsList = () => {
 
     return (
         <div>
+            <div className="bg-slate-400">
+                <p className="mt-1 text-sm text-gray-500 text-center py-9">Favorited Items</p>
+            </div>
             <div className="bg-white">
                 <div className="mx-auto px-4 sm:px-6 lg:w-full lg:px-8">
                     <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-3">
