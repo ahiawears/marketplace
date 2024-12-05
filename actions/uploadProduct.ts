@@ -10,8 +10,6 @@ interface Size {
 export const addProduct = async (formData: FormData) => {
   const supabase = await createClient();
 
-  console.log("Input data:", formData);  
-
   const name = formData.get("productName") as string;
   const category = formData.get("category") as string;
   const subCategory = formData.get("subCategory") as string;
@@ -64,7 +62,6 @@ export const addProduct = async (formData: FormData) => {
   }
 
   // Check if category exists, insert if not
-  console.log("Inserting category:", category);
   const { data: categoryData, error: categoryError } = await supabase
     .from("categories")
     .select("id, name")
@@ -73,7 +70,6 @@ export const addProduct = async (formData: FormData) => {
 
   let categoryId;
   if (categoryError || !categoryData) {
-    console.log("Category not found, inserting...");
     const { data: newCategoryData, error: newCategoryError } = await supabase
       .from("categories")
       .insert({ name: category })
@@ -85,14 +81,11 @@ export const addProduct = async (formData: FormData) => {
     }
 
     categoryId = newCategoryData.id;
-    console.log("New category inserted:", newCategoryData);
   } else {
     categoryId = categoryData.id;
-    console.log("Existing category found:", categoryData);
   }
 
   // Check if subcategory exists under the category, insert if not
-  console.log("Inserting subcategory:", subCategory, "under category id:", categoryId);
   const { data: subCategoryData, error: subCategoryError } = await supabase
     .from("subcategories")
     .select("id, name")
@@ -102,7 +95,6 @@ export const addProduct = async (formData: FormData) => {
 
   let subCategoryId;
   if (subCategoryError || !subCategoryData) {
-    console.log("Subcategory not found, inserting...");
     const { data: newSubCategoryData, error: newSubCategoryError } = await supabase
       .from("subcategories")
       .insert({ name: subCategory, category_id: categoryId })
@@ -114,10 +106,8 @@ export const addProduct = async (formData: FormData) => {
     }
 
     subCategoryId = newSubCategoryData.id;
-    console.log("New subcategory inserted:", newSubCategoryData);
   } else {
     subCategoryId = subCategoryData.id;
-    console.log("Existing subcategory found:", subCategoryData);
   }
 
   // Insert product data into the products table
@@ -147,7 +137,6 @@ export const addProduct = async (formData: FormData) => {
   // Handle sizes - check if size exists, if not insert and get the ID
 if (sizes && sizes.length > 0) {
   const sizeData = [];
-  console.log("The tags are:", sizes);
   for (const size of sizes) {
     const { data: existingSize, error: sizeError } = await supabase
       .from("sizes")
@@ -195,9 +184,7 @@ if (sizes && sizes.length > 0) {
   // Handle tags
   if (tags && tags.length > 0) {
   const tagData = [];
-  console.log("The tags are:", tags);
   for (const tag of tags) {
-    console.log("The individual tag being processed is:", tag);
     const { data: existingTag, error: tagError } = await supabase
       .from("tags")
       .select("id")

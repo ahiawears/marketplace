@@ -100,10 +100,8 @@ export const userGetProductItems = async (query: string) => {
   } catch (error) {
     // Safely handle 'unknown' error type
     if (error instanceof Error) {
-      console.error("Error fetching product items:", error.message);
       throw new Error(`Failed to fetch product items: ${error.message}`);
     }
-    console.error("Unexpected error:", error);
     throw new Error("An unexpected error occurred");
   }
 };

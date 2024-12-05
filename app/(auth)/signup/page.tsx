@@ -5,6 +5,7 @@ import { Logo } from "@/components/ui/logo";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { PasswordInput } from "@/components/ui/password-input";
+import Link from "next/link";
 
 const SignupPage = async ({
   searchParams,
@@ -125,12 +126,12 @@ const RegisterForm = () => (
       <div className="flex items-center justify-between">
         <p className="text-center text-sm/6 text-gray-500">
           Already have an account?{" "}
-          <a
+          <Link
             href="/log-in"
             className="font-semibold text-indigo-600 hover:text-indigo-500"
           >
             Sign In
-          </a>{" "}
+          </Link>{" "}
           here
         </p>
         <div className="text-sm">

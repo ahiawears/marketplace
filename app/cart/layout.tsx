@@ -1,17 +1,13 @@
+import { Footer } from "@/components/footer";
 import { ServerHeader } from "@/components/headerServerComponent";
-import { ReactNode } from "react";
 
-type Props = {
-  children: ReactNode;
-};
-
-const LandingLayout = (props: Props) => {
+export default function LandingLayout ({ children }: { children: React.ReactNode }) {
   return (
     <>
       <ServerHeader />
-      <main className="md:pt-32 pt-44">{props.children}</main>
+      <main className="md:pt-32 pt-44 md:pb-32 pb-44">{children}</main>
+      <Footer />
     </>
   );
 };
 
-export default LandingLayout;

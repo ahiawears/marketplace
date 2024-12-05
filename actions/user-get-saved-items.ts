@@ -48,7 +48,5 @@ export const getSavedItems = async (userId: string) => {
         id: product?.product_id || null,
     }));
 
-    console.log(productsWithImages);
-
     return productsWithImages;
 }

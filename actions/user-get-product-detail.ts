@@ -8,12 +8,11 @@ export const userGetProductDetail = async () => {
         .select();
 
     if (productError) {
-        console.error("Error fetching products items: ", productError);
         throw new Error('Failed to fetch products items');
     }
 
     if (!productData || productData.length === 0) {
-        console.log("No products items found: ");
+        //return no products found
         return[];
     }
 
@@ -25,7 +24,6 @@ export const userGetProductDetail = async () => {
         .eq('is_main', true);
 
     if ( imagesError ) {
-        console.error("Error fetching product images: ", imagesError);
         throw new Error('Failed to fetch product images');
     }
 

@@ -29,11 +29,8 @@ export const deleteCartItem = async (id: string) => {
             .eq('id', id);
 
         if (error) {
-            console.error("Error deleting item:", error);
             return;
         }
-
-        console.log("Item deleted from Supabase:", data);
 
     } catch (err) {
         console.error("Unexpected error:", err);

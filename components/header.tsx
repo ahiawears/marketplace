@@ -2,7 +2,6 @@
 
 import { Filter, Heart, ShoppingCart } from "lucide-react";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { Logo } from "./ui/logo";
 import {
   Sheet,

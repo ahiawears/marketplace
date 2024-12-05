@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { User } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js"; 
 import { User as UserIcon } from "lucide-react";
 import Link from "next/link";
 import { Fragment } from "react";

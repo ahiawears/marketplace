@@ -6,6 +6,7 @@ import { FcGoogle } from "react-icons/fc";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { PasswordInput } from "@/components/ui/password-input";
+import Link from "next/link";
 
 const LoginPage = async ({
   searchParams,
@@ -80,12 +81,12 @@ const LoginForm = () => (
             Password:*
           </label>
           <div className="text-sm">
-            <a
+            <Link
               href="/password-reset"
               className="font-semibold text-indigo-600 hover:text-indigo-500"
             >
               Forgot password?
-            </a>
+            </Link>
           </div>
         </div>
         <div className="mt-2">
@@ -101,12 +102,12 @@ const LoginForm = () => (
       <div className="flex items-center justify-between">
         <p className="text-center text-sm/6 text-gray-500">
           Don&apos;t have an account?{" "}
-          <a
-            href="#"
+          <Link
+            href={'/signup'}
             className="font-semibold text-indigo-600 hover:text-indigo-500"
           >
             Sign Up
-          </a>{" "}
+          </Link>{" "}
           here
         </p>
         <div className="text-sm">
