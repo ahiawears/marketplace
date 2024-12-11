@@ -6,6 +6,9 @@ import { Select } from "../ui/select";
 import { countries } from "@/lib/countries";
 import { Button } from "../ui/button";
 import { addUserAddress } from "@/actions/add-user-address";
+import { UserAddressType } from "@/lib/types";
+
+type ComponentItems = "addressList" | "addAddress";
 
 const AddressBook = () => {
     const [selectedCountry, setSelectedCountry] = useState("");
@@ -13,6 +16,9 @@ const AddressBook = () => {
     const [countryCode, setCountryCode] = useState("");
     const [firstName, setFirstName] = useState('');
 	const [lastName, setLastName] = useState('');
+    const [currentComponent, setCurrentComponent] = useState<ComponentItems>("addressList");
+    const [addressData, setAddressData] = useState<UserAddressType[]>([]);
+
 
     useEffect(() => {
         const fetchUserDetails = async () => {
@@ -33,6 +39,25 @@ const AddressBook = () => {
 		fetchUserDetails();
     }, []);
 
+    useEffect(() => {
+        const fetchUserAddresses = async () => {
+            try {
+                const response = await fetch('/api/getUserAddresses');
+                const { data: uAddress} = await response.json();
+
+                if(!response.ok) throw new Error("Failed to fetch user addresses");
+
+                const addressItems = uAddress.map((address: UserAddressType) => ({
+                    ...address,
+                }));
+                setAddressData(addressItems)
+            } catch (error) {
+                console.error("Error fetching user details:", error);
+            }
+        }
+        fetchUserAddresses();
+    }, []);
+
     const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedId = parseInt(event.target.value); 
         const country = countries.find((c) => c.id === selectedId); 
@@ -44,6 +69,30 @@ const AddressBook = () => {
         }
     
         console.log(selectedId); 
+    };
+
+    const renderComponent = () => {
+        if (currentComponent === "addressList") {
+            return (
+                <UserAddresses 
+                    onAddAddress={() => setCurrentComponent("addAddress")} 
+                    addressInfo={addressData}
+                />
+            )
+        }
+        if (currentComponent === "addAddress") {
+            return (
+                <AddressForm
+                    selectedCountry={selectedCountry}
+                    countryCode={countryCode}
+                    handleChange={handleChange}
+                    firstName={firstName}
+                    lastName={lastName}
+                    countryName={countryName}
+                    onBack={() => setCurrentComponent("addressList")}
+                />
+            );
+        }
     };
 
     return (
@@ -79,20 +128,48 @@ const AddressBook = () => {
                     </svg>
                     <p className="mt-4 text-lg font-semibold">Address Book</p>
                 </div>
-                <AddressForm 
-                    selectedCountry={selectedCountry}
-                    countryCode={countryCode}
-                    handleChange={handleChange}
-                    firstName={firstName}
-                    lastName={lastName}
-                    countryName={countryName}
-                />
+                {renderComponent()}
             </div>
         </div>
     );
 };
 
-const AddressForm = ({ selectedCountry, countryCode, handleChange, firstName, lastName, countryName}: { selectedCountry: string; countryCode: string; handleChange: (event: React.ChangeEvent<HTMLSelectElement>) => void; firstName: string; lastName: string;countryName: string;}) => {
+const UserAddresses = ({ onAddAddress, addressInfo, }: { onAddAddress: () => void; addressInfo: UserAddressType[]; }) => {    
+    return (
+        <div>
+            <div className="space-y-4">
+                <Button
+                    onClick={onAddAddress}
+                    className="px-4 py-2 text-white rounded"
+                >
+                    Add New Address
+                </Button>
+                {/* Example card structure */}
+                {addressInfo.map((uAddress) => (
+                    <div key={uAddress.id} className="border p-4 rounded shadow-md flex justify-between items-center">
+                        <div className="float-left">
+                            <p>{uAddress.address}</p>
+                            <p>{uAddress.city + ", " + uAddress.county}</p>
+                            <p>{uAddress.post_code}</p>
+                            <p>{uAddress.country}</p>
+                            <p>{uAddress.country_code + " " + uAddress.mobile}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                            <button className="p-2 bg-gray-200 rounded hover:bg-gray-300">
+                                Edit
+                            </button>
+                            <button className="p-2 bg-red-200 rounded hover:bg-red-300">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const AddressForm = ({ selectedCountry, countryCode, handleChange, firstName, lastName, countryName, onBack, }: { selectedCountry: string; countryCode: string; handleChange: (event: React.ChangeEvent<HTMLSelectElement>) => void; firstName: string; lastName: string;countryName: string; onBack: () => void;}) => {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
@@ -109,6 +186,12 @@ const AddressForm = ({ selectedCountry, countryCode, handleChange, firstName, la
     };
     return (
         <div>
+            <Button
+                onClick={onBack}
+                className="px-4 py-2 mb-4 text-white rounded"
+            >
+                Back
+            </Button>
             <form className="space-y-6" onSubmit={handleSubmit}>
                 <div>
                     <label

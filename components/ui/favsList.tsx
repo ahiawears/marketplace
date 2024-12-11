@@ -43,7 +43,7 @@ const FavsList = () => {
 
     useEffect(() => {
         fetchUserLikedItemList();
-    }, []); // Only run once when the component mounts
+    }, []);
 
     return (
         <div>

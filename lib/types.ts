@@ -93,5 +93,16 @@ export interface ProductsListType {
   source: "brand" | "product" | "tag";
   liked?: boolean;
 }
+
+export interface UserAddressType {
+  id: string;
+  city: string;
+  address: string;
+  post_code: string;
+  country: string;
+  county: string;
+  mobile: string;
+  country_code: string;
+}
   
 
