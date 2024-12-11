@@ -8,7 +8,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import Link from "next/link";
 
 const SignupPage = async ({
-  searchParams,
+  searchParams, 
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) => {

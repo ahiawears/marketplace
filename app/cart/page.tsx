@@ -4,6 +4,8 @@ import React, { useEffect, useState } from "react";
 import CartItem from "@/components/ui/cart-item";
 import OrderSummary from "@/components/ui/order-summary";
 import { deleteCartItem, updateCartItemQuantity } from "@/actions/updateCartItem";
+import { Logo } from "@/components/ui/logo";
+import { ShoppingCart } from "lucide-react";
 
 interface CartItem {
     id: number;
@@ -92,12 +94,17 @@ const CartPage: React.FC = () => {
 
                     {/* Right column: Order summary */}
                     <div className="w-full md:w-1/3">
-                        <OrderSummary totalPrice={totalPrice} />
+                        <OrderSummary totalPrice={totalPrice}/>
                     </div>
                 </div>
             ) : (
                 <div className="text-center">
-                    <p>Your cart is empty!</p>
+                    <ShoppingCart 
+                        className="mx-auto"
+                        width={24}
+                        height={24}
+                    />
+                    <p className="pt-7">Your cart is empty!</p>
                 </div>
             )}
         </div>

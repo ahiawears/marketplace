@@ -4,7 +4,7 @@ export const categoriesList = [
         sizes: ["S", "M", "L", "XL", "XXL"],
         subcategories: [
             "Plain T-Shirts",
-            "Graphic T-Shirts",
+            "Graphic T-Shirts",  
             "Long Sleeve T-Shirts",
             "Striped T-Shirts",
         ],

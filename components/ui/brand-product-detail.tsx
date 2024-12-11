@@ -2,8 +2,10 @@ import Image from "next/image";
 import React, { useState } from "react";
 import { MdOutlineModeEdit } from "react-icons/md";
 import SizeSelect from "./size-select";
+import { categoriesList } from "@/lib/categoriesList";
 import { Input } from "./input";
 import { Textarea } from "./textarea";
+import { Select } from "./select";
 
 
 interface ProductItemProps {
@@ -13,6 +15,8 @@ interface ProductItemProps {
     mainImage: string;
     thumbnails: string[];
     description: string;
+    weight: number;
+    categoryName: string;
 }
 
 interface Size {
@@ -26,14 +30,22 @@ interface SizeSelectProps {
     onSelectSize: (size: Size | null) => void;
 }
 
-const BrandProductItem: React.FC<ProductItemProps> = ({ productId, productName, productPrice, mainImage, thumbnails, description, }) => {
+const BrandProductItem: React.FC<ProductItemProps> = ({ productId, productName, productPrice, mainImage, thumbnails, description, weight, categoryName}) => {
     const productImages = [mainImage, ...thumbnails];
     const [selectedImage, setSelectedImage] = useState(mainImage);
+    const [customTags, setCustomTags] = useState<string[]>([]);
+    const [subcategories, setSubcategories] = useState<string[]>([]);
+    const [selectedCategory, setSelectedCategory] = useState<string>(categoryName);
+    const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
+    const [selectedTags, setSelectedTags] = useState<string[]>([]);
+    const catname = categoryName;
 
     const [productDetails, setProductDetails] = useState({
         name: productName,
         price: productPrice,
         description: description,
+        weight: weight,
+
     });
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,6 +71,18 @@ const BrandProductItem: React.FC<ProductItemProps> = ({ productId, productName, 
 			};
 		});
     }
+
+    const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const categoryName = event.target.value;
+        setSelectedCategory(categoryName);
+
+        const category = categoriesList.find((cat) => cat.name === categoryName);
+        setSubcategories(category?.subcategories || []);
+        setCustomTags(category ? category.tags : []); 
+        
+        setSelectedSubcategory("");
+        setSelectedTags([]);
+    };
 
     return (
         <div>
@@ -135,6 +159,24 @@ const BrandProductItem: React.FC<ProductItemProps> = ({ productId, productName, 
                                 />
                             </div>
                         </div>
+                        <div className="mb-4">
+                            <label htmlFor="weight" className="block text-sm font-bold text-gray-900 mt-2">
+                                Weight:*
+                            </label>
+                            <div className="mt-2">
+                                <Input
+                                    id="weight"
+                                    name="weight"
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={productDetails.weight}
+                                    onChange={handleInputChange}
+                                    required
+                                    placeholder="Enter the product wight"
+                                />
+                            </div>
+                        </div>
                         <div className=" mb-4">
                             <label htmlFor="description" className="block text-sm font-bold text-gray-900 mt-2">
                                 Description:*
@@ -150,12 +192,32 @@ const BrandProductItem: React.FC<ProductItemProps> = ({ productId, productName, 
                                 />
                             </div>
                         </div>
+                        <div>
+                            <label htmlFor="category" className="block text-sm font-bold text-gray-900">
+                                Category:*
+                            </label>
+                            <div className="mt-2">
+                                <Select
+                                    id="category"
+                                    name="category"
+                                    onChange={handleCategoryChange}
+                                    value={selectedCategory} 
+                                >
+                                    <option value="" disabled>Select a category</option>
+                                    {categoriesList.map((category) => (
+                                        <option key={category.name} value={category.name}>
+                                            {category.name}
+                                        </option>
+                                    ))}
+                                </Select>
+                            </div>
+                        </div>
                         <div className="text-sm">
                             <button
                                 //onClick={handleAddToCart}
                                 className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
                             >
-                                Add to Cart
+                                Update Product
                             </button>
                         </div>
                     </div>

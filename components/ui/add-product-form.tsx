@@ -24,7 +24,7 @@ const AddProductForm = ({ initialData }: AddProductFormProps) =>{
     const [customTags, setCustomTags] = useState<string[]>([]);
     const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [images, setImages] = useState<string[]>(["", "", "", ""]);
+    const [images, setImages] = useState<string[]>(["", "", "", ""]); 
     const [currentSlide, setCurrentSlide] = useState(0);
     const [sizes, setSizes] = useState<string[]>([]);
     const [quantities, setQuantities] = useState<{ [size: string]: number }>({});  

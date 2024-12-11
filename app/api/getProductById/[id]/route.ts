@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         // Fetch product data
         const { data: productData, error: productError } = await supabase
             .from("products_list")
-            .select("*")
+            .select("*, categories(name)")
             .eq("id", productId)
             .single();
 
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         }
 
         // Fetch all images for the product
-        const { data: imagesData, error: imagesError } = await supabase
+        const { data: imagesData, error: imagesError } = await supabase  
             .from("product_images")
             .select("image_url, is_main")
             .eq("product_id", productId);
@@ -65,6 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             ...productData,
             main_image_url: mainImageUrl,
             image_urls: thumbnailUrls,
+            categoryName: productData.categories?.name,
         };
 
         console.log(productWithImages);

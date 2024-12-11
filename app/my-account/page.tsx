@@ -11,7 +11,7 @@ type MenuItem = "details" | "changePassword" | "myOrders" | "addressBook";
 const MyAccount = () => {
 	const [activeComponent, setActiveComponent] = useState<MenuItem | null>(null);
 
-	// Component mapping with the correct types
+	// Component mapping with the correct types  
 	const componentMap: Record<MenuItem, JSX.Element> = {
 		details: <Userdetails />,
 		changePassword: <ChangePassword />,

@@ -7,6 +7,12 @@ export interface ProductTableType {
   sku: string;
 }
 
+export interface OrderTableType {
+  order_id: string;
+  customer_id: string;
+  status: string;
+}
+
 export type ProductDetails = {
   id: string;
   name: string;
@@ -75,6 +81,7 @@ export type Product = {
   image_urls?: string[];
   tags?: string[];
   main_image_url?: string;
+  categoryName?: string;
 };
 
 export interface ProductsListType {
@@ -86,3 +93,5 @@ export interface ProductsListType {
   source: "brand" | "product" | "tag";
   liked?: boolean;
 }
+  
+
