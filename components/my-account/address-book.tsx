@@ -99,7 +99,13 @@ const AddressForm = ({ selectedCountry, countryCode, handleChange, firstName, la
 
         formData.append("countryName", countryName);
 
-        await addUserAddress(formData);
+        const response = await addUserAddress(formData);
+        if (response.error) {
+            console.error(response.error);
+            alert("Failed to save address: " + response.error);
+        } else {
+            alert(response.message);
+        }
     };
     return (
         <div>
