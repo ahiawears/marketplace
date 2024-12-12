@@ -41,10 +41,11 @@ export const getCartItems = async (userId: string) => {
         .select("total_price")
         .eq('user_id', userId);  
 
-    console.log(priceData);
+    
     const totalPrice = priceData && priceData.length > 0 
-        ? String(priceData[0].total_price) 
+        ? Number(priceData[0].total_price) 
         : null;
+
     // Create a map of size_id to size_name
     const sizeMap = new Map(sizeData.map((size) => [size.id, size.name]));
 
@@ -82,7 +83,7 @@ export const getCartItems = async (userId: string) => {
         main_image_url: imageMap.get(product.product_id) || null,
         product_name: product.products_list?.name || null,
         size_name: sizeMap.get(product.size_id) || null, // Attach size name using sizeMap
-        cumPrice: totalPrice, 
+        cumPrice: totalPrice?.toFixed(2), 
     }));
 
     console.log(productsWithImages);

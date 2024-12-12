@@ -55,7 +55,7 @@ const addItemToUserCart = async (cartItem: CartItem) => {
         .from("cart_items")
         .select("id, quantity, price")
         .eq("product_id", cartItem.productId)
-        .eq("size_id", cartItem.sizeId)
+        .eq("size_id", cartItem.sizeId) 
         .eq("user_id", userId)
         .maybeSingle();
 
@@ -63,7 +63,7 @@ const addItemToUserCart = async (cartItem: CartItem) => {
 
     if (existingCartItem) {
         // Update quantity and price if item exists
-        const updatedQuantity = existingCartItem.quantity + cartItem.quantity;
+        const updatedQuantity = existingCartItem.quantity + cartItem.quantity;   
 
         const { error: updateItemError } = await supabase
             .from("cart_items")
@@ -83,6 +83,7 @@ const addItemToUserCart = async (cartItem: CartItem) => {
             user_id: userId,
             price: cartItem.price,
             size_id: cartItem.sizeId,
+            cart_id: cartId,
         });
 
         if (cartItemError) {
@@ -91,6 +92,8 @@ const addItemToUserCart = async (cartItem: CartItem) => {
 
         updatedTotalPrice += cartItem.price * cartItem.quantity;
     }
+
+    console.log("The total price is:", updatedTotalPrice);
 
     // Step 4: Update total price in the cart
     const { error: updateCartError } = await supabase

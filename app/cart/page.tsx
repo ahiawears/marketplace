@@ -21,6 +21,7 @@ interface CartItem {
     price: number;
     cart_item_id: string;
     cumPrice: number;
+    cart_id: string;
 }
 
 const CartPage: React.FC = () => {
@@ -50,30 +51,16 @@ const CartPage: React.FC = () => {
 
     const totalPrice = cartItems.length > 0 ? cartItems[0].cumPrice : 0;
 
-    const handleDelete = (id: number, cart_item_id: string) => {
+    const handleDelete = (mainCartId: string, cart_item_id: string) => {
         if (confirm("Are you sure you want to delete this item?")) {
-            deleteCartItem(cart_item_id);
-            setCartItems((items) => items.filter((item) => item.id !== id));
-        }
-    };
-
-    const handleQuantityChange = (id: number, quantity: number, cart_item_id: string) => {
-        setCartItems((items) =>
-            items.map((item) =>
-                item.id === id ? { ...item, quantity } : item
-            )
-        );
-        try {
-            updateCartItemQuantity(quantity, cart_item_id);
-        } catch (error) {
-            console.error("Error updating quantity:", error);
+            deleteCartItem(mainCartId, cart_item_id);
         }
     };
 
     if (loading) {
         return <div>Loading...</div>;
     }
-
+   
     return (
         <div className="container mx-auto p-4 mt-16">
             {cartItems.length > 0 ? (
@@ -84,10 +71,7 @@ const CartPage: React.FC = () => {
                             <CartItem
                                 key={item.id}
                                 item={item}
-                                onDelete={() => handleDelete(item.id, item.cart_item_id)}
-                                onQuantityChange={(quantity) =>
-                                    handleQuantityChange(item.id, quantity, item.cart_item_id)
-                                }
+                                onDelete={() => handleDelete( item.cart_id, item.cart_item_id )}   
                             />
                         ))}
                     </div>
