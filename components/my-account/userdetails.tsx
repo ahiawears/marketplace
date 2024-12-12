@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Input } from '../ui/input';
 import { UserDetails } from '@/lib/types';
+import { Button } from '../ui/button';
 
 const Userdetails = () => {
 	const [firstName, setFirstName] = useState('');
@@ -112,12 +113,12 @@ const Userdetails = () => {
 				</div>
 
 				<div className="text-sm">
-					<button
+					<Button
 						// formAction={signup}
 						className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
 					>
 						Update Fields
-					</button>
+					</Button>
 				</div>
 
 				{/* Add more form fields here as needed */}

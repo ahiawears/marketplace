@@ -1,9 +1,14 @@
+"use server";
 import { createClient } from "@/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: { params: { id: string } }) {
     try {
-        const productId = params?.id;
+        const { params } = context;
+        const { id: productId } = await params;
+        if (!productId || typeof productId !== "string") {
+            return NextResponse.json({ error: "Product ID is required and must be a string" }, { status: 400 });
+        }
 
         if (!productId) {
             return NextResponse.json(

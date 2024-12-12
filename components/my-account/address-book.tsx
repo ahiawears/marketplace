@@ -7,10 +7,17 @@ import { countries } from "@/lib/countries";
 import { Button } from "../ui/button";
 import { addUserAddress } from "@/actions/add-user-address";
 import { UserAddressType } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 type ComponentItems = "addressList" | "addAddress";
 
+interface DeleteAddressModalProps {
+    onDelete: () => void;
+    onCancel: () => void;
+}
+
 const AddressBook = () => {
+    
     const [selectedCountry, setSelectedCountry] = useState("");
     const [countryName, setCountryName] = useState("");
     const [countryCode, setCountryCode] = useState("");
@@ -39,22 +46,23 @@ const AddressBook = () => {
 		fetchUserDetails();
     }, []);
 
-    useEffect(() => {
-        const fetchUserAddresses = async () => {
-            try {
-                const response = await fetch('/api/getUserAddresses');
-                const { data: uAddress} = await response.json();
+    const fetchUserAddresses = async () => {
+        try {
+            const response = await fetch('/api/getUserAddresses');
+            const { data: uAddress} = await response.json();
 
-                if(!response.ok) throw new Error("Failed to fetch user addresses");
+            if(!response.ok) throw new Error("Failed to fetch user addresses");
 
-                const addressItems = uAddress.map((address: UserAddressType) => ({
-                    ...address,
-                }));
-                setAddressData(addressItems)
-            } catch (error) {
-                console.error("Error fetching user details:", error);
-            }
+            const addressItems = uAddress.map((address: UserAddressType) => ({
+                ...address,
+            }));
+            setAddressData(addressItems)
+        } catch (error) {
+            console.error("Error fetching user details:", error);
         }
+    }
+
+    useEffect(() => {
         fetchUserAddresses();
     }, []);
 
@@ -77,6 +85,7 @@ const AddressBook = () => {
                 <UserAddresses 
                     onAddAddress={() => setCurrentComponent("addAddress")} 
                     addressInfo={addressData}
+                    onAddressAdded={fetchUserAddresses} 
                 />
             )
         }
@@ -90,6 +99,7 @@ const AddressBook = () => {
                     lastName={lastName}
                     countryName={countryName}
                     onBack={() => setCurrentComponent("addressList")}
+                    onAddressAdded={fetchUserAddresses}
                 />
             );
         }
@@ -134,33 +144,71 @@ const AddressBook = () => {
     );
 };
 
-const UserAddresses = ({ onAddAddress, addressInfo, }: { onAddAddress: () => void; addressInfo: UserAddressType[]; }) => {    
+const UserAddresses = ({ onAddAddress, addressInfo, onAddressAdded, }: { onAddAddress: () => void; addressInfo: UserAddressType[]; onAddressAdded: () => void; }) => {  
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [addressIdToDelete, setAddressIdToDelete] = useState<string | null>(null);
+
+    
+    const handleDeleteClick = (addressId: string) => {
+        setAddressIdToDelete(addressId);
+        setIsModalOpen(true); 
+    };
+    
+    const handleDelete = async () => {
+        if (addressIdToDelete) {
+            try {
+                const response = await fetch(`/api/deleteAddress/${addressIdToDelete}`, {method: "DELETE",});
+                if (response.ok) {
+                    console.log("Address deleted successfully");
+                    onAddressAdded();
+                } else {
+                    console.error("Failed to delete address");
+                }
+            } catch (error) {
+                console.error("Error deleting address:", error);
+            } finally {
+                setIsModalOpen(false); 
+                setAddressIdToDelete(null); 
+            }
+        }
+    };
+    
+    const handleCancel = () => {
+        setIsModalOpen(false);
+        setAddressIdToDelete(null);
+    };  
     return (
         <div>
-            <div className="space-y-4">
+            <div className="space-y-4 md:w-full">
                 <Button
                     onClick={onAddAddress}
-                    className="px-4 py-2 text-white rounded"
+                    className="px-4 py-2 mb-4 text-white rounded float-left"
                 >
                     Add New Address
                 </Button>
                 {/* Example card structure */}
                 {addressInfo.map((uAddress) => (
-                    <div key={uAddress.id} className="border p-4 rounded shadow-md flex justify-between items-center">
-                        <div className="float-left">
-                            <p>{uAddress.address}</p>
-                            <p>{uAddress.city + ", " + uAddress.county}</p>
+                    <div key={uAddress.id} className="border p-4 rounded shadow-md flex justify-between items-center md:w-full">
+                        <div>
+                            <p >{uAddress.address}</p>
+                            <p >{uAddress.city + ", " + uAddress.county}</p>
                             <p>{uAddress.post_code}</p>
                             <p>{uAddress.country}</p>
                             <p>{uAddress.country_code + " " + uAddress.mobile}</p>
                         </div>
                         <div className="flex space-x-2">
-                            <button className="p-2 bg-gray-200 rounded hover:bg-gray-300">
+                            <Button className="p-2 rounded hover:bg-lime-400">
                                 Edit
-                            </button>
-                            <button className="p-2 bg-red-200 rounded hover:bg-red-300">
+                            </Button>
+                            <Button
+                                onClick={() => handleDeleteClick(uAddress.id)} 
+                                className="p-2 rounded hover:bg-red-600"
+                            >
                                 Delete
-                            </button>
+                            </Button>
+                            {isModalOpen && (
+                                <DeleteAddressModal onDelete={handleDelete} onCancel={handleCancel} />
+                            )}
                         </div>
                     </div>
                 ))}
@@ -169,9 +217,37 @@ const UserAddresses = ({ onAddAddress, addressInfo, }: { onAddAddress: () => voi
     );
 };
 
-const AddressForm = ({ selectedCountry, countryCode, handleChange, firstName, lastName, countryName, onBack, }: { selectedCountry: string; countryCode: string; handleChange: (event: React.ChangeEvent<HTMLSelectElement>) => void; firstName: string; lastName: string;countryName: string; onBack: () => void;}) => {
+const DeleteAddressModal: React.FC<DeleteAddressModalProps> = ({ onDelete, onCancel }) => {
+    return (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+            <div className="bg-white rounded-lg shadow-lg p-6 w-80">
+                <h2 className="text-lg font-semibold mb-4">Delete Address</h2>
+                <p className="mb-6">Are you sure you want to delete this address?</p>
+                <div className="flex justify-end space-x-4">
+                    <Button
+                        onClick={onCancel}
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        onClick={onDelete}
+                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    >
+                        Delete
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const AddressForm = ({ selectedCountry, countryCode, handleChange, firstName, lastName, countryName, onBack, onAddressAdded, }: { selectedCountry: string; countryCode: string; handleChange: (event: React.ChangeEvent<HTMLSelectElement>) => void; firstName: string; lastName: string;countryName: string; onBack: () => void; onAddressAdded: () => void; }) => {
+    const router = useRouter();
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
         const formData = new FormData(e.currentTarget);
 
         formData.append("countryName", countryName);
@@ -181,14 +257,16 @@ const AddressForm = ({ selectedCountry, countryCode, handleChange, firstName, la
             console.error(response.error);
             alert("Failed to save address: " + response.error);
         } else {
-            alert(response.message);
+            onAddressAdded();
         }
+        onBack();
     };
+
     return (
         <div>
             <Button
                 onClick={onBack}
-                className="px-4 py-2 mb-4 text-white rounded"
+                className="px-4 py-2 mb-4 text-white rounded float-left"
             >
                 Back
             </Button>

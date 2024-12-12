@@ -1,6 +1,7 @@
 import React from 'react'
 import { Input } from '../ui/input'
 import { UpdatePassword } from '@/actions/update-password'
+import { Button } from '../ui/button'
 
 const ChangePassword = () => {
     return (
@@ -64,16 +65,15 @@ const ChangePassword = () => {
                 </div>
 
                 <div className="text-sm">
-                    <button
+                    <Button
                         // formAction={UpdatePassword}
                         type='submit'
-                        className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        className="flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-smfocus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                     >
                         Change Password
-                    </button>
+                    </Button>
                 </div>
 
-                {/* Add more form fields here as needed */}
             </form>
 		</div>
     )
