@@ -7,20 +7,33 @@ import { useRouter } from 'next/navigation';
 import { useSearchParams } from "next/navigation";
 import addItemToUserLiked from '@/actions/add-to-user-saved';
 import { fetchUserLikedItems } from '@/actions/fetch-user-liked-item';
+import { Button } from './button';
+import AddToCartModal from '../modals/add-to-cart-modal';
+import ModalBackdrop from '../modals/modal-backdrop';
 
 
 const ProductsList = () => { 
     const [liked, setLiked] = useState<{ [key: string]: boolean }>({});
     const [productsData, setProductsData] = useState<ProductsListType[]>([]);
+    const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+
     const searchParams = useSearchParams();
     const query = searchParams.get("query") ?? "";
     const catQuery = searchParams.get("cat") ?? "";
     const router = useRouter();
 
-    const handleClickedProduct = ( id: string ) => {
-        console.log(`Product with id: ${id} clicked` );
+    const handleAddToCartClick = (productId: string) => {
+        setSelectedProductId(productId);
     }
 
+    const handleAddToCart = async () => {
+        console.log(`Item with ID ${selectedProductId} is added to cart`);
+        setSelectedProductId(null);
+    }
+
+    const handleModalCancel = async () => {
+        setSelectedProductId(null);
+    }
     //Toggle the like status for a product
     const toggleLike = async (id: string) => {
         setLiked((liked) => {
@@ -34,6 +47,7 @@ const ProductsList = () => {
     };
 
 
+
     const updateUserLikedItem = async (id: string, isLiked: boolean) => {
         const item = { id, isLiked };
         try {
@@ -43,7 +57,7 @@ const ProductsList = () => {
           console.error(`Error updating liked status for product ID: ${id}`, error);
         }
     };
-
+  
     
 
     useEffect(() => {
@@ -78,6 +92,14 @@ const ProductsList = () => {
     
         fetchProductsAndLikes();
     }, [query, catQuery]);
+
+    useEffect(() => {
+        if (selectedProductId) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    }, [selectedProductId]);
     
 
     return (
@@ -107,11 +129,13 @@ const ProductsList = () => {
                                             <AiOutlineHeart className="text-black" size={24} />
                                         )} 
                                     </button>
-                                    <button
+                                    <Button
+                                        onClick={() => handleAddToCartClick(product.id)}
                                         className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-50 text-white font-medium opacity-0 group-hover:opacity-100 duration-300 ease-in-out z-10 h-[40px] w-[200px] rounded-full"
                                     >
                                         Add to Cart
-                                    </button>
+                                    </Button>
+                                    
                                 </div>
                                 <div className="mt-4 flex justify-between">
                                     <div>
@@ -132,8 +156,21 @@ const ProductsList = () => {
                     </div>
                 </div>
             </div>
+            {/* Modal outside the map */}
+            {selectedProductId && (
+                <>
+                    <ModalBackdrop disableInteraction={true} />
+
+                    <AddToCartModal 
+                        productId={selectedProductId} 
+                        onAdd={handleAddToCart} 
+                        onCancel={handleModalCancel} 
+                    />
+                </>
+            )}
         </div>
     )
 }
+
 
 export default ProductsList

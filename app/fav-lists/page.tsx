@@ -4,7 +4,7 @@ const FavsListPage: React.FC = () => {
     return (
         <div>
             <FavsList />
-        </div>
+        </div> 
     )
 }
 

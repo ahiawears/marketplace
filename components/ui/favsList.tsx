@@ -2,10 +2,11 @@
 
 import removeFavedItem from "@/actions/remove-faved-item";
 import { ProductsListType } from "@/lib/types"
-import { revalidatePath } from "next/cache";
+import { revalidatePath } from "next/cache";   
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react"
 import { FaRegTrashAlt } from "react-icons/fa";
+import { Button } from "./button";
 
 const FavsList = () => {
 
@@ -65,12 +66,18 @@ const FavsList = () => {
                                             router.push(`/product-detail/${product.id}`);
                                         }}
                                     />
-                                    <button
+                                    <Button
                                         onClick={() => removeFavItem(product.id)}
-                                        className="absolute top-2 right-2 p-2 cursor-pointer z-10 text-white group-hover:opacity-100 opacity-0 transition-opacity duration-300 ease-in-out"
+                                        className="absolute top-2 right-2 p-2 cursor-pointer z-10 text-white group-hover:opacity-100 opacity-0 transition-opacity duration-300 ease-in-out bg-transparent hover:bg-transparent"
                                     >
                                         <FaRegTrashAlt className="text-black" size={24} />
-                                    </button>
+                                    </Button>
+
+                                    <Button
+                                        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-50 text-white font-medium opacity-0 group-hover:opacity-100 duration-300 ease-in-out z-10 h-[40px] w-[200px] rounded-full"
+                                    >
+                                        Add to Cart
+                                    </Button>
 
                                 </div>
                                 <div className="mt-4 flex justify-between">

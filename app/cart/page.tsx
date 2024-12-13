@@ -28,34 +28,66 @@ const CartPage: React.FC = () => {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        const fetchCartItems = async () => {
-            try {
-                const response = await fetch("/api/cart");
-                const data = await response.json();
+    const fetchCartItems = async () => {
+        try {
+            const response = await fetch("/api/cart");
+            const data = await response.json();
 
-                if (response.ok) {
-                    setCartItems(data.data); 
-                } else {
-                    console.error("Failed to fetch cart items:", data.error);
-                }
-            } catch (error) {
-                console.error("Error fetching cart items:", error);
-            } finally {
-                setLoading(false);
+            if (response.ok) {
+                setCartItems(data.data); 
+            } else {
+                console.error("Failed to fetch cart items:", data.error);
             }
-        };
+        } catch (error) {
+            console.error("Error fetching cart items:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
+    useEffect(() => {
         fetchCartItems();
     }, []);
 
-    const totalPrice = cartItems.length > 0 ? cartItems[0].cumPrice : 0;
+    const handleQuantityChange = async (
+        qty: number,
+        mainCartId: string,
+        cartItemId: string
+    ) => {
+        try {
+            // Call server to update the quantity
+            await updateCartItemQuantity(qty, mainCartId, cartItemId, 0);
 
-    const handleDelete = (mainCartId: string, cart_item_id: string) => {
+            // Update cartItems locally
+            setCartItems((prevItems) =>
+                prevItems.map((item) =>
+                    item.cart_item_id === cartItemId
+                        ? { ...item, quantity: qty }
+                        : item
+                )
+            );
+        } catch (error) {
+            console.error("Error updating quantity:", error);
+        }
+
+        fetchCartItems();
+    };
+
+    const handleDelete = (mainCartId: string, cartItemId: string) => {
         if (confirm("Are you sure you want to delete this item?")) {
-            deleteCartItem(mainCartId, cart_item_id);
+            try {
+                deleteCartItem(mainCartId, cartItemId);
+                setCartItems((prevItems) =>
+                    prevItems.filter((item) => item.cart_item_id !== cartItemId)
+                );
+            } catch (error) {
+                console.error("Error deleting item:", error);
+            }
+            fetchCartItems();
         }
     };
+
+    const totalPrice = cartItems.length > 0 ? cartItems[0].cumPrice : 0;
 
     if (loading) {
         return <div>Loading...</div>;
@@ -71,7 +103,8 @@ const CartPage: React.FC = () => {
                             <CartItem
                                 key={item.id}
                                 item={item}
-                                onDelete={() => handleDelete( item.cart_id, item.cart_item_id )}   
+                                onDelete={() => handleDelete( item.cart_id, item.cart_item_id )}
+                                onQuantityChange={handleQuantityChange}
                             />
                         ))}
                     </div>

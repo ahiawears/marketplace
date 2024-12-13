@@ -23,36 +23,24 @@ interface CartItemProps {
     cart_id: string;
   };
   onDelete: () => void;
+  onQuantityChange: (qty: number, mainCartId: string, cartItemId: string) => void;
 }
 
-const CartItem: React.FC<CartItemProps> = ({ item, onDelete }) => {
-  const [selectedQuantity, setSelectedQuantity] = useState<number | null>(null);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange }) => {
+    const [selectedQuantity, setSelectedQuantity] = useState<number>(item.quantity);
+    const [showConfirmation, setShowConfirmation] = useState(false);
 
-  const handleQuantityChange = (quantity: number) => {
-    setSelectedQuantity(quantity);
-    setShowConfirmation(true);
-  };
+    const handleQuantityChange = (quantity: number) => {
+        setSelectedQuantity(quantity);
+        setShowConfirmation(true);
+    };
 
-  const handleUpdate = async (qty: number, mainCartId: string, cartItemId: string, cartItemPrice: number) => {
-    console.log("Hello Update", qty, "Main Cart Id: ", mainCartId, "Cart Item Id: ", cartItemId);
+    const handleUpdate = () => {
+        onQuantityChange(selectedQuantity, item.cart_id, item.cart_item_id);
+        setShowConfirmation(false);
+    };
 
-    try {
-        updateCartItemQuantity(qty, mainCartId, cartItemId, cartItemPrice);
-    } catch (error) {
-        console.error(error);
-        console.log(error);
-    }
-    alert("Quantity successfully changed");
-  };
-
-  const handleCancel = () => {
-    setSelectedQuantity(null);
-    setShowConfirmation(false);
-  };
-
-  return (
-    <div>
+    return (
         <div className="flex items-center space-x-4 p-4 border-b">
             <img src={item.main_image_url} alt={item.product_name} width={150} height={150} className="rounded" />
             <div className="flex-1">
@@ -65,7 +53,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, onDelete }) => {
                     </label>
                     <Select
                         id={`quantity-${item.id}`}
-                        value={selectedQuantity ?? item.quantity}
+                        value={selectedQuantity}
                         onChange={(e) => handleQuantityChange(Number(e.target.value))}
                         className="border rounded px-2 py-1 md:w-1/6"
                     >
@@ -76,27 +64,23 @@ const CartItem: React.FC<CartItemProps> = ({ item, onDelete }) => {
                         ))}
                     </Select>
                 </div>
-            
             </div>
             <p className="text-sm font-semibold">${item.price.toFixed(2)}</p>
             <button onClick={onDelete} className="text-black">
                 <AiOutlineDelete size={24} />
             </button>
-
             {showConfirmation && (
                 <div className="flex items-center space-x-2 mt-2">
-                    <Button onClick={() => handleUpdate(Number(selectedQuantity), item.cart_id, item.cart_item_id, Number(item.price.toFixed(2)))} className="px-4 py-2 text-white rounded">
+                    <Button onClick={handleUpdate} className="px-4 py-2 text-white rounded">
                         Update
                     </Button>
-                    <Button onClick={handleCancel} className="px-4 py-2 bg-gray-300 rounded">
+                    <Button onClick={() => setShowConfirmation(false)} className="px-4 py-2 bg-gray-300 rounded">
                         Cancel
                     </Button>
                 </div>
             )}
-            </div>
-    </div>
-    
-  );
+        </div>
+    );
 };
 
-export default CartItem;
+export default CartItem
