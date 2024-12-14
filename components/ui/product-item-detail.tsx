@@ -36,13 +36,13 @@ const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, produ
     
         const item = {
             productId,
-            sizeId: selectedSize.size_id, // Correctly accessing size_id
-            quantity: 1, // Default quantity
+            sizeId: selectedSize.size_id,
+            quantity: 1,
             price: productPrice,
         };
     
         try {
-            await addItemToUserCart(item); // Call the action with the correct item
+            await addItemToUserCart(item);
             alert("Item added to cart!");
         } catch (error) {
             console.error("Error adding item to cart:", error);

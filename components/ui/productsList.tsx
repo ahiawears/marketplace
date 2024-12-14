@@ -163,7 +163,6 @@ const ProductsList = () => {
 
                     <AddToCartModal 
                         productId={selectedProductId} 
-                        onAdd={handleAddToCart} 
                         onCancel={handleModalCancel} 
                     />
                 </>
