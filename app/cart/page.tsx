@@ -6,6 +6,7 @@ import OrderSummary from "@/components/ui/order-summary";
 import { deleteCartItem, updateCartItemQuantity } from "@/actions/updateCartItem";
 import { Logo } from "@/components/ui/logo";
 import { ShoppingCart } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface CartItem {
     id: number;
@@ -27,6 +28,7 @@ interface CartItem {
 const CartPage: React.FC = () => {
     const [cartItems, setCartItems] = useState<CartItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
     const fetchCartItems = async () => {
         try {
@@ -73,6 +75,16 @@ const CartPage: React.FC = () => {
         fetchCartItems();
     };
 
+    const handleCheckout = async () => {
+        try {
+            router.push('/place-order')
+        } catch (error) {
+            
+        } finally {
+            setLoading(false);
+        }
+    }
+
     const handleDelete = (mainCartId: string, cartItemId: string) => {
         if (confirm("Are you sure you want to delete this item?")) {
             try {
@@ -103,7 +115,7 @@ const CartPage: React.FC = () => {
                             <CartItem
                                 key={item.id}
                                 item={item}
-                                onDelete={() => handleDelete( item.cart_id, item.cart_item_id )}
+                                onDelete={() => handleDelete(item.cart_id, item.cart_item_id)}
                                 onQuantityChange={handleQuantityChange}
                             />
                         ))}
@@ -111,7 +123,10 @@ const CartPage: React.FC = () => {
 
                     {/* Right column: Order summary */}
                     <div className="w-full md:w-1/3">
-                        <OrderSummary totalPrice={totalPrice}/>
+                        <OrderSummary 
+                            totalPrice={totalPrice}
+                            onCheckOut={() => handleCheckout()}
+                        />
                     </div>
                 </div>
             ) : (

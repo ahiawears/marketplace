@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '2mb', // Set the limit to 2 MB (adjust as needed)
     },
   },
+  env: {
+    FLUTTERWAVE_SECRET_KEY: process.env.FLUTTERWAVE_SECRET_KEY,
+    FLUTTERWAVE_ENCRYPTION_KEY: process.env.FLUTTERWAVE_ENCRYPTION_KEY, // Must be 24 characters
+  },
 };
 
 export default nextConfig;

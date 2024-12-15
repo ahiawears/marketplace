@@ -50,7 +50,7 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({ productId, onCancel }) 
 
                     <div className="flex gap-4 float-right bottom-0">
                         
-                        <Button onClick={onCancel} className="bg-gray-300">
+                        <Button onClick={onCancel} className="py-2 px-4 text-white rounded-lg">
                             Cancel
                         </Button>
                     </div>

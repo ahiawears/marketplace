@@ -23,16 +23,15 @@ const SuccessModal: React.FC<SuccessModalProps> = ({productName, successMessage,
                     strokeWidth="2" 
                     strokeLinecap="round" 
                     strokeLinejoin="round" 
-                    className="lucide lucide-check">
+                    className="lucide lucide-check mx-auto my-4">
                         <path 
                             d="M20 6 9 17l-5-5"
                         />
                 </svg>
-                <p>{productName} {successMessage}</p>
+                <p className="text-center my-4">{productName} {successMessage}</p>
 
-                <div className="flex gap-4 float-right bottom-0">
-                        
-                    <Button onClick={onCancel} className="bg-gray-300">
+                <div className="flex gap-4 mx-auto bottom-0 mt-6">
+                    <Button onClick={onCancel} className="w-full py-2 px-4 text-white rounded-lg">
                         OK
                     </Button>
                 </div>
