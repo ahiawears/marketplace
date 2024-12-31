@@ -326,7 +326,7 @@ const AddressForm = ({ selectedCountry, countryCode, handleChange, firstName, la
                             </option>
                             {countries.map((country) => (
                                 <option key={`${country.code}-${country.name}`} value={country.id}>
-                                    {`${country.flag} ${country.name} ${country.code}`}
+                                    {`${country.flag + " " + country.name + " " + country.code}`}
                                 </option>
                             ))}
                         </Select>

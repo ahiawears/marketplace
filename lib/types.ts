@@ -25,6 +25,8 @@ export type ProductDetails = {
   description: string;
   quantities: { [size: string]: number };
   subCategory: string;
+  colorName: string;
+  colorHex: string;
 };
 
 export interface ProductData {
@@ -39,6 +41,8 @@ export interface ProductData {
   description: string;
   quantities: { [size: string]: number };
   subCategory: string;
+  colorName: string;
+  colorHex: string;
 }
 
 // A helper function to map ProductDetails to ProductData
@@ -56,6 +60,8 @@ export const mapProductDetailsToProductData = (
   description: details.description,
   quantities: details.quantities,
   subCategory: details.subCategory,
+  colorName: details.colorName,
+  colorHex: details.colorHex,
 });
 
 export interface UserDetails {
@@ -105,4 +111,34 @@ export interface UserAddressType {
   country_code: string;
 }
   
+export interface ProductVariantType {
+  currentSlide: number;
+  main_image_url: string;
+  productId: string;
+  variantId: string;
+  variantName: string;
+  variantSku: string;
+  quantities: { [size: string]: number };
+  images: string[];
+  colorName: string;
+  price: string;
+  colorHex: string;
+  currency: string;
+}
+
+export interface GeneralProductDetailsType {
+  productName: string;
+  productDescription: string;
+  category: string;
+  subCategory: string;
+  tags: string[];
+  currency: string;
+}
+
+export interface PhysicalAttributesType {
+  weight: string;
+  height: string;
+  width: string;
+  depth: string;
+}
 

@@ -1,5 +1,6 @@
 // components/OrderSummary.tsx
 import React from 'react';
+import { Button } from './button';
 
 interface OrderSummaryProps {
     totalPrice: number;
@@ -15,13 +16,13 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ totalPrice, onCheckOut }) =
                 <span>Total Price:</span>
                 <span>${totalPrice}</span>
             </div>
-            <button
+            <Button
                 onClick={onCheckOut}
                 
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 rounded my-5"
+                className="w-full text-white font-semibold py-2 rounded my-5"
             >
                 Checkout
-            </button>
+            </Button>
         </div>
     );
 };

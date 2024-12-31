@@ -8,9 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { QRCodeCanvas } from "qrcode.react";
 import { addProduct } from "@/actions/uploadProduct";
 import { ProductData } from "@/lib/types";
-import { Router } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { CropModal } from "../modals/crop-modal";
+import PublishProduct from "./publish-product";
+import AddProductDetails from "./add-product-details";
+
 
 interface AddProductFormProps {
   initialData?: ProductData;
@@ -55,28 +56,26 @@ const AddProductForm = ({ initialData }: AddProductFormProps) => {
     }
   }, [initialData]);
 
-  const handleCategoryChange = (
-    event: React.ChangeEvent<HTMLSelectElement>
-  ) => {
-    const categoryName = event.target.value;
-    setSelectedCategory(categoryName);
+    // const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    //     const categoryName = event.target.value;
+    //     setSelectedCategory(categoryName);
 
-    const category = categoriesList.find((cat) => cat.name === categoryName);
-    setSubcategories(category?.subcategories || []);
-    setCustomTags(category ? category.tags : []);
+    //     const category = categoriesList.find((cat) => cat.name === categoryName);
+    //     setSubcategories(category?.subcategories || []);
+    //     setCustomTags(category ? category.tags : []); 
 
-    setSizes(category?.sizes || []); // Assuming sizes are part of categoriesList
+    //     setSizes(category?.sizes || []); // Assuming sizes are part of categoriesList
 
-    // Initialize quantities for each size
-    const initialQuantities: { [size: string]: number } = {};
-    (category?.sizes || []).forEach((size) => {
-      initialQuantities[size] = 0; // Default quantity 0
-    });
-    setQuantities(initialQuantities);
-
-    setSelectedSubcategory("");
-    setSelectedTags([]);
-  };
+    //     // Initialize quantities for each size
+    //     const initialQuantities: { [size: string]: number } = {};
+    //     (category?.sizes || []).forEach((size) => {
+    //         initialQuantities[size] = 0; // Default quantity 0
+    //     });
+    //     setQuantities(initialQuantities);
+        
+    //     setSelectedSubcategory("");
+    //     setSelectedTags([]);
+    // };
 
   const handleSubcategorySelect = (subcategory: string) => {
     setSelectedSubcategory(subcategory);
@@ -198,305 +197,259 @@ const AddProductForm = ({ initialData }: AddProductFormProps) => {
     }
   };
 
-  return (
-    <form className="space-y-6" onSubmit={handleSubmit}>
-      <div>
-        <label
-          htmlFor="productName"
-          className="block text-sm font-bold text-gray-900"
-        >
-          Enter Product Name:*
-        </label>
-        <div className="mt-2">
-          <Input
-            id="productName"
-            name="productName"
-            type="text"
-            required
-            onChange={(e) => setProductName(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div>
-        <div>
-          <label
-            htmlFor="category"
-            className="block text-sm font-bold text-gray-900"
-          >
-            Category:*
-          </label>
-          <div className="mt-2">
-            <Select
-              id="category"
-              name="category"
-              onChange={handleCategoryChange}
-              value={selectedCategory}
-            >
-              <option value="" disabled>
-                Select a category
-              </option>
-              {categoriesList.map((category) => (
-                <option key={category.name} value={category.name}>
-                  {category.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-
-        {subcategories.length > 0 && (
-          <div className="mt-4">
-            <p className="text-sm font-bold text-gray-900 mb-2">
-              Subcategories:
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {subcategories.map((sub, index) => (
-                <span
-                  key={index}
-                  onClick={() => handleSubcategorySelect(sub)}
-                  className={`px-3 py-1 rounded-full text-sm cursor-pointer 
-                                        ${
-                                          selectedSubcategory === sub
-                                            ? "bg-indigo-500 text-white"
-                                            : "bg-indigo-200 text-indigo-800"
-                                        } 
-                                        hover:bg-indigo-300`}
-                >
-                  {sub}
-                </span>
-              ))}
+    return (
+        <div className="container mx-auto p-4 mt-4">
+            <div className="flex flex-col md:flex-row gap-8">
+                <div className="w-full md:w-2/3">
+                    <AddProductDetails />
+                </div>
+                <div className="w-full md:w-1/4 mt-12">
+                    <PublishProduct />
+                </div>
             </div>
-          </div>
-        )}
-
-        {customTags.length > 0 && (
-          <div className="mt-4">
-            <p className="text-sm font-bold text-gray-900 mb-2">Tags:</p>
-            <div className="flex flex-wrap gap-2">
-              {customTags.map((tag, index) => (
-                <span
-                  key={index}
-                  className={`px-3 py-1 rounded-full text-sm cursor-pointer 
-                                        ${
-                                          selectedTags.includes(tag)
-                                            ? "bg-indigo-500 text-white"
-                                            : "bg-indigo-200 text-indigo-800"
-                                        } 
-                                        hover:bg-indigo-300`}
-                  onClick={() => handleTagClick(tag)}
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-      {/*upload image section */}
-      {isMounted && (
-        <div className="mt-4">
-          <label
-            htmlFor="fileInput"
-            className="block text-sm font-bold text-gray-900 mb-5"
-          >
-            Upload Product Image:*
-          </label>
-
-          <div className="relative w-full h-[600px]">
-            {/* Left button */}
-            {currentSlide > 0 && (
-              <button
-                className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-300 p-2 rounded-full"
-                onClick={prevSlide}
-              >
-                ◀
-              </button>
-            )}
-
-            <CropModal
-              image={currentImage}
-              onClose={(image) => {
-                setCurrentImage(undefined);
-                setImages((prevImages) => {
-                  const newImages = [...prevImages];
-                  newImages[currentSlide * 2] = image;
-                  return newImages;
-                });
-              }}
-            />
-
-            {/* Image Carousel */}
-            <div
-              ref={carouselRef}
-              className="w-full h-full flex space-x-4 overflow-x-hidden"
-            >
-              {images
-                .slice(currentSlide * 2, currentSlide * 2 + 2)
-                .map((image, index) => (
-                  <div
-                    key={index}
-                    className="relative w-full aspect-1 h-[600px]"
-                  >
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) =>
-                        handleFileChange(e, currentSlide * 2 + index)
-                      }
-                      className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-                    />
-                    <img
-                      src={
-                        image ||
-                        "https://placehold.co/500x600?text=Drop+the+products+main+image+here%0Aor%0Aclick+here+to+browse"
-                      }
-                      alt={`Slide ${currentSlide * 2 + index + 1}`}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ))}
-            </div>
-
-            {/* Right button */}
-            {currentSlide < images.length / 2 - 1 && (
-              <button
-                className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-300 p-2 rounded-full"
-                onClick={nextSlide}
-              >
-                ▶
-              </button>
-            )}
-          </div>
         </div>
-      )}
-      {/*input sizes available */}
-      {sizes.length > 0 && (
-        <div className="my-7">
-          <p className="text-sm font-bold text-gray-900 mb-4">
-            Enter Quantities for Sizes Available:
-          </p>
-          <div className="grid grid-cols-3 gap-4">
-            {sizes.map((size, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <label
-                  htmlFor={`${size}`}
-                  className="block text-sm font-medium text-gray-700"
-                >
-                  {size}:
-                </label>
-                <Input
-                  id={`${size}`}
-                  name={`${size}`}
-                  type="number"
-                  min={0}
-                  value={quantities[size]}
-                  onChange={(e) =>
-                    handleQuantityChange(size, Number(e.target.value))
-                  }
-                  className="w-20"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        // <form className="space-y-6" onSubmit={handleSubmit}>
+        //     <div>
+        //         <label htmlFor="productName" className="block text-sm font-bold text-gray-900">
+        //             Enter Product Name:* 
+        //         </label>
+        //         <div className="mt-2">
+        //             <Input
+        //                 id="productName"
+        //                 name="productName"
+        //                 type="text"
+        //                 required
+        //                 onChange={(e) => setProductName(e.target.value)}
+        //             />
+        //         </div>
+        //     </div>
 
-      {/* Enter the products description */}
-      <div>
-        <label
-          htmlFor="productDescription"
-          className="block text-sm font-bold text-gray-900"
-        >
-          Enter Product Description:*
-        </label>
-        <div className="mt-2">
-          <Textarea
-            id="productDescription"
-            name="productDescription"
-            rows={4}
-            required
-            placeholder="Enter the product description here"
-          />
-        </div>
-      </div>
+        //     <div> 
+        //         <div>
+        //             <label htmlFor="category" className="block text-sm font-bold text-gray-900">
+        //                 Category:*
+        //             </label>
+        //             <div className="mt-2">
+        //                 <Select
+        //                     id="category"
+        //                     name="category"
+        //                     onChange={handleCategoryChange}
+        //                     value={selectedCategory}
+        //                 >
+        //                     <option value="" disabled>Select a category</option>
+        //                     {categoriesList.map((category) => (
+        //                         <option key={category.name} value={category.name}>
+        //                             {category.name}
+        //                         </option>
+        //                     ))}
+        //                 </Select>
+        //             </div>
+        //         </div>
 
-      {/* Enter the products price */}
-      <div>
-        <label
-          htmlFor="price"
-          className="block text-sm font-bold text-gray-900"
-        >
-          Price:*
-        </label>
-        <div className="mt-2">
-          <Input
-            id="price"
-            name="price"
-            type="number"
-            min="0"
-            step="0.01"
-            required
-            placeholder="Enter the product price"
-          />
-        </div>
-      </div>
+        //         {subcategories.length > 0 && (
+        //             <div className="mt-4">
+        //                 <p className="text-sm font-bold text-gray-900 mb-2">Subcategories:</p>
+        //                 <div className="flex flex-wrap gap-2">
+        //                     {subcategories.map((sub, index) => (
+        //                         <span
+        //                             key={index}
+        //                             onClick={() => handleSubcategorySelect(sub)}
+        //                             className={`px-3 py-1 rounded-full text-sm cursor-pointer 
+        //                                 ${selectedSubcategory === sub 
+        //                                     ? "bg-indigo-500 text-white" 
+        //                                     : "bg-indigo-200 text-indigo-800"} 
+        //                                 hover:bg-indigo-300`}
+        //                         >
+        //                             {sub}
+        //                         </span>
+        //                     ))}
+        //                 </div>
+        //             </div>
+        //         )}
 
-      {/* Enter Stock keeping unit code */}
-      <div>
-        <label htmlFor="sku" className="block text-sm font-bold text-gray-900">
-          SKU (Stock Keeping Unit):
-        </label>
-        <div className="mt-2">
-          <Input
-            id="sku"
-            name="sku"
-            type="text"
-            required
-            value={sku}
-            onChange={handleSkuChange}
-            placeholder="Enter the SKU"
-          />
-        </div>
+        //         {customTags.length > 0 && (
+        //             <div className="mt-4">
+        //                 <p className="text-sm font-bold text-gray-900 mb-2">Tags:</p>
+        //                 <div className="flex flex-wrap gap-2">
+        //                     {customTags.map((tag, index) => (
+        //                         <span
+        //                             key={index}
+        //                             className={`px-3 py-1 rounded-full text-sm cursor-pointer 
+        //                                 ${selectedTags.includes(tag) 
+        //                                     ? "bg-indigo-500 text-white" 
+        //                                     : "bg-indigo-200 text-indigo-800"} 
+        //                                 hover:bg-indigo-300`}
+        //                             onClick={() => handleTagClick(tag)}
+        //                         >
+        //                             {tag}
+        //                         </span>
+        //                     ))}
+        //                 </div>
+        //             </div>
+        //         )}
+        //     </div>
+        //     {/*upload image section */}
+        //     {isMounted && (
+        //         <div className="mt-4">
+        //             <label htmlFor="fileInput" className="block text-sm font-bold text-gray-900 mb-5">
+        //                 Upload Product Image:*
+        //             </label>
+                    
+        //             <div className="relative w-full h-[600px]">
+        //                 {/* Left button */}
+        //                 {currentSlide > 0 && (
+        //                     <button
+        //                         className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-300 p-2 rounded-full"
+        //                         onClick={prevSlide}
+        //                     >
+        //                         ◀
+        //                     </button>
+        //                 )}
 
-        {sku && (
-          <div className="mt-4">
-            <QRCodeCanvas value={sku} size={128} id="qr-code" />
-          </div>
-        )}
-      </div>
+        //                 {/* Image Carousel */}
+        //                 <div ref={carouselRef} className="w-full h-full flex space-x-4 overflow-x-hidden">
+        //                     {images.slice(currentSlide * 2, currentSlide * 2 + 2).map((image, index) => (
+        //                         <div key={index} className="relative w-full h-[600px]">
+        //                             <input
+        //                                 type="file"
+        //                                 accept="image/*"
+        //                                 onChange={(e) => handleFileChange(e, currentSlide * 2 + index)}
+        //                                 className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
+        //                             />
+        //                             <img
+        //                                 src={image || "https://placehold.co/500x600?text=Drop+the+products+main+image+here%0Aor%0Aclick+here+to+browse"}
+        //                                 alt={`Slide ${currentSlide * 2 + index + 1}`}
+        //                                 className="w-full h-full object-cover"
+        //                             />
+        //                         </div>
+        //                     ))}
+        //                 </div>
 
-      {/* enter weight(kg) */}
-      <div>
-        <label
-          htmlFor="weight"
-          className="block text-sm font-bold text-gray-900"
-        >
-          Weight in kg (Optional):
-        </label>
-        <div className="mt-2">
-          <Input
-            id="weight"
-            name="weight"
-            type="number"
-            min="0"
-            step="0.01"
-            placeholder="Enter the product weight in kilograms"
-          />
-        </div>
-      </div>
+        //                 {/* Right button */}
+        //                 {currentSlide < images.length / 2 - 1 && (
+        //                     <button
+        //                         className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-300 p-2 rounded-full"
+        //                         onClick={nextSlide}
+        //                     >
+        //                         ▶
+        //                     </button>
+        //                 )}
+        //             </div>
+        //         </div>
+        //     )}
+        //     {/*input sizes available */}
+        //     {sizes.length > 0 && (
+        //         <div className="my-7">
+        //             <p className="text-sm font-bold text-gray-900 mb-4">Enter Quantities for Sizes Available:</p>
+        //             <div className="grid grid-cols-3 gap-4">
+        //                 {sizes.map((size, index) => (
+        //                     <div key={index} className="flex items-center space-x-2">
+        //                         <label htmlFor={`${size}`} className="block text-sm font-medium text-gray-700">
+        //                             {size}:
+        //                         </label>
+        //                         <Input
+        //                             id={`${size}`}   
+        //                             name={`${size}`}
+        //                             type="number"
+        //                             min={0}
+        //                             value={quantities[size]}
+        //                             onChange={(e) => handleQuantityChange(size, Number(e.target.value))}
+        //                             className="w-20"
+        //                         />
+        //                     </div>
+        //                 ))}
+        //             </div>
+        //         </div>
+        //     )}
 
-      {/* Submit form */}
-      <div>
-        <button
-          type="submit"
-          className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        >
-          Submit Product
-        </button>
-      </div>
-    </form>
-  );
+        //     {/* Enter the products description */}
+        //     <div>
+        //         <label htmlFor="productDescription" className="block text-sm font-bold text-gray-900">
+        //             Enter Product Description:*
+        //         </label>
+        //         <div className="mt-2">
+        //             <Textarea
+        //                 id="productDescription"
+        //                 name="productDescription"
+        //                 rows={4}
+        //                 required
+        //                 placeholder="Enter the product description here"
+        //             />
+        //         </div>
+        //     </div>
+
+        //     {/* Enter the products price */}
+        //     <div>
+        //         <label htmlFor="price" className="block text-sm font-bold text-gray-900">
+        //             Price:*
+        //         </label>
+        //         <div className="mt-2">
+        //             <Input
+        //                 id="price"
+        //                 name="price"
+        //                 type="number"
+        //                 min="0"
+        //                 step="0.01"
+        //                 required
+        //                 placeholder="Enter the product price"
+        //             />
+        //         </div>
+        //     </div>
+
+        //     {/* Enter Stock keeping unit code */}
+        //     <div>
+        //         <label htmlFor="sku" className="block text-sm font-bold text-gray-900">
+        //             SKU (Stock Keeping Unit):
+        //         </label>
+        //         <div className="mt-2">
+        //             <Input
+        //                 id="sku"
+        //                 name="sku"
+        //                 type="text"
+        //                 required
+        //                 value={sku}
+        //                 onChange={handleSkuChange}
+        //                 placeholder="Enter the SKU"
+        //             />
+        //         </div>
+
+        //         {sku && (
+        //             <div className="mt-4">
+        //                 <QRCodeCanvas value={sku} size={128} id="qr-code"/>
+        //             </div>
+                    
+        //         )}
+        //     </div>
+
+
+        //     {/* enter weight(kg) */}
+        //     <div>
+        //         <label htmlFor="weight" className="block text-sm font-bold text-gray-900">
+        //             Weight in kg (Optional):
+        //         </label>
+        //         <div className="mt-2">
+        //             <Input
+        //                 id="weight"
+        //                 name="weight"
+        //                 type="number"
+        //                 min="0"
+        //                 step="0.01"
+        //                 placeholder="Enter the product weight in kilograms"
+        //             />
+        //         </div>
+        //     </div>
+
+        //     {/* Submit form */}
+        //     <div>
+        //         <button
+        //             type="submit"
+        //             className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        //         >
+        //             Submit Product 
+        //         </button>
+        //     </div>
+        // </form>
+    );
 };
 
 export default AddProductForm;

@@ -14,12 +14,6 @@ const PlaceOrder = () => {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
 
-    const addresses = [
-        { id: 1, label: "123 Main Street, Lagos, Nigeria" },
-        { id: 2, label: "456 Oak Avenue, Abuja, Nigeria" },
-        { id: 3, label: "789 Pine Drive, Port Harcourt, Nigeria" },
-    ];
-
     const accordionItems = [
         {
             title: "User Information",

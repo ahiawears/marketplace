@@ -10,7 +10,6 @@ const PaymentForm = () => {
     const [cvv, setCvv] = useState("");
     const [amount, setAmount] = useState("");
 
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
     
@@ -35,10 +34,13 @@ const PaymentForm = () => {
                 console.log(data.redirect_url);
                 // Redirect to payment success page or show confirmation
                 if (data.redirect_url) {
+                    console.log("The redirect url: ", data.redirect_url)
                     window.location.href = data.redirect_url;
-                } else {
-                    alert("Payment processed successfully!");
-                }
+                } else if(data.flw_ref){
+                    console.log("Payment processed through OTP!", data.flw_ref);
+                } //else if(data.redirect_url>0 && data.flw_ref>0) {
+                    //console.log("The redirect url: ", data.redirect_url, "Payment processed through OTP!", data.flw_ref)
+                //}
             } else {
                 alert(data.error || "Payment failed!");
             }
@@ -122,6 +124,8 @@ const PaymentForm = () => {
                     Pay Now
                 </Button>
             </form>
+
+
         </div>
     );
 };

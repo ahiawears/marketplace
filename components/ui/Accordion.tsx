@@ -9,7 +9,7 @@ type AccordionItem = {
 
 type AccordionProps = {
   items: AccordionItem[];
-};
+};  
 
 const Accordion: React.FC<AccordionProps> = ({ items }) => {
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
@@ -21,10 +21,10 @@ const Accordion: React.FC<AccordionProps> = ({ items }) => {
   return (
     <div className="space-y-4">
       {items.map((item, index) => (
-        <div key={index} className="border border-gray-300 rounded-lg shadow">
+        <div key={index} className="rounded-lg shadow">
           <button
             onClick={() => handleToggle(index)}
-            className="w-full flex justify-between items-center p-4 text-left text-lg font-medium text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none focus:ring"
+            className="w-full flex justify-between items-center p-4 text-left text-lg font-medium text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none"
           >
             <span>{item.title}</span>
             <svg
