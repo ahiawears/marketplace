@@ -4,10 +4,12 @@ import { Input } from '../ui/input';
 
 interface MeasurementSizesTableProps {
     category: string;
+    measurements: { [size: string]: number };
+    setMeasurements: React.Dispatch<React.SetStateAction<{ [size: string]: number }>>;
 }
 
 // Dynamic table component for measurements, sizes, and quantities
-const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category }) => {
+const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category, measurements, setMeasurements }) => {
     if (!category) {
         return <p className="text-gray-500">Please select a category to proceed.</p>;
     }

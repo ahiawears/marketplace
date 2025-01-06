@@ -13,13 +13,14 @@ interface ProductVariantProps {
     originalProductName: string;
     sizes: string[];
     currencySymbol: string;
+    category: string;
 }
 
-const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariants, originalProductName, sizes, currencySymbol}) => {
-    const [images, setImages] = useState<string[]>(["", "", "", ""]);
-    const carouselRef = useRef<HTMLDivElement>(null);
+const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariants, originalProductName, sizes, currencySymbol, category}) => {
     const [selectedColor, setSelectedColor] = useState("#000000");
     const [colorName, setColorName] = useState("Black");
+    const carouselRefs = useRef<HTMLDivElement[]>([]);
+
 
     const addProductVariant = () => {
         const initialQuantities = sizes.reduce((acc, size) => {
@@ -36,8 +37,8 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             variantId: "",
             variantSku: "",
             quantities: initialQuantities,
-            images: ["", "", "", ""], // Add images array
-            currentSlide: 0, // Track slide per variant
+            images: ["", "", "", ""], 
+            currentSlide: 0, 
             currency: "",
             price: "",
         };
@@ -57,25 +58,53 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
     const prevSlide = (variantIndex: number) => {
         setVariants((prevVariants) => {
             const updatedVariants = [...prevVariants];
-            const currentSlide = updatedVariants[variantIndex]?.currentSlide || 0;
+            const currentSlide = updatedVariants[variantIndex].currentSlide;
+    
+            // Ensure we don't go below the first slide
             if (currentSlide > 0) {
-                updatedVariants[variantIndex].currentSlide = currentSlide - 1;
+                const newSlide = currentSlide - 1;
+                updatedVariants[variantIndex].currentSlide = newSlide;
+    
+                // Scroll to the previous slide
+                scrollCarousel(variantIndex, newSlide);
             }
+    
             return updatedVariants;
         });
     };
-    
+    const scrollCarousel = (variantIndex: number, slideIndex: number) => {
+        const carousel = carouselRefs.current[variantIndex];
+        if (carousel) {
+            const slideWidth = carousel.clientWidth; // Dynamic width
+            const scrollPosition = slideIndex * 500;
+            carousel.scroll({
+                left: scrollPosition,
+                behavior: "smooth",
+            });
+        }
+    };
+
     const nextSlide = (variantIndex: number) => {
         setVariants((prevVariants) => {
             const updatedVariants = [...prevVariants];
-            const currentSlide = updatedVariants[variantIndex]?.currentSlide || 0;
-            const maxSlides = Math.ceil((updatedVariants[variantIndex]?.images?.length || 0) / 2);
-            if (currentSlide < maxSlides - 1) {
-                updatedVariants[variantIndex].currentSlide = currentSlide + 1;
+            const currentSlide = updatedVariants[variantIndex].currentSlide;
+            const maxSlides = updatedVariants[variantIndex].images.length - 1;
+            // Ensure we don't exceed the maximum number of slides
+            if (currentSlide < maxSlides) {
+                const newSlide = currentSlide + 1;
+                updatedVariants[variantIndex].currentSlide = newSlide;
+    
+                // Scroll to the next slide
+                scrollCarousel(variantIndex, newSlide);
             }
+    
             return updatedVariants;
         });
     };
+
+    useEffect(() => {
+        //console.log("The length of variant images are:", variants[0].images.length);
+    });
 
     const blobLoader = ({ src }: { src: string }) => {
         if (src.startsWith("blob:")) {
@@ -105,8 +134,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             });
         }
     };
-    
-    
 
     // Helper: Convert HEX to RGB
     const hexToRgb = (hex: string) => {
@@ -237,17 +264,16 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                     Upload Product Image:*
                                 </label>
                                 {/* Add Product Image Div */}
-                                <div className="w-full h-[300px] bg-slate-400">
-                                    <div className="">
-                                        <div className="relative w-full h-full">
+                                <div className="w-full h-[600px] bg-slate-50">
+                                    <div className="mt-4">
+                                        <div className="relative w-full h-[600px]">
                                             {/* Left Button */}
                                             {variant.currentSlide > 0 && (
                                                 <Button
                                                     type="button"
                                                     className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white ml-2 "
-                                                    onClick={(e) => {
-                                                        prevSlide(index);
-                                                    }}
+                                                    //disabled={variant.currentSlide === 0}
+                                                    onClick={() => prevSlide(index)}
                                                 >
                                                     ◀
                                                 </Button>
@@ -256,27 +282,32 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                             {/* Image Carousel */}
                                             <div 
                                                 ref={(el) => {
-                                                    if (carouselRef.current && el) {
-                                                        carouselRef.current.children[index] = el;
+                                                    if (carouselRefs.current && el) {
+                                                        carouselRefs.current[index] = el; // Assign the correct carousel to the ref
                                                     }
                                                 }}
-                                                className="w-full h-full flex space-x-4 overflow-x-hidden"
+                                                className="w-full h-full flex overflow-x-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth"
+                                                style={{ scrollSnapType: "x mandatory" }}
                                             >
-                                                {variant.images?.slice(variant.currentSlide * 2, variant.currentSlide * 2 + 2).map((image, imgIndex) => (
-                                                    <div key={imgIndex} className="relative w-full h-[300px] flex justify-center items-center bg-gray-100">
+                                                {variant.images.map((image, imgIndex) => (
+                                                    <div 
+                                                        key={imgIndex} 
+                                                        className="relative w-full h-[600px] flex justify-center items-center flex-shrink-0 overflow-x-hidden" 
+                                                        style={{ scrollSnapAlign: "center" }}  
+                                                    >
                                                         <Input
                                                             type="file"
                                                             accept="image/*"
-                                                            onChange={(e) => handleFileChange(e, index, variant.currentSlide * 2 + imgIndex)}
-                                                            className="absolute inset-0 opacity-0 w-250 h-full cursor-pointer"
+                                                            onChange={(e) => handleFileChange(e, index, variant.currentSlide)}
+                                                            className="absolute inset-0 opacity-0 w-full h-[600px] cursor-pointer"
                                                         />
                                                         <Image
                                                             src={
-                                                                image || "https://placehold.co/250x250.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
+                                                                image || "https://placehold.co/250x500.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
                                                             }
                                                             width={250}
-                                                            height={250}
-                                                            alt={`Slide ${variant.currentSlide * 2 + imgIndex + 1}`}
+                                                            height={600}
+                                                            alt={`Variant ${index + 1} Image ${imgIndex + 1}`}
                                                             loader={blobLoader}
                                                             priority                                                                
                                                             objectFit="fit"
@@ -286,17 +317,13 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                                 ))}
                                             </div>
 
-
-
                                             {/* Right Button */}
-
-                                            {variant.currentSlide < images.length / 2 - 1 && (
+                                            {variant.currentSlide < variant.images.length && (
                                                 <Button
                                                     type="button"
                                                     className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white mr-2"
-                                                    onClick={(e) => {
-                                                        nextSlide(index);
-                                                    }}
+                                                    //disabled={variant.currentSlide === variant.images.length - 1}
+                                                    onClick={() => nextSlide(index)}
                                                 >
                                                     ▶
                                                 </Button>

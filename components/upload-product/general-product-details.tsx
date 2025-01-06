@@ -125,9 +125,12 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ setGenera
                 ...prevDetails,
                 currency: sCurrency.code,
             }));
+
+            setSelectedCurrency(event.target.value);
         }
 
-        setSelectedCurrency(event.target.value);
+        //setSelectedCurrency(sCurrency.symbol);
+        console.log("The currency set is", event.target.value);
     }
 
     return (

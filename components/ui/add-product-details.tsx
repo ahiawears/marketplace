@@ -292,6 +292,8 @@ const AddProductDetails = () => {
 
         // TODO: Send `productData` to the backend or further processing
     };
+    const productCurrency = generalDetails.currency;
+    const productCurrencySymbol = currency.find((c) => c.code === productCurrency)?.symbol || "";
 
     const accordionItems = [
         {
@@ -305,8 +307,12 @@ const AddProductDetails = () => {
         {
             title: "Product Information",
             //content: <ProductVariantForm variants={productVariants} setVariants={setProductVariants} originalProductName={productName} sizes={sizes} currencySymbol={currencySymbol}/>
-            content: <MainProductForm variants={productVariants} setVariants={setProductVariants} originalProductName={productName} sizes={sizes} currencySymbol={currencySymbol} category={catName}/>
+            content: <MainProductForm variants={productVariants} setVariants={setProductVariants} originalProductName={productName} sizes={sizes} currencySymbol={productCurrencySymbol} category={catName}/>
         },
+        {
+            title: "Add Product Variants",
+            content: <ProductVariantForm variants={productVariants} setVariants={setProductVariants} originalProductName={productName} sizes={sizes} currencySymbol={productCurrencySymbol} category={catName}/>
+        }
     ];
 
     useEffect(() => {

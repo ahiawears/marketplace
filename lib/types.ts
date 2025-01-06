@@ -141,4 +141,3 @@ export interface PhysicalAttributesType {
   width: string;
   depth: string;
 }
-

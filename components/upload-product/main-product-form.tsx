@@ -5,6 +5,7 @@ import { ProductVariantType } from "@/lib/types";
 import { Input } from "../ui/input";
 import { ColourList } from "@/lib/coloursList";
 import MeasurementSizesTable from "./measurement-sizes-table";
+import { QRCodeCanvas } from "qrcode.react";
 
 interface ProductVariantProps {
     variants: ProductVariantType[];
@@ -22,6 +23,12 @@ const MainProductForm: React.FC<ProductVariantProps> = ({variants, setVariants, 
     const carouselRef = useRef<HTMLDivElement>(null);
     const [selectedColor, setSelectedColor] = useState("#000000");
     const [colorName, setColorName] = useState("Black");
+    const [measurements, setMeasurements] = useState({});
+    const [sku, setSku] = useState<string>("");
+    const [showQRCode, setShowQRCode] = useState<boolean>(false);
+    const [qrCodeBase64, setQrCodeBase64] = useState<string>("");
+    console.log("The curency symbol is ", currencySymbol);
+
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
         if (event.target.files && event.target.files[0]) {
@@ -153,8 +160,23 @@ const MainProductForm: React.FC<ProductVariantProps> = ({variants, setVariants, 
         setColorName(findNearestColor(hex));
     };
     
-    return (
-        
+    const handleSkuChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSku(event.target.value);
+        generateQRCode();
+    };
+
+    const generateQRCode = () => {
+        setShowQRCode(true);
+
+        const canvas = document.getElementById("qr-code") as HTMLCanvasElement;
+        if (canvas) {
+            const base64Image = canvas.toDataURL("image/png"); // Convert QR code to base64
+            setQrCodeBase64(base64Image); // Set base64 image in state
+            console.log(base64Image);
+        }
+    };
+
+    return (  
         <div>
             {/* Images Upload */}
             <div>
@@ -166,6 +188,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({variants, setVariants, 
                         <div className="relative w-full h-[600px]">
                             {currentSlide > 0 && (
                                 <Button
+                                    type="button"
                                     className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white ml-2 "
                                     onClick={prevSlide}
                                 >
@@ -183,9 +206,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({variants, setVariants, 
                                         key={index}
                                         className="relative w-full h-[600px] flex justify-center items-center flex-shrink-0 overflow-x-hidden"
                                         //style={{ scrollSnapAlign: 'center', width: 250 }}
-
                                     >
-                                        
                                         <Input
                                             type="file"
                                             accept="image/*"
@@ -195,7 +216,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({variants, setVariants, 
 
                                         <Image
                                             src={
-                                                image || "https://placehold.co/210x500.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
+                                                image || "https://placehold.co/250x500.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
                                             }
                                             width={250}
                                             height={600}
@@ -210,6 +231,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({variants, setVariants, 
 
                             {currentSlide < images.length / 1 - 1 && (
                                 <Button
+                                    type="button"
                                     className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white mr-2"
                                     onClick={nextSlide}
                                 >
@@ -290,14 +312,81 @@ const MainProductForm: React.FC<ProductVariantProps> = ({variants, setVariants, 
             </div>
 
             {/* Quantity and Measurements */}
-            <div>
-                <label htmlFor="measurementsList" className="block text-sm font-bold text-gray-900">
-                    Product Measurements Available:*
-                </label>
+            <div>         
+                {category && 
+                    <div>
+                        <label htmlFor="measurementsList" className="block text-sm font-bold text-gray-900">
+                            Product Measurements Available:*
+                        </label>
+                        <MeasurementSizesTable
+                            category={category}
+                            measurements={measurements}
+                            setMeasurements={setMeasurements} 
+                        />   
+                    </div>
+                     
+                }
             </div>
-            {category && 
-                <MeasurementSizesTable category={category} />    
-            }
+
+            {/*  Add Products Price */}
+            <div className="mb-5">
+                <label htmlFor="price" className="block text-sm font-bold text-gray-900 mb-2">
+                    Product Price:*
+                </label>
+                <div className="flex flex-col md:flex-row gap-8">
+                    <div className="w-full md:w-1/2">
+                        {/* Input Price */}
+                        <div className="flex items-center border border-gray-300 rounded-md">
+                            <Input
+                                id="currencySymbol"
+                                name="currencySymbol"
+                                type="text"
+                                value={currencySymbol}
+                                readOnly
+                                required
+                                className="text-center block border-l p-2 text-gray-900 bg-transparent w-1/5"
+                            />
+                            {/* Fix Price Input */}
+                            <Input
+                                id="price"
+                                name="price"
+                                type="number"
+                                dir="rtl"
+                                min={0}
+                                step={0.01}
+                                required
+                                className="block border-l p-2 text-gray-900 bg-transparent w-10/12 [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Product Sku */}
+            <div>
+                <label htmlFor="sku" className="block text-sm font-bold text-gray-900">
+                    SKU (Stock Keeping Unit):
+                </label>
+                <div className="mt-2">
+                    <Input
+                        id="sku"
+                        name="sku"
+                        type="text"
+                        required
+                        value={sku}
+                        onChange={handleSkuChange}
+                        placeholder="Enter the product SKU"
+                        className="block w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+
+                {sku && (
+                    <div className="mt-4">
+                        <QRCodeCanvas value={sku} size={128} id="qr-code"/> 
+                    </div>
+                )}
+            </div>
+            
         </div>
     );
 };
