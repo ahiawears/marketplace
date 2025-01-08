@@ -94,7 +94,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         } 
     };
 
-
     const scrollCarousel = (variantIndex: number, slideIndex: number) => {
         if (carouselRefs.current) {
             const carousel = carouselRefs.current[variantIndex];
@@ -120,11 +119,34 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         }
     };
 
+    useEffect(() => {
+        const preventScroll = (event: Event) => event.preventDefault();
+    
+        if (carouselRefs.current) {
+            carouselRefs.current.forEach((carousel) => {
+                if (carousel) {
+                    carousel.addEventListener("wheel", preventScroll, { passive: false });
+                }
+            });
+        }
+    
+        return () => {
+            if (carouselRefs.current) {
+                carouselRefs.current.forEach((carousel) => {
+                    if (carousel) {
+                        carousel.removeEventListener("wheel", preventScroll);
+                    }
+                });
+            }
+        };
+    }, [carouselRefs]);
+    
+    
     const blobLoader = ({ src }: { src: string }) => {
         if (src.startsWith("blob:")) {
-            return src; // Let the browser handle blob URLs directly
+            return src; 
         }
-        return src; // Default behavior
+        return src;
     };
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, variantIndex: number, imageIndex: number) => {
@@ -134,13 +156,12 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                 alert("File size exceeds 2MB");
                 return;
             }
-            const imageUrl = URL.createObjectURL(file); // Temporary preview
+            const imageUrl = URL.createObjectURL(file); 
     
             setVariants((prevVariants) => {
                 const updatedVariants = [...prevVariants];
                 const variantImages = [...updatedVariants[variantIndex].images];
     
-                // Replace the image at the specific index
                 variantImages[imageIndex] = imageUrl;
     
                 updatedVariants[variantIndex].images = variantImages;
@@ -255,7 +276,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                         <h4 className="text-md font-bold mb-3">Product Variant {index + 1}</h4>
 
                         {/* Variant Form Fields */}
-                        <div onWheel={(e) => {return false}}>
+                        <div>
                             {/* Variant Name */}
                             <div className="mt-4">
                                 <label htmlFor={`variantName-${index}`} className="block text-sm font-bold text-gray-900 my-4">
@@ -296,17 +317,17 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                             <div 
                                                 ref={(el) => {
                                                     if (carouselRefs.current && el) {
-                                                        carouselRefs.current[index] = el; // Assign the correct carousel to the ref
+                                                        carouselRefs.current[index] = el; 
                                                     }
                                                 }}
-                                                className="w-full h-full flex overflow-x-scroll [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth"
-                                                style={{ scrollSnapType: "x mandatory" }}
+                                                className="w-full h-full flex overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth"
+                                                style={{ scrollSnapType: "none" }}
                                             >
                                                 {variant.images.map((image, imgIndex) => (
                                                     <div 
                                                         key={imgIndex} 
                                                         className="relative w-full h-[600px] flex justify-center items-center flex-shrink-0 overflow-x-hidden" 
-                                                        style={{ scrollSnapAlign: "center" }}  
+                                                        style={{ scrollSnapAlign: "center" }} 
                                                     >
                                                         <Input
                                                             type="file"
@@ -381,11 +402,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                                     value={variant.colorName || "Black"}
                                                     onChange={(event) => {
                                                         const inputValue = event.target.value;
-
-                                                        // Update color name directly
                                                         setColorName(inputValue);
-
-                                                        // Find the corresponding hex code if it exists
                                                         const selectedColorHex = Object.keys(ColourList).find(
                                                             (hex) => ColourList[hex].toLowerCase() === inputValue.toLowerCase()
                                                         );
@@ -395,7 +412,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                                         }
                                                     }}
                                                     onBlur={() => {
-                                                        // Validate and reset input to a known color if invalid
                                                         const validHex = Object.keys(ColourList).find(
                                                             (hex) => ColourList[hex].toLowerCase() === colorName.toLowerCase()
                                                         );
