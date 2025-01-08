@@ -19,7 +19,8 @@ interface ProductVariantProps {
 const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariants, originalProductName, sizes, currencySymbol, category}) => {
     const [selectedColor, setSelectedColor] = useState("#000000");
     const [colorName, setColorName] = useState("Black");
-    const carouselRefs = useRef<HTMLDivElement[]>([]);
+    const carouselRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const [images, setImages] = useState<string[]>(["", "", "", ""])
 
 
     const addProductVariant = () => {
@@ -56,55 +57,68 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
     };
 
     const prevSlide = (variantIndex: number) => {
-        setVariants((prevVariants) => {
-            const updatedVariants = [...prevVariants];
-            const currentSlide = updatedVariants[variantIndex].currentSlide;
-    
-            // Ensure we don't go below the first slide
-            if (currentSlide > 0) {
-                const newSlide = currentSlide - 1;
+        console.log("The prev slide has been clicked, the variant Index is: ", variantIndex);
+        let updatedVariants = [...variants];
+        const currentSlide = updatedVariants[variantIndex].currentSlide;
+        const maxSlideIndex = updatedVariants[variantIndex].images.length - 1;
+        const newSlide = currentSlide - 1;
+        console.log("The currentSlide is: ", currentSlide, "The next slide should be: ", currentSlide + 1, "The maxSlideIndex is: ", maxSlideIndex);
+
+        if (currentSlide > 0) {
+            setVariants((prevVariants) => {
+                updatedVariants = [...prevVariants];
                 updatedVariants[variantIndex].currentSlide = newSlide;
-    
-                // Scroll to the previous slide
                 scrollCarousel(variantIndex, newSlide);
-            }
-    
-            return updatedVariants;
-        });
-    };
-    const scrollCarousel = (variantIndex: number, slideIndex: number) => {
-        const carousel = carouselRefs.current[variantIndex];
-        if (carousel) {
-            const slideWidth = carousel.clientWidth; // Dynamic width
-            const scrollPosition = slideIndex * 500;
-            carousel.scroll({
-                left: scrollPosition,
-                behavior: "smooth",
+                console.log(updatedVariants);
+                return updatedVariants;
             });
         }
     };
 
+
     const nextSlide = (variantIndex: number) => {
-        setVariants((prevVariants) => {
-            const updatedVariants = [...prevVariants];
-            const currentSlide = updatedVariants[variantIndex].currentSlide;
-            const maxSlides = updatedVariants[variantIndex].images.length - 1;
-            // Ensure we don't exceed the maximum number of slides
-            if (currentSlide < maxSlides) {
-                const newSlide = currentSlide + 1;
+        console.log("The next slide has been clicked, the variant Index is: ", variantIndex);
+        let updatedVariants = [...variants];
+        const currentSlide = updatedVariants[variantIndex].currentSlide;
+        const maxSlideIndex = updatedVariants[variantIndex].images.length - 1;
+        const newSlide = currentSlide + 1;
+        console.log("The currentSlide is: ", currentSlide, "The next slide should be: ", currentSlide + 1, "The maxSlideIndex is: ", maxSlideIndex);
+        if (currentSlide < maxSlideIndex) {
+            setVariants((prevVariants) => {
+                updatedVariants = [...prevVariants];
                 updatedVariants[variantIndex].currentSlide = newSlide;
-    
-                // Scroll to the next slide
                 scrollCarousel(variantIndex, newSlide);
-            }
-    
-            return updatedVariants;
-        });
+                console.log(updatedVariants);
+                return updatedVariants;
+            });
+        } 
     };
 
-    useEffect(() => {
-        //console.log("The length of variant images are:", variants[0].images.length);
-    });
+
+    const scrollCarousel = (variantIndex: number, slideIndex: number) => {
+        if (carouselRefs.current) {
+            const carousel = carouselRefs.current[variantIndex];
+            if (carousel) {
+                const slideWidth = carousel.firstElementChild?.clientWidth || 0;
+
+                if (!slideWidth) {
+                    console.warn("Unable to determine slide width!");
+                    return;
+                }
+
+                const scrollPosition = slideIndex * slideWidth;
+
+                console.log(
+                    `Variant: ${variantIndex}, Slide: ${slideIndex}, Calculated scroll position: ${scrollPosition}`
+                );
+
+                carousel.scrollTo({
+                    left: scrollPosition,
+                    behavior: "smooth",
+                });
+            }
+        }
+    };
 
     const blobLoader = ({ src }: { src: string }) => {
         if (src.startsWith("blob:")) {
@@ -241,7 +255,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                         <h4 className="text-md font-bold mb-3">Product Variant {index + 1}</h4>
 
                         {/* Variant Form Fields */}
-                        <div>
+                        <div onWheel={(e) => {return false}}>
                             {/* Variant Name */}
                             <div className="mt-4">
                                 <label htmlFor={`variantName-${index}`} className="block text-sm font-bold text-gray-900 my-4">
@@ -271,8 +285,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                             {variant.currentSlide > 0 && (
                                                 <Button
                                                     type="button"
-                                                    className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white ml-2 "
-                                                    //disabled={variant.currentSlide === 0}
+                                                    className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white ml-2"
                                                     onClick={() => prevSlide(index)}
                                                 >
                                                     ◀
@@ -310,25 +323,26 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                                             alt={`Variant ${index + 1} Image ${imgIndex + 1}`}
                                                             loader={blobLoader}
                                                             priority                                                                
-                                                            objectFit="fit"
-                                                            className="mx-auto mt-4"
+                                                            className="mx-auto mt-4 align-middle"
                                                         />
                                                     </div>
                                                 ))}
                                             </div>
 
                                             {/* Right Button */}
-                                            {variant.currentSlide < variant.images.length && (
+                                            {variant.currentSlide < variant.images.length / 1 - 1 && (
                                                 <Button
                                                     type="button"
                                                     className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white mr-2"
-                                                    //disabled={variant.currentSlide === variant.images.length - 1}
-                                                    onClick={() => nextSlide(index)}
+                                                    onClick={(e) => 
+                                                        {
+                                                            nextSlide(index);
+                                                        }
+                                                    }
                                                 >
                                                     ▶
                                                 </Button>
                                             )}
-
                                         </div>
                                     </div>
                                 </div>
