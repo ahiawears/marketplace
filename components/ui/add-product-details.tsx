@@ -8,13 +8,13 @@ import { Button } from "./button";
 import Image from "next/image";
 import { ColourList } from "@/lib/coloursList";
 import { QRCodeCanvas } from "qrcode.react";
-import { GeneralProductDetailsType, ProductVariantType } from "@/lib/types";
-import ProductVariantForm from "./product-variant-form";
+import { GeneralProductDetailsType, ProductUploadData, ProductVariantType } from "@/lib/types";
+import ProductVariantForm from "../upload-product/product-variant-form";
 import GeneralProductDetails from "../upload-product/general-product-details";
 import Accordion from "./Accordion";
 import PhysicalProductAttributes from "../upload-product/physical-product-attributes";
 import MainProductForm from "../upload-product/main-product-form";
-
+    
 const AddProductDetails = () => {
     const [productName, setProductName] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("");
@@ -38,21 +38,40 @@ const AddProductDetails = () => {
     const [qrCodeBase64, setQrCodeBase64] = useState<string>("");
     const [originalProductName, setOriginalProductName] = useState(productName);
     const [variantName, setVariantName] = useState("");
-    const [productVariants, setProductVariants] = useState<ProductVariantType[]>([]);
+    //const [productVariants, setProductVariants] = useState<ProductVariantType[]>([]);
 
     const [bodyMeasured, setBodyMeasured] = useState<string[]>([]);
     const [catName, setCatName] = useState("");
 
 
 
-    const [generalDetails, setGeneralDetails] = useState<GeneralProductDetailsType>({
-        productName: "",
-        productDescription: "",
-        category: "",
-        subCategory: "",
-        tags: [],
-        currency: "",
-    });
+    const [productData, setProductData] = useState<ProductUploadData>({
+        generalDetails: {
+          productName: "",
+          productDescription: "",
+          category: "",
+          subCategory: "",
+          tags: [],
+          currency: "",
+          material: "",
+        },
+        productInformation: {
+          currentSlide: 0,
+          main_image_url: "",
+          productId: "",
+          variantId: "",
+          variantName: "",
+          variantSku: "",
+          quantities: {},
+          images: [],
+          colorName: "",
+          price: "",
+          colorHex: "",
+          currency: "",
+          sku: "",
+        },
+        productVariants: [],
+      });
 
     // const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     //     const categoryName = event.target.value;
@@ -283,42 +302,60 @@ const AddProductDetails = () => {
         e.preventDefault();
 
         // Gather all form data
-        const productData = {
-            generalDetails, // Include general details
-            // Add other state variables here, e.g., images, variants, etc.
-        };
+        // const productData = {
+        //     generalDetails, // Include general details
+        //     // Add other state variables here, e.g., images, variants, etc.
+        // };
 
         console.log("Product Data Submitted:", productData);
 
         // TODO: Send `productData` to the backend or further processing
     };
-    const productCurrency = generalDetails.currency;
+    const productCurrency = productData.generalDetails.currency;
     const productCurrencySymbol = currency.find((c) => c.code === productCurrency)?.symbol || "";
 
+    const setGeneralDetails = (details: GeneralProductDetailsType | ((prev: GeneralProductDetailsType) => GeneralProductDetailsType)) => {
+        setProductData((prev) => ({
+            ...prev,
+            generalDetails: typeof details === 'function' ? details(prev.generalDetails) : details,
+        }));
+    };
+
+    const setProductVariants = (variants: ProductVariantType[] | ((prev: ProductVariantType[]) => ProductVariantType[])) => {
+        setProductData((prev) => ({
+            ...prev, 
+            productVariants: typeof variants === 'function' ? variants(prev.productVariants) : variants,
+        }));
+    };
+
+    const setProductInformation = (info: Partial<ProductUploadData['productInformation']>) => {
+        setProductData((prev) => ({
+            ...prev,
+            productInformation: {
+                ...prev.productInformation,
+                ...info,
+            },
+        }));
+    };
+    
     const accordionItems = [
         {
             title: "General Product Details",
-            content: <GeneralProductDetails setGeneralDetails={setGeneralDetails} />
+            content: <GeneralProductDetails generalDetails={productData.generalDetails} setGeneralDetails={setGeneralDetails} />
         }, 
-        // {
-        //     title: "Physical Product Attributes",
-        //     content: <PhysicalProductAttributes setCat={catName}/>
-        // },
         {
             title: "Product Information",
-            //content: <ProductVariantForm variants={productVariants} setVariants={setProductVariants} originalProductName={productName} sizes={sizes} currencySymbol={currencySymbol}/>
-            content: <MainProductForm variants={productVariants} setVariants={setProductVariants} originalProductName={productName} sizes={sizes} currencySymbol={productCurrencySymbol} category={catName}/>
+            content: <MainProductForm productInformation={productData.productInformation} setProductInformation={setProductInformation} originalProductName={productData.generalDetails.productName} sizes={sizes} currencySymbol={productCurrencySymbol} category={productData.generalDetails.category}/>
         },
         {
             title: "Add Product Variants",
-            content: <ProductVariantForm variants={productVariants} setVariants={setProductVariants} originalProductName={productName} sizes={sizes} currencySymbol={productCurrencySymbol} category={catName}/>
+            content: <ProductVariantForm variants={productData.productVariants} setVariants={setProductVariants} originalProductName={productData.generalDetails.productName} sizes={sizes} currencySymbol={productCurrencySymbol} category={productData.generalDetails.category}/>
         }
     ];
 
     useEffect(() => {
-        console.log("General Details updated:", generalDetails);
-        setCatName(generalDetails.category);
-    }, [generalDetails]);
+        console.log("General Details updated:", productData);
+    }, [productData]);
 
    
 

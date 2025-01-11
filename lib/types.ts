@@ -124,6 +124,7 @@ export interface ProductVariantType {
   price: string;
   colorHex: string;
   currency: string;
+  sku: string;
 }
 
 export interface GeneralProductDetailsType {
@@ -133,6 +134,13 @@ export interface GeneralProductDetailsType {
   subCategory: string;
   tags: string[];
   currency: string;
+  material: string;
+}
+
+export interface ProductUploadData {
+  generalDetails: GeneralProductDetailsType;
+  productInformation: ProductVariantType;
+  productVariants: ProductVariantType[];
 }
 
 export interface PhysicalAttributesType {

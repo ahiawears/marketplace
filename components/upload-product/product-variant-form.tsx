@@ -1,15 +1,16 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Button } from "./button";
-import { Input } from "./input";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import { ProductVariantType } from "@/lib/types";
 import Image from "next/image";
 import { ColourList } from "@/lib/coloursList";
+import MeasurementSizesTable from "./measurement-sizes-table";
 
 interface ProductVariantProps {
     variants: ProductVariantType[];
-    setVariants: React.Dispatch<React.SetStateAction<ProductVariantType[]>>;
+    setVariants: (variants: ProductVariantType[]) => void;
     originalProductName: string;
     sizes: string[];
     currencySymbol: string;
@@ -19,8 +20,8 @@ interface ProductVariantProps {
 const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariants, originalProductName, sizes, currencySymbol, category}) => {
     const [selectedColor, setSelectedColor] = useState("#000000");
     const [colorName, setColorName] = useState("Black");
-    const carouselRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const [images, setImages] = useState<string[]>(["", "", "", ""])
+    const carouselRefs = useRef<(HTMLDivElement | null)[]>([]);    
+    const [measurements, setMeasurements] = useState({});
 
 
     const addProductVariant = () => {
@@ -42,6 +43,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             currentSlide: 0, 
             currency: "",
             price: "",
+            sku: "",
         };
         setVariants([...variants, newVariant]);
     };
@@ -65,13 +67,13 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         console.log("The currentSlide is: ", currentSlide, "The next slide should be: ", currentSlide + 1, "The maxSlideIndex is: ", maxSlideIndex);
 
         if (currentSlide > 0) {
-            setVariants((prevVariants) => {
-                updatedVariants = [...prevVariants];
-                updatedVariants[variantIndex].currentSlide = newSlide;
-                scrollCarousel(variantIndex, newSlide);
-                console.log(updatedVariants);
-                return updatedVariants;
-            });
+            // setVariants((prevVariants) => {
+            //     updatedVariants = [...prevVariants];
+            //     updatedVariants[variantIndex].currentSlide = newSlide;
+            //     scrollCarousel(variantIndex, newSlide);
+            //     console.log(updatedVariants);
+            //     return updatedVariants;
+            // });
         }
     };
 
@@ -84,13 +86,13 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         const newSlide = currentSlide + 1;
         console.log("The currentSlide is: ", currentSlide, "The next slide should be: ", currentSlide + 1, "The maxSlideIndex is: ", maxSlideIndex);
         if (currentSlide < maxSlideIndex) {
-            setVariants((prevVariants) => {
-                updatedVariants = [...prevVariants];
-                updatedVariants[variantIndex].currentSlide = newSlide;
-                scrollCarousel(variantIndex, newSlide);
-                console.log(updatedVariants);
-                return updatedVariants;
-            });
+            // setVariants((prevVariants) => {
+            //     updatedVariants = [...prevVariants];
+            //     updatedVariants[variantIndex].currentSlide = newSlide;
+            //     scrollCarousel(variantIndex, newSlide);
+            //     console.log(updatedVariants);
+            //     return updatedVariants;
+            // });
         } 
     };
 
@@ -158,15 +160,15 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             }
             const imageUrl = URL.createObjectURL(file); 
     
-            setVariants((prevVariants) => {
-                const updatedVariants = [...prevVariants];
-                const variantImages = [...updatedVariants[variantIndex].images];
+            // setVariants((prevVariants) => {
+            //     const updatedVariants = [...prevVariants];
+            //     const variantImages = [...updatedVariants[variantIndex].images];
     
-                variantImages[imageIndex] = imageUrl;
+            //     variantImages[imageIndex] = imageUrl;
     
-                updatedVariants[variantIndex].images = variantImages;
-                return updatedVariants;
-            });
+            //     updatedVariants[variantIndex].images = variantImages;
+            //     return updatedVariants;
+            // });
         }
     };
 
@@ -231,30 +233,37 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         return nearestColorName;
     };
 
-    const handleColorChange = (index: number, colorHex: string, colorName: string) => {
+    // const handleColorChange = (index: number, colorHex: string, colorName: string) => {
+    //     const updatedVariants = [...variants];
+    //     updatedVariants[index].colorHex = colorHex;
+    //     updatedVariants[index].colorName = findNearestColor(colorHex);
+    //     updatedVariants[index].variantName = `${originalProductName} in ${findNearestColor(colorHex)}`;
+    //     setVariants(updatedVariants);
+    // };
+
+    const handleColorChange = (index: number, hex: string, colorName: string) => {
         const updatedVariants = [...variants];
-        updatedVariants[index].colorHex = colorHex;
-        updatedVariants[index].colorName = findNearestColor(colorHex);
-        updatedVariants[index].variantName = `${originalProductName} in ${findNearestColor(colorHex)}`;
+        updatedVariants[index].colorHex = hex;
+        updatedVariants[index].colorName = findNearestColor(hex);
+        updatedVariants[index].variantName = `${originalProductName} in ${findNearestColor(hex)}`;
         setVariants(updatedVariants);
-    };
-    
+    }
     const handleQuantityChange = (variantIndex: number, size: string, value: number) => {
-        setVariants((prevVariants) => {
-            const updatedVariants = [...prevVariants];
+        // setVariants((prevVariants) => {
+        //     const updatedVariants = [...prevVariants];
             
-            const updatedQuantities = {
-                ...(updatedVariants[variantIndex].quantities || {}),
-                [size]: value,
-            };
+        //     const updatedQuantities = {
+        //         ...(updatedVariants[variantIndex].quantities || {}),
+        //         [size]: value,
+        //     };
     
-            updatedVariants[variantIndex] = {
-                ...updatedVariants[variantIndex],
-                quantities: updatedQuantities,
-            };
+        //     updatedVariants[variantIndex] = {
+        //         ...updatedVariants[variantIndex],
+        //         quantities: updatedQuantities,
+        //     };
     
-            return updatedVariants;
-        });
+        //     return updatedVariants;
+        // });
     };
 
     return (
@@ -320,7 +329,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                                         carouselRefs.current[index] = el; 
                                                     }
                                                 }}
-                                                className="w-full h-full flex overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth"
+                                                className="w-full h-full flex overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-none"
                                                 style={{ scrollSnapType: "none" }}
                                             >
                                                 {variant.images.map((image, imgIndex) => (
@@ -439,32 +448,22 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                 </div>
                             </div>
 
-                             {/* Variant Sizes and Quantities */}
-                             {sizes.length > 0 && (
-                                <div className="my-7">
-                                    <p className="text-sm font-bold text-gray-900 mb-4">Enter Quantities for Sizes Available:</p>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        {sizes.map((size, sizeIndex) => (
-                                            <div key={sizeIndex} className="flex items-center border border-gray-300 rounded-md space-x-2">
-                                                <label htmlFor={`size-${index}-${size}`} className="text-center block text-sm font-medium text-gray-700 w-1/5">
-                                                    {size}:
-                                                </label>
-                                                <Input
-                                                    id={`size-${index}-${size}`} 
-                                                    name={`size-${index}-${size}`} 
-                                                    type="number"
-                                                    min={0}
-                                                    value={variant?.quantities?.[size] ?? 0}
-                                                    onChange={(e) =>
-                                                        handleQuantityChange(index, size, parseInt(e.target.value, 10))
-                                                    }
-                                                    className="block border-l p-2 text-gray-900 bg-transparent w-10/12 [&::-webkit-inner-spin-button]:appearance-none"
-                                                />
-                                            </div>
-                                        ))}
+                             {/* Quantity and Measurements */}
+                            <div>         
+                                {category && 
+                                    <div>
+                                        <label htmlFor="measurementsList" className="block text-sm font-bold text-gray-900">
+                                            Product Measurements Available:*
+                                        </label>
+                                        <MeasurementSizesTable
+                                            category={category}
+                                            measurements={measurements}
+                                            setMeasurements={setMeasurements} 
+                                        />   
                                     </div>
-                                </div>
-                            )}
+                                    
+                                }
+                            </div>
 
                             {/*  Add Products Price */}
                             <div className="mb-5">

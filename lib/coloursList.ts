@@ -122,7 +122,6 @@ export const ColourList: { [key: string]: string } = {
     "#8B008B": "Dark Magenta", 
     "#964B00": "Brown", 
     "#8B4513": "Saddle Brown", 
-    "#BC8F8F": "Rosy Brown", 
     "#1E90FF": "Dodger Blue",
     "#EE82EE": "Violet", 
     "#FF69B4": "Hot Pink", 

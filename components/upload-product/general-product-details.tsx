@@ -3,85 +3,47 @@ import { Input } from "../ui/input";
 import { Select } from "../ui/select";
 import { Textarea } from "../ui/textarea";
 import { categoriesList } from "@/lib/categoriesList";
-import { useState } from "react";
-import { currency } from "@/lib/currencyList";
+import { useEffect, useState } from "react";
+import { currency } from "@/lib/currencyList";  
+import { clothingMaterials } from "@/lib/item-material-list";
 
 interface GeneralProductDetailsProps {
-    setGeneralDetails: React.Dispatch<React.SetStateAction<GeneralProductDetailsType>>;
+    generalDetails: GeneralProductDetailsType;
+    setGeneralDetails: (details: GeneralProductDetailsType | ((prev: GeneralProductDetailsType) => GeneralProductDetailsType)) => void;
 }
-const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ setGeneralDetails }) => {
 
+const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails,setGeneralDetails }) => {
     const [subcategories, setSubcategories] = useState<string[]>([]);
     const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
     const [customTags, setCustomTags] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
-    const [selectedCategory, setSelectedCategory] = useState("");
     const [selectedCurrency, setSelectedCurrency] = useState("");
 
-    
-    const addGeneralProductDetails = () => {
-
-        const generalDetails: GeneralProductDetailsType = {
-            productName: "",
-            productDescription: "",
-            category: "",
-            subCategory: "",
-            tags: [],
-            currency: "",
-        }
-        setGeneralDetails(generalDetails);
+    const handleChange = (field: keyof GeneralProductDetailsType, value: string | string[]) => {
+        setGeneralDetails((prev: GeneralProductDetailsType) => {
+            const updatedDetails = { ...prev, [field]: value };
+            return updatedDetails as GeneralProductDetailsType;
+        });
     };
-
-    const handleProductNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setGeneralDetails(prevDetails => ({
-            ...prevDetails,
-            productName: e.target.value,
-        }));
-    };
-
-    const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setGeneralDetails(prevDetails => ({
-            ...prevDetails,
-            productDescription: e.target.value,
-        }));
-    };    
-    
-    // const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    //     const categoryName = event.target.value;
-    //     setSelectedCategory(categoryName);
-        
-    //     const category = categoriesList.find((cat) => cat.name === categoryName);
-    //     setSubcategories(category?.subcategories || []);
-    //     setCustomTags(category ? category.tags : []); 
-
-    //     setSizes(category?.sizes || []); // Assuming sizes are part of categoriesList
-
-    //     // Initialize quantities for each size
-    //     const initialQuantities: { [size: string]: number } = {};
-    //     (category?.sizes || []).forEach((size) => {
-    //         initialQuantities[size] = 0; // Default quantity 0
-    //     });
-    //     setQuantities(initialQuantities);
-        
-    //     setSelectedSubcategory("");
-    //     setSelectedTags([]);
-    // };
 
     const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const categoryName = event.target.value;
-        setGeneralDetails(prevDetails => ({
-            ...prevDetails,
-            category: categoryName,
-        }));
-        
-        // Update subcategories based on the selected category
         const category = categoriesList.find((cat) => cat.name === categoryName);
         setSubcategories(category?.subcategories || []);
         setCustomTags(category ? category.tags : []);
 
-        //set the values
-
-        setSelectedCategory(categoryName);
+        //check if the category is stored in the object, if it is, remove the subcategory and tags
+        const isCategorySet = generalDetails.category;
+        if (categoryName !== isCategorySet) {
+            setGeneralDetails((prevDetails) => ({
+                ...prevDetails,
+                category: categoryName,
+                subCategory: "",
+                tags: [],
+            }));
+            setSelectedSubcategory("");
+            setSelectedTags([]);
+        }
     };
     
     const handleTagClick = (tag: string) => {
@@ -119,19 +81,39 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ setGenera
     const handleCurrencyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedCurrency = parseInt(event.target.value);
         const sCurrency = currency.find((c) => c.id === selectedCurrency);
-
         if (sCurrency) {
             setGeneralDetails(prevDetails => ({
                 ...prevDetails,
                 currency: sCurrency.code,
             }));
+        }
+    }
 
-            setSelectedCurrency(event.target.value);
+    useEffect(() => {
+        const handleSetCurrency = (s_Currency: string) => {
+            const setCurrencyCode = s_Currency;
+            const sCurrency = currency.find((c) => c.code === setCurrencyCode);
+            setSelectedCurrency(sCurrency ? sCurrency.id.toString() : "");
         }
 
-        //setSelectedCurrency(sCurrency.symbol);
-        console.log("The currency set is", event.target.value);
-    }
+        handleSetCurrency(generalDetails.currency);
+    },[]);
+
+    useEffect(() => {
+        const getDetails = () => {
+            if (generalDetails.category) {
+                const categoryName = generalDetails.category;
+                const category = categoriesList.find((cat) => cat.name === categoryName);
+                setSubcategories(category?.subcategories || []);
+                setCustomTags(category ? category.tags : []);
+                setSelectedSubcategory(generalDetails.subCategory);
+                setSelectedTags(generalDetails.tags);
+            }else{
+                console.log("there are no subcategories set");
+            }
+        }
+        getDetails();
+    }, []);
 
     return (
         <div className="product-details">
@@ -142,9 +124,9 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ setGenera
                 <div className="mt-2">
                     <Input
                         id="productName"
-                        name="productName"
                         type="text"
-                        onChange={handleProductNameChange}
+                        onChange={(e) => handleChange("productName", e.target.value)}
+                        value={generalDetails.productName}
                         required
                     />
                 </div>    
@@ -158,7 +140,8 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ setGenera
                     <Textarea
                         id="productDescription"
                         name="productDescription"
-                        onChange={handleDescriptionChange}
+                        onChange={(e) => handleChange("productDescription", e.target.value)}
+                        value={generalDetails.productDescription}
                         rows={4}
                         required
                         placeholder="Enter the product description here"
@@ -174,9 +157,12 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ setGenera
                     <div className="mt-2">
                         <Select
                             id="category"
-                            name="category"
-                            onChange={handleCategoryChange}
-                            value={selectedCategory}
+                            onChange={(e) => {
+                                handleCategoryChange(e);
+                                handleChange("category", e.target.value);
+                                
+                            }}
+                            value={generalDetails.category}
                         >
                             <option value="" disabled>Select a category</option>
                             {categoriesList.map((category) => (
@@ -231,18 +217,18 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ setGenera
                 )}
             </div>
 
-            
-
             <div className="mt-5">
-                <label htmlFor="price" className="block text-sm font-bold text-gray-900 mb-2">
+                <label htmlFor="currency" className="block text-sm font-bold text-gray-900 mb-2">
                     Product Currency:*
                 </label>
                 <div className="flex flex-col md:flex-row gap-8">
                     <div className="w-full md:w-1/2">
                         <Select
                             id="currency"
-                            name="currency"
-                            onChange={handleCurrencyChange}
+                            onChange={(e) => {
+                                handleCurrencyChange(e);
+                                setSelectedCurrency(e?.target.value);
+                            }}
                             value={selectedCurrency}
                             className="block border-l bg-transparent"
                         >
@@ -255,6 +241,33 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ setGenera
                             ))}
                         </Select>
                         
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-5">
+                <label htmlFor="material" className="block text-sm font-bold text-gray-900 mb-2">
+                    Product Material:*
+                </label>
+
+                <div className="flex flex-col md:flex-row gap-8">
+                    <div className="w-full">
+                        <Select
+                            id="material"
+                            name="material"
+                            onChange={(e) => {
+                                handleChange("material", e.target.value);
+                            }}
+                            value={generalDetails.material}
+                            className="block border-l bg-transparent"
+                        >
+                            <option value="" disabled>Select Material</option>
+                            {clothingMaterials.map((material) => (
+                                <option key={material} value={material}>
+                                    {material}
+                                </option>
+                            ))}
+                        </Select>
                     </div>
                 </div>
             </div>

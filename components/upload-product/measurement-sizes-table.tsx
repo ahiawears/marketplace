@@ -36,23 +36,25 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                 <tbody>
                     {sizes.map((size) => (
                         <tr key={size}>
-                        <td className="border border-gray-300 px-4 py-2 font-medium">{size}</td>
-                        {categoryData?.measurements.map((measurement) => (
-                            <td key={measurement} className="border border-gray-300 px-4 py-2">
-                            <Input
-                                type="number"
-                                placeholder={measurement}
-                                className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
+                            <td className="border border-gray-300 px-4 py-2 font-medium">
+                                {size}
                             </td>
-                        ))}
-                        <td className="border border-gray-300 px-4 py-2">
-                            <Input
-                            type="number"
-                            placeholder="Quantity"
-                            className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            />
-                        </td>
+                            {categoryData?.measurements.map((measurement) => (
+                                <td key={measurement} className="border border-gray-300 px-4 py-2">
+                                    <Input
+                                        type="number"
+                                        placeholder={measurement}
+                                        className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 [&::-webkit-inner-spin-button]:appearance-none"
+                                    />
+                                </td>
+                            ))}
+                            <td className="border border-gray-300 px-4 py-2">
+                                <Input
+                                    type="number"
+                                    placeholder="Quantity"
+                                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </td>
                         </tr>
                     ))}
                 </tbody>
