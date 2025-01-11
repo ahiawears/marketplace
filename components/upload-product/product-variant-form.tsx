@@ -62,18 +62,12 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         console.log("The prev slide has been clicked, the variant Index is: ", variantIndex);
         let updatedVariants = [...variants];
         const currentSlide = updatedVariants[variantIndex].currentSlide;
-        const maxSlideIndex = updatedVariants[variantIndex].images.length - 1;
         const newSlide = currentSlide - 1;
-        console.log("The currentSlide is: ", currentSlide, "The next slide should be: ", currentSlide + 1, "The maxSlideIndex is: ", maxSlideIndex);
 
         if (currentSlide > 0) {
-            // setVariants((prevVariants) => {
-            //     updatedVariants = [...prevVariants];
-            //     updatedVariants[variantIndex].currentSlide = newSlide;
-            //     scrollCarousel(variantIndex, newSlide);
-            //     console.log(updatedVariants);
-            //     return updatedVariants;
-            // });
+            updatedVariants[variantIndex].currentSlide = newSlide;
+            scrollCarousel(variantIndex, newSlide);
+            setVariants(updatedVariants);
         }
     };
 
@@ -86,13 +80,9 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         const newSlide = currentSlide + 1;
         console.log("The currentSlide is: ", currentSlide, "The next slide should be: ", currentSlide + 1, "The maxSlideIndex is: ", maxSlideIndex);
         if (currentSlide < maxSlideIndex) {
-            // setVariants((prevVariants) => {
-            //     updatedVariants = [...prevVariants];
-            //     updatedVariants[variantIndex].currentSlide = newSlide;
-            //     scrollCarousel(variantIndex, newSlide);
-            //     console.log(updatedVariants);
-            //     return updatedVariants;
-            // });
+            updatedVariants[variantIndex].currentSlide = newSlide;
+            scrollCarousel(variantIndex, newSlide);
+            setVariants(updatedVariants);
         } 
     };
 
@@ -108,10 +98,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                 }
 
                 const scrollPosition = slideIndex * slideWidth;
-
-                console.log(
-                    `Variant: ${variantIndex}, Slide: ${slideIndex}, Calculated scroll position: ${scrollPosition}`
-                );
 
                 carousel.scrollTo({
                     left: scrollPosition,
@@ -169,6 +155,11 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             //     updatedVariants[variantIndex].images = variantImages;
             //     return updatedVariants;
             // });
+            const updatedVariants = [...variants];
+            const variantImages = [...updatedVariants[variantIndex].images];
+            variantImages[imageIndex] = imageUrl;
+            updatedVariants[variantIndex].images = variantImages;
+            setVariants(updatedVariants);
         }
     };
 
@@ -339,6 +330,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                                         style={{ scrollSnapAlign: "center" }} 
                                                     >
                                                         <Input
+                                                            id={`fileInput-${index}`}
                                                             type="file"
                                                             accept="image/*"
                                                             onChange={(e) => handleFileChange(e, index, variant.currentSlide)}
@@ -475,7 +467,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                         {/* Input Price */}
                                         <div className="flex items-center border border-gray-300 rounded-md">
                                             <Input
-                                                id="currencySymbol"
                                                 name="currencySymbol"
                                                 type="text"
                                                 value={currencySymbol}
@@ -492,6 +483,8 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                                 min={0}
                                                 step={0.01}
                                                 required
+                                                value={variant.price}
+                                                onChange={(e) => updateVariant(index, "price", e.target.value)}
                                                 className="block border-l p-2 text-gray-900 bg-transparent w-10/12 [&::-webkit-inner-spin-button]:appearance-none"
                                             />
                                         </div>
@@ -508,8 +501,9 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                     id={`variantSku-${index}`}
                                     name={`variantSku-${index}`}
                                     type="text"
-                                    //value={variant.sku}
+                                    value={variant.sku}
                                     //onChange={(e) => updateVariant(index, "sku", e.target.value)}
+                                    onChange={(e) => updateVariant(index, "sku", e.target.value)}
                                     placeholder="Enter the variant SKU"
                                 />
                             </div>
