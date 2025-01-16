@@ -1,10 +1,18 @@
 import { Button } from "./button";
 
-const PublishProduct = () => {
+
+interface PublishProductProps {
+    onPublishClick: () => void;
+}
+
+const PublishProduct: React.FC<PublishProductProps> = ({ onPublishClick }) => {
     return (
         <div className="absolute">
             <div className="p-6 border rounded-lg shadow-sm mx-auto fixed">
-                <Button className="w-full">
+                <Button 
+                    className="w-full"
+                    onClick={onPublishClick}    
+                >
                     Publish Product
                 </Button>
             </div>

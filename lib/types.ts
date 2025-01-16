@@ -125,6 +125,12 @@ export interface ProductVariantType {
   colorHex: string;
   currency: string;
   sku: string;
+  measurements: { 
+    [size: string]: {
+      [measurement: string]: number;
+      quantity: number;
+    };
+  }; // Add this line
 }
 
 export interface GeneralProductDetailsType {
@@ -149,3 +155,6 @@ export interface PhysicalAttributesType {
   width: string;
   depth: string;
 }
+
+//the size and quantity object should return like
+//measurement: {[size(S): {chest: string; waist: string; color; string; quantity: string;}], [size(XL): {chest: string; waist: string; color; string; quantity: string;}]}

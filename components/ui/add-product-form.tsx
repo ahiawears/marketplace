@@ -1,212 +1,122 @@
 "use client";
 
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
-import { categoriesList } from "@/lib/categoriesList";
-import { useEffect, useRef, useState } from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { QRCodeCanvas } from "qrcode.react";
-import { addProduct } from "@/actions/uploadProduct";
-import { ProductData } from "@/lib/types";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import PublishProduct from "./publish-product";
 import AddProductDetails from "./add-product-details";
+import ProductPreviewModal from "../modals/product-preview-modal";
+import ProductPreview from "../upload-product/product-preview";
+import { ProductUploadData } from "@/lib/types";
+import ModalBackdrop from "../modals/modal-backdrop";
 
-
-interface AddProductFormProps {
-  initialData?: ProductData;
-}
-
-const AddProductForm = ({ initialData }: AddProductFormProps) => {
-  const [productName, setProductName] = useState(
-    initialData?.productName || ""
-  );
-  const [selectedCategory, setSelectedCategory] = useState(
-    initialData?.category || ""
-  );
-  const [subcategories, setSubcategories] = useState<string[]>([]);
-  const [customTags, setCustomTags] = useState<string[]>([]);
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [images, setImages] = useState<string[]>(["", "", "", ""]);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [sizes, setSizes] = useState<string[]>([]);
-  const [quantities, setQuantities] = useState<{ [size: string]: number }>({});
-  const [sku, setSku] = useState<string>("");
-  const [showQRCode, setShowQRCode] = useState<boolean>(false);
-  const [qrCodeBase64, setQrCodeBase64] = useState<string>("");
-  const [isMounted, setIsMounted] = useState(false);
-  const carouselRef = useRef<HTMLDivElement>(null);
-  const [currentImage, setCurrentImage] = useState<string | undefined>(
-    undefined
-  );
-
-  const router = useRouter();
-
-  useEffect(() => {
-    setIsMounted(true);
-    if (initialData) {
-      setProductName(initialData.productName || "");
-      setSelectedCategory(initialData.category || "");
-      setSelectedSubcategory(initialData.subCategory || "");
-      setSelectedTags(initialData.tags || []);
-      setImages(initialData.images || ["", "", "", ""]);
-      setSku(initialData.sku || "");
-      setQuantities(initialData.quantities || {});
-    }
-  }, [initialData]);
-
-    // const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    //     const categoryName = event.target.value;
-    //     setSelectedCategory(categoryName);
-
-    //     const category = categoriesList.find((cat) => cat.name === categoryName);
-    //     setSubcategories(category?.subcategories || []);
-    //     setCustomTags(category ? category.tags : []); 
-
-    //     setSizes(category?.sizes || []); // Assuming sizes are part of categoriesList
-
-    //     // Initialize quantities for each size
-    //     const initialQuantities: { [size: string]: number } = {};
-    //     (category?.sizes || []).forEach((size) => {
-    //         initialQuantities[size] = 0; // Default quantity 0
-    //     });
-    //     setQuantities(initialQuantities);
-        
-    //     setSelectedSubcategory("");
-    //     setSelectedTags([]);
-    // };
-
-  const handleSubcategorySelect = (subcategory: string) => {
-    setSelectedSubcategory(subcategory);
-  };
-
-  const handleTagClick = (tag: string) => {
-    setSelectedTags((prevTags) => {
-      if (prevTags.includes(tag)) {
-        return prevTags.filter((t) => t !== tag);
-      } else if (prevTags.length < 3) {
-        return [...prevTags, tag];
-      }
-      return prevTags;
-    });
-  };
-
-  const handleFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    index: number
-  ) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      const imageUrl = URL.createObjectURL(file);
-      setCurrentImage(imageUrl);
-      setImages((prevImages) => {
-        const newImages = [...prevImages];
-        newImages[index] = imageUrl;
-        return newImages;
-      });
-    }
-  };
-
-  const nextSlide = () => {
-    if (currentSlide < images.length / 2 - 1) {
-      setCurrentSlide(currentSlide + 1);
-      scrollToCurrentSlide(currentSlide + 1);
-    }
-  };
-
-  const prevSlide = () => {
-    if (currentSlide > 0) {
-      setCurrentSlide(currentSlide - 1);
-      scrollToCurrentSlide(currentSlide - 1);
-    }
-  };
-
-  const scrollToCurrentSlide = (slide: number) => {
-    const scrollPosition = slide * 500; // Each image is 500px wide
-    if (carouselRef.current) {
-      carouselRef.current.scroll({
-        left: scrollPosition,
-        behavior: "smooth",
-      });
-    }
-  };
-
-  const handleQuantityChange = (size: string, value: number) => {
-    setQuantities((prevQuantities) => ({
-      ...prevQuantities,
-      [size]: value,
-    }));
-  };
-
-  const handleSkuChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSku(event.target.value);
-    generateQRCode();
-  };
-
-  const generateQRCode = () => {
-    setShowQRCode(true);
-
-    const canvas = document.getElementById("qr-code") as HTMLCanvasElement;
-    if (canvas) {
-      const base64Image = canvas.toDataURL("image/png"); // Convert QR code to base64
-      setQrCodeBase64(base64Image); // Set base64 image in state
-      console.log(base64Image);
-    }
-  };
+const AddProductForm = () => {
   
-  async function urlToFile(url: string): Promise<File> {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    return new File([blob], "image.jpg", { type: blob.type });
-  }
+	// const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+	// event.preventDefault();
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+	// const formData = new FormData(event.currentTarget); // Use currentTarget here
 
-    const formData = new FormData(event.currentTarget); // Use currentTarget here
+	// formData.append("qrCode", qrCodeBase64);
+	// formData.append("subCategory", selectedSubcategory || "");
+	// formData.append("tags", selectedTags.join(","));
 
-    formData.append("qrCode", qrCodeBase64);
-    formData.append("subCategory", selectedSubcategory || "");
-    formData.append("tags", selectedTags.join(","));
+	// formData.append(
+	// 	"sizes",
+	// 	JSON.stringify(
+	// 	Object.keys(quantities).map((size) => ({
+	// 		name: size,
+	// 		quantity: quantities[size],
+	// 	}))
+	// 	)
+	// );
+	// // Convert blob URLs to Files and attach them
+	// const filePromises = images.map(async (imageUrl) => {
+	// 	if (imageUrl) {
+	// 	const file = await urlToFile(imageUrl);
+	// 	formData.append("images", file);
+	// 	}
+	// });
 
-    formData.append(
-      "sizes",
-      JSON.stringify(
-        Object.keys(quantities).map((size) => ({
-          name: size,
-          quantity: quantities[size],
-        }))
-      )
-    );
-    // Convert blob URLs to Files and attach them
-    const filePromises = images.map(async (imageUrl) => {
-      if (imageUrl) {
-        const file = await urlToFile(imageUrl);
-        formData.append("images", file);
-      }
-    });
+	// await Promise.all(filePromises); // Wait for all files to be added
 
-    await Promise.all(filePromises); // Wait for all files to be added
+	// try {
+	// 	const productId = await addProduct(formData);
+	// 	router.push(`/dashboard/product-details/${productId}`);
+	// } catch (error) {
+	// 	console.error("Error adding product:", error);
+	// 	alert("Failed to add product. Please try again.");
+	// }
+	// };
 
-    try {
-      const productId = await addProduct(formData);
-      router.push(`/dashboard/product-details/${productId}`);
-    } catch (error) {
-      console.error("Error adding product:", error);
-      alert("Failed to add product. Please try again.");
-    }
-  };
+    
+	const [productData, setProductData] = useState<ProductUploadData>({
+		generalDetails: {
+			productName: "",
+			productDescription: "",
+			category: "",
+			subCategory: "",
+			tags: [],
+			currency: "",
+			material: "",
+		},
+		productInformation: {
+			currentSlide: 0,
+			main_image_url: "",
+			productId: "",
+			variantId: "",
+			variantName: "",
+			variantSku: "",
+			quantities: {},
+			images: [],
+			colorName: "",
+			price: "",
+			colorHex: "",
+			currency: "",
+			sku: "",
+			measurements: {},
+		},
+		productVariants: [],
+	});
+
+	  
+	const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
+	const [selectedVariant, setSelectedVariant] = useState(null);
+
+	const handlePublishClick = () => {
+		setPreviewModalOpen(true);
+	};
+
+	const handleVariantClick = (variant: any) => {
+		setSelectedVariant(variant);
+	};
+
+	const closeModal = () => {
+		setPreviewModalOpen(false); 
+	};
 
     return (
-        <div className="container mx-auto p-4 mt-4">
-            <div className="flex flex-col md:flex-row gap-8">
+        <div className="container overflow-auto mx-auto p-4 mt-4">
+            <div className="flex flex-col md:flex-row gap-8 h-full">
                 <div className="w-full md:w-2/3">
-                    <AddProductDetails />
+                    <AddProductDetails productData={productData} setProductData={setProductData}/>
                 </div>
                 <div className="w-full md:w-1/4 mt-12">
-                    <PublishProduct />
+                    <PublishProduct onPublishClick={handlePublishClick}/>
                 </div>
+
+				{isPreviewModalOpen && (
+                    <>
+                        <div className="">
+                            {/* <ModalBackdrop disableInteraction={true}/> */}
+                            <ProductPreviewModal onClose={closeModal}>
+                                <ProductPreview
+                                    productData={productData}
+                                    selectedVariant={selectedVariant}
+                                    onVariantClick={handleVariantClick}
+                                />
+                            </ProductPreviewModal>
+                        </div>
+                    </>
+			    )}
             </div>
         </div>
         // <form className="space-y-6" onSubmit={handleSubmit}>

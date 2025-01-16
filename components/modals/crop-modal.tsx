@@ -61,7 +61,7 @@ export const CropModal = (props: Props) => {
         </DialogHeader>
 
         <div className="relative h-[50vh] min-h-[500px]">
-          <Cropper
+          {/* <Cropper
             image={props.image}
             crop={crop}
             zoom={zoom}
@@ -69,7 +69,19 @@ export const CropModal = (props: Props) => {
             onCropChange={setCrop}
             onCropComplete={onCropComplete}
             onZoomChange={setZoom}
+          /> */}
+          <Cropper
+            image={props.image}
+            crop={crop}
+            zoom={zoom}
+            aspect={3 / 4} // Example: 4:3 aspect ratio
+            onCropChange={setCrop}
+            onCropComplete={onCropComplete}
+            onZoomChange={setZoom}
+            minZoom={1} // Minimum zoom level
+            maxZoom={3} // Maximum zoom level
           />
+
         </div>
 
         <DialogFooter>

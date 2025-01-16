@@ -7,6 +7,7 @@ import { ProductVariantType } from "@/lib/types";
 import Image from "next/image";
 import { ColourList } from "@/lib/coloursList";
 import MeasurementSizesTable from "./measurement-sizes-table";
+import { CropModal } from "../modals/crop-modal";
 
 interface ProductVariantProps {
     variants: ProductVariantType[];
@@ -20,9 +21,11 @@ interface ProductVariantProps {
 const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariants, originalProductName, sizes, currencySymbol, category}) => {
     const [selectedColor, setSelectedColor] = useState("#000000");
     const [colorName, setColorName] = useState("Black");
-    const carouselRefs = useRef<(HTMLDivElement | null)[]>([]);    
-    const [measurements, setMeasurements] = useState({});
-
+    const carouselRefs = useRef<(HTMLDivElement | null)[]>([]);
+    
+    const [cropImage, setCropImage] = useState<string | null>(null);
+    const [cropIndex, setCropIndex] = useState<number | null>(null);
+    const [croppedUrl, setCroppedUrl] = useState<string | null>(null);
 
     const addProductVariant = () => {
         const initialQuantities = sizes.reduce((acc, size) => {
@@ -44,6 +47,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             currency: "",
             price: "",
             sku: "",
+            measurements: {},
         };
         setVariants([...variants, newVariant]);
     };
@@ -70,7 +74,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             setVariants(updatedVariants);
         }
     };
-
 
     const nextSlide = (variantIndex: number) => {
         console.log("The next slide has been clicked, the variant Index is: ", variantIndex);
@@ -145,23 +148,27 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                 return;
             }
             const imageUrl = URL.createObjectURL(file); 
-    
-            // setVariants((prevVariants) => {
-            //     const updatedVariants = [...prevVariants];
-            //     const variantImages = [...updatedVariants[variantIndex].images];
-    
-            //     variantImages[imageIndex] = imageUrl;
-    
-            //     updatedVariants[variantIndex].images = variantImages;
-            //     return updatedVariants;
-            // });
-            const updatedVariants = [...variants];
-            const variantImages = [...updatedVariants[variantIndex].images];
-            variantImages[imageIndex] = imageUrl;
-            updatedVariants[variantIndex].images = variantImages;
-            setVariants(updatedVariants);
+            setCropImage(imageUrl);
+            setCropIndex(imageIndex);
+            setCroppedUrl(imageUrl);
         }
     };
+
+    const handleCroppedImage = (croppedImage: string, variantIndex: number, imageIndex: number) => {
+        if (cropIndex !== null) {
+            const updatedVariants = [...variants];
+            const variantImages = [...updatedVariants[variantIndex].images];
+            variantImages[imageIndex] = croppedImage;
+            updatedVariants[variantIndex].images = variantImages;
+            setVariants(updatedVariants);
+    
+            // Reset crop state
+            setCropImage(null);
+            setCropIndex(null);
+            setCroppedUrl(null);
+        }
+    };
+    
 
     // Helper: Convert HEX to RGB
     const hexToRgb = (hex: string) => {
@@ -224,37 +231,30 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         return nearestColorName;
     };
 
-    // const handleColorChange = (index: number, colorHex: string, colorName: string) => {
-    //     const updatedVariants = [...variants];
-    //     updatedVariants[index].colorHex = colorHex;
-    //     updatedVariants[index].colorName = findNearestColor(colorHex);
-    //     updatedVariants[index].variantName = `${originalProductName} in ${findNearestColor(colorHex)}`;
-    //     setVariants(updatedVariants);
-    // };
-
-    const handleColorChange = (index: number, hex: string, colorName: string) => {
+    const handleColorChange = (index: number, hex: string) => {
         const updatedVariants = [...variants];
         updatedVariants[index].colorHex = hex;
         updatedVariants[index].colorName = findNearestColor(hex);
         updatedVariants[index].variantName = `${originalProductName} in ${findNearestColor(hex)}`;
         setVariants(updatedVariants);
     }
-    const handleQuantityChange = (variantIndex: number, size: string, value: number) => {
-        // setVariants((prevVariants) => {
-        //     const updatedVariants = [...prevVariants];
-            
-        //     const updatedQuantities = {
-        //         ...(updatedVariants[variantIndex].quantities || {}),
-        //         [size]: value,
-        //     };
-    
-        //     updatedVariants[variantIndex] = {
-        //         ...updatedVariants[variantIndex],
-        //         quantities: updatedQuantities,
-        //     };
-    
-        //     return updatedVariants;
-        // });
+
+    const handleMeasurementChange = ( variantIndex: number, size: string, field: string, value: number ) => {
+        const updatedVariants = [...variants]; 
+        const targetVariant = updatedVariants[variantIndex]; 
+        const updatedMeasurements = {
+            ...targetVariant.measurements,
+            [size]: {
+                ...(targetVariant.measurements[size] || {}),
+                [field]: value,
+            },
+        };
+
+        updatedVariants[variantIndex] = {
+            ...targetVariant,
+            measurements: updatedMeasurements,
+        };
+        setVariants(updatedVariants);
     };
 
     return (
@@ -299,7 +299,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                     Upload Product Image:*
                                 </label>
                                 {/* Add Product Image Div */}
-                                <div className="w-full h-[600px] bg-slate-50">
+                                <div className="w-full h-[700px] bg-slate-50 flex items-center justify-center">
                                     <div className="mt-4">
                                         <div className="relative w-full h-[600px]">
                                             {/* Left Button */}
@@ -334,14 +334,14 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                                             type="file"
                                                             accept="image/*"
                                                             onChange={(e) => handleFileChange(e, index, variant.currentSlide)}
-                                                            className="absolute inset-0 opacity-0 w-full h-[600px] cursor-pointer"
+                                                            className="absolute inset-0 opacity-0 w-[510px] h-[600px] cursor-pointer"
                                                         />
                                                         <Image
                                                             src={
                                                                 image || "https://placehold.co/250x500.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
                                                             }
-                                                            width={250}
-                                                            height={600}
+                                                            width={510}
+                                                            height={650}
                                                             alt={`Variant ${index + 1} Image ${imgIndex + 1}`}
                                                             loader={blobLoader}
                                                             priority                                                                
@@ -381,12 +381,11 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                             <Input
                                                 type="color"
                                                 id={`colorPicker-${index}`}
-                                                value={variant.colorHex || "#000000"}
+                                                value={variant.colorHex ? variant.colorHex : selectedColor}
                                                 onChange={(e) =>
                                                     handleColorChange(
                                                       index,
                                                       e.target.value,
-                                                      ColourList[e.target.value] || "Unknown Color"
                                                     )
                                                 }
                                                 className="mt-2 w-full h-12 border"
@@ -396,6 +395,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                             {/* a searchable dropdown that has a list of colors for brands to select */}
                                             <div className="relative">
                                                 <Input
+                                                    name="colorDropdown"
                                                     className="w-full px-4 mt-2 border border-gray-300 rounded-md"
                                                     type="text"
                                                     list="colorOptions"
@@ -410,6 +410,10 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
 
                                                         if (selectedColorHex) {
                                                             setSelectedColor(selectedColorHex);
+                                                            const updatedVariants = [...variants];
+                                                            updatedVariants[index].colorHex = selectedColorHex;
+                                                            updatedVariants[index].colorName = inputValue;
+                                                            setVariants(updatedVariants);
                                                         }
                                                     }}
                                                     onBlur={() => {
@@ -420,9 +424,13 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                                             const nearestHex = findNearestColor(selectedColor);
                                                             setColorName(ColourList[nearestHex]);
                                                             setSelectedColor(nearestHex);
+                                                            const sColorName = ColourList[nearestHex];
+                                                            const updatedVariants = [...variants];
+                                                            updatedVariants[index].colorHex = nearestHex;
+                                                            updatedVariants[index].colorName = sColorName;
+                                                            setVariants(updatedVariants);
                                                         }
                                                     }}
-                                                    
                                                 />
                                                 <datalist id="colorOptions">
                                                     {Object.entries(ColourList).map(([hex, name]) => (
@@ -444,13 +452,16 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                             <div>         
                                 {category && 
                                     <div>
-                                        <label htmlFor="measurementsList" className="block text-sm font-bold text-gray-900">
+                                        <label className="block text-sm font-bold text-gray-900">
                                             Product Measurements Available:*
                                         </label>
                                         <MeasurementSizesTable
                                             category={category}
-                                            measurements={measurements}
-                                            setMeasurements={setMeasurements} 
+                                            measurements={variants[index].measurements}
+                                            onMeasurementChange={(size, field, value) =>
+                                                handleMeasurementChange(index, size, field, value)
+                                            }
+                                            sizes={sizes}
                                         />   
                                     </div>
                                     
@@ -502,14 +513,24 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                     name={`variantSku-${index}`}
                                     type="text"
                                     value={variant.sku}
-                                    //onChange={(e) => updateVariant(index, "sku", e.target.value)}
                                     onChange={(e) => updateVariant(index, "sku", e.target.value)}
                                     placeholder="Enter the variant SKU"
                                 />
                             </div>
-                            
-                            {/* Additional Variant Fields */}
-                            {/* (Include other fields like colors, sizes, images as needed for each variant) */}
+                            {/* Crop Modal */}
+                            {cropImage && (
+                                <CropModal
+                                    image={cropImage}
+                                    onClose={(croppedImage) => {
+                                        if (croppedImage) {
+                                            handleCroppedImage(croppedImage, index, variant.currentSlide);
+                                        } else {
+                                            setCropImage(null);
+                                        }
+                                    }}
+                                />
+                            )}
+
                         </div>
                         <Button
                             type="button"
@@ -552,6 +573,8 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                             </svg>
                         </Button>
                     </div>
+                    
+                    
                 ))}
             </div>
         </div>

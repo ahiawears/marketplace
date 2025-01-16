@@ -5,9 +5,9 @@ import { ProductVariantType } from "@/lib/types";
 import { Input } from "../ui/input";
 import { ColourList } from "@/lib/coloursList";
 import MeasurementSizesTable from "./measurement-sizes-table";
+import { CropModal } from "../modals/crop-modal";
 
 interface ProductVariantProps {
-    
     productInformation: ProductVariantType;
     setProductInformation: (productInformation: ProductVariantType) => void;
     originalProductName: string;
@@ -17,18 +17,32 @@ interface ProductVariantProps {
 }
 
 const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, setProductInformation, originalProductName, sizes, currencySymbol, category}) => {
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const [images, setImages] = useState<string[]>(["", "", "", ""]);
     const carouselRef = useRef<HTMLDivElement>(null);
     const [selectedColor, setSelectedColor] = useState("#000000");
     const [colorName, setColorName] = useState("Black");
-    const [measurements, setMeasurements] = useState({});
+
+    const [cropImage, setCropImage] = useState<string | null>(null);
+    const [cropIndex, setCropIndex] = useState<number | null>(null);
+
     const [sku, setSku] = useState<string>("");
     const [showQRCode, setShowQRCode] = useState<boolean>(false);
     const [qrCodeBase64, setQrCodeBase64] = useState<string>("");
-    console.log("The curency symbol is ", currencySymbol);
 
     useEffect(() => {
+        const isImagesEmpty = Array.isArray(productInformation.images) && productInformation.images.length === 0;
+
+        if (isImagesEmpty) {
+            setProductInformation({
+                ...productInformation,
+                images: ["", "", "", ""],
+            });
+        } else {
+            setProductInformation({ ...productInformation })
+        }
+    }, []);
+
+    useEffect(() => {
+        
         const preventScroll = (event: Event) => event.preventDefault();
 
         carouselRef.current?.addEventListener("wheel", preventScroll, { passive: false });
@@ -43,33 +57,34 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
     
             if (file.size > 2 * 1024 * 1024) {
                 alert("File size exceeds 2MB");
-                //add a modal here
                 return;
             }
     
-            // Simulate an upload or create a blob URL for temporary preview
-            const imageUrl = URL.createObjectURL(file); // Temporary local preview
-            setImages((prevImages) => {
-                const newImages = [...prevImages];
-                newImages[index] = imageUrl;
-                return newImages;
-            });
+            const imageUrl = URL.createObjectURL(file);
+            setCropImage(imageUrl); 
+            setCropIndex(index); 
+        }
+    };
+
+    const handleCroppedImage = (croppedImage: string) => {
+        if (cropIndex !== null) {
+            const updatedDetails = { ...productInformation };
+            const productImages = [...updatedDetails.images];
+            productImages[cropIndex] = croppedImage;
+            updatedDetails.images = productImages;
+            updatedDetails.main_image_url = productImages[0];
+            setProductInformation(updatedDetails as ProductVariantType);
     
-            // If uploading to a server, replace the blob URL with the server URL
-            // Example (pseudo-code for server upload):
-            // const uploadedUrl = await uploadToServer(file);
-            // setImages((prevImages) => {
-            //   const newImages = [...prevImages];
-            //   newImages[index] = uploadedUrl;
-            //   return newImages;
-            // });
+            // Reset crop state
+            setCropImage(null);
+            setCropIndex(null);
         }
     };
 
     const scrollToCurrentSlide = (slide: number) => {
         const carousel = carouselRef.current;
         if (carousel) {
-            const slideWidth = carousel.offsetWidth;
+            const slideWidth = carousel.firstElementChild?.clientWidth || 0;
             const scrollPosition = slide * slideWidth;
             carousel.scrollTo({
                 left: scrollPosition,
@@ -79,25 +94,35 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
     };
       
     const nextSlide = () => {
-        if (currentSlide < images.length - 1) {
-            setCurrentSlide((prevSlide) => prevSlide + 1);
-            scrollToCurrentSlide(currentSlide + 1);
+        let updatedDetails = { ...productInformation };
+        const pCurrentSlide = updatedDetails.currentSlide;
+        const maxSlideIndex = updatedDetails.images.length - 1;
+        const newSlide = pCurrentSlide + 1;
+        
+        if (pCurrentSlide < maxSlideIndex) {
+            updatedDetails.currentSlide = newSlide;
+            scrollToCurrentSlide(newSlide);
+            setProductInformation(updatedDetails);
         }
     };
 
     const prevSlide = () => {
-        if (currentSlide > 0) {
-            setCurrentSlide((prevSlide) => prevSlide - 1);
-            scrollToCurrentSlide(currentSlide - 1);
+        let updatedDetails = { ...productInformation };
+        const pCurrentSlide = updatedDetails.currentSlide;
+        const newSlide = pCurrentSlide - 1;
+        if (pCurrentSlide > 0) {
+            updatedDetails.currentSlide = newSlide;
+            scrollToCurrentSlide(newSlide);
+            setProductInformation(updatedDetails);
         }
     };
 
 
     const blobLoader = ({ src }: { src: string }) => {
         if (src.startsWith("blob:")) {
-            return src; // Let the browser handle blob URLs directly
+            return src; 
         }
-        return src; // Default behavior
+        return src;
     };
 
     // Helper: Convert HEX to RGB
@@ -167,8 +192,6 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
 
         setSelectedColor(hex);
         setColorName(colorSet);
-        
-        // Combine the updates into one call
         setProductInformation({
             ...productInformation,
             colorHex: hex,
@@ -186,14 +209,28 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
 
         const canvas = document.getElementById("qr-code") as HTMLCanvasElement;
         if (canvas) {
-            const base64Image = canvas.toDataURL("image/png"); // Convert QR code to base64
-            setQrCodeBase64(base64Image); // Set base64 image in state
+            const base64Image = canvas.toDataURL("image/png");
+            setQrCodeBase64(base64Image); 
             console.log(base64Image);
         }
     };
 
     const handleVariantChange = (field: keyof ProductVariantType, value: any) => {
         const updatedDetails = { ...productInformation, [field]: value };
+        setProductInformation(updatedDetails as ProductVariantType);
+    };
+
+    const handleMeasurementChange = (size: string, field: string, value: number) => {
+        const updatedDetails = {
+            ...productInformation,
+            measurements: {
+                ...productInformation.measurements,
+                [size]: {
+                    ...(productInformation.measurements[size] || {}),
+                    [field]: value,
+                },
+            },
+        };
         setProductInformation(updatedDetails as ProductVariantType);
     };
 
@@ -205,10 +242,10 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                     <label htmlFor="fileInput" className="block text-sm font-bold text-gray-900 mb-5">
                         Upload Product Images:*
                     </label>
-                    <div className="w-full h-[600px] bg-slate-50">
+                    <div className="w-full h-[700px] bg-slate-50 flex items-center justify-center">
                         <div className="mt-4">
                             <div className="relative w-full h-[600px]">
-                                {currentSlide > 0 && (
+                                {productInformation.currentSlide > 0 && (
                                     <Button
                                         type="button"
                                         className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white ml-2 "
@@ -223,7 +260,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                     className="w-full h-full flex overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-none" 
                                     style={{ scrollSnapType: "none" }}
                                 >
-                                    {images.map((image, index) => (
+                                    {productInformation.images.map((image, index) => (
                                         <div
                                             key={index}
                                             className="relative w-full h-[600px] flex justify-center items-center flex-shrink-0 overflow-x-hidden"
@@ -233,25 +270,25 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                                 type="file"
                                                 accept="image/*"
                                                 onChange={(e) => handleFileChange(e, index)}
-                                                className="absolute inset-0 opacity-0 w-full h-[600px] cursor-pointer"
+                                                className="absolute inset-0 opacity-0 w-[510px] h-[650px] cursor-pointer"
                                             />
 
                                             <Image
                                                 src={
-                                                    image || "https://placehold.co/250x500.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
+                                                    image || "https://placehold.co/510x650.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
                                                 }
-                                                width={250}
-                                                height={600}
+                                                width={510}
+                                                height={650}
                                                 alt={`Slide ${index + 1}`}
                                                 loader={blobLoader}
                                                 priority
-                                                className="mx-auto"
+                                                className="mx-auto mt-4 align-middle"
                                             />
                                         </div>
                                     ))}
                                 </div>
 
-                                {currentSlide < images.length / 1 - 1 && (
+                                {productInformation.currentSlide < productInformation.images.length / 1 - 1 && (
                                     <Button
                                         type="button"
                                         className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white mr-2"
@@ -289,25 +326,18 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                         type="text"
                                         list="colorOptions"
                                         placeholder="Search and select a color" 
-                                        value={productInformation.colorName ? productInformation.colorName : colorName}
-
+                                        value={colorName}
+                                        // THIS IS CORRECT, DO NOT CHANGE
                                         onChange={(e) => {
                                             const inputValue = e.target.value;
-                                            //console.log("The inputValue is: ", inputValue);
-
-                                            // Update color name directly
                                             setColorName(inputValue);
 
-                                            // Find the corresponding hex code if it exists
                                             const selectedColorHex = Object.keys(ColourList).find(
                                                 (hex) => ColourList[hex].toLowerCase() === inputValue.toLowerCase()
                                             );
-
                                             if (selectedColorHex) {
                                                 setSelectedColor(selectedColorHex);
-                                                // console.log("The color hex is: ", selectedColorHex)
-                                                // handleVariantChange("colorHex", selectedColorHex);
-                                                // Combine the updates into one call
+                                                
                                                 setProductInformation({
                                                     ...productInformation,
                                                     colorHex: selectedColorHex,
@@ -315,10 +345,8 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                                 });
                                             }
                                             
-                                            //handleVariantChange("colorName", inputValue);
                                         }}
                                         onBlur={() => {
-                                            // Validate and reset input to a known color if invalid
                                             const validHex = Object.keys(ColourList).find(
                                                 (hex) => ColourList[hex].toLowerCase() === colorName.toLowerCase()
                                             );
@@ -326,11 +354,8 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                                 const nearestHex = findNearestColor(selectedColor);
                                                 setColorName(ColourList[nearestHex]);
                                                 setSelectedColor(nearestHex);
-                                                //const sColorName = setColorName(ColourList[nearestHex]);
                                                 const sColorName = ColourList[nearestHex];
-                                                //setColorName(sColorName);
-                                                // console.log("The sColorName: ", sColorName);
-                                                // handleVariantChange("colorHex", nearestHex);
+                                                
                                                 setProductInformation({
                                                     ...productInformation,
                                                     colorHex: nearestHex,
@@ -338,7 +363,6 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                                 });
                                             }
                                         }}
-                                        
                                     />
                                     <datalist id="colorOptions">
                                         {Object.entries(ColourList).map(([hex, name]) => (
@@ -364,13 +388,12 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                 Product Measurements Available:*
                             </h3>
                             <MeasurementSizesTable
-                            
                                 category={category}
-                                measurements={measurements}
-                                setMeasurements={setMeasurements} 
+                                measurements={productInformation.measurements}
+                                onMeasurementChange={handleMeasurementChange}                 
+                                sizes={sizes}
                             />   
                         </div>
-                        
                     }
                 </div>
 
@@ -431,7 +454,20 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                     </div>
                 </div>
             </div>
-                
+
+            {/* Crop Modal */}
+            {cropImage && (
+                <CropModal
+                    image={cropImage}
+                    onClose={(croppedImage) => {
+                        if (croppedImage) {
+                            handleCroppedImage(croppedImage);
+                        } else {
+                            setCropImage(null);
+                        }
+                    }}
+                />
+            )}
         </div>
     );
 };

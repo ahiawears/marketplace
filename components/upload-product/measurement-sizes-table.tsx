@@ -4,12 +4,17 @@ import { Input } from '../ui/input';
 
 interface MeasurementSizesTableProps {
     category: string;
-    measurements: { [size: string]: number };
-    setMeasurements: React.Dispatch<React.SetStateAction<{ [size: string]: number }>>;
+    measurements: {
+        [size: string]: {
+          [measurement: string]: number | string; // Measurements (e.g., "chest", "waist", etc.)
+        };
+    };
+    onMeasurementChange: (size: string, field: string, value: number) => void; // Function to handle updates
+    sizes: string[];
 }
 
 // Dynamic table component for measurements, sizes, and quantities
-const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category, measurements, setMeasurements }) => {
+const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category, measurements, onMeasurementChange, }) => {
     if (!category) {
         return <p className="text-gray-500">Please select a category to proceed.</p>;
     }
@@ -42,16 +47,28 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                             {categoryData?.measurements.map((measurement) => (
                                 <td key={measurement} className="border border-gray-300 px-4 py-2">
                                     <Input
+                                        name='sizes'
                                         type="number"
                                         placeholder={measurement}
+                                        value={measurements[size]?.[measurement] || ""}
+                                        onChange={(e) =>
+                                            onMeasurementChange(size, measurement, parseFloat(e.target.value))
+                                        }
                                         className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 [&::-webkit-inner-spin-button]:appearance-none"
                                     />
                                 </td>
                             ))}
                             <td className="border border-gray-300 px-4 py-2">
                                 <Input
+                                    name='quantity'
                                     type="number"
                                     placeholder="Quantity"
+                                    //value={quantities[size] || ""}
+                                    // onChange={(e) =>
+                                    //     onQuantityChange(size, parseFloat(e.target.value) || 0)
+                                    // }
+                                    value={measurements[size]?.quantity || ""}
+                                    onChange={(e) => onMeasurementChange(size, "quantity", parseFloat(e.target.value))}
                                     className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                 />
                             </td>
