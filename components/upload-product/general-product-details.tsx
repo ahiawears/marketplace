@@ -93,6 +93,9 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
         const handleSetCurrency = (s_Currency: string) => {
             const setCurrencyCode = s_Currency;
             const sCurrency = currency.find((c) => c.code === setCurrencyCode);
+            if (sCurrency) {
+                sCurrency.symbol
+            }
             setSelectedCurrency(sCurrency ? sCurrency.id.toString() : "");
         }
 
@@ -128,6 +131,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                         onChange={(e) => handleChange("productName", e.target.value)}
                         value={generalDetails.productName}
                         required
+                        placeholder="Enter the Product Name"
                     />
                 </div>    
             </div>

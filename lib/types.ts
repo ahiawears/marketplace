@@ -117,7 +117,6 @@ export interface ProductVariantType {
   productId: string;
   variantId: string;
   variantName: string;
-  variantSku: string;
   quantities: { [size: string]: number };
   images: string[];
   colorName: string;
@@ -130,7 +129,8 @@ export interface ProductVariantType {
       [measurement: string]: number;
       quantity: number;
     };
-  }; // Add this line
+  };
+  productCode: string;
 }
 
 export interface GeneralProductDetailsType {
@@ -155,6 +155,3 @@ export interface PhysicalAttributesType {
   width: string;
   depth: string;
 }
-
-//the size and quantity object should return like
-//measurement: {[size(S): {chest: string; waist: string; color; string; quantity: string;}], [size(XL): {chest: string; waist: string; color; string; quantity: string;}]}

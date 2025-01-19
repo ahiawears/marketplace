@@ -196,6 +196,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
             ...productInformation,
             colorHex: hex,
             colorName: colorSet,
+            variantName: `${originalProductName} in ${findNearestColor(hex)}`,
         });
     };
     
@@ -282,6 +283,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                                 alt={`Slide ${index + 1}`}
                                                 loader={blobLoader}
                                                 priority
+                                                style={{objectFit:"contain"}}
                                                 className="mx-auto mt-4 align-middle"
                                             />
                                         </div>
@@ -433,24 +435,49 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                     </div>
                 </div>
 
-                {/* Product Sku */}
-                <div>
-                    <label htmlFor="sku" className="block text-sm font-bold text-gray-900">
-                        SKU (Stock Keeping Unit):
-                    </label>
-                    <div className="mt-2">
-                        <Input
-                            id="sku"
-                            type="text"
-                            required
-                            value={productInformation.sku}
-                            onChange={(e) => {
-                                handleVariantChange("sku", e.target.value);
-                                handleSkuChange(e);
-                            }}
-                            placeholder="Enter the product SKU"
-                            className="block w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
+                <div className="mx-auto flex flex-col lg:flex-row space-x-4">
+                    {/* Product SKU */}
+                    <div className="lg:basis-1/2 ">
+                        <div>
+                            <label htmlFor="sku" className="block text-sm font-bold text-gray-900">
+                                SKU (Stock Keeping Unit):
+                            </label>
+                            <div className="mt-2">
+                                <Input
+                                    id="sku"
+                                    type="text"
+                                    required
+                                    value={productInformation.sku}
+                                    onChange={(e) => {
+                                        handleVariantChange("sku", e.target.value);
+                                        handleSkuChange(e);
+                                    }}
+                                    placeholder="Enter the product SKU"
+                                    className="block w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                    {/* Product Code */}
+                    <div className="lg:basis-1/2 ">
+                        <div>
+                            <label htmlFor="productCode" className="block text-sm font-bold text-gray-900">
+                                Product Code:
+                            </label>
+                            <div className="mt-2">
+                                <Input
+                                    id="productCode"
+                                    type="text"
+                                    required
+                                    value={productInformation.productCode}
+                                    onChange={(e) => {
+                                        handleVariantChange("productCode", e.target.value);
+                                    }}
+                                    placeholder="Enter the Product Code"
+                                    className="block w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

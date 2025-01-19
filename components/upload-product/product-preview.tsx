@@ -1,5 +1,7 @@
+import { currency } from "@/lib/currencyList";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { Input } from "../ui/input"
 
 interface ProductPreviewProps {
     productData: {
@@ -13,6 +15,8 @@ interface ProductPreviewProps {
             price?: string;
             variantName?: string;
             images?: string[];
+            colorName?: string;
+            colorHex?: string;
         };
         productVariants: {
             main_image_url: string;
@@ -24,6 +28,8 @@ interface ProductPreviewProps {
         price?: string;
         variantName?: string;
         images?: string[];
+        colorName?: string;
+        colorHex?: string;
     } | null;
     onVariantClick: (variant: any) => void;
   }
@@ -31,7 +37,19 @@ interface ProductPreviewProps {
 const ProductPreview: React.FC<ProductPreviewProps> = ({ productData, selectedVariant, onVariantClick, }) => {
     const mainPreview = selectedVariant || productData.productInformation;
     const [selectedImage, setSelectedImage] = useState(mainPreview.main_image_url);
+    const [currencySymbolValue, setCurrencySymbolValue] = useState("");
     
+
+    useEffect(() => {
+        const handleCurrencySymbol = (currencyCode: string) => {
+            const doesCodeExist = currencyCode;
+            const getSymbolFromCode = currency.find((c) => c.code === doesCodeExist);
+            if (getSymbolFromCode) {
+                setCurrencySymbolValue(getSymbolFromCode.symbol);
+            }
+        }
+        handleCurrencySymbol(productData.generalDetails.currency)
+    }, []);
 
     const blobLoader = ({ src }: { src: string }) => {
         if (src.startsWith("blob:")) {
@@ -40,11 +58,13 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({ productData, selectedVa
         return src;
     };
 
+    const validImages = mainPreview.images?.filter((image) => image?.trim() !== "") || [];
+    
     return (
         <div>
             <div className="mx-auto flex flex-col lg:flex-row">
                 <div className="lg:basis-3/5 p-4">
-                    <div className="flex justify-center mb-4 h-[500px] w-[300px]">
+                    <div className="flex justify-center h-[500px] w-[300px]">
                         <Image
                             src={ selectedImage }
                             height={500}
@@ -55,29 +75,57 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({ productData, selectedVa
                         />
                     </div>
                     {/* Thumbnails */}
-                    <div className="flex justify-center gap-4">
-                        {mainPreview.images && mainPreview.images.map((image, index) => (
+                    <div className="flex gap-4">
+                        {validImages.map((image, index) => (
                             <div
                                 key={index}
-                                className="cursor-pointer border-2 border-transparent hover:border-gray-400 rounded-md overflow-hidden relative h-[80px] w-[80px]"
+                                className="cursor-pointer border-2 border-transparent hover:border-gray-400 rounded-md overflow-hidden relative h-[60px] w-[60px]"
                                 onClick={() => setSelectedImage(image)}
                             >
                                 <Image
                                     src={image}
                                     alt={`Thumbnail ${index + 1}`}
-                                    height={80}
-                                    width={80}
+                                    height={60}
+                                    width={60}
                                     style={{objectFit:"contain"}}
-                                    //className="w-20 h-20 object-cover"
                                 />
                             </div>
                         ))}
                     </div>
                 </div>
                 <div className="lg:basis-2/5 p-4">
-                    <div className="px-6 bg-white rounded-lg shadow-lg py-4">
+                    <div className="px-6 bg-white rounded-lg py-4">
                         <div className="flex justify-between mb-4">
-                            <span>{mainPreview.variantName || productData.generalDetails.productName}</span>
+                            <h2 className="text-lg font-bold">
+                                {mainPreview.variantName || productData.generalDetails.productName}
+                            </h2>
+                        </div>
+                        <div>
+                            <p className="text-gray-700">
+                                { `${currencySymbolValue} ${mainPreview.price}` }
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col md:flex-row gap-2 my-2">
+                            <div className="w-full md:w-5/6">
+                                <p className="text-gray-700">
+                                    Colour: {mainPreview.colorName}
+                                </p>
+                            </div>
+                            <div className="w-full md:w-1/6 pointer-events-none">
+                                <Input
+                                    type="color"
+                                    value={mainPreview.colorHex}
+                                    className="border-none w-12 h-6 py-0 "
+                                    
+                                />
+                            </div>
+                        </div>
+                        {/* TODO: Add sizes list */}
+                        <div className="flex justify-between my-2">
+                            <p className="text-md font-bold">
+                                Size:
+                            </p>
                         </div>
                         
                     </div>

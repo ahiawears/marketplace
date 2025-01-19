@@ -7,6 +7,8 @@ import ProductPreviewModal from "../modals/product-preview-modal";
 import ProductPreview from "../upload-product/product-preview";
 import { ProductUploadData } from "@/lib/types";
 import ModalBackdrop from "../modals/modal-backdrop";
+import { addProduct } from "@/actions/uploadProduct";
+import { useRouter } from "next/navigation";
 
 const AddProductForm = () => {
   
@@ -47,7 +49,7 @@ const AddProductForm = () => {
 	// }
 	// };
 
-    
+    const router = useRouter();
 	const [productData, setProductData] = useState<ProductUploadData>({
 		generalDetails: {
 			productName: "",
@@ -64,7 +66,6 @@ const AddProductForm = () => {
 			productId: "",
 			variantId: "",
 			variantName: "",
-			variantSku: "",
 			quantities: {},
 			images: [],
 			colorName: "",
@@ -73,6 +74,7 @@ const AddProductForm = () => {
 			currency: "",
 			sku: "",
 			measurements: {},
+            productCode: "",
 		},
 		productVariants: [],
 	});
@@ -81,8 +83,61 @@ const AddProductForm = () => {
 	const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
 	const [selectedVariant, setSelectedVariant] = useState(null);
 
-	const handlePublishClick = () => {
-		setPreviewModalOpen(true);
+	const handlePublishClick = async () => {
+		//setPreviewModalOpen(true);
+
+
+        const formData = new FormData();
+
+        const measurementsJson = JSON.stringify(productData.productInformation.measurements);
+
+
+        // Add General Details Begin
+        formData.append("productName", productData.generalDetails.productName);
+        formData.append("productDescription", productData.generalDetails.productDescription);
+        formData.append("category", productData.generalDetails.category);
+        formData.append("subCategory", productData.generalDetails.subCategory);
+        formData.append("tags", productData.generalDetails.tags.join(","));
+        formData.append("material", productData.generalDetails.material);
+        formData.append("currency", productData.generalDetails.currency);
+        // Add General Details End
+
+        // Add Main Variant Details Begin
+        formData.append("variantName", productData.productInformation.variantName);
+        formData.append("variantSku", productData.productInformation.sku);
+        formData.append("variantPrice", productData.productInformation.price);
+        formData.append("variantColorName", productData.productInformation.colorName);
+        formData.append("variantColorHex", productData.productInformation.colorHex);
+        formData.append("variantProductCode", productData.productInformation.productCode);
+        formData.append("variantMeasurements", measurementsJson);
+        // Add images
+        productData.productInformation.images.forEach((image, index) => {
+            formData.append(`images[${index}]`, image);
+        });
+
+        // Add Main Variant Details End
+
+        //Add other variants if available Begin
+        formData.append("variants", JSON.stringify(productData.productVariants));
+        //Add other variants if available End
+
+
+        try {
+            const response = await fetch("/api/uploadProduct", {
+                method: "POST",
+                body: formData,
+              });
+          
+              if (!response.ok) {
+                throw new Error("Failed to upload product.");
+              }
+          
+              const { productId } = await response.json();
+              router.push(`/dashboard/product-details/${productId}`);
+        } catch (error) {
+            //create and pass error to modal for further actions
+            console.error("Error publishing product: ", error);
+        }
 	};
 
 	const handleVariantClick = (variant: any) => {

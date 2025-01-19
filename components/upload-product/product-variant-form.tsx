@@ -40,7 +40,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             colorHex: "",
             main_image_url: "",
             variantId: "",
-            variantSku: "",
             quantities: initialQuantities,
             images: ["", "", "", ""], 
             currentSlide: 0, 
@@ -48,6 +47,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             price: "",
             sku: "",
             measurements: {},
+            productCode: "",
         };
         setVariants([...variants, newVariant]);
     };
@@ -338,13 +338,14 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                                         />
                                                         <Image
                                                             src={
-                                                                image || "https://placehold.co/250x500.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
+                                                                image || "https://placehold.co/510x650.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
                                                             }
                                                             width={510}
                                                             height={650}
                                                             alt={`Variant ${index + 1} Image ${imgIndex + 1}`}
                                                             loader={blobLoader}
-                                                            priority                                                                
+                                                            priority
+                                                            style={{objectFit:"contain"}}                                                                
                                                             className="mx-auto mt-4 align-middle"
                                                         />
                                                     </div>
@@ -503,20 +504,40 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                 </div>
                             </div>
 
-                            {/* Variant SKU */}
-                            <div className="mt-3">
-                                <label htmlFor={`variantSku-${index}`} className="block text-sm font-bold text-gray-900 my-4">
-                                    Variant SKU:
-                                </label>
-                                <Input
-                                    id={`variantSku-${index}`}
-                                    name={`variantSku-${index}`}
-                                    type="text"
-                                    value={variant.sku}
-                                    onChange={(e) => updateVariant(index, "sku", e.target.value)}
-                                    placeholder="Enter the variant SKU"
-                                />
+                            <div className="mx-auto flex flex-col lg:flex-row space-x-4 mt-3">
+                                {/* Product SKU */}
+                                <div className="lg:basis-1/2 ">
+                                    <div className="mt-3">
+                                        <label htmlFor={`variantSku-${index}`} className="block text-sm font-bold text-gray-900 my-4">
+                                            Product SKU:
+                                        </label>
+                                        <Input
+                                            id={`variantSku-${index}`}
+                                            type="text"
+                                            value={variant.sku}
+                                            onChange={(e) => updateVariant(index, "sku", e.target.value)}
+                                            placeholder="Enter the variant SKU"
+                                        />
+                                    </div>
+                                </div>
+                                {/* Product Code */}
+                                <div className="lg:basis-1/2 ">
+                                    <div className="mt-3">
+                                        <label htmlFor={`productCode-${index}`} className="block text-sm font-bold text-gray-900 my-4">
+                                            Product Code:
+                                        </label>
+                                        <Input
+                                            id={`productCode-${index}`}
+                                            type="text"
+                                            required
+                                            value={variant.productCode}
+                                            onChange={(e) => updateVariant(index, "productCode", e.target.value)}
+                                            placeholder="Enter the Product Code"
+                                        />
+                                    </div>
+                                </div>
                             </div>
+
                             {/* Crop Modal */}
                             {cropImage && (
                                 <CropModal
