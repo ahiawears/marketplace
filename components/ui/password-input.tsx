@@ -8,7 +8,7 @@ export type InputProps = React.InputHTMLAttributes<HTMLInputElement>;
 
 const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, ...props }, ref) => {
-    const [showPassword, setShowPassword] = React.useState(false);
+    const [showPassword, setShowPassword] = React.useState(false); 
 
     return (
       <div className="relative">
@@ -25,7 +25,7 @@ const PasswordInput = React.forwardRef<HTMLInputElement, InputProps>(
           type="button"
           onClick={() => setShowPassword((prev) => !prev)}
           className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-foreground focus:outline-none"
-          aria-label={showPassword ? "Hide password" : "Show password"} // Accessibility
+          aria-label={showPassword ? "Hide password" : "Show password"} 
         >
           {showPassword ? (
             <EyeOff className="h-5 w-5" aria-hidden="true" />

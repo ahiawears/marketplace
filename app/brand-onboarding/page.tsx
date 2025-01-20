@@ -225,6 +225,7 @@ export default function BrandOnboardingPage() {
 						<ArrowRight className="w-4 h-4 ml-2" />
 					</Button>
 				</div>
+				
 			</CardFooter>
 		</Card>
 	);
