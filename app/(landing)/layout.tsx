@@ -3,11 +3,13 @@ import { ServerHeader } from "@/components/headerServerComponent";
 
 
 export default function LandingLayout ({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <ServerHeader />
-      <main className="md:py-32 py-44">{children}</main>
-      <Footer />
-    </>
-  );
+	return (
+		<>
+			<div className="flex flex-col min-h-screen">
+				<ServerHeader />
+				<main className="flex-grow">{children}</main>
+				<Footer />
+			</div>
+		</>
+	);
 };
