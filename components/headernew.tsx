@@ -1,0 +1,115 @@
+"use client";
+
+import { Filter, Heart, ShoppingCart } from "lucide-react";
+import { Button } from "./ui/button";
+import { Logo } from "./ui/logo";
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetTitle,
+  SheetTrigger,
+} from "./ui/sheet";
+import Link from "next/link";
+import {
+  UserActionsDropdownDesktop,
+  UserActionsDropdownMobile,
+} from "./user-actions-dropdown";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { SearchInput } from "./ui/search-input";
+
+
+export const HeaderNew = ({ user }: { user: any }) => {
+    const [searchQuery, setSearchQuery] = useState("");  
+    const router = useRouter();
+
+    const handleSearch = () => {
+
+    if (searchQuery.trim()) 
+        {
+            router.push(`/products?query=${encodeURIComponent(searchQuery)}`);
+        }
+    };
+
+    const goToFavorited = () => {
+        router.push(`/fav-lists`);
+    }
+
+    const goToCart = () => {
+        router.push(`/cart`);
+    }
+    return (
+        <header className="p-8 border-b border-border left-0 top-0 w-full bg-background z-50 sticky">
+            <div className="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
+                <div className="flex md:flex-row gap-4">
+                    <div className="lg:items-start md:items-start mx-auto ">
+                        <Logo />
+                    </div>
+                    
+                    <div className="hidden lg:flex md:flex items-center gap-4 grow w-full">
+                            <SearchInput 
+                                placeholder="Search products" 
+                                className="grow h-10" 
+                                name="searchValue" 
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onSearch={handleSearch}
+                            /> 
+                        
+                        <div className="hidden md:flex lg:flex gap-4">
+                            <Button size={"icon"} variant="outline" onClick={goToFavorited}>
+                                <Heart />
+                            </Button>
+                            <Button size={"icon"} variant="outline" onClick={goToCart}>
+                                <ShoppingCart />
+                            </Button>
+                        </div>
+                        
+                        <div className="md:hidden">
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button size={"icon"}>
+                                    <Filter />
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent className="flex flex-col px-0" side={"left"}>
+                                    <SheetTitle className="sr-only">Filters</SheetTitle>
+                                    <ul className="flex-1">{/* TODO: Add filters */}</ul>
+                                    <SheetFooter className="border-t border-border pt-4 px-3">
+                                    {!user ? (
+                                        <div className="grid grid-cols-2 gap-4 w-full">
+                                        <Button asChild variant={"outline"} size={"lg"}>
+                                            <Link href={"/log-in"}>Login</Link>
+                                        </Button>
+                                        <Button size={"lg"}>
+                                            <Link href={"/signup"}>Get Started</Link>
+                                        </Button>
+                                        </div>
+                                    ) : (
+                                        <UserActionsDropdownMobile user={user} />
+                                    )}
+                                    </SheetFooter>
+                                </SheetContent>
+                            </Sheet>
+                        </div>
+                    </div>
+                    {!user ? (
+                        <div className="md:flex items-center gap-4 hidden">
+                            <Button variant={"outline"} asChild size={"lg"}>
+                            <Link href={"/log-in"}>Login</Link>
+                            </Button>
+                            <Button size={"lg"}>
+                            <Link href={"/signup"}>Get Started</Link>
+                            </Button>
+                        </div>
+                        ) : (
+                        <div className="hidden md:block">
+                            <UserActionsDropdownDesktop user={user} />
+                        </div>
+                    )}
+                </div>
+            </div>
+            
+        </header>
+    );
+};

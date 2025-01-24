@@ -11,7 +11,7 @@ export const BrandCard = (props: BrandCardProps) => {
     return (
         <Card className={cn(props.className)}>
             <CardHeader
-                className={cn("w-fit p-0 bg-muted", props.headerClassName)}
+                className={cn("p-0", props.headerClassName)}
                 style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
             >
                 <Image

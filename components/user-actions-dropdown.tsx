@@ -24,13 +24,8 @@ const menuItems: {
   separator?: boolean;
 }[] = [
   {
-    label: "Dashboard",
-    href: "/dashboard",
-  },
-  {
-    label: "Start your brand",
-    href: "/brand-onboarding",
-    separator: true,
+    label: "My account",
+    href: "/my-account",
   },
   {
     label: "Log out",
@@ -48,7 +43,13 @@ export function UserActionsDropdownDesktop({ user }: Props) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className="w-56">
-        <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+        <DropdownMenuLabel>
+          <p className="">
+            Hi, <span>{user.user_metadata.first_name} </span>
+          </p>
+          
+          
+        </DropdownMenuLabel>
         {menuItems.map((item) => (
           <Fragment key={item.label}>
             <DropdownMenuItem asChild>
@@ -74,7 +75,7 @@ export function UserActionsDropdownMobile({ user }: Props) {
         <Button variant="outline">
           <span className="sr-only">Open menu</span>
           <UserIcon />
-          <span className="ml-2">{user.email}</span>
+          <span className="ml-2">{user.user_metadata.first_name}</span>
         </Button>
       </DropdownMenuTrigger>
 
