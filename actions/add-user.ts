@@ -6,15 +6,17 @@ type Props = {
 };
 
 export async function AddUser({ id, email }: Props) {
-  const supabase = await createClient();
+	const supabase = await createClient();
 
-  const { data, error } = await supabase.from("users").insert({
-    id,
-    email,
-  });
+	const { data, error } = await supabase
+									.from("users").
+									insert({
+										id,
+										email,
+									});
 
-  return {
-    data,
-    error,
-  };
+	return {
+		data,
+		error,
+	};
 }

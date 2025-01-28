@@ -22,6 +22,7 @@ import { SearchInput } from "./ui/search-input";
 
 export const HeaderNew = ({ user }: { user: any }) => {
     const [searchQuery, setSearchQuery] = useState("");  
+    const [isSearchVisible, setIsSearchVisible] = useState(false);
     const router = useRouter();
 
     const handleSearch = () => {
@@ -39,18 +40,91 @@ export const HeaderNew = ({ user }: { user: any }) => {
     const goToCart = () => {
         router.push(`/cart`);
     }
+
+    const toggleSearch = () => {
+        setIsSearchVisible(!isSearchVisible); // Toggle search input visibility
+    };
+
     return (
         <header className="p-8 border-b border-border left-0 top-0 w-full bg-background z-50 sticky">
             <div className="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
                 <div className="flex md:flex-row gap-4">
-                    <div className="lg:items-start md:items-start mx-auto ">
-                        <Logo />
-                    </div>
+
+                    {/* Mobile Search Icon */}
+                    {!isSearchVisible && (
+                        <div className="lg:hidden md:hidden flex items-center">
+                            <Button 
+                                className="bg-white"
+                                onClick={toggleSearch}
+                            >
+                                <svg 
+                                    xmlns="http://www.w3.org/2000/svg" 
+                                    width="24" 
+                                    height="24" 
+                                    viewBox="0 0 24 24"  
+                                    fill="none" 
+                                    stroke="black" 
+                                    strokeWidth="2" 
+                                    strokeLinecap="round" 
+                                    strokeLinejoin="round" 
+                                    className="lucide lucide-search "
+                                >
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <path d="m21 21-4.3-4.3"/>
+                                </svg>
+                            </Button>
+                        </div>
+                    )}
+
+                     {/* Logo */}
+                    {!isSearchVisible && (
+                        <div className="lg:items-start md:items-start mx-auto">
+                            <Logo />
+                        </div>
+                    )}
+
+                    {/* Mobile Menu Icon */}
+                    {!isSearchVisible && (
+                        <div className="lg:hidden md:hidden flex items-center">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="24"
+                                height="24"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="lucide lucide-menu"
+                            >
+                                <line x1="4" x2="20" y1="12" y2="12" />
+                                <line x1="4" x2="20" y1="6" y2="6" />
+                                <line x1="4" x2="20" y1="18" y2="18" />
+                            </svg>
+                        </div>
+                    )}
+
+                    {/* Search Input (Visible on Mobile when Search Icon is Clicked) */}
+                    {isSearchVisible && (
+                        <div className="lg:hidden md:hidden flex items-center w-full gap-2">
+                            <SearchInput
+                                placeholder="Search products"
+                                className="grow h-10 cursor-auto"
+                                name="searchValue"
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                onSearch={handleSearch}
+                            />
+                            <Button variant="outline" onClick={toggleSearch}>
+                                Cancel
+                            </Button>
+                        </div>
+                    )}
                     
                     <div className="hidden lg:flex md:flex items-center gap-4 grow w-full">
                             <SearchInput 
                                 placeholder="Search products" 
-                                className="grow h-10" 
+                                className="grow h-10 cursor-auto" 
                                 name="searchValue" 
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onSearch={handleSearch}
@@ -96,10 +170,10 @@ export const HeaderNew = ({ user }: { user: any }) => {
                     {!user ? (
                         <div className="md:flex items-center gap-4 hidden">
                             <Button variant={"outline"} asChild size={"lg"}>
-                            <Link href={"/log-in"}>Login</Link>
+                                <Link href={"/log-in"}>Login</Link>
                             </Button>
                             <Button size={"lg"}>
-                            <Link href={"/signup"}>Get Started</Link>
+                                <Link href={"/signup"}>Get Started</Link>
                             </Button>
                         </div>
                         ) : (

@@ -24,7 +24,7 @@ const MyAccount = () => {
 	return (
 		<div>
 			<div className="container flex h-[calc(100%-7.5rem)] space-x-4">
-				<aside className={`bg-gray-100 p-4 space-y-4 w-full h-fit lg:w-64 mx-auto ${activeComponent && "hidden md:block"}`}>
+				<aside className={`cursor-pointer bg-gray-100 p-4 space-y-4 w-full h-fit lg:w-64 mx-auto ${activeComponent && "hidden md:block"}`}>
 					<ul className="space-y-4 text-lg">
 						<li onClick={() => setActiveComponent("details")}>My Details</li>
 						<li onClick={() => setActiveComponent("changePassword")}>Change Password</li>
@@ -46,9 +46,7 @@ const MyAccount = () => {
 							<div>{renderComponent}</div>
 						</div>
 					) : (
-						<div className="hidden md:block text-center text-gray-500 ">
-							Select a menu item to view details
-						</div>
+						<div className="hidden md:block lg:block bg-[url('/images/ahiaproto3.jpg')] h-[600px] bg-cover text-center text-gray-500 "></div>
 					)}
 				</main>
 			</div>

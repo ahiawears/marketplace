@@ -11,7 +11,7 @@ export const CategoryBento = () => {
                 <p className="mx-auto mt-2 max-w-lg text-balance text-center text-4xl font-semibold tracking-tight text-gray-950 sm:text-5xl">
                     Everything you need to deploy your app
                 </p>
-                <div className="mt-10 grid gap-4 sm:mt-16 lg:grid-cols-3 lg:grid-rows-1">
+                <div className="mt-10 grid gap-4 sm:mt-16 lg:grid-cols-3 lg:grid-rows-1 ">
                     <div className="lg:basis-1/3 md:basis-2/3 basis-10/12 sm:justify-items-center lg:justify-self-start">
                         <div className="relative mb-8 block cursor-pointer">
                             <Image 

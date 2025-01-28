@@ -6,7 +6,7 @@ import { ProductCarousel } from "@/components/product-carousel";
 import { ProductGrid } from "@/components/product-grid";
 
 export default function Home() {
-	return (
+	return (  
 		<div className="flex flex-1 flex-col">
 			<HeroSection />
 
@@ -17,7 +17,6 @@ export default function Home() {
 				<div className="my-5">
 					<CategoryBento />
 				</div>
-				
 			</div>
 		{/* <ProductCarousel title="Trending" /> */}
 		{/* <ProductGrid title="New Arrivals" /> */}

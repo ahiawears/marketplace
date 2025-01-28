@@ -3,8 +3,8 @@ import { Logo } from "../ui/logo";
 
 export const TopBrandCTA = () => {
     return (
-        <div className="bg-transparent">
-            <div className="mx-auto py-24 sm:py-32 bg-[#BFCFBB]">
+        <div>
+            <div className="mx-auto py-24 sm:py-32 bg-[#BFCFBB] shadow-2xl">
                 <div className="relative mx-auto lg:flex md:flex w-full px-6 sm:px-16 lg:max-w-7xl lg:px-8 h-[500] py-6"> 
                     <div className="mx-auto text-center align-middle lg:mx-0 lg:flex-auto lg:text-left basis-1/3 lg:align-middle">
                         <div className="py-6 md:py-6">

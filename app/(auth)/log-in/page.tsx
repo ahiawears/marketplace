@@ -63,11 +63,12 @@ const LoginForm = () => (
         </label>
         <div className="mt-2">
           <Input
+            id="email"
             name="email"
             type="email"
             required
             autoComplete="email"
-            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
+            className="block w-full rounded-md py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
           />
         </div>
       </div>
@@ -91,10 +92,11 @@ const LoginForm = () => (
         </div>
         <div className="mt-2">
           <PasswordInput
+            id="password"
             name="password"
             required      
             autoComplete="current-password"
-            className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
+            className="block w-full rounded-md py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
           />
         </div>
       </div>

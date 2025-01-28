@@ -1,6 +1,4 @@
 import { createClient } from "@/supabase/server";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { AddBrand } from "./add-brand";
 
 type SignupProps = {

@@ -3,7 +3,7 @@
 import { Filter, Heart, ShoppingCart } from "lucide-react";
 import { Button } from "./ui/button";
 import { Logo } from "./ui/logo";
-import {
+import { 
   Sheet,
   SheetContent,
   SheetFooter,

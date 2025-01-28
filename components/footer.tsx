@@ -17,6 +17,7 @@ export const Footer = () => {
                                 <Input 
                                     id="email" 
                                     type="email" 
+                                    autoComplete="email"
                                     className="px-4 py-2 text-gray-700 bg-white border rounded-md dark:bg-gray-900 dark:text-gray-300 dark:border-gray-600 dark:focus:border-blue-300 focus:outline-none focus:ring focus:ring-opacity-40" 
                                     placeholder="Email Address" 
                                 />

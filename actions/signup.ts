@@ -1,47 +1,60 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-
 import { createClient } from "@/supabase/server";
-import { AddUser } from "./add-user";
+import { AddUser } from "./add-user"; 
 
-export async function signup(formData: FormData) {
-  const supabase = await createClient();
+type UserSignUpProps = {
+	email: string;
+	password: string;
+	firstName: string;
+	lastName: string;
+}
 
-  const userData = {
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-    firstName: formData.get("firstname") as string,
-    lastName: formData.get("lastname") as string,
-  };
+export async function signup({email, password, firstName, lastName}: UserSignUpProps) {
+    const supabase = await createClient();
 
-  const { data, error } = await supabase.auth.signUp({
-    email: userData.email,
-    password: userData.password,
-    options: { 
-      data: {
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-      },
-    },
-  });
+    const userData = {
+      	email, password, firstName, lastName,
+    };	
 
-  if (error || !data.user?.id) {
-    console.error({ error });
-    redirect("/signup?error=" + error?.code);
-  }
+    const { data, error } = await supabase.auth.signUp({
+		email: userData.email,
+		password: userData.password,
+		options: { 
+			data: {
+				first_name: userData.firstName,
+				last_name: userData.lastName,
+			},
+		},
+    });
 
-  const { error: addUserError } = await AddUser({
-    id: data.user.id, 
-    email: userData.email,
-  });
+	if (error) {
+		throw new Error(error.message || "An unexpected error occured, please try again.")
+	}
 
-  if (addUserError) {
-    console.error({ addUserError });
-    redirect("/signup?error=" + addUserError?.code);
-  }
+	if (!data.user) {
+		throw new Error("User data is null");
+	}
 
-  revalidatePath("/", "layout");
-  redirect("/");
+	try {
+		const { error: addUserError } = await AddUser({
+			id: data.user.id, 
+			email: userData.email,
+		});
+	
+		if (addUserError) {
+			throw new Error(addUserError.message);
+		}
+	} catch (error) {
+		//delete user if AddUser fails
+		const { error: deleteError } = await supabase.auth.admin.deleteUser(data.user.id);
+
+		//if theres an error, display error
+        if (deleteError) {
+            throw new Error (deleteError.message);
+        }
+
+		//through an unhandled error in case
+        throw new Error("An unexpected error occurred, please try again.");
+	}
 }
