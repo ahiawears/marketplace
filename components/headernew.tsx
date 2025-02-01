@@ -103,8 +103,8 @@ export const HeaderNew = ({ user }: { user: any }) => {
                                 <line x1="4" x2="20" y1="18" y2="18" />
                             </svg>
                         </div>
-                    )}
-
+                    )} 
+ 
                     {/* Search Input (Visible on Mobile when Search Icon is Clicked) */}
                     {isSearchVisible && (
                         <div className="lg:hidden md:hidden flex items-center w-full gap-2">
