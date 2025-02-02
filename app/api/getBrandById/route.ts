@@ -25,7 +25,6 @@ export async function GET(req: NextRequest) {
             );
         }
         const id = user.id;
-        console.log("The user Id is: ", id);
 
         const { data, error } = await supabase
             .from("brands_list")
@@ -40,6 +39,7 @@ export async function GET(req: NextRequest) {
                 { status: 404 }
             );
         }
+        console.log("The data is ", data);
 
         // Return fetched data as a JSON response
         return NextResponse.json({ data }, { status: 200 });

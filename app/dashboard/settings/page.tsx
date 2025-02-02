@@ -39,7 +39,7 @@ const SettingsPage = () => {
 				const data = await response.json();
 				setBrandDetails({
 					brandName: data.data.name,
-					brandEmail: data.data.brands?.brand_email, // Ensure this matches your backend structure
+					brandEmail: data.data.brands?.brand_email, // Ensure this matches backend structure
 					brandMobileNumber: "", // Placeholder for now
 				});
 				console.log("Fetched Brand Details:", data);
@@ -49,6 +49,7 @@ const SettingsPage = () => {
 		};
 
 		fetchBrandDetails();
+		console.log(brandDetails);
 	}, []);
 
 	return (
@@ -94,6 +95,7 @@ const BusinessProfileSection = ({brandDetails, handleInputChange,}: { brandDetai
 								type="text"
 								required
 								value={brandDetails?.brandName || ""}
+								disabled
 								onChange={handleInputChange}
 								className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-md/6"
 							/>

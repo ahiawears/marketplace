@@ -6,7 +6,7 @@ import Navbarn from "@/components/navbarn";
 export default function LandingLayout ({ children }: { children: React.ReactNode }) {
 	return (
 		<>
-			<div className="flex flex-col min-h-screen">
+			<div className="flex flex-col">
 				<ServerHeader /> 
 				{/* <Navbar /> */}
 				<Navbarn />
