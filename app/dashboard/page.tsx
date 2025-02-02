@@ -13,6 +13,9 @@ const DashboardPage = () => {
 				{/* Brand Metrics */}
 				{/* This should have the total sales, orders,  */}
 				<CardMetricsGrid />
+
+				{/* Top Selling Products */}
+				{/*  */}
 			</div>
 		</div>
 	);
