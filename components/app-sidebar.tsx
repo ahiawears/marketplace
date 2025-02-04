@@ -5,6 +5,7 @@ import {
   Settings,
   ShoppingBasket,
   TicketPercent,
+  UserPenIcon,
 } from "lucide-react";
 
 import {
@@ -72,6 +73,24 @@ const items: SibarMenuItem[] = [
     title: "Orders",
     url: "/dashboard/orders",
     icon: ListOrdered,
+  },
+
+  {
+    title: "Brand Profile Management",
+    url: "#",
+    icon: UserPenIcon,
+    subitems: [
+      {
+        title: "Profile Page",
+        url: "/dashboard/brand-profile-page",
+        icon: undefined,
+      },
+      {
+        title: "Brand Settings",
+        url: "/dashboard/brand-settings-page",
+        icon: undefined,
+      }
+    ]
   },
 
   {

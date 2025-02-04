@@ -7,11 +7,61 @@ export interface ProductTableType {
   sku: string;
 }
 
-export interface OrderTableType {
-  order_id: string;
-  customer_id: string;
+// export interface OrderTableType {
+//   order_id: string;
+//   customer_id: string;
+//   status: string;
+// }
+
+export type Customer = {
+  name: string;
+  email: string;
+  phone: string;
+  shippingAddress: string;
+};
+
+export type Shipping = {
+  method: string;
+  trackingNumber: string | null;
+  estimatedDelivery: string;
+};
+
+export type Order = {
+  id: string;
+  date: string;
+  status: "Processing" | "Shipped" | "Delivered" | "Cancelled";
+  total: number;
+  customer: Customer;
+  products: Product[];
+  shipping: Shipping;
+};
+
+export type OrderTableType = Order;
+
+export type OrderType = {
+  id: string;
+  date: string;
   status: string;
-}
+  total: number;
+  customer: {
+      name: string;
+      email: string;
+      phone: string;
+      shippingAddress: string;
+  };
+  products: {
+      name: string;
+      image: string;
+      quantity: number;
+      price: number;
+  }[];
+  shipping: {
+      method: string;
+      trackingNumber: string | undefined;
+      estimatedDelivery: string;
+  };
+};
+
 
 export type ProductDetails = {
   id: string;

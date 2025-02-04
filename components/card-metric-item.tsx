@@ -9,16 +9,23 @@ interface CardMetricItemProps {
 export const CardMetricItem: FC<CardMetricItemProps> = ({ title, value, icon: Icon }) => {
     return(
         <div className="bg-white rounded-lg shadow-md p-6 w-full ">
-            <div className="flex items-center mb-4">
-                {Icon && 
-                    <Icon 
-                        className="h-8 w-8 text-indigo-500 mr-2"
-                    />
-                } 
-                <h3 className="text-lg font-medium text-gray-800">{title}</h3>
-            </div>
-            <div className="text-2xl font-bold text-indigo-600">
-                {value}
+            <div className='flex flex-col md:flex-col lg:flex-col'>
+                <div>
+                    <h3 className="text-lg font-medium text-gray-800 float-left">{title}</h3>
+                </div>
+                <div className='flex flex-row md:flex-row lg:flex-row'>
+                    <div className='basis-10/12 float-left'>
+                        <h3 className="text-lg font-medium text-gray-800 float-left">{value}</h3>
+                    </div>
+                    <div className='basis-2/12'>
+                        {Icon && 
+                            <Icon 
+                                className="h-8 w-8 text-indigo-500 mr-2 float-right"
+                            />
+                        } 
+                    </div>
+                </div>
+
             </div>
         </div>
     );
