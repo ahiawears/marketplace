@@ -1,11 +1,9 @@
 "use client";
 
-import { OrderDetailsModal } from "@/components/brand-dashboard/order-details-modal";
 import NavTab from "@/components/navtab";
-import PageLoading from "@/components/pageLoading";
 import OrderTable from "@/components/ui/order-list-table";
-import { OrderTableType, OrderType } from "@/lib/types";
-import { useEffect, useState } from "react";
+import { OrderType } from "@/lib/types";
+import { useState } from "react";
 
 const OrdersPage = () => {
 

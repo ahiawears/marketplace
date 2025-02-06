@@ -6,7 +6,7 @@ import { Button } from '../ui/button'
 const ChangePassword = () => {
     return (
         <div className='p-4'>
-            <div className="text-center py-5 mb-5">
+            <div className="text-center mb-5">
                 {/* SVG Icon */}
                 <svg 
                     xmlns="http://www.w3.org/2000/svg" 

@@ -77,20 +77,9 @@ const items: SibarMenuItem[] = [
 
   {
     title: "Brand Profile Management",
-    url: "#",
+    url: "/dashboard/brand-profile-management",
     icon: UserPenIcon,
-    subitems: [
-      {
-        title: "Profile Page",
-        url: "/dashboard/brand-profile-page",
-        icon: undefined,
-      },
-      {
-        title: "Brand Settings",
-        url: "/dashboard/brand-settings-page",
-        icon: undefined,
-      }
-    ]
+   
   },
 
   {
