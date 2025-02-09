@@ -5,16 +5,20 @@ import React, { useState } from "react";
 type AccordionItem = {
   title: string;
   content: React.ReactNode;
+  disabled?: boolean;
 };
 
 type AccordionProps = {
   items: AccordionItem[];
+  activeIndex: number | null;
+  setActiveIndex: (index: number | null) => void;
 };  
 
-const Accordion: React.FC<AccordionProps> = ({ items }) => {
-  const [activeIndex, setActiveIndex] = useState<number | null>(0);
+const Accordion: React.FC<AccordionProps> = ({ items, activeIndex, setActiveIndex  }) => {
+  //const [activeIndex, setActiveIndex] = useState<number | null>(0);
 
   const handleToggle = (index: number) => {
+    if (items[index].disabled) return;
     setActiveIndex(activeIndex === index ? null : index); 
   };
 
@@ -24,7 +28,8 @@ const Accordion: React.FC<AccordionProps> = ({ items }) => {
         <div key={index} className="rounded-lg shadow">
           <button
             onClick={() => handleToggle(index)}
-            className="w-full flex justify-between items-center p-4 text-left text-lg font-medium text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none"
+            disabled={item.disabled}
+            className='w-full flex justify-between items-center p-4 text-left text-lg font-medium text-gray-800 bg-gray-100 hover:bg-gray-200 focus:outline-none border-b-2 ${item.disabled ? "opacity-50 cursor-not-allowed" : ""}'
           >
             <span>{item.title}</span>
             <svg

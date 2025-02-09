@@ -6,6 +6,8 @@ import { Input } from "../ui/input";
 import { ColourList } from "@/lib/coloursList";
 import MeasurementSizesTable from "./measurement-sizes-table";
 import { CropModal } from "../modals/crop-modal";
+import { findNearestColor } from "@/lib/findNearestColor";
+import { Pencil } from "lucide-react";
 
 interface ProductVariantProps {
     productInformation: ProductVariantType;
@@ -14,10 +16,14 @@ interface ProductVariantProps {
     sizes: string[];
     currencySymbol: string;
     category: string;
+    onSaveAndContinue: () => void;
 }
 
-const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, setProductInformation, originalProductName, sizes, currencySymbol, category}) => {
+const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, setProductInformation, originalProductName, sizes, currencySymbol, category, onSaveAndContinue }) => {
+    const [localDetails, setLocalDetails] = useState<ProductVariantType>(productInformation);
+
     const carouselRef = useRef<HTMLDivElement>(null);
+    const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
     const [selectedColor, setSelectedColor] = useState("#000000");
     const [colorName, setColorName] = useState("Black");
 
@@ -29,20 +35,25 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
     const [qrCodeBase64, setQrCodeBase64] = useState<string>("");
 
     useEffect(() => {
-        const isImagesEmpty = Array.isArray(productInformation.images) && productInformation.images.length === 0;
-
+        const isImagesEmpty = Array.isArray(localDetails.images) && localDetails.images.length === 0;
         if (isImagesEmpty) {
-            setProductInformation({
-                ...productInformation,
+            // setProductInformation({
+            //     ...productInformation,
+            //     images: ["", "", "", ""],
+            // });
+            setLocalDetails({
+                ...localDetails,
                 images: ["", "", "", ""],
-            });
+            })
         } else {
-            setProductInformation({ ...productInformation })
+            // setProductInformation({ ...productInformation })
+            // scrollToCurrentSlide(productInformation.currentSlide);
+            setLocalDetails({ ...localDetails });
+            scrollToCurrentSlide(localDetails.currentSlide);
         }
     }, []);
 
     useEffect(() => {
-        
         const preventScroll = (event: Event) => event.preventDefault();
 
         carouselRef.current?.addEventListener("wheel", preventScroll, { passive: false });
@@ -68,12 +79,13 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
 
     const handleCroppedImage = (croppedImage: string) => {
         if (cropIndex !== null) {
-            const updatedDetails = { ...productInformation };
+            const updatedDetails = { ...localDetails };
             const productImages = [...updatedDetails.images];
             productImages[cropIndex] = croppedImage;
             updatedDetails.images = productImages;
             updatedDetails.main_image_url = productImages[0];
-            setProductInformation(updatedDetails as ProductVariantType);
+            //setProductInformation(updatedDetails as ProductVariantType);
+            setLocalDetails(updatedDetails as ProductVariantType);
     
             // Reset crop state
             setCropImage(null);
@@ -94,7 +106,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
     };
       
     const nextSlide = () => {
-        let updatedDetails = { ...productInformation };
+        let updatedDetails = { ...localDetails };
         const pCurrentSlide = updatedDetails.currentSlide;
         const maxSlideIndex = updatedDetails.images.length - 1;
         const newSlide = pCurrentSlide + 1;
@@ -102,18 +114,20 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
         if (pCurrentSlide < maxSlideIndex) {
             updatedDetails.currentSlide = newSlide;
             scrollToCurrentSlide(newSlide);
-            setProductInformation(updatedDetails);
+            //setProductInformation(updatedDetails);
+            setLocalDetails(updatedDetails);
         }
     };
 
     const prevSlide = () => {
-        let updatedDetails = { ...productInformation };
+        let updatedDetails = { ...localDetails };
         const pCurrentSlide = updatedDetails.currentSlide;
         const newSlide = pCurrentSlide - 1;
         if (pCurrentSlide > 0) {
             updatedDetails.currentSlide = newSlide;
             scrollToCurrentSlide(newSlide);
-            setProductInformation(updatedDetails);
+            //setProductInformation(updatedDetails);
+            setLocalDetails(updatedDetails);
         }
     };
 
@@ -125,66 +139,6 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
         return src;
     };
 
-    // Helper: Convert HEX to RGB
-    const hexToRgb = (hex: string) => {
-        const bigint = parseInt(hex.slice(1), 16);
-        return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
-    };
-
-    // Helper: Convert RGB to Lab
-    const rgbToLab = ({ r, g, b }: { r: number; g: number; b: number }) => {
-        // Normalize RGB values
-        r /= 255;
-        g /= 255;
-        b /= 255;
-
-        // Convert to XYZ space
-        r = r > 0.04045 ? Math.pow((r + 0.055) / 1.055, 2.4) : r / 12.92;
-        g = g > 0.04045 ? Math.pow((g + 0.055) / 1.055, 2.4) : g / 12.92;
-        b = b > 0.04045 ? Math.pow((b + 0.055) / 1.055, 2.4) : b / 12.92;
-
-        const x = r * 0.4124564 + g * 0.3575761 + b * 0.1804375;
-        const y = r * 0.2126729 + g * 0.7151522 + b * 0.0721750;
-        const z = r * 0.0193339 + g * 0.1191920 + b * 0.9503041;
-
-        // Convert to Lab space
-        const xyz = [x / 0.95047, y / 1.00000, z / 1.08883].map((v) =>
-            v > 0.008856 ? Math.cbrt(v) : (v * 903.3 + 16) / 116
-        );
-
-        return {
-            l: 116 * xyz[1] - 16,
-            a: 500 * (xyz[0] - xyz[1]),
-            b: 200 * (xyz[1] - xyz[2]),
-        };
-    };
-
-    //Calculate Delta-E
-    const deltaE = (lab1: { l: number; a: number; b: number }, lab2: { l: number; a: number; b: number }) => {
-        return Math.sqrt(
-            Math.pow(lab1.l - lab2.l, 2) +
-            Math.pow(lab1.a - lab2.a, 2) +
-            Math.pow(lab1.b - lab2.b, 2)
-        );
-    };
-
-    // Main: Find the nearest color
-    const findNearestColor = (hex: string): string => {
-        const targetLab = rgbToLab(hexToRgb(hex));
-        let nearestColorName = "Unknown Color";
-        let smallestDeltaE = Infinity;
-
-        for (const [key, name] of Object.entries(ColourList)) {
-            const colorLab = rgbToLab(hexToRgb(key));
-            const difference = deltaE(targetLab, colorLab);
-
-            if (difference < smallestDeltaE) {
-                smallestDeltaE = difference;
-                nearestColorName = name;
-            }
-        }
-        return nearestColorName;
-    };
 
     const handleColorChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const hex = event.target.value;
@@ -192,12 +146,18 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
 
         setSelectedColor(hex);
         setColorName(colorSet);
-        setProductInformation({
-            ...productInformation,
+        // setProductInformation({
+        //     ...productInformation,
+        //     colorHex: hex,
+        //     colorName: colorSet,
+        //     variantName: `${originalProductName} in ${findNearestColor(hex)}`,
+        // });
+        setLocalDetails((prev) => ({
+            ...prev,
             colorHex: hex,
             colorName: colorSet,
             variantName: `${originalProductName} in ${findNearestColor(hex)}`,
-        });
+        }))
     };
     
     const handleSkuChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -235,21 +195,56 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
         setProductInformation(updatedDetails as ProductVariantType);
     };
 
+    const handleEditClick = (index: number) => {
+        event?.preventDefault();
+        if (fileInputRefs.current[index]) {
+            fileInputRefs.current[index]?.click();
+        }
+    };
+
+    const handleSave = () => {
+        //set local details here 
+        setProductInformation(localDetails);
+        //add onsave and continue
+        onSaveAndContinue();
+    }
+
+    const handleChange = (field: keyof ProductVariantType, value: string | string[]) => {
+        setLocalDetails((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
+    };
+
+    const isFormValid = () => {
+        // Check if all required fields are filled
+        return (
+            localDetails.images.every(image => image !== "") &&
+            localDetails.colorName.trim() !== "" &&
+            localDetails.colorHex.trim() !== "" &&
+            localDetails.price.trim() !== "" &&
+            localDetails.sku.trim() !== "" &&
+            localDetails.productCode.trim() !== "" 
+        );
+        
+        //return areImagesValid && isColorValid && isPriceValid && isSkuValid && isProductCodeValid && areMeasurementsValid;
+    };
+
     return (  
         <div>
             {/* Images Upload */}
-            <div>
+            <div className="mb-4">
                 <div>
                     <label htmlFor="fileInput" className="block text-sm font-bold text-gray-900 mb-5">
                         Upload Product Images:*
                     </label>
-                    <div className="w-full h-[700px] bg-slate-50 flex items-center justify-center">
-                        <div className="mt-4">
+                    <div className="w-full bg-slate-50 flex items-center justify-center">
+                        <div className="">
                             <div className="relative w-full h-[600px]">
-                                {productInformation.currentSlide > 0 && (
+                                {localDetails.currentSlide > 0 && (
                                     <Button
                                         type="button"
-                                        className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white ml-2 "
+                                        className="absolute left-0 top-1/2 transform bg-white -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white ml-2 "
                                         onClick={() => prevSlide()}
                                     >
                                         ◀
@@ -261,22 +256,14 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                     className="w-full h-full flex overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth touch-none" 
                                     style={{ scrollSnapType: "none" }}
                                 >
-                                    {productInformation.images.map((image, index) => (
+                                    {localDetails.images.map((image, index) => (
                                         <div
                                             key={index}
-                                            className="relative w-full h-[600px] flex justify-center items-center flex-shrink-0 overflow-x-hidden"
+                                            className="relative w-full h-[650px] flex justify-center items-center flex-shrink-0 overflow-x-hidden"
                                         >
-                                            <Input
-                                                id="fileInput"
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={(e) => handleFileChange(e, index)}
-                                                className="absolute inset-0 opacity-0 w-[510px] h-[650px] cursor-pointer"
-                                            />
-
                                             <Image
                                                 src={
-                                                    image || "https://placehold.co/510x650.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
+                                                    image ? image : "https://placehold.co/510x650.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
                                                 }
                                                 width={510}
                                                 height={650}
@@ -284,13 +271,25 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                                 loader={blobLoader}
                                                 priority
                                                 style={{objectFit:"contain"}}
-                                                className="mx-auto mt-4 align-middle"
+                                                className="mx-auto align-middle"
                                             />
+                                            <div className="absolute top-4 right-4">
+                                                <Button onClick={() => handleEditClick(index)} className="bg-gray-800 bg-opacity-50 rounded-full p-2 text-white hover:bg-opacity-75 transition">
+                                                    <Pencil />
+                                                </Button>
+                                                <Input
+                                                    type="file"
+                                                    ref={(el) => { fileInputRefs.current[index] = el; }}
+                                                    style={{ display: 'none' }}
+                                                    onChange={(e) => handleFileChange(e, index)}
+                                                    accept="image/*"
+                                                />
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
 
-                                {productInformation.currentSlide < productInformation.images.length / 1 - 1 && (
+                                {localDetails.currentSlide < localDetails.images.length / 1 - 1 && (
                                     <Button
                                         type="button"
                                         className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-transparent p-2 rounded-full text-black hover:text-white mr-2"
@@ -315,20 +314,20 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                 <Input
                                     type="color"
                                     id="colorPicker"
-                                    value={productInformation.colorHex ? productInformation.colorHex : selectedColor}
+                                    value={localDetails.colorHex ? localDetails.colorHex : selectedColor}
                                     onChange={handleColorChange}
-                                    className="mt-2 w-full h-12 border"
+                                    className="mt-2 w-full h-12 border-2"
                                 />
                             </div>
                             <div className="w-full md:w-5/6">
                                 <div className="relative">
                                     <Input
                                         name="colorPicker"
-                                        className="w-full px-4 mt-2 border border-gray-300 rounded-md"
+                                        className="w-full px-4 mt-2 border-2"
                                         type="text"
                                         list="colorOptions"
                                         placeholder="Search and select a color" 
-                                        value={colorName}
+                                        value={localDetails.colorName ? localDetails.colorName : colorName}
                                         // THIS IS CORRECT, DO NOT CHANGE
                                         onChange={(e) => {
                                             const inputValue = e.target.value;
@@ -377,7 +376,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                     </div>
                     <div>
                         <p>
-                            Selected Color: <span>{colorName}</span> (<span>{selectedColor}</span>)
+                            Selected Color: <span>{localDetails.colorName ? localDetails.colorName : colorName}</span> (<span>{localDetails.colorHex ? localDetails.colorHex : selectedColor}</span>)
                         </p>
                     </div>
                 </div>
@@ -426,18 +425,18 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                     required
                                     className="block border-l p-2 text-gray-900 bg-transparent w-10/12 [&::-webkit-inner-spin-button]:appearance-none"
                                     onChange={(e) => {
-                                        handleVariantChange("price", e.target.value);
+                                        handleChange("price", e.target.value);
                                     }}
-                                    value={productInformation.price}
+                                    value={localDetails.price}
                                 />
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div className="mx-auto flex flex-col lg:flex-row space-x-4">
+                <div className="mx-auto flex flex-col lg:flex-row lg:space-x-4 md:flex-col gap-y-4">
                     {/* Product SKU */}
-                    <div className="lg:basis-1/2 ">
+                    <div className="lg:basis-1/2">
                         <div>
                             <label htmlFor="sku" className="block text-sm font-bold text-gray-900">
                                 SKU (Stock Keeping Unit):
@@ -447,9 +446,9 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                     id="sku"
                                     type="text"
                                     required
-                                    value={productInformation.sku}
+                                    value={localDetails.sku}
                                     onChange={(e) => {
-                                        handleVariantChange("sku", e.target.value);
+                                        handleChange("sku", e.target.value);
                                         handleSkuChange(e);
                                     }}
                                     placeholder="Enter the product SKU"
@@ -459,8 +458,8 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                         </div>
                     </div>
                     {/* Product Code */}
-                    <div className="lg:basis-1/2 ">
-                        <div>
+                    <div className="lg:basis-1/2">
+                        <div className="">
                             <label htmlFor="productCode" className="block text-sm font-bold text-gray-900">
                                 Product Code:
                             </label>
@@ -469,9 +468,9 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                     id="productCode"
                                     type="text"
                                     required
-                                    value={productInformation.productCode}
+                                    value={localDetails.productCode}
                                     onChange={(e) => {
-                                        handleVariantChange("productCode", e.target.value);
+                                        handleChange("productCode", e.target.value);
                                     }}
                                     placeholder="Enter the Product Code"
                                     className="block w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -479,6 +478,15 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                             </div>
                         </div>
                     </div>
+                </div>
+                <div className="mt-5">
+                    <Button
+                        onClick={handleSave}
+                        disabled={!isFormValid()}
+                        className="flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    >
+                        Save and continue
+                    </Button>
                 </div>
             </div>
 

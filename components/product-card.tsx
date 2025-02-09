@@ -20,7 +20,7 @@ export const ProductCard = (props: Props) => {
     <Card className={cn(props.className)}>
       <CardHeader
         className={cn("h-[400px] bg-muted border-b", props.headerClassName)}
-      >
+      > 
         {/* Image */}
       </CardHeader>
       <CardContent className={cn("pt-4 space-y-2", props.contentClassName)}>

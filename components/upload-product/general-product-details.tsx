@@ -6,24 +6,48 @@ import { categoriesList } from "@/lib/categoriesList";
 import { useEffect, useState } from "react";
 import { currency } from "@/lib/currencyList";  
 import { clothingMaterials } from "@/lib/item-material-list";
+import { Button } from "../ui/button";
 
 interface GeneralProductDetailsProps {
     generalDetails: GeneralProductDetailsType;
     setGeneralDetails: (details: GeneralProductDetailsType | ((prev: GeneralProductDetailsType) => GeneralProductDetailsType)) => void;
+    onSaveAndContinue: () => void;
 }
 
-const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails,setGeneralDetails }) => {
+const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue }) => {
+    const [localDetails, setLocalDetails] = useState<GeneralProductDetailsType>(generalDetails);
+
     const [subcategories, setSubcategories] = useState<string[]>([]);
     const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
     const [customTags, setCustomTags] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [selectedCurrency, setSelectedCurrency] = useState("");
 
+     // Check if all required fields are filled
+     const isFormValid = () => {
+        return (
+            localDetails.productName.trim() !== "" &&
+            localDetails.productDescription.trim() !== "" &&
+            localDetails.category.trim() !== "" &&
+            localDetails.currency.trim() !== "" &&
+            localDetails.material.trim() !== "" &&
+            localDetails.subCategory.trim() !== "" &&
+            //check if 3 tags has been selected
+            localDetails.tags.length === 3
+        );
+    };
+
+    const handleSave = () => {
+        // Pass the local state to the parent component
+        setGeneralDetails(localDetails);
+        onSaveAndContinue();
+    };
+
     const handleChange = (field: keyof GeneralProductDetailsType, value: string | string[]) => {
-        setGeneralDetails((prev: GeneralProductDetailsType) => {
-            const updatedDetails = { ...prev, [field]: value };
-            return updatedDetails as GeneralProductDetailsType;
-        });
+        setLocalDetails((prev) => ({
+            ...prev,
+            [field]: value,
+        }));
     };
 
     const handleCategoryChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -32,11 +56,10 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
         setSubcategories(category?.subcategories || []);
         setCustomTags(category ? category.tags : []);
 
-        //check if the category is stored in the object, if it is, remove the subcategory and tags
-        const isCategorySet = generalDetails.category;
-        if (categoryName !== isCategorySet) {
-            setGeneralDetails((prevDetails) => ({
-                ...prevDetails,
+        // Reset subcategory and tags if the category changes
+        if (categoryName !== localDetails.category) {
+            setLocalDetails((prev) => ({
+                ...prev,
                 category: categoryName,
                 subCategory: "",
                 tags: [],
@@ -47,33 +70,30 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
     };
     
     const handleTagClick = (tag: string) => {
-
-        if (selectedTags.length > 3) {
-            console.log("You can only select up to 3 tags");
+        if (localDetails.tags.includes(tag)) {
+            // If the tag is already selected, remove it
+            setLocalDetails((prev) => ({
+                ...prev,
+                tags: prev.tags.filter((t) => t !== tag),
+            }));
+        } else {
+            // If the tag is not selected and the limit is reached, show a message
+            if (localDetails.tags.length >= 3) {
+                console.log("You can only select up to 3 tags");
+            } else {
+                // If the tag is not selected and the limit is not reached, add it
+                setLocalDetails((prev) => ({
+                    ...prev,
+                    tags: [...prev.tags, tag],
+                }));
+            }
         }
-
-        setSelectedTags(prevTags => {
-            if (prevTags.includes(tag)) {
-                return prevTags.filter(t => t !== tag);
-            } else if (prevTags.length < 3) {
-                return [...prevTags, tag];
-            } 
-            return prevTags;
-        });
-
-        setGeneralDetails(prevDetails => ({
-            ...prevDetails,
-            tags: prevDetails.tags.includes(tag) 
-                ? prevDetails.tags.filter(t => t !== tag) 
-                : [...prevDetails.tags, tag],
-        }));
-
     };
 
     const handleSubcategorySelect = (subcategory: string) => {
         setSelectedSubcategory(subcategory);
-        setGeneralDetails(prevDetails => ({
-            ...prevDetails,
+        setLocalDetails((prev) => ({
+            ...prev,
             subCategory: subcategory,
         }));
     };
@@ -82,8 +102,8 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
         const selectedCurrency = parseInt(event.target.value);
         const sCurrency = currency.find((c) => c.id === selectedCurrency);
         if (sCurrency) {
-            setGeneralDetails(prevDetails => ({
-                ...prevDetails,
+            setLocalDetails((prev) => ({
+                ...prev,
                 currency: sCurrency.code,
             }));
         }
@@ -94,29 +114,26 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
             const setCurrencyCode = s_Currency;
             const sCurrency = currency.find((c) => c.code === setCurrencyCode);
             if (sCurrency) {
-                sCurrency.symbol
+                setSelectedCurrency(sCurrency.id.toString());
             }
-            setSelectedCurrency(sCurrency ? sCurrency.id.toString() : "");
         }
 
-        handleSetCurrency(generalDetails.currency);
-    },[]);
+        handleSetCurrency(localDetails.currency);
+    },[localDetails.currency]);
 
     useEffect(() => {
         const getDetails = () => {
-            if (generalDetails.category) {
-                const categoryName = generalDetails.category;
+            if (localDetails.category) {
+                const categoryName = localDetails.category;
                 const category = categoriesList.find((cat) => cat.name === categoryName);
                 setSubcategories(category?.subcategories || []);
                 setCustomTags(category ? category.tags : []);
-                setSelectedSubcategory(generalDetails.subCategory);
-                setSelectedTags(generalDetails.tags);
-            }else{
-                console.log("there are no subcategories set");
+                setSelectedSubcategory(localDetails.subCategory);
+                setSelectedTags(localDetails.tags);
             }
-        }
+        };
         getDetails();
-    }, []);
+    }, [localDetails.category, localDetails.subCategory, localDetails.tags]);
 
     return (
         <div className="product-details">
@@ -129,9 +146,10 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                         id="productName"
                         type="text"
                         onChange={(e) => handleChange("productName", e.target.value)}
-                        value={generalDetails.productName}
+                        value={localDetails.productName}
                         required
                         placeholder="Enter the Product Name"
+                        className="border-2"
                     />
                 </div>    
             </div>
@@ -145,10 +163,11 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                         id="productDescription"
                         name="productDescription"
                         onChange={(e) => handleChange("productDescription", e.target.value)}
-                        value={generalDetails.productDescription}
+                        value={localDetails.productDescription}
                         rows={4}
                         required
                         placeholder="Enter the product description here"
+                        className="border-2"
                     />
                 </div>
             </div>
@@ -166,7 +185,8 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                                 handleChange("category", e.target.value);
                                 
                             }}
-                            value={generalDetails.category}
+                            value={localDetails.category}
+                            className="border-2"
                         >
                             <option value="" disabled>Select a category</option>
                             {categoriesList.map((category) => (
@@ -186,11 +206,11 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                                 <span
                                     key={index}
                                     onClick={() => handleSubcategorySelect(sub)}
-                                    className={`px-3 py-1 rounded-full text-sm cursor-pointer 
+                                    className={`px-3 py-1 text-sm cursor-pointer 
                                         ${selectedSubcategory === sub 
-                                            ? "bg-indigo-500 text-white" 
-                                            : "bg-indigo-200 text-indigo-800"} 
-                                        hover:bg-indigo-300`}
+                                            ? "bg-black text-white" 
+                                            : "bg-primary text-white opacity-50"} 
+                                        hover:bg-primary/90 hover:text-white`}
                                 >
                                     {sub}
                                 </span>
@@ -206,11 +226,11 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                             {customTags.map((tag, index) => (
                                 <span
                                     key={index}
-                                    className={`px-3 py-1 rounded-full text-sm cursor-pointer 
+                                    className={`px-3 py-1  text-sm cursor-pointer 
                                         ${selectedTags.includes(tag) 
-                                            ? "bg-indigo-500 text-white" 
-                                            : "bg-indigo-200 text-indigo-800"} 
-                                        hover:bg-indigo-300`}
+                                            ? "bg-black text-white" 
+                                            : "bg-primary text-white opacity-50"} 
+                                        hover:bg-primary/90 hover:text-white` }
                                     onClick={() => handleTagClick(tag)}
                                 >
                                     {tag}
@@ -234,7 +254,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                                 setSelectedCurrency(e?.target.value);
                             }}
                             value={selectedCurrency}
-                            className="block border-l bg-transparent"
+                            className="block border-2 bg-transparent"
                         >
                             <option value="" disabled>Select Currency</option>
                             
@@ -262,8 +282,8 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                             onChange={(e) => {
                                 handleChange("material", e.target.value);
                             }}
-                            value={generalDetails.material}
-                            className="block border-l bg-transparent"
+                            value={localDetails.material}
+                            className="block border-2 bg-transparent"
                         >
                             <option value="" disabled>Select Material</option>
                             {clothingMaterials.map((material) => (
@@ -274,6 +294,15 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                         </Select>
                     </div>
                 </div>
+            </div>
+            <div className="mt-5">
+                <Button
+                    onClick={handleSave}
+                    disabled={!isFormValid()}
+                    className="flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                >
+                    Save and continue
+                </Button>
             </div>
         </div>
     );

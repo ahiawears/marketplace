@@ -1,5 +1,6 @@
 import {
   ArrowLeft,
+  BookImage,
   Home,
   ListOrdered,
   Settings,
@@ -54,6 +55,12 @@ const items: SibarMenuItem[] = [
         icon: undefined,
       }
     ],
+  },
+
+  {
+    title: "Lookbook",
+    url: "/dashboard/lookbook",
+    icon: BookImage,
   },
 
   {

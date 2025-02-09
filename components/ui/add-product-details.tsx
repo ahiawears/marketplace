@@ -10,6 +10,9 @@ import MainProductForm from "../upload-product/main-product-form";
     
 const AddProductDetails = ({ productData, setProductData }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>> }) => {
     const [sizes, setSizes] = useState<string[]>([]);
+    const [isFirstAccordionCompleted, setIsFirstAccordionCompleted] = useState(false);
+    const [isSecondAccordionCompleted, setIsSecondAccordionCompleted] = useState(false);
+    const [activeIndex, setActiveIndex] = useState<number | null>(0);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -24,6 +27,11 @@ const AddProductDetails = ({ productData, setProductData }: { productData: Produ
 
         // TODO: Send `productData` to the backend or further processing
     };
+
+    const handleNextAccordion = () => {
+        setActiveIndex(1); // Open the second accordion (index 1)
+    };
+
     const productCurrency = productData.generalDetails.currency;
     const productCurrencySymbol = currency.find((c) => c.code === productCurrency)?.symbol || "";
 
@@ -32,6 +40,7 @@ const AddProductDetails = ({ productData, setProductData }: { productData: Produ
             ...prev,
             generalDetails: typeof details === 'function' ? details(prev.generalDetails) : details,
         }));
+        setIsFirstAccordionCompleted(true);
     };
 
     const setProductVariants = (variants: ProductVariantType[] | ((prev: ProductVariantType[]) => ProductVariantType[])) => {
@@ -44,26 +53,39 @@ const AddProductDetails = ({ productData, setProductData }: { productData: Produ
     const setProductInformation = (info: ProductVariantType | ((prev: ProductVariantType) => ProductVariantType)) => {
         setProductData((prev) => ({
             ...prev,
-            // productInformation: {
-            //     ...prev.productInformation,
-            //     ...info,
-            // },
             productInformation: typeof info === 'function' ? info(prev.productInformation) : info,
         }));
+        setIsSecondAccordionCompleted(true);
+        setIsFirstAccordionCompleted(false);
     };
     
     const accordionItems = [
         {
             title: "General Product Details",
-            content: <GeneralProductDetails generalDetails={productData.generalDetails} setGeneralDetails={setGeneralDetails} />
+            content: <GeneralProductDetails 
+                generalDetails={productData.generalDetails} 
+                setGeneralDetails={setGeneralDetails}
+                onSaveAndContinue={handleNextAccordion} 
+            />,
+            disabled: false,
         }, 
         {
             title: "Product Information",
-            content: <MainProductForm productInformation={productData.productInformation} setProductInformation={setProductInformation} originalProductName={productData.generalDetails.productName} sizes={sizes} currencySymbol={productCurrencySymbol} category={productData.generalDetails.category}/>
+            content: <MainProductForm 
+                productInformation={productData.productInformation} 
+                setProductInformation={setProductInformation} 
+                originalProductName={productData.generalDetails.productName} 
+                sizes={sizes} 
+                currencySymbol={productCurrencySymbol} 
+                category={productData.generalDetails.category}
+                onSaveAndContinue={handleNextAccordion}
+            />,
+            disabled: !isFirstAccordionCompleted,
         },
         {
             title: "Add Product Variants",
-            content: <ProductVariantForm variants={productData.productVariants} setVariants={setProductVariants} originalProductName={productData.generalDetails.productName} sizes={sizes} currencySymbol={productCurrencySymbol} category={productData.generalDetails.category}/>
+            content: <ProductVariantForm variants={productData.productVariants} setVariants={setProductVariants} originalProductName={productData.generalDetails.productName} sizes={sizes} currencySymbol={productCurrencySymbol} category={productData.generalDetails.category}/>,
+            disabled: !isSecondAccordionCompleted && !isFirstAccordionCompleted,
         }
     ];
 
@@ -71,12 +93,10 @@ const AddProductDetails = ({ productData, setProductData }: { productData: Produ
         console.log("General Details updated:", productData);
     }, [productData]);
 
-   
-
     return (
-        <div className="border rounded-lg shadow-sm mx-auto">
+        <div className="border-2 rounded-lg shadow-sm mx-auto">
             <form onSubmit={handleSubmit}>
-                <Accordion items={accordionItems} />
+                <Accordion items={accordionItems} activeIndex={activeIndex} setActiveIndex={setActiveIndex}/>
             </form>
         </div>
     );
