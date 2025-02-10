@@ -85,7 +85,7 @@ const AddProductDetails = ({ productData, setProductData }: { productData: Produ
         {
             title: "Add Product Variants",
             content: <ProductVariantForm variants={productData.productVariants} setVariants={setProductVariants} originalProductName={productData.generalDetails.productName} sizes={sizes} currencySymbol={productCurrencySymbol} category={productData.generalDetails.category}/>,
-            disabled: !isSecondAccordionCompleted && !isFirstAccordionCompleted,
+            disabled: !(isSecondAccordionCompleted && isFirstAccordionCompleted),
         }
     ];
 

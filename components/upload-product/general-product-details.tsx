@@ -226,7 +226,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                             {customTags.map((tag, index) => (
                                 <span
                                     key={index}
-                                    className={`px-3 py-1  text-sm cursor-pointer 
+                                    className={`px-3 py-1 text-sm cursor-pointer 
                                         ${selectedTags.includes(tag) 
                                             ? "bg-black text-white" 
                                             : "bg-primary text-white opacity-50"} 

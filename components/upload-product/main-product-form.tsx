@@ -21,6 +21,7 @@ interface ProductVariantProps {
 
 const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, setProductInformation, originalProductName, sizes, currencySymbol, category, onSaveAndContinue }) => {
     const [localDetails, setLocalDetails] = useState<ProductVariantType>(productInformation);
+    const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
 
     const carouselRef = useRef<HTMLDivElement>(null);
     const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -37,17 +38,13 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
     useEffect(() => {
         const isImagesEmpty = Array.isArray(localDetails.images) && localDetails.images.length === 0;
         if (isImagesEmpty) {
-            // setProductInformation({
-            //     ...productInformation,
-            //     images: ["", "", "", ""],
-            // });
+            
             setLocalDetails({
                 ...localDetails,
                 images: ["", "", "", ""],
             })
         } else {
-            // setProductInformation({ ...productInformation })
-            // scrollToCurrentSlide(productInformation.currentSlide);
+
             setLocalDetails({ ...localDetails });
             scrollToCurrentSlide(localDetails.currentSlide);
         }
@@ -84,7 +81,6 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
             productImages[cropIndex] = croppedImage;
             updatedDetails.images = productImages;
             updatedDetails.main_image_url = productImages[0];
-            //setProductInformation(updatedDetails as ProductVariantType);
             setLocalDetails(updatedDetails as ProductVariantType);
     
             // Reset crop state
@@ -114,7 +110,6 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
         if (pCurrentSlide < maxSlideIndex) {
             updatedDetails.currentSlide = newSlide;
             scrollToCurrentSlide(newSlide);
-            //setProductInformation(updatedDetails);
             setLocalDetails(updatedDetails);
         }
     };
@@ -126,7 +121,6 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
         if (pCurrentSlide > 0) {
             updatedDetails.currentSlide = newSlide;
             scrollToCurrentSlide(newSlide);
-            //setProductInformation(updatedDetails);
             setLocalDetails(updatedDetails);
         }
     };
@@ -146,12 +140,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
 
         setSelectedColor(hex);
         setColorName(colorSet);
-        // setProductInformation({
-        //     ...productInformation,
-        //     colorHex: hex,
-        //     colorName: colorSet,
-        //     variantName: `${originalProductName} in ${findNearestColor(hex)}`,
-        // });
+        
         setLocalDetails((prev) => ({
             ...prev,
             colorHex: hex,
@@ -182,17 +171,33 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
     };
 
     const handleMeasurementChange = (size: string, field: string, value: number) => {
-        const updatedDetails = {
-            ...productInformation,
-            measurements: {
-                ...productInformation.measurements,
-                [size]: {
-                    ...(productInformation.measurements[size] || {}),
-                    [field]: value,
+        if (field === "remove") {
+            // Remove the size from measurements
+            const updatedMeasurements = { ...localDetails.measurements };
+            delete updatedMeasurements[size];
+            setLocalDetails((prev) => ({
+                ...prev,
+                measurements: updatedMeasurements,
+            }));
+        } else {
+            const updatedDetails = {
+                ...localDetails,
+                measurements: {
+                    ...localDetails.measurements,
+                    [size]: {
+                        ...(localDetails.measurements[size] || {}),
+                        [field]: value,
+                    },
                 },
-            },
-        };
-        setProductInformation(updatedDetails as ProductVariantType);
+            };
+            setLocalDetails(updatedDetails as ProductVariantType);
+        }
+        
+    };
+
+    // Validate if all selected sizes have a quantity
+    const areMeasurementsValid = () => {
+        return selectedSizes.every((size) => localDetails.measurements[size]?.quantity);
     };
 
     const handleEditClick = (index: number) => {
@@ -224,10 +229,10 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
             localDetails.colorHex.trim() !== "" &&
             localDetails.price.trim() !== "" &&
             localDetails.sku.trim() !== "" &&
-            localDetails.productCode.trim() !== "" 
+            localDetails.productCode.trim() !== "" &&
+            //get the measurements and validate
+            areMeasurementsValid()
         );
-        
-        //return areImagesValid && isColorValid && isPriceValid && isSkuValid && isProductCodeValid && areMeasurementsValid;
     };
 
     return (  
@@ -390,9 +395,9 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                             </h3>
                             <MeasurementSizesTable
                                 category={category}
-                                measurements={productInformation.measurements}
-                                onMeasurementChange={handleMeasurementChange}                 
-                                sizes={sizes}
+                                measurements={localDetails.measurements}
+                                onMeasurementChange={handleMeasurementChange} 
+                                setSelectedSizes={setSelectedSizes}                 
                             />   
                         </div>
                     }
