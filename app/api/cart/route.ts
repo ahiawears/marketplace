@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCartItems } from '@/lib/cart';
-import { createClient } from '@/supabase/server';
+import { createClient } from '@/supabase_change/server';
  
 export async function GET(req: NextRequest) {
     try {

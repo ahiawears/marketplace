@@ -1,4 +1,4 @@
-import { createClient } from "@/supabase/server";
+import { createClient } from "@/supabase_change/server";
 import { NextRequest, NextResponse } from "next/server";
 
 // Define the expected type for the size data

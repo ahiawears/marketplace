@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/supabase/server";
+import { createClient } from "@/supabase_change/server";
 import { AddUser } from "./add-user"; 
 
 type UserSignUpProps = {

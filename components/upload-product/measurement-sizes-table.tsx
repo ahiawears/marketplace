@@ -1,8 +1,8 @@
 "use client";
 
-import { categoriesList } from '@/lib/categoriesList';
+import { categoriesList } from "../../lib/categoriesList.ts";
 import React, { useEffect, useState } from 'react';
-import { Input } from '../ui/input';
+import { Input } from "../ui/input.tsx";
 
 interface MeasurementSizesTableProps {
     category: string; 
@@ -115,56 +115,6 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                     ))}
                 </tbody>
             </table>
-            {/* <table className="table-auto w-full border-collapse border border-gray-300">
-                <thead>
-                    <tr className="bg-gray-100">
-                        <th className="border border-gray-300 px-4 py-2">Size</th>
-                            {categoryData?.measurements.map((measurement) => (
-                                <th key={measurement} className="border border-gray-300 px-4 py-2">
-                                    {measurement}
-                                </th>
-                            ))}
-                        <th className="border border-gray-300 px-4 py-2">Quantity</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {sizes.map((size) => (
-                        <tr key={size}>
-                            <td className="border border-gray-300 px-4 py-2 font-medium">
-                                {size}
-                            </td>
-                            {categoryData?.measurements.map((measurement) => (
-                                <td key={measurement} className="border border-gray-300 px-4 py-2">
-                                    <Input
-                                        name='sizes'
-                                        type="number"
-                                        placeholder={measurement}
-                                        value={measurements[size]?.[measurement] || ""}
-                                        onChange={(e) =>
-                                            onMeasurementChange(size, measurement, parseFloat(e.target.value))
-                                        }
-                                        className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 [&::-webkit-inner-spin-button]:appearance-none"
-                                    />
-                                </td>
-                            ))}
-                            <td className="border border-gray-300 px-4 py-2">
-                                <Input
-                                    name='quantity'
-                                    type="number"
-                                    placeholder="Quantity"
-                                    //value={quantities[size] || ""}
-                                    // onChange={(e) =>
-                                    //     onQuantityChange(size, parseFloat(e.target.value) || 0)
-                                    // }
-                                    value={measurements[size]?.quantity || ""}
-                                    onChange={(e) => onMeasurementChange(size, "quantity", parseFloat(e.target.value))}
-                                    className="w-full px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table> */}
         </div>
     );
 };

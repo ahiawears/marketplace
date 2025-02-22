@@ -17,9 +17,11 @@ interface ProductVariantProps {
     currencySymbol: string;
     category: string;
     onSaveAndContinue: () => void;
+    onProductInformationChange: (field: keyof ProductVariantType, value: string | string[]) => void;
+    hasUnsavedChanges: boolean;
 }
 
-const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, setProductInformation, originalProductName, sizes, currencySymbol, category, onSaveAndContinue }) => {
+const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, setProductInformation, originalProductName, sizes, currencySymbol, category, onSaveAndContinue, onProductInformationChange, hasUnsavedChanges }) => {
     const [localDetails, setLocalDetails] = useState<ProductVariantType>(productInformation);
     const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
 
@@ -165,11 +167,6 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
         }
     };
 
-    const handleVariantChange = (field: keyof ProductVariantType, value: any) => {
-        const updatedDetails = { ...productInformation, [field]: value };
-        setProductInformation(updatedDetails as ProductVariantType);
-    };
-
     const handleMeasurementChange = (size: string, field: string, value: number) => {
         if (field === "remove") {
             // Remove the size from measurements
@@ -215,6 +212,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
     }
 
     const handleChange = (field: keyof ProductVariantType, value: string | string[]) => {
+        onProductInformationChange(field, value); 
         setLocalDetails((prev) => ({
             ...prev,
             [field]: value,
@@ -276,7 +274,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                                 loader={blobLoader}
                                                 priority
                                                 style={{objectFit:"contain"}}
-                                                className="mx-auto align-middle"
+                                                
                                             />
                                             <div className="absolute top-4 right-4">
                                                 <Button onClick={() => handleEditClick(index)} className="bg-gray-800 bg-opacity-50 rounded-full p-2 text-white hover:bg-opacity-75 transition">

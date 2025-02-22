@@ -1,5 +1,5 @@
 import { Product } from "@/lib/types";
-import { createClient } from "@/supabase/server";
+import { createClient } from "@/supabase_change/server";
 
 export const getProduct = async (id: string) => {
   console.log("The Id is : ", id);

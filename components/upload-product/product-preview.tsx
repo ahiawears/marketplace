@@ -1,7 +1,9 @@
-import { currency } from "@/lib/currencyList";
+import { currency } from "../../lib/currencyList";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Input } from "../ui/input"
+import { Button } from "../ui/button";
+import React from "react";
 
 interface ProductPreviewProps {
     productData: {
@@ -17,6 +19,12 @@ interface ProductPreviewProps {
             images?: string[];
             colorName?: string;
             colorHex?: string;
+            measurements: {
+                [size: string]: {
+                    [measurement: string]: number | string;
+                    quantity: number;
+                };
+            };
         };
         productVariants: {
             main_image_url: string;
@@ -59,12 +67,13 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({ productData, selectedVa
     };
 
     const validImages = mainPreview.images?.filter((image) => image?.trim() !== "") || [];
-    
+    const sizes = Object.keys(productData.productInformation.measurements);
+
     return (
         <div>
             <div className="mx-auto flex flex-col lg:flex-row">
                 <div className="lg:basis-3/5 p-4">
-                    <div className="flex justify-center h-[500px] w-[300px]">
+                    <div className="flex justify-center h-fit w-[300px] py-4">
                         <Image
                             src={ selectedImage }
                             height={500}
@@ -72,6 +81,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({ productData, selectedVa
                             priority
                             style={{objectFit:"contain"}}
                             alt={mainPreview.variantName || productData.generalDetails.productName}
+                            className="border-2"
                         />
                     </div>
                     {/* Thumbnails */}
@@ -79,7 +89,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({ productData, selectedVa
                         {validImages.map((image, index) => (
                             <div
                                 key={index}
-                                className="cursor-pointer border-2 border-transparent hover:border-gray-400 rounded-md overflow-hidden relative h-[60px] w-[60px]"
+                                className="cursor-pointer border-2 border-transparent hover:border-gray-400 rounded-md overflow-hidden relative h-fit w-[60px]"
                                 onClick={() => setSelectedImage(image)}
                             >
                                 <Image
@@ -88,6 +98,7 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({ productData, selectedVa
                                     height={60}
                                     width={60}
                                     style={{objectFit:"contain"}}
+                                    className="border-2"
                                 />
                             </div>
                         ))}
@@ -122,15 +133,59 @@ const ProductPreview: React.FC<ProductPreviewProps> = ({ productData, selectedVa
                             </div>
                         </div>
                         {/* TODO: Add sizes list */}
-                        <div className="flex justify-between my-2">
+                        <div className="flex my-2">
                             <p className="text-md font-bold">
                                 Size:
                             </p>
+                            {sizes.map((size) => (
+                                <div className="flex flex-wrap gap-2 mx-2">
+                                    <span key={size} className="px-3 py-1 text-sm border-2 bg-black text-white">
+                                        {size}
+                                    </span>
+                                </div>
+                                
+                            ))}
+                        </div>
+
+                        {/* Measurements Table */}
+                        <div className="overflow-x-auto mt-5">
+                            <table className="table-auto w-full border-collapse border-2">
+                                <thead>
+                                    <tr className="bg-gray-100">
+                                        <th className="border-2 px-4 py-2">Size</th>
+                                        {Object.keys(productData.productInformation.measurements[sizes[0]] || {}).map((measurement) => (
+                                            <th key={measurement} className="border-2 px-4 py-2">
+                                                {measurement}
+                                            </th>
+                                        ))}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {sizes.map((size) => (
+                                        <tr key={size}>
+                                            <td className="border-2 px-4 py-2 font-medium">
+                                                {size}
+                                            </td>
+                                            {Object.keys(productData.productInformation.measurements[size] || {}).map((measurement) => (
+                                                <td key={measurement} className="border-2 px-4 py-2">
+                                                    {productData.productInformation.measurements[size][measurement]}
+                                                </td>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                         
                     </div>
                 </div>
+                <div>
+                    <Button className="px-3 py-1.5 text-sm/6 font-semibold text-black shadow-sm">
+                        Publish Product
+                    </Button>
+                </div>
             </div>
+            
         </div>
         // <div>
         //     {/* Main Product Preview */}

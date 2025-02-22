@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/supabase/server";
+import { createClient } from "@/supabase_change/server";
 import { redirect } from "next/navigation";
 
 export async function passwordReset(formData: FormData) {

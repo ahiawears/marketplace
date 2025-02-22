@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import SizeSelect from './size-select';
-import addItemToUserCart from '@/actions/add-item-to-user-cart';
+import SizeSelect from "./size-select";
+import addItemToUserCart from "../../actions/add-item-to-user-cart";
 import Image from 'next/image';
 
 interface ProductItemProps {

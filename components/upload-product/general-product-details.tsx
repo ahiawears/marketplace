@@ -12,9 +12,10 @@ interface GeneralProductDetailsProps {
     generalDetails: GeneralProductDetailsType;
     setGeneralDetails: (details: GeneralProductDetailsType | ((prev: GeneralProductDetailsType) => GeneralProductDetailsType)) => void;
     onSaveAndContinue: () => void;
+    setIsGeneralDetailsSaved: (value: boolean) => void;
 }
 
-const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue }) => {
+const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, setIsGeneralDetailsSaved }) => {
     const [localDetails, setLocalDetails] = useState<GeneralProductDetailsType>(generalDetails);
 
     const [subcategories, setSubcategories] = useState<string[]>([]);
@@ -40,6 +41,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
     const handleSave = () => {
         // Pass the local state to the parent component
         setGeneralDetails(localDetails);
+        setIsGeneralDetailsSaved(true);
         onSaveAndContinue();
     };
 
@@ -299,7 +301,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                 <Button
                     onClick={handleSave}
                     disabled={!isFormValid()}
-                    className="flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                    className="flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
                 >
                     Save and continue
                 </Button>

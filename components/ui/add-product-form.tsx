@@ -1,53 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PublishProduct from "./publish-product";
 import AddProductDetails from "./add-product-details";
 import ProductPreviewModal from "../modals/product-preview-modal";
 import ProductPreview from "../upload-product/product-preview";
-import { ProductUploadData } from "@/lib/types";
+import { ProductUploadData, ProductVariantType } from "../../lib/types";
 import ModalBackdrop from "../modals/modal-backdrop";
-import { addProduct } from "@/actions/uploadProduct";
+import { addProduct } from "../../actions/uploadProduct";
 import { useRouter } from "next/navigation";
+import React from "react";
+import { createClient } from "@/supabase/client";
 
 const AddProductForm = () => {
-  
-	// const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-	// event.preventDefault();
 
-	// const formData = new FormData(event.currentTarget); // Use currentTarget here
-
-	// formData.append("qrCode", qrCodeBase64);
-	// formData.append("subCategory", selectedSubcategory || "");
-	// formData.append("tags", selectedTags.join(","));
-
-	// formData.append(
-	// 	"sizes",
-	// 	JSON.stringify(
-	// 	Object.keys(quantities).map((size) => ({
-	// 		name: size,
-	// 		quantity: quantities[size],
-	// 	}))
-	// 	)
-	// );
-	// // Convert blob URLs to Files and attach them
-	// const filePromises = images.map(async (imageUrl) => {
-	// 	if (imageUrl) {
-	// 	const file = await urlToFile(imageUrl);
-	// 	formData.append("images", file);
-	// 	}
-	// });
-
-	// await Promise.all(filePromises); // Wait for all files to be added
-
-	// try {
-	// 	const productId = await addProduct(formData);
-	// 	router.push(`/dashboard/product-details/${productId}`);
-	// } catch (error) {
-	// 	console.error("Error adding product:", error);
-	// 	alert("Failed to add product. Please try again.");
-	// }
-	// };
+    const [isFormValid, setIsFormValid] = useState<boolean>(false);
+    const [isGeneralDetailsComplete, setIsGeneralDetailsComplete] = useState<boolean>(false);
+    const [isProductInformationComplete, setIsProductInformationComplete] = useState<boolean>(false);
+    const [isGeneralDetailsSaved, setIsGeneralDetailsSaved] = useState<boolean>(false);
+    const [isProductInformationSaved, setIsProductInformationSaved] = useState<boolean>(false);
 
     const router = useRouter();
 	const [productData, setProductData] = useState<ProductUploadData>({
@@ -64,14 +35,11 @@ const AddProductForm = () => {
 			currentSlide: 0,
 			main_image_url: "",
 			productId: "",
-			variantId: "",
 			variantName: "",
-			quantities: {},
 			images: [],
 			colorName: "",
 			price: "",
 			colorHex: "",
-			currency: "",
 			sku: "",
 			measurements: {},
             productCode: "",
@@ -79,18 +47,84 @@ const AddProductForm = () => {
 		productVariants: [],
 	});
 
+    const validateGeneralDetails = () => {
+        const { productName, productDescription, category, currency, material } = productData.generalDetails;
+        return (
+            productName.trim() !== "" &&
+            productDescription.trim() !== "" &&
+            category.trim() !== "" &&
+            currency.trim() !== "" &&
+            material.trim() !== ""
+        );
+    };
+
+    const validateProductInformation = () => {
+        const { images, colorName, colorHex, price, sku, productCode, measurements } = productData.productInformation;
+    
+        // Check if all images are uploaded
+        const areImagesUploaded = images.every((image) => image !== "");
+    
+        // Check if all required fields are filled
+        const areFieldsFilled = (
+            colorName.trim() !== "" &&
+            colorHex.trim() !== "" &&
+            price.trim() !== "" &&
+            sku.trim() !== "" &&
+            productCode.trim() !== ""
+        );
+    
+        // Check if all selected sizes have a quantity
+        const areMeasurementsValid = Object.keys(measurements).every(
+            (size) => measurements[size].quantity
+        );
+    
+        return areImagesUploaded && areFieldsFilled && areMeasurementsValid;
+    };
+
+    useEffect(() => {
+        const isGeneralValid = validateGeneralDetails();
+        const isProductInfoValid = validateProductInformation();
+
+        setIsGeneralDetailsComplete(isGeneralValid);
+        setIsProductInformationComplete(isProductInfoValid);
+
+        // Enable Publish button only if both accordions are saved and there are no unsaved changes
+        setIsFormValid(isGeneralDetailsSaved && isProductInformationSaved);
+
+    }, [productData, isGeneralDetailsSaved, isProductInformationSaved]);
+
+    const handleSaveProductInformation = () => {
+        // Save logic for Product Information
+        setIsProductInformationSaved(true);
+    };
+
+    const handleProductInformationChange = (field: keyof ProductVariantType, value: string | string[]) => {
+        setProductData((prev) => ({
+            ...prev,
+            productInformation: {
+                ...prev.productInformation,
+                [field]: value,
+            },
+        }));
+    };
+    
 	  
 	const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
-	const [selectedVariant, setSelectedVariant] = useState(null);
+    const [selectedVariant, setSelectedVariant] = useState<ProductVariantType | null>(null);
 
 	const handlePublishClick = async () => {
-		//setPreviewModalOpen(true);
+        event?.preventDefault();
+
+        if (!isFormValid) {
+            console.log("Form is not valid");
+            return;
+        }
 
 
+	    //setPreviewModalOpen(true);
         const formData = new FormData();
 
         const measurementsJson = JSON.stringify(productData.productInformation.measurements);
-
 
         // Add General Details Begin
         formData.append("productName", productData.generalDetails.productName);
@@ -122,25 +156,53 @@ const AddProductForm = () => {
         //Add other variants if available End
 
 
+        console.log("The intended form data is: ", formData);
+
         try {
-            const response = await fetch("/api/uploadProduct", {
-                method: "POST",
-                body: formData,
-              });
+            const { data: { session }, error } = await createClient().auth.getSession();
+
+            console.log("Session Data:", session);
+            console.log("Error:", error);
+            if (error) {
+                throw new Error("Failed to get session.");
+            }
+
+            //this error keeps getting thrown
+    
+            if (!session) {
+                throw new Error("User is not authenticated.");
+            }
+            
+
+            console.log("Access Token:", session.access_token);
+
+            const accessToken = session.access_token;
+            for (const pair of formData.entries()) {
+                console.log(`${pair[0]}:`, pair[1]);
+            }
+            const res =  await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`, // Include the authorization header
+                        "Content-Type": "multipart/form-data"
+                    },
+                    body: formData,
+                });
           
-              if (!response.ok) {
+              if (!res.ok) {
                 throw new Error("Failed to upload product.");
               }
           
-              const { productId } = await response.json();
-              router.push(`/dashboard/product-details/${productId}`);
+              const data = await res.json();
+              console.log("Data uploaded successfully: ", data);
+              //router.push(`/dashboard/product-details/${productId}`);
         } catch (error) {
             //create and pass error to modal for further actions
             console.error("Error publishing product: ", error);
         }
 	};
 
-	const handleVariantClick = (variant: any) => {
+    const handleVariantClick = (variant: ProductVariantType) => {
 		setSelectedVariant(variant);
 	};
 
@@ -152,10 +214,17 @@ const AddProductForm = () => {
         <div className="container overflow-auto mx-auto p-4 mt-4">
             <div className="flex flex-col md:flex-row gap-8 h-full">
                 <div className="w-full md:w-2/3">
-                    <AddProductDetails productData={productData} setProductData={setProductData}/>
+                    <AddProductDetails 
+                        productData={productData} 
+                        setProductData={setProductData}
+                        onSaveProductInformation={handleSaveProductInformation}
+                        setIsGeneralDetailsSaved={setIsGeneralDetailsSaved}
+                        // onProductInformationChange={handleProductInformationChange}
+                        // hasUnsavedChanges={hasUnsavedChanges}
+                    />
                 </div>
                 <div className="w-full md:w-1/4 mt-12">
-                    <PublishProduct onPublishClick={handlePublishClick}/>
+                    <PublishProduct onPublishClick={handlePublishClick} isFormValid={isFormValid}/>
                 </div>
 
 				{isPreviewModalOpen && (
@@ -174,250 +243,7 @@ const AddProductForm = () => {
 			    )}
             </div>
         </div>
-        // <form className="space-y-6" onSubmit={handleSubmit}>
-        //     <div>
-        //         <label htmlFor="productName" className="block text-sm font-bold text-gray-900">
-        //             Enter Product Name:* 
-        //         </label>
-        //         <div className="mt-2">
-        //             <Input
-        //                 id="productName"
-        //                 name="productName"
-        //                 type="text"
-        //                 required
-        //                 onChange={(e) => setProductName(e.target.value)}
-        //             />
-        //         </div>
-        //     </div>
-
-        //     <div> 
-        //         <div>
-        //             <label htmlFor="category" className="block text-sm font-bold text-gray-900">
-        //                 Category:*
-        //             </label>
-        //             <div className="mt-2">
-        //                 <Select
-        //                     id="category"
-        //                     name="category"
-        //                     onChange={handleCategoryChange}
-        //                     value={selectedCategory}
-        //                 >
-        //                     <option value="" disabled>Select a category</option>
-        //                     {categoriesList.map((category) => (
-        //                         <option key={category.name} value={category.name}>
-        //                             {category.name}
-        //                         </option>
-        //                     ))}
-        //                 </Select>
-        //             </div>
-        //         </div>
-
-        //         {subcategories.length > 0 && (
-        //             <div className="mt-4">
-        //                 <p className="text-sm font-bold text-gray-900 mb-2">Subcategories:</p>
-        //                 <div className="flex flex-wrap gap-2">
-        //                     {subcategories.map((sub, index) => (
-        //                         <span
-        //                             key={index}
-        //                             onClick={() => handleSubcategorySelect(sub)}
-        //                             className={`px-3 py-1 rounded-full text-sm cursor-pointer 
-        //                                 ${selectedSubcategory === sub 
-        //                                     ? "bg-indigo-500 text-white" 
-        //                                     : "bg-indigo-200 text-indigo-800"} 
-        //                                 hover:bg-indigo-300`}
-        //                         >
-        //                             {sub}
-        //                         </span>
-        //                     ))}
-        //                 </div>
-        //             </div>
-        //         )}
-
-        //         {customTags.length > 0 && (
-        //             <div className="mt-4">
-        //                 <p className="text-sm font-bold text-gray-900 mb-2">Tags:</p>
-        //                 <div className="flex flex-wrap gap-2">
-        //                     {customTags.map((tag, index) => (
-        //                         <span
-        //                             key={index}
-        //                             className={`px-3 py-1 rounded-full text-sm cursor-pointer 
-        //                                 ${selectedTags.includes(tag) 
-        //                                     ? "bg-indigo-500 text-white" 
-        //                                     : "bg-indigo-200 text-indigo-800"} 
-        //                                 hover:bg-indigo-300`}
-        //                             onClick={() => handleTagClick(tag)}
-        //                         >
-        //                             {tag}
-        //                         </span>
-        //                     ))}
-        //                 </div>
-        //             </div>
-        //         )}
-        //     </div>
-        //     {/*upload image section */}
-        //     {isMounted && (
-        //         <div className="mt-4">
-        //             <label htmlFor="fileInput" className="block text-sm font-bold text-gray-900 mb-5">
-        //                 Upload Product Image:*
-        //             </label>
-                    
-        //             <div className="relative w-full h-[600px]">
-        //                 {/* Left button */}
-        //                 {currentSlide > 0 && (
-        //                     <button
-        //                         className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-300 p-2 rounded-full"
-        //                         onClick={prevSlide}
-        //                     >
-        //                         ◀
-        //                     </button>
-        //                 )}
-
-        //                 {/* Image Carousel */}
-        //                 <div ref={carouselRef} className="w-full h-full flex space-x-4 overflow-x-hidden">
-        //                     {images.slice(currentSlide * 2, currentSlide * 2 + 2).map((image, index) => (
-        //                         <div key={index} className="relative w-full h-[600px]">
-        //                             <input
-        //                                 type="file"
-        //                                 accept="image/*"
-        //                                 onChange={(e) => handleFileChange(e, currentSlide * 2 + index)}
-        //                                 className="absolute inset-0 opacity-0 w-full h-full cursor-pointer"
-        //                             />
-        //                             <img
-        //                                 src={image || "https://placehold.co/500x600?text=Drop+the+products+main+image+here%0Aor%0Aclick+here+to+browse"}
-        //                                 alt={`Slide ${currentSlide * 2 + index + 1}`}
-        //                                 className="w-full h-full object-cover"
-        //                             />
-        //                         </div>
-        //                     ))}
-        //                 </div>
-
-        //                 {/* Right button */}
-        //                 {currentSlide < images.length / 2 - 1 && (
-        //                     <button
-        //                         className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-300 p-2 rounded-full"
-        //                         onClick={nextSlide}
-        //                     >
-        //                         ▶
-        //                     </button>
-        //                 )}
-        //             </div>
-        //         </div>
-        //     )}
-        //     {/*input sizes available */}
-        //     {sizes.length > 0 && (
-        //         <div className="my-7">
-        //             <p className="text-sm font-bold text-gray-900 mb-4">Enter Quantities for Sizes Available:</p>
-        //             <div className="grid grid-cols-3 gap-4">
-        //                 {sizes.map((size, index) => (
-        //                     <div key={index} className="flex items-center space-x-2">
-        //                         <label htmlFor={`${size}`} className="block text-sm font-medium text-gray-700">
-        //                             {size}:
-        //                         </label>
-        //                         <Input
-        //                             id={`${size}`}   
-        //                             name={`${size}`}
-        //                             type="number"
-        //                             min={0}
-        //                             value={quantities[size]}
-        //                             onChange={(e) => handleQuantityChange(size, Number(e.target.value))}
-        //                             className="w-20"
-        //                         />
-        //                     </div>
-        //                 ))}
-        //             </div>
-        //         </div>
-        //     )}
-
-        //     {/* Enter the products description */}
-        //     <div>
-        //         <label htmlFor="productDescription" className="block text-sm font-bold text-gray-900">
-        //             Enter Product Description:*
-        //         </label>
-        //         <div className="mt-2">
-        //             <Textarea
-        //                 id="productDescription"
-        //                 name="productDescription"
-        //                 rows={4}
-        //                 required
-        //                 placeholder="Enter the product description here"
-        //             />
-        //         </div>
-        //     </div>
-
-        //     {/* Enter the products price */}
-        //     <div>
-        //         <label htmlFor="price" className="block text-sm font-bold text-gray-900">
-        //             Price:*
-        //         </label>
-        //         <div className="mt-2">
-        //             <Input
-        //                 id="price"
-        //                 name="price"
-        //                 type="number"
-        //                 min="0"
-        //                 step="0.01"
-        //                 required
-        //                 placeholder="Enter the product price"
-        //             />
-        //         </div>
-        //     </div>
-
-        //     {/* Enter Stock keeping unit code */}
-        //     <div>
-        //         <label htmlFor="sku" className="block text-sm font-bold text-gray-900">
-        //             SKU (Stock Keeping Unit):
-        //         </label>
-        //         <div className="mt-2">
-        //             <Input
-        //                 id="sku"
-        //                 name="sku"
-        //                 type="text"
-        //                 required
-        //                 value={sku}
-        //                 onChange={handleSkuChange}
-        //                 placeholder="Enter the SKU"
-        //             />
-        //         </div>
-
-        //         {sku && (
-        //             <div className="mt-4">
-        //                 <QRCodeCanvas value={sku} size={128} id="qr-code"/>
-        //             </div>
-                    
-        //         )}
-        //     </div>
-
-
-        //     {/* enter weight(kg) */}
-        //     <div>
-        //         <label htmlFor="weight" className="block text-sm font-bold text-gray-900">
-        //             Weight in kg (Optional):
-        //         </label>
-        //         <div className="mt-2">
-        //             <Input
-        //                 id="weight"
-        //                 name="weight"
-        //                 type="number"
-        //                 min="0"
-        //                 step="0.01"
-        //                 placeholder="Enter the product weight in kilograms"
-        //             />
-        //         </div>
-        //     </div>
-
-        //     {/* Submit form */}
-        //     <div>
-        //         <button
-        //             type="submit"
-        //             className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-        //         >
-        //             Submit Product 
-        //         </button>
-        //     </div>
-        // </form>
     );
 };
 
 export default AddProductForm;
-//To Do
-//Allow users to upload products for later date releases

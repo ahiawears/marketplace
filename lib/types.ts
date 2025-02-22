@@ -165,14 +165,11 @@ export interface ProductVariantType {
   currentSlide: number;
   main_image_url: string;
   productId: string;
-  variantId: string;
   variantName: string;
-  quantities: { [size: string]: number };
   images: string[];
   colorName: string;
   price: string;
   colorHex: string;
-  currency: string;
   sku: string;
   measurements: { 
     [size: string]: {

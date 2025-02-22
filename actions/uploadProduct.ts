@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/supabase/server";
+import { createClient } from "../supabase/server";
 
 interface Size {
   name: string;

@@ -1,5 +1,5 @@
 import { getOrderItems } from "@/actions/brand-get-order-list";
-import { createClient } from "@/supabase/server";
+import { createClient } from "@/supabase_change/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {

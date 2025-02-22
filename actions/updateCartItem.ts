@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/supabase/server";
+import { createClient } from "@/supabase_change/server";
 
 export const updateCartItemQuantity = async (qty: number, mainCartId: string, cart_item_id: string, cartItemPrice: number) => {
     const supabase = await createClient();
