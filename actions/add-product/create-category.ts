@@ -28,7 +28,7 @@ export async function createCategory(supabase: any, category: string) {
         }
         
     } catch (error) {
-        console.error("Error creating category:", error);
+        console.error(`Error creating category: `, error);
         throw error;
     }
 }

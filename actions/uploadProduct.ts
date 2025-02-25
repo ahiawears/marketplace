@@ -214,12 +214,12 @@ if (sizes && sizes.length > 0) {
 
   const { error: tagInsertionError } = await supabase.from("product_tags").insert(tagData);
 
-  if (tagInsertionError) {
-    throw new Error(`Error adding product tags: ${tagInsertionError.message}`);
-  }
+    if (tagInsertionError) {
+      throw new Error(`Error adding product tags: ${tagInsertionError.message}`);
+    }
   }
 
-  // Array to hold the image URLs after they are uploaded
+// Array to hold the image URLs after they are uploaded
 const imageUrls: string[] = [];
 
 // Upload each image to Supabase Storage

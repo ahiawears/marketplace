@@ -1,9 +1,9 @@
 "use client";
 
-import { categoriesList } from "../../lib/categoriesList.ts";
+import { categoriesList } from "../../lib/categoriesList";
 import React, { useEffect, useState } from 'react';
-import { Input } from "../ui/input.tsx";
-
+import { Input } from "../ui/input";
+ 
 interface MeasurementSizesTableProps {
     category: string; 
     measurements: {

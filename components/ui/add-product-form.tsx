@@ -62,7 +62,7 @@ const AddProductForm = () => {
         const { images, colorName, colorHex, price, sku, productCode, measurements } = productData.productInformation;
     
         // Check if all images are uploaded
-        const areImagesUploaded = images.every((image) => image !== "");
+        const areImagesUploaded = images.every((image) => image !== null);
     
         // Check if all required fields are filled
         const areFieldsFilled = (
@@ -145,18 +145,28 @@ const AddProductForm = () => {
         formData.append("variantProductCode", productData.productInformation.productCode);
         formData.append("variantMeasurements", measurementsJson);
         // Add images
-        productData.productInformation.images.forEach((image, index) => {
-            formData.append(`images[${index}]`, image);
-        });
+        const validImages = productData.productInformation.images.filter(image => image !== null);
 
+        const convertBlobUrlToFile = async (blobUrl: string, index: number) => {
+            const response = await fetch(blobUrl);
+            const blob = await response.blob();
+            const file = new File([blob], `image-${index}.png`, { type: blob.type });
+            return file;
+        };
+
+        const imageFiles = await Promise.all(
+            validImages.map((blobUrl, index) => convertBlobUrlToFile(blobUrl, index))
+        );
+        
+        imageFiles.forEach((image) => {
+            console.log("image from front end is : ", image)
+            formData.append("images", image);
+        });
         // Add Main Variant Details End
 
         //Add other variants if available Begin
         formData.append("variants", JSON.stringify(productData.productVariants));
         //Add other variants if available End
-
-
-        console.log("The intended form data is: ", formData);
 
         try {
             const { data: { session }, error } = await createClient().auth.getSession();
@@ -166,8 +176,6 @@ const AddProductForm = () => {
             if (error) {
                 throw new Error("Failed to get session.");
             }
-
-            //this error keeps getting thrown
     
             if (!session) {
                 throw new Error("User is not authenticated.");
@@ -180,22 +188,29 @@ const AddProductForm = () => {
             for (const pair of formData.entries()) {
                 console.log(`${pair[0]}:`, pair[1]);
             }
-            const res =  await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`, {
+            const res =  await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`, 
+                {
                     method: "POST",
                     headers: {
                         "Authorization": `Bearer ${accessToken}`, // Include the authorization header
-                        "Content-Type": "multipart/form-data"
+                        //"Content-Type": "multipart/form-data"
                     },
                     body: formData,
                 });
           
-              if (!res.ok) {
-                throw new Error("Failed to upload product.");
-              }
-          
-              const data = await res.json();
-              console.log("Data uploaded successfully: ", data);
-              //router.push(`/dashboard/product-details/${productId}`);
+            if (!res.ok) {
+                throw new Error("Failed to upload product. Response error.");
+            }
+        
+            const data = await res.json();
+            if (data.success) {
+                console.log("Data uploaded successfully: ", data);
+                //router.push(`/dashboard/product-details/${data.productId}`);
+            } else {
+                console.error(`Product upload failed: ${data.message}`);
+                throw new Error(`Data not uploaded: ${data.message}`);
+            }
+            
         } catch (error) {
             //create and pass error to modal for further actions
             console.error("Error publishing product: ", error);
@@ -230,7 +245,7 @@ const AddProductForm = () => {
 				{isPreviewModalOpen && (
                     <>
                         <div className="">
-                            {/* <ModalBackdrop disableInteraction={true}/> */}
+                            <ModalBackdrop disableInteraction={true}/>
                             <ProductPreviewModal onClose={closeModal}>
                                 <ProductPreview
                                     productData={productData}

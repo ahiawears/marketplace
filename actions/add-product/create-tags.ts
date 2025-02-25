@@ -1,40 +1,32 @@
-
-
-export async function createTags(supabase: any, tags: string[], productId: string){
+export async function createTags(supabase: any, tags: string[], productId: string) {
     try {
         const tagData = [];
+
         for (const tag of tags) {
-            const { data: existingTag, error: tagError } = await supabase
+            // Use UPSERT to avoid race conditions
+            const { data: newTagData, error: tagError } = await supabase
                 .from("tags")
-                .select("id")
-                .eq("name", tag)
-                .maybeSingle();
-            
+                .upsert({ name: tag }, { onConflict: ["name"] }) // Ensures unique name constraint
+                .select()
+                .single();
+
             if (tagError) {
-                throw new Error(tagError.message);
+                throw new Error(`Error inserting or retrieving tag '${tag}': ${tagError.message}`);
             }
 
-            if (existingTag) {
-                tagData.push({ product_id: productId, tag_id: existingTag.id});
-            } else {
-                const { data: newtagData, error: newTagError } = await supabase
-                    .from("tags")
-                    .insert({ name: tag, product_id: productId })
-                    .select()
-                    .single();
-
-                if (newTagError) {
-                    throw new Error(newTagError.message);
-                }
-
-                tagData.push({ product_id: productId, tag_id: newtagData.id});
+            if (newTagData) {
+                tagData.push({ product_id: productId, tag_id: newTagData.id });
             }
         }
 
-        const { error: tagInsertionError } = await supabase.from("product_tags").insert(tagData);
+        if (tagData.length > 0) {
+            const { error: tagInsertionError } = await supabase
+                .from("product_tags")
+                .insert(tagData);
 
-        if (tagInsertionError) {
-            throw new Error(`Error adding product tags: ${tagInsertionError.message}`);
+            if (tagInsertionError) {
+                throw new Error(`Error adding product tags: ${tagInsertionError.message}`);
+            }
         }
     } catch (error) {
         console.error("Error creating tags: ", error);

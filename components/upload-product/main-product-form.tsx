@@ -222,7 +222,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
     const isFormValid = () => {
         // Check if all required fields are filled
         return (
-            localDetails.images.every(image => image !== "") &&
+            localDetails.images.every(image => typeof image === "string") &&
             localDetails.colorName.trim() !== "" &&
             localDetails.colorHex.trim() !== "" &&
             localDetails.price.trim() !== "" &&
@@ -265,9 +265,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
                                             className="relative w-full h-[650px] flex justify-center items-center flex-shrink-0 overflow-x-hidden"
                                         >
                                             <Image
-                                                src={
-                                                    image ? image : "https://placehold.co/510x650.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"
-                                                }
+                                                src={ image || "https://placehold.co/510x650.png?text=Drop+the+products+main+image+here+or+click+here+to+browse"}
                                                 width={510}
                                                 height={650}
                                                 alt={`Slide ${index + 1}`}

@@ -10,9 +10,13 @@ import { createTags } from "@actions/create-tags.ts";
 import { createProduct } from "@actions/create-general-details.ts"; 
 import { createMaterial } from "@actions/create-material.ts";
 import { createSubCategory } from "@actions/create-subCategory.ts";
+import { createColor } from "@actions/create-color.ts";
+import { createVariant} from "@actions/create-variant.ts";
+import { createSizes } from "@actions/create-sizes.ts";
+import { createImages } from "@actions/create-images.ts"
 import validator from "npm:validator";
 import { createClient } from "../../server-deno.ts";
-import { corsHeaders } from '../_shared/cors.ts'
+import { corsHeaders } from '../_shared/cors.ts';
 
 
 serve(async (req: Request) => {
@@ -28,13 +32,13 @@ serve(async (req: Request) => {
 		const authHeader = req.headers.get("Authorization");
 		if (!authHeader) {
 			console.error("Missing Authorization header!");
-			return new Response("Unauthorized, opps", { status: 401 });
+			return new Response("Unauthorized header", { status: 401 });
 		}
 		const accessToken = authHeader.split("Bearer ")[1];
 
 		if (!accessToken) {
 			console.error("Malformed Authorization header!");
-			return new Response("Unauthorized, accessTUnknown", { status: 401 });
+			return new Response("Unauthorized accessToken", { status: 401 });
 		}
 
 		console.log("Extracted Token:", accessToken);
@@ -81,39 +85,66 @@ serve(async (req: Request) => {
 		const material = validator.trim(formData.get("material") as string);
 		const currency = validator.trim(formData.get("currency") as string);
 
-		console.log("SUbcat is ", subCategory, "Material is", material)
-
-		// const variantName = validator.trim(formData.get("variantName") as string);
-		// const variantSku = validator.escape(formData.get("variantSku") as string);
-		// const variantPrice = parseFloat(formData.get("variantPrice") as string);
-		// const variantColorName = validator.trim(formData.get("variantColorName") as string);
-		// const variantColorHex = validator.trim(formData.get("variantColorHex") as string);
-		// const variantProductCode = validator.trim(formData.get("variantProductCode") as string);
-		// const variantMeasurements = JSON.parse(formData.get("variantMeasurements") as string);
-		// const variantImages = formData.getAll("images") as File[];
-
-		// console.log(variantName, variantSku, variantPrice, variantColorName, variantColorHex, variantProductCode, variantMeasurements, variantImages)
-
-		// Insert into database
-		const categoryId = await createCategory(supabase, category);
-		if (!categoryId) {
-			console.log("Category Id is", categoryId);
+		const variantName = validator.trim(formData.get("variantName") as string);
+		const variantSku = validator.escape(formData.get("variantSku") as string);
+		const variantPrice = parseFloat(formData.get("variantPrice") as string);
+		const variantColorName = validator.trim(formData.get("variantColorName") as string);
+		const variantColorHex = validator.trim(formData.get("variantColorHex") as string);
+		const variantProductCode = validator.trim(formData.get("variantProductCode") as string);
+		const variantMeasurements = JSON.parse(formData.get("variantMeasurements") as string);
+		const variantImages = formData.getAll("images") as File[];
+		if (!variantImages || variantImages.length === 0) {
+			return new Response(
+				JSON.stringify({ success: false, message: "No images provided." }),
+				{
+					headers: { ...corsHeaders, "Content-Type": "application/json" },
+					status: 400,
+				}
+			);
 		}
+
+		// Insert General details into database
+		const categoryId = await createCategory(supabase, category);
 		const subCategoryId = await createSubCategory(supabase, subCategory, categoryId);
 		const materialId = await createMaterial(supabase, material);
 		const currencyId = await createCurrency(supabase, currency);
 		const productUploadId = await createProduct(supabase, categoryId, subCategoryId, materialId, description, name, currencyId, user.id);
 		await createTags(supabase, tags, productUploadId);
 
-		return new Response(JSON.stringify({ success: true, message: "Product uploaded successfully" }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json'}
-        });
+
+		//Insert Variant Details into database
+		const colorId = await createColor(supabase, variantColorName, variantColorHex);
+		const variantId = await createVariant(supabase, variantName, variantSku, variantPrice, colorId, variantProductCode, productUploadId);
+		await createSizes(supabase, variantId, {measurements: variantMeasurements});	
+		for (const [index, imageFile] of variantImages.entries()) {
+			if (imageFile) {
+				console.log("Uploading image:", imageFile.type);
+				await createImages(supabase, variantId, imageFile, index);
+			}
+		} 
+		
+		return new Response(
+			JSON.stringify({ 
+				success: true, 
+				message: "Product uploaded successfully", 
+				productId: variantId 
+			}), 
+			{
+            	headers: { ...corsHeaders, 'Content-Type': 'application/json'}
+        	}
+		);
 	} catch (error) {
 		console.error("Error in Upload Function: ", error);
-        return new Response(JSON.stringify({ success: false, message: error || "An error occurred." }), {
-            status: 500,
-            headers: {...corsHeaders, 'Content-Type': 'application/json'},
-        });
+        return new Response(
+			JSON.stringify({ 
+				success: false, 
+				message: error || "An error occurred." 
+			}), 
+			{
+				status: 500,
+				headers: {...corsHeaders, 'Content-Type': 'application/json'},
+        	}
+		);
 	}
 })
 
