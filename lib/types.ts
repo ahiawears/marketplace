@@ -197,8 +197,60 @@ export interface ProductUploadData {
 }
 
 export interface PhysicalAttributesType {
-  weight: string;
-  height: string;
-  width: string;
-  depth: string;
+	weight: string;
+	height: string;
+	width: string;
+	depth: string;
+}
+
+
+export interface ProductInformation {
+	variantTexts: {
+		name: string;
+		product_code: string;
+		sku: string;
+		price: number;
+		color_id: {
+			name: string;
+			hex_code: string;
+		}
+		main_product_id: {
+			id: string;
+			product_description: string;
+			category_id: {
+				name: string;
+			}
+			subcategory_id: {
+				name: string;
+			}
+			currency_id: {
+				name: string;
+			}
+			material_id: {
+				name: string;
+			}
+		}
+	}
+	variantTags: {
+		tag_id: {
+			name: string;
+		}
+	}
+	variantImages: {
+		image_url: string;
+		is_main: boolean;
+	}
+	measurementsData: {
+		value: number;
+		measurement_type_id: {
+			name: string;
+		}
+		product_size_id: {
+			quantity: number;
+			size_id: {
+				name: string;
+			}
+			product_id: string;
+		}
+	}
 }

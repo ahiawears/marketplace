@@ -21,7 +21,7 @@ export async function GET(req: NextRequest, context: { params: { id: string } })
 
         // Fetch product data
         const { data: productData, error: productError } = await supabase
-            .from("products_list")
+            .from("product_variants")
             .select("*, categories(name)")
             .eq("id", productId)
             .single();

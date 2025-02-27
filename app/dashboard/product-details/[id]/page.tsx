@@ -3,7 +3,10 @@
 import BrandProductItem from "@/components/ui/brand-product-detail"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react";
-import { Product } from '@/lib/types';
+import { Product, ProductInformation } from '@/lib/types';
+import { ProductsImagesThumbnailEdit } from "@/components/brand-product-preview/product-images-thumbnail";
+import { createClient } from "@/supabase/client";
+
 
 const BrandProductDetail: React.FC = () => {
     const params = useParams();
@@ -12,30 +15,68 @@ const BrandProductDetail: React.FC = () => {
         productId = productId[0];
     }
     const [product, setProduct] = useState<Product | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [productData, setProductData] = useState<ProductInformation | null>(null);
+
 
     useEffect(() => {
         if (productId) {
-            const fetchProductDetails = async () => {
+            async function fetchProductDetails() {
                 try {
-                    const response = await fetch(`/api/getProductById/${productId}`);
-                    const data = await response.json();
-                    setProduct(data.data);
+                    const { data: {session}, error } = await createClient().auth.getSession();
+                    if (error) {
+                        throw new Error("Failed to get session.");
+                    }
+            
+                    if (!session) {
+                        throw new Error("User is not authenticated.");
+                    }
+
+                    const accessToken = session.access_token;
+
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-product?variantId=${productId}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                            },
+                        }
+                    )
+                    if (!res.ok) {
+                        throw new Error("Failed to get products details");
+                    }
+                    const data = await res.json();
+                    console.log("The product details are: ", data);
+                    if (data.success) {
+                        const holdData = data.data;
+                        setProductData(holdData);                  
+                    } else {
+                        console.error("Error fetching product:", data.message);
+                    }
+            
                 } catch (error) {
                     console.error("Error fetching product details:", error);
+                } finally {
+                    setLoading(false);
                 }
-            };
+            }
             fetchProductDetails();
-            
         }
-    }, [productId]);
+    }, [productId])
 
-    if (!product) return <p>Loading...</p>;
-    console.log(product.categoryName);
+    useEffect(() => {
+        if (productData) {
+            console.log("Updated product data:", productData);
+        }
+    }, [productData]);
+    //if (!product) return <p>Product not found</p>;
+
+    if (loading) return <p>Loading...</p>;
+
 
 
     return (
-        <div>
-            <BrandProductItem 
+        <div className="border-2 shadow mx-auto h-fit">
+            {/* <BrandProductItem 
                 productId={productId} 
                 productName={product?.name || "Unknown Product"} 
                 productPrice={product?.price || 0} 
@@ -44,7 +85,19 @@ const BrandProductDetail: React.FC = () => {
                 description ={product?.description || "This product has no description"} 
                 weight={product?.weight || 0} 
                 categoryName={product?.categoryName || ""}
-            />
+            /> */}
+            {/* Add products variants grid here start */}
+            {/* Add products variants grid here end */}
+
+            
+            <div className="flex flex-col lg:flex-row">
+                <div className="w-full lg:basis-3/5 basis-full">
+                    {/* Add images and thumbnails here */}
+                    <ProductsImagesThumbnailEdit 
+                        productId={productId}
+                    />
+                </div>
+            </div>
         </div> 
     )
 }

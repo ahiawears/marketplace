@@ -12,7 +12,7 @@ export async function createImages(supabase: any, variantId: string, variantImag
         const { data, error } = await supabase.storage
             .from(bucketName)
             .upload(`products/${uniqueFileName}`, variantImages, {
-                upsert: true,
+                upsert: false,
                 contentType: variantImages.type
             });
 

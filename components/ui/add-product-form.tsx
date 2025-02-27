@@ -120,7 +120,6 @@ const AddProductForm = () => {
             return;
         }
 
-
 	    //setPreviewModalOpen(true);
         const formData = new FormData();
 
@@ -171,8 +170,7 @@ const AddProductForm = () => {
         try {
             const { data: { session }, error } = await createClient().auth.getSession();
 
-            console.log("Session Data:", session);
-            console.log("Error:", error);
+            
             if (error) {
                 throw new Error("Failed to get session.");
             }
@@ -185,9 +183,7 @@ const AddProductForm = () => {
             console.log("Access Token:", session.access_token);
 
             const accessToken = session.access_token;
-            for (const pair of formData.entries()) {
-                console.log(`${pair[0]}:`, pair[1]);
-            }
+            
             const res =  await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`, 
                 {
                     method: "POST",

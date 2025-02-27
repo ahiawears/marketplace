@@ -1,5 +1,5 @@
 import { userGetProductItems } from "@/actions/user-get-product-lists";
-import { createClient } from "@/supabase_change/server";
+import { createClient } from "@/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {

@@ -20,14 +20,11 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 
 serve(async (req: Request) => {
-	console.log("Function started!");
-	console.log("Request Method:", req.method);
-	console.log("Request Headers:", Object.fromEntries(req.headers.entries()));
 	if (req.method === "OPTIONS") {
 		// Handle CORS preflight request
 		return new Response('ok', { headers: corsHeaders});
 	}
-
+	
 	try {
 		const authHeader = req.headers.get("Authorization");
 		if (!authHeader) {
@@ -41,16 +38,7 @@ serve(async (req: Request) => {
 			return new Response("Unauthorized accessToken", { status: 401 });
 		}
 
-		console.log("Extracted Token:", accessToken);
-
-
 		const supabase = createClient(accessToken);
-
-		const allHeaders = Object.fromEntries(req.headers.entries());
-		console.log("All Headers:", allHeaders);
-
-		console.log("Authorization Header:", authHeader);
-		console.log("Extracted Token:", accessToken);
 	
 		// Ensure request content type is multipart/form-data
 		const contentType = req.headers.get("content-type");
@@ -77,9 +65,9 @@ serve(async (req: Request) => {
 		}
 
 		// Sanitize Inputs
-		const name = validator.trim(formData.get("productName") as string);
-		const category = validator.trim(formData.get("category") as string);
-		const subCategory = validator.trim(formData.get("subCategory") as string);
+		const name = validator.escape(formData.get("productName") as string);
+		const category = validator.escape(formData.get("category") as string);
+		const subCategory = validator.escape(formData.get("subCategory") as string);
 		const tags = (formData.get("tags") as string).split(",").map(tag => validator.trim(tag.toLowerCase()));
 		const description = validator.escape(formData.get("productDescription") as string);
 		const material = validator.trim(formData.get("material") as string);
@@ -90,7 +78,7 @@ serve(async (req: Request) => {
 		const variantPrice = parseFloat(formData.get("variantPrice") as string);
 		const variantColorName = validator.trim(formData.get("variantColorName") as string);
 		const variantColorHex = validator.trim(formData.get("variantColorHex") as string);
-		const variantProductCode = validator.trim(formData.get("variantProductCode") as string);
+		const variantProductCode = validator.escape(formData.get("variantProductCode") as string);
 		const variantMeasurements = JSON.parse(formData.get("variantMeasurements") as string);
 		const variantImages = formData.getAll("images") as File[];
 		if (!variantImages || variantImages.length === 0) {
@@ -116,12 +104,11 @@ serve(async (req: Request) => {
 		const colorId = await createColor(supabase, variantColorName, variantColorHex);
 		const variantId = await createVariant(supabase, variantName, variantSku, variantPrice, colorId, variantProductCode, productUploadId);
 		await createSizes(supabase, variantId, {measurements: variantMeasurements});	
-		for (const [index, imageFile] of variantImages.entries()) {
-			if (imageFile) {
-				console.log("Uploading image:", imageFile.type);
-				await createImages(supabase, variantId, imageFile, index);
-			}
-		} 
+		await Promise.all(
+			variantImages.map((imageFile, index) =>
+			  createImages(supabase, variantId, imageFile, index)
+			)
+		);
 		
 		return new Response(
 			JSON.stringify({ 
