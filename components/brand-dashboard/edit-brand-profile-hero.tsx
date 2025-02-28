@@ -44,7 +44,7 @@ export const EditBrandProfileHero = () => {
                             src={heroImage} 
                             alt={"brand profile image"}
                             fill 
-                            style={{ objectFit: "cover" }} 
+                            style={{ objectFit: "contain" }} 
                             priority 
                             sizes="100vw" 
                         />

@@ -7,11 +7,13 @@ export default function BrandProfilePage () {
     return (
         <div className="flex flex-1 flex-col space-y-10">
             
+            {/* Brand Logo Section */}
+            <div className="w-full">
+                <EditBrandLogo />
+            </div>
+
             {/* Brand Profile Hero */}
             <EditBrandProfileHero />
-
-            {/* Brand Logo Section */}
-            <EditBrandLogo />
 
             {/* Brand Social Links */}
             <SocialLinksForm />

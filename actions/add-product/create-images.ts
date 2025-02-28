@@ -12,7 +12,7 @@ export async function createImages(supabase: any, variantId: string, variantImag
         const { data, error } = await supabase.storage
             .from(bucketName)
             .upload(`products/${uniqueFileName}`, variantImages, {
-                upsert: false,
+                upsert: true,
                 contentType: variantImages.type
             });
 
@@ -29,7 +29,7 @@ export async function createImages(supabase: any, variantId: string, variantImag
             throw new Error(`Error getting public URL: ${publicUrlError.message}`);
         }
 
-            const publicUrl = publicUrlData.publicUrl;
+        const publicUrl = publicUrlData.publicUrl;
 
         console.log("The public url is: ", publicUrl);
         imageUrls.push(publicUrl);

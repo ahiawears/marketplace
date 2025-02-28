@@ -158,7 +158,6 @@ const AddProductForm = () => {
         );
         
         imageFiles.forEach((image) => {
-            console.log("image from front end is : ", image)
             formData.append("images", image);
         });
         // Add Main Variant Details End

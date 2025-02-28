@@ -106,7 +106,7 @@ serve(async (req: Request) => {
 		await createSizes(supabase, variantId, {measurements: variantMeasurements});	
 		await Promise.all(
 			variantImages.map((imageFile, index) =>
-			  createImages(supabase, variantId, imageFile, index)
+			  createImages(supabase, variantId, imageFile, index) 
 			)
 		);
 		

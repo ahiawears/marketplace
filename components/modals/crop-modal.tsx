@@ -129,7 +129,7 @@ export const getCroppedImg = (
         }
         const url = URL.createObjectURL(blob);
         resolve(url);
-      }, "image/jpeg");
+      }, "image/png");
     };
     image.onerror = reject;
   }) as Promise<string>;
