@@ -235,7 +235,7 @@ export interface ProductInformation {
 		tag_id: {
 			name: string;
 		}
-	}
+	}[]
 	variantImages: {
 		image_url: string;
 		is_main: boolean;

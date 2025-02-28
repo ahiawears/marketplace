@@ -1,11 +1,11 @@
 'use client';
 
-import BrandProductItem from "@/components/ui/brand-product-detail"
 import { useParams } from "next/navigation"
 import { useEffect, useState } from "react";
-import { Product, ProductInformation } from '@/lib/types';
+import { ProductInformation } from '@/lib/types';
 import { ProductsImagesThumbnailEdit } from "@/components/brand-product-preview/product-images-thumbnail";
 import { createClient } from "@/supabase/client";
+import { ProductDataDetailsEdit } from "@/components/brand-product-preview/product-data-details";
 
 
 const BrandProductDetail: React.FC = () => {
@@ -14,10 +14,12 @@ const BrandProductDetail: React.FC = () => {
     if (Array.isArray(productId)) {
         productId = productId[0];
     }
-    const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
-    const [productData, setProductData] = useState<ProductInformation | undefined>(undefined);
+    const [productData, setProductData] = useState<ProductInformation | null>(null);
     const [variantImagesData, setVariantImagesData] = useState<ProductInformation["variantImages"] | null>(null);
+    const [variantTextsData, setVariantTextsData] = useState<ProductInformation["variantTexts"] | null>(null);
+    const [variantTagsData, setVariantTagsData] = useState<ProductInformation["variantTags"] | null>(null);
+    const [variantMeasurementsData, setVariantMeasurementsData] = useState<ProductInformation["measurementsData"] | null>(null);
 
 
     useEffect(() => {
@@ -68,6 +70,9 @@ const BrandProductDetail: React.FC = () => {
         if (productData) {
             //console.log("Updated product data:", productData);
             setVariantImagesData(productData.variantImages);
+            setVariantTextsData(productData.variantTexts);
+            setVariantTagsData(productData.variantTags);
+            setVariantMeasurementsData(productData.measurementsData);
         }
     }, [productData]);
 
@@ -84,10 +89,18 @@ const BrandProductDetail: React.FC = () => {
 
             
             <div className="flex flex-col lg:flex-row md:flex-row sm:flex-col gap-4">
-                <div className="w-full lg:basis-3/5 md:basis-3/5 sm:basis-full">
+                <div className="w-full lg:basis-3/5 md:basis-3/5 sm:basis-full justify-between">
                     {/* Add images and thumbnails here */}
                     <ProductsImagesThumbnailEdit 
                         {...variantImagesData}
+                    />
+                </div>
+                <div className="w-full lg:basis-2/5 md:basis-2/5 sm:basis-full">
+                    {/* Edit Product details */}
+                    <ProductDataDetailsEdit 
+                        variantTags={variantTagsData}
+                        variantTexts={variantTextsData}
+                        measurementsData={variantMeasurementsData}
                     />
                 </div>
             </div>

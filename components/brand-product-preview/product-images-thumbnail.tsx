@@ -9,7 +9,6 @@ export const ProductsImagesThumbnailEdit: FC <ProductInformation["variantImages"
 
     const [mainImage, setMainImage] = useState<string | null>(null);
     const [selectedImage, setSelectedImage] = useState(mainImage);
-
     const [imagesArray, setImagesArray] = useState<ProductInformation["variantImages"] | null>(null);
     
     useEffect(() => {
@@ -41,7 +40,7 @@ export const ProductsImagesThumbnailEdit: FC <ProductInformation["variantImages"
     }
     
     return (
-        <div className="h-fit">
+        <div className="h-fit lg:w-fit">
             <div className="flex relative group h-[650px] max-w-[510px]">
                 <Image
                     width={510}
@@ -57,15 +56,14 @@ export const ProductsImagesThumbnailEdit: FC <ProductInformation["variantImages"
                     className="border-2"
                 />
                 <Button
-                    className="absolute top-4 right-4 z-10 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition"
+                    className="absolute top-4 right-4 z-10 bg-white p-2 rounded-full shadow-md hover:bg-gray-200 transition border-2"
                 >
                     <MdOutlineModeEdit className="text-black" />
                 </Button>
             </div>
             {/* thumbnails */}
 
-            <div className="flex gap-4 mt-4">
-                
+            <div className="flex gap-4 mt-4 justify-between">
                 {variantImagesData && imagesArray.map((image, index) => (
                     <div
                         key={index}
