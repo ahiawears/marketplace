@@ -16,7 +16,8 @@ const BrandProductDetail: React.FC = () => {
     }
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
-    const [productData, setProductData] = useState<ProductInformation | null>(null);
+    const [productData, setProductData] = useState<ProductInformation | undefined>(undefined);
+    const [variantImagesData, setVariantImagesData] = useState<ProductInformation["variantImages"] | null>(null);
 
 
     useEffect(() => {
@@ -65,36 +66,28 @@ const BrandProductDetail: React.FC = () => {
 
     useEffect(() => {
         if (productData) {
-            console.log("Updated product data:", productData);
+            //console.log("Updated product data:", productData);
+            setVariantImagesData(productData.variantImages);
         }
     }, [productData]);
-    //if (!product) return <p>Product not found</p>;
+
 
     if (loading) return <p>Loading...</p>;
-
-
+    if (!productData || productData === undefined) return <p>Product not found</p>;
+    if (!variantImagesData) return <p>No images found</p>;
 
     return (
-        <div className="border-2 shadow mx-auto h-fit">
-            {/* <BrandProductItem 
-                productId={productId} 
-                productName={product?.name || "Unknown Product"} 
-                productPrice={product?.price || 0} 
-                mainImage={product?.main_image_url || ""}
-                thumbnails={product?.image_urls || []}
-                description ={product?.description || "This product has no description"} 
-                weight={product?.weight || 0} 
-                categoryName={product?.categoryName || ""}
-            /> */}
+        <div>
+        
             {/* Add products variants grid here start */}
             {/* Add products variants grid here end */}
 
             
-            <div className="flex flex-col lg:flex-row">
-                <div className="w-full lg:basis-3/5 basis-full">
+            <div className="flex flex-col lg:flex-row md:flex-row sm:flex-col gap-4">
+                <div className="w-full lg:basis-3/5 md:basis-3/5 sm:basis-full">
                     {/* Add images and thumbnails here */}
                     <ProductsImagesThumbnailEdit 
-                        productId={productId}
+                        {...variantImagesData}
                     />
                 </div>
             </div>

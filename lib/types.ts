@@ -239,7 +239,7 @@ export interface ProductInformation {
 	variantImages: {
 		image_url: string;
 		is_main: boolean;
-	}
+	}[]
 	measurementsData: {
 		value: number;
 		measurement_type_id: {
