@@ -21,7 +21,8 @@ const ProductDetail: React.FC = () => {
                     const response = await fetch(`/api/getProductById/${productId}`);
                     const data = await response.json();
                     setProduct(data.data);
-                } catch (error) {
+                } catch (error: any) {
+                    throw new Error(`Error fetching product details: ${error}, ${error.message}, ${error.name}}`);
                     console.error("Error fetching product details:", error);
                 }
             };

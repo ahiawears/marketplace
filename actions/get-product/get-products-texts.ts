@@ -39,14 +39,15 @@ export async function getProductsTexts(supabase: any, variantId: string) {
 
         const { data: measurementsData, error: measurementsError } = await supabase
             .from("product_measurements")
-            .select("value, measurement_type_id(name), product_size_id(quantity, size_id    (name), product_id)")
+            .select("value, measurement_type_id(name), product_size_id(quantity, size_id(name), product_id)")
             .eq("product_size_id.product_id", variantId);
 
         if (measurementsError) {
             throw new Error(measurementsError.message);
         }
         return {variantTexts, variantTags, variantImages, measurementsData};
-    } catch (error) {
+    } catch (error: any) {
         error;
+        throw new Error(`Error getting products texts: ${error.message}, ${error.name}`)
     }
 }

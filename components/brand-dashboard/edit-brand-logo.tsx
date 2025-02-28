@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
 import { Pencil } from "lucide-react";
 import { Input } from "../ui/input";
@@ -14,13 +14,51 @@ const dataURLtoBlob = async (dataUrl: string): Promise<Blob> => {
     return blob;
 };
 
-export const EditBrandLogo = () => {
-    const [logoImage, setLogoImage] = useState('/images/ahiaproto.avif');
+interface EditBrandLogoProps {
+    userId: string;
+    userSession: any;
+}
+
+export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSession }) => {
+    const [logoImage, setLogoImage] = useState('');
     const [cropImage, setCropImage] = useState<string | null>(null);
     const [isLogoChanged, setIsLogoChanged] = useState<boolean>(false);
+    const [loading, setLoading] = useState(true); 
 
 
     const logoInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if(userId && userSession){
+            const fetchLogo = async () => {
+                try {
+                    const accessToken = userSession.access_token;
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-logo?userId=${userId}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                            }
+                        }
+                    );
+                    if (!res.ok) {
+                        throw new Error("Failed to get brands logo details");
+                    }
+                    const data = await res.json();
+                    const gotLogo = data.data.logo_url;
+
+                    setLogoImage(gotLogo);
+                } catch (error: any) {
+                    throw new Error(`Error getting brands logo url: ${error}, ${error.name}, ${error.message} `)
+                } finally {
+                    setLoading(false);
+                }
+            }
+            fetchLogo();
+        }
+    }, [userId, userSession]);
+    if (loading) {
+        return <div>Loading...</div>; 
+    }
 
     const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
