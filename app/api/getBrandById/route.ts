@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/supabase_change/server";
+import { createClient } from "@/supabase/server";
 
 export async function GET(req: NextRequest) {
     // // Await params to ensure they are fully resolved

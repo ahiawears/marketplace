@@ -187,7 +187,7 @@ const AddProductForm = () => {
                 {
                     method: "POST",
                     headers: {
-                        "Authorization": `Bearer ${accessToken}`, // Include the authorization header
+                        "Authorization": `Bearer ${accessToken}`,
                         //"Content-Type": "multipart/form-data"
                     },
                     body: formData,

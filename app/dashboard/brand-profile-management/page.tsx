@@ -4,6 +4,7 @@ import NavTab from "@/components/navtab";
 import { useState } from "react";
 import BrandAccountSettings from "../brand-account-settings/page";
 import BrandProfilePage from "../brand-profile-page/page";
+import BrandSocialLinks from "../brand-socials-links/page";
 
 const BrandProfileManagemennt = () => {
 
@@ -11,7 +12,8 @@ const BrandProfileManagemennt = () => {
     
     const tabs = [
         { label: 'Profile', value: 'Profile' },
-        { label: 'Account', value: 'Account' },
+        { label: 'Account Settings', value: 'Account Settings' },
+        { label: 'Social Media', value: 'Social Media'}
         
     ];
 
@@ -27,8 +29,11 @@ const BrandProfileManagemennt = () => {
                 {selectedTab === "Profile" &&
                     <BrandProfilePage />
                 }
-                {selectedTab === "Account" &&
+                {selectedTab === "Account Settings" &&
                    <BrandAccountSettings />
+                }
+                {selectedTab === "Social Media" && 
+                    <BrandSocialLinks />
                 }
             </div>
         </div>

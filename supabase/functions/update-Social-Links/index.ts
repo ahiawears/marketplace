@@ -4,16 +4,16 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import { serve } from "https://deno.land/std@0.114.0/http/server.ts";
-import { UploadBrandLogo } from "@actions/upload-brand-logo.ts"
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from "../../server-deno.ts";
+import { updateSocialMediaLinks } from "@actions/update-social-links.ts"
 
 
 serve(async (req: Request) => {
-	if (req.method === "OPTIONS") {
-		// Handle CORS preflight request
-		return new Response('ok', { headers: corsHeaders});
-	}
+  	if (req.method === "OPTIONS") {
+      // Handle CORS preflight request
+      return new Response('ok', { headers: corsHeaders});
+    }
 
 	try {
 		const authHeader = req.headers.get("Authorization");
@@ -30,13 +30,14 @@ serve(async (req: Request) => {
 
 		const supabase = createClient(accessToken);
 
+
 		// Authenticate user
 		const { data: { user } } = await supabase.auth.getUser();
 		if (!user) {
 			return new Response(JSON.stringify(
 				{
 					success: false, 
-					message: "User not authenticated. from user"
+					message: "User not authenticated., from user"
 				}), 
 				{ 
 					headers: {...corsHeaders, 'Content-Type': 'application/json'}
@@ -44,55 +45,35 @@ serve(async (req: Request) => {
 			);
 		}
 
-		const userId = user.id;
 
 
-		//Check if content type is multipart/form-data
-        const contentType = req.headers.get("content-type");
-        if (!contentType || !contentType.includes("multipart/form-data")) {
-            return new Response(JSON.stringify({ success: false, message: "Invalid content type. Expected multipart/form-data." }), { 
-                headers: corsHeaders
-            });
-        }
+		const { brand_id, website, instagram, twitter, facebook } = await req.json();
 
-		const formData = await req.formData();
-        const logoBlob = formData.get("logo") as Blob;
 
-		// Check if logoBlob is null
-        if (!logoBlob) {
-            return new Response(JSON.stringify({ 
-                success: false, 
-                message: "No logo image provided."
-            }), {
-                headers: {...corsHeaders, 'Content-Type': 'application/json'},
-                status: 400,
-            });
-        }
-		const logoURL = await UploadBrandLogo(supabase, userId, logoBlob);
+		await updateSocialMediaLinks(supabase, website, facebook, instagram, twitter, brand_id);
+
 		return new Response(
-			JSON.stringify({ 
-				success: true, 
-				message: "Product uploaded successfully", 
-				logoURL: logoURL
-			}), 
-			{
-            	headers: { ...corsHeaders, 'Content-Type': 'application/json'}
-        	}
-		);
+		JSON.stringify({ 
+			success: true, 
+			message: "Product uploaded successfully", 
+		}), 
+		{
+			headers: { ...corsHeaders, 'Content-Type': 'application/json'}
+		}
+	);
 	} catch (error) {
-		console.error(`Error in Upload Logo function: ${error instanceof Error ? error.message : String(error)}`);
-		return new Response(
+		console.error("Error during Updating Social Media Links: ", error);
+        return new Response(
 			JSON.stringify({ 
 				success: false, 
-				message: error || "An error occurred." 
+				message: error || "Error during Updating Social Media Links: Something went wrong." 
 			}), 
 			{
 				status: 500,
 				headers: {...corsHeaders, 'Content-Type': 'application/json'},
-			}
+        	}
 		);
 	}
-  
 })
 
 /* To invoke locally:
@@ -100,7 +81,7 @@ serve(async (req: Request) => {
   1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
   2. Make an HTTP request:
 
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/upload-brand-logo' \
+  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/update-Social-Links' \
     --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
     --header 'Content-Type: application/json' \
     --data '{"name":"Functions"}'

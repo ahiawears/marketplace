@@ -19,6 +19,7 @@ serve(async (req: Request) => {
 		const url = new URL(req.url);
         const userId = url.searchParams.get("userId");
 		const authHeader = req.headers.get("Authorization");
+		console.log("The userId", userId)
 
 		if (!authHeader) {
 			console.error("Missing Authorization header!");
@@ -26,6 +27,10 @@ serve(async (req: Request) => {
 		}
 
 		const accessToken = authHeader.split("Bearer ")[1];
+		if (!accessToken) {
+			console.error("Malformed Authorization header!");
+			return new Response("Unauthorized accessToken", { status: 401 });
+		}
 		const supabase = createClient(accessToken);
 
 		if (!userId) {
@@ -36,6 +41,13 @@ serve(async (req: Request) => {
         }
 
 		const brandLogoData = await GetBrandLogoUrl(supabase, userId);
+
+		if (!brandLogoData) {
+            return new Response(JSON.stringify({ success: true, message: "No logo found for the user.", data: null }), {
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            });
+        }
+		
 		return new Response(
 			JSON.stringify({ 
 				success: true, 

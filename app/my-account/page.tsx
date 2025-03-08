@@ -4,6 +4,7 @@ import AddressBook from "@/components/my-account/address-book";
 import ChangePassword from "@/components/my-account/change-password";
 import MyOrders from "@/components/my-account/my-orders";
 import Userdetails from "@/components/my-account/userdetails";
+import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
 type MenuItem = "details" | "changePassword" | "myOrders" | "addressBook";
@@ -24,7 +25,7 @@ const MyAccount = () => {
 	return (
 		<div>
 			<div className="container flex h-[calc(100%-7.5rem)] space-x-4">
-				<aside className={`cursor-pointer bg-gray-100 p-4 space-y-4 w-full h-fit lg:w-64 mx-auto ${activeComponent && "hidden md:block"}`}>
+				<aside className={`cursor-pointer bg-gray-100 p-4 space-y-4 w-full h-fit lg:w-64 mx-auto ${activeComponent && "hidden md:block"} border-2`}>
 					<ul className="space-y-4 text-lg">
 						<li onClick={() => setActiveComponent("details")}>My Details</li>
 						<li onClick={() => setActiveComponent("changePassword")}>Change Password</li>
@@ -33,16 +34,16 @@ const MyAccount = () => {
 					</ul>
 				</aside>
 				{/* Main Content */}
-				<main className="flex-1 bg-gray-100 ">
+				<main className="flex-1 border-2 bg-gray-100 ">
 					{/* Show selected component or fallback */}
 					{activeComponent ? (
-						<div className="">
-							<button
+						<div className="my-5">
+							<Button
 								onClick={() => setActiveComponent(null)}
-								className="mb-4 text-blue-500 md:hidden"
+								className="mb-4 text-black md:hidden bg-transparent focus:bg-transparent"
 							>
 								← Back
-							</button>
+							</Button>
 							<div>{renderComponent}</div>
 						</div>
 					) : (

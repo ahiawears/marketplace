@@ -254,3 +254,17 @@ export interface ProductInformation {
 		}
 	}
 }
+
+export interface BrandSubAccounts {
+  account_bank: string;
+  account_number: string;
+  business_name: string;
+  country: string;
+  split_value: number;
+  business_mobile: string;
+  business_email: string;
+  business_contact: string;
+  business_contact_mobile: string;
+  split_type: string;
+  
+}

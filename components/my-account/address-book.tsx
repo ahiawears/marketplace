@@ -8,6 +8,7 @@ import { Button } from "../ui/button";
 import { addUserAddress } from "@/actions/add-user-address";
 import { UserAddressType } from "@/lib/types";
 import { useRouter } from "next/navigation";
+import { trim } from "validator";
 
 type ComponentItems = "addressList" | "addAddress";
 
@@ -67,8 +68,8 @@ const AddressBook = () => {
     }, []);
 
     const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-        const selectedId = parseInt(event.target.value); 
-        const country = countries.find((c) => c.id === selectedId); 
+        const selectedId = trim(event.target.value); 
+        const country = countries.find((c) => c.alpha2 === selectedId); 
     
         if (country) {
             setSelectedCountry(String(selectedId)); 
@@ -186,7 +187,7 @@ const UserAddresses = ({ onAddAddress, addressInfo, onAddressAdded, }: { onAddAd
                 >
                     Add New Address
                 </Button>
-                {/* Example card structure */}
+                
                 {addressInfo.map((uAddress) => (
                     <div key={uAddress.id} className="border p-4 rounded shadow-md flex justify-between items-center md:w-full">
                         <div>
@@ -325,7 +326,7 @@ const AddressForm = ({ selectedCountry, countryCode, handleChange, firstName, la
                                 Select
                             </option>
                             {countries.map((country) => (
-                                <option key={`${country.code}-${country.name}`} value={country.id}>
+                                <option key={`${country.code}-${country.name}`} value={country.alpha2}>
                                     {`${country.flag + " " + country.name + " " + country.code}`}
                                 </option>
                             ))}

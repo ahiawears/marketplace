@@ -43,8 +43,8 @@ const BrandProductDetail: React.FC = () => {
                                 Authorization: `Bearer ${accessToken}`,
                             },
                         }
-                    )
-                    if (!res.ok) {
+                    );
+                    if (!res.ok) { 
                         throw new Error("Failed to get products details");
                     }
                     const data = await res.json();
@@ -54,10 +54,12 @@ const BrandProductDetail: React.FC = () => {
                         setProductData(holdData);                  
                     } else {
                         console.error("Error fetching product:", data.message);
+                        throw new Error(`Error fetching product. ${data.message}`);
                     }
             
-                } catch (error) {
+                } catch (error: any) {
                     console.error("Error fetching product details:", error);
+                    throw new Error(`Error fetching product details. ${error}, ${error.message}`);
                 } finally {
                     setLoading(false);
                 }

@@ -48,7 +48,7 @@ const ChangeBrandPassword = () => {
                             htmlFor="newPassword"
                             className="block text-sm font-bold text-gray-900 mb-1 w-fit"
                         >
-                            New Password:*
+                            New Password:* 
                         </label>
                         <div>
                             <PasswordInput

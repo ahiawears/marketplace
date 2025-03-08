@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/supabase_change/server";
+import { createClient } from "@/supabase/server";
 
 interface CartItem {
     productId: string;

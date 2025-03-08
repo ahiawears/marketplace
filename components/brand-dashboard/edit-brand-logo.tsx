@@ -7,6 +7,7 @@ import { Pencil } from "lucide-react";
 import { Input } from "../ui/input";
 import { CropModal } from "../modals/crop-modal";
 import { createClient } from "@/supabase/client";
+import { LogoCropModal } from "../modals/logo-crop-modal";
 
 const dataURLtoBlob = async (dataUrl: string): Promise<Blob> => {
     const response = await fetch(dataUrl);
@@ -20,7 +21,7 @@ interface EditBrandLogoProps {
 }
 
 export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSession }) => {
-    const [logoImage, setLogoImage] = useState('');
+    const [logoImage, setLogoImage] = useState('/images/ahiaproto.avif');
     const [cropImage, setCropImage] = useState<string | null>(null);
     const [isLogoChanged, setIsLogoChanged] = useState<boolean>(false);
     const [loading, setLoading] = useState(true); 
@@ -30,7 +31,7 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSessio
 
     useEffect(() => {
         if(userId && userSession){
-            const fetchLogo = async () => {
+            async function fetchLogo() {
                 try {
                     const accessToken = userSession.access_token;
                     const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-logo?userId=${userId}`,
@@ -39,13 +40,18 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSessio
                                 Authorization: `Bearer ${accessToken}`,
                             }
                         }
-                    );
+                    )
                     if (!res.ok) {
                         throw new Error("Failed to get brands logo details");
                     }
                     const data = await res.json();
+                    if (!data.data) {
+                        console.log("No logo found for the user.");
+                        setLogoImage('/images/ahiaproto.avif'); // Set default image
+                        return;
+                    }
                     const gotLogo = data.data.logo_url;
-
+                   
                     setLogoImage(gotLogo);
                 } catch (error: any) {
                     throw new Error(`Error getting brands logo url: ${error}, ${error.name}, ${error.message} `)
@@ -87,13 +93,14 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSessio
     }
 
     const handleSaveLogo = async () => {
+        event?.preventDefault();
         setIsLogoChanged(false);
         setCropImage(null);
         console.log("The logo string is: ", logoImage);
         try {
             const {data: { session }, error } = await createClient().auth.getSession();
             if (error) {
-                throw new Error("Failed to get session")
+                throw new Error(`Failed to get session ${error.message}`)
             }
 
             if (!session) {
@@ -115,14 +122,15 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSessio
                 }
             )
             if (!res.ok) {
-                const errorData = await res.json();
-                console.log("The server response is: ", errorData.message);
-                throw new Error(`Could not establish a connection with the server: ${errorData.message}`);
+                
+                throw new Error(`Could not establish a connection with the server`);
             }
 
             const data = await res.json();
             if (data.success) {
                 console.log("Logo Url sucessfully changed: ", data);
+            }else{
+                console.error("Error uploadingh the logo url")
             }
         } catch (error) {
             console.error("Error uploading brand logo:", error);
@@ -160,7 +168,7 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSessio
             </div>
             {/* Logo crop modal */}
             {cropImage &&(
-                <CropModal
+                <LogoCropModal
                     image={cropImage}
                     onClose={(croppedImage) => {
                         if (croppedImage) {

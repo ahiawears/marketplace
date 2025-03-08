@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "./ui/button";
 
 interface Tab {
     label: string;
@@ -25,17 +26,17 @@ const NavTab: React.FC<NavTabsProps> = ({ tabs, onTabChange, initialTab }) => {
                 <div className="mx-auto w-full overflow-x-auto sm:w-full md:w-fit lg:w-fit">
                     <nav className="flex space-x-4">
                         {tabs.map((tab) => (
-                            <button
+                            <Button
                                 key={tab.value}
                                 onClick={() => handleTabClick(tab.value)}
                                 className={`px-4 py-2 rounded-md font-medium text-sm transition-colors duration-300
                                 ${activeTab === tab.value
-                                    ? 'bg-blue-500 text-white hover:bg-blue-600 focus:ring-2 focus:ring-blue-200 focus:ring-opacity-50' // Active styles
-                                    : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus:ring-2 focus:ring-gray-200 focus:ring-opacity-50' // Inactive styles
+                                    ? 'bg-black text-white hover:bg-gray-100 hover:text-gray-900' // Active styles
+                                    : 'text-white hover:bg-gray-100 hover:text-gray-900 opacity-60' // Inactive styles
                                 }`}
                             >
                                 {tab.label}
-                            </button>
+                            </Button>
                         ))}
                     </nav>
                 </div>

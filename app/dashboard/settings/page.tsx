@@ -20,7 +20,7 @@ const SettingsPage = () => {
 			}
 	
 			return {
-				...prevDetails,
+				...prevDetails, 
 				[name]: value,
 			};
 		});

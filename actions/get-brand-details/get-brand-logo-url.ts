@@ -8,12 +8,16 @@ export async function GetBrandLogoUrl(supabase: any, userId: string) {
             .single();
 
         if (logoURLError) {
-            throw new Error(`Error getting brand logo URL: ${logoURLError}, ${logoURLError.name}, ${logoURLError.message}}`);
+            console.error("Error getting brand logo URL: ", logoURLError);
+            throw new Error(`Error getting brand logo URL: ${logoURLError.message}`);
         }
 
-        if (logoURL) {
-            return logoURL;
+        if (!logoURL) {
+            console.log("No logo found for the user.");
+            return null; // Return null if no logo is found
         }
+        console.log("Logo URL found: ", logoURL);
+        return logoURL;
     } catch (error: any) {
         throw new Error(`Error getting brand logo URL: ${error}, ${error.name}, ${error.message}`)
     }

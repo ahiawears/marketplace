@@ -19,7 +19,6 @@ export default function BrandProfilePage () {
                 const { data: { user }, error } = await createClient().auth.getUser();
 
                 if (error) {
-
                     console.error("Error fetching user:", error);
                     throw new Error(`Error fetching user: ${error.message}, cause: ${error.cause}`)
                 } else if (!user) {
@@ -27,7 +26,6 @@ export default function BrandProfilePage () {
                     throw new Error("User not found");
                 } else {
                     setUserId(user.id);
-                    console.log("The user id is: ", user.id);
                 }
 
                 const { data: {session}, error: sessionError } = await createClient().auth.getSession();
@@ -37,7 +35,6 @@ export default function BrandProfilePage () {
                 }
 
                 setUserSession(session);
-                console.log("The user session is: ", session);
             } catch (error: any) {
                 console.error("An error occurred while fetching the user:", error);
                 throw new Error(`An error occurred while fetching the user: ${error.message}, cause: ${error.cause}`)
@@ -67,9 +64,6 @@ export default function BrandProfilePage () {
 
             {/* Brand Profile Hero */}
             <EditBrandProfileHero />
-
-            {/* Brand Social Links */}
-            <SocialLinksForm />
 
             {/* Brand Description */}
             <BrandDescriptionField />

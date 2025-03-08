@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/supabase_change/server";
+import { createClient } from "@/supabase/server";
 import { redirect } from "next/navigation";
 import { AddBrand } from "./add-brand";
 import { revalidatePath } from "next/cache";

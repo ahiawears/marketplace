@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/supabase_change/server"
+import { createClient } from "@/supabase/server"
 
 const removeFavedItem = async (id: string) => {
     const supabase = await createClient();
