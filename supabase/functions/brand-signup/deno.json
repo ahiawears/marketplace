@@ -1,0 +1,8 @@
+{
+  "imports": {
+		"importMap": "./import_map.json",
+		"@actions/": "../../../actions/auth/",
+		"@supabase/": "../../../supabase"
+	}
+}
+ 

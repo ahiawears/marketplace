@@ -63,8 +63,7 @@ const RegisterBrand = () => {
         if (inputPassword.length < 8) {
             newErrors.password = 'Password must be at least 8 characters long';
         } else if (!validator.isStrongPassword(inputPassword)) {
-            newErrors.password =
-                'Password must include uppercase, lowercase, numbers, and symbols';
+            newErrors.password = 'Password must include uppercase, lowercase, numbers, and symbols';
         }
 
         // Confirm password validation
@@ -83,22 +82,41 @@ const RegisterBrand = () => {
         // If no errors, proceed with form submission
         if (Object.keys(newErrors).length === 0) {
             const sanitizedEmail = validator.normalizeEmail(email);
-            console.log('Form submitted:', { email: sanitizedEmail, password: inputPassword });
+            // console.log('Form submitted:', { email: sanitizedEmail, password: inputPassword });
+            // try {
+            //     const response = await fetch('/api/brandSignUp', {
+            //         method: 'POST',
+            //         headers: { 'Content-Type': 'application/json' },
+            //         body: JSON.stringify({ email: sanitizedEmail, password: inputPassword }),
+            //     });
+            //     if (!response.ok) {
+            //         const data = await response.json();
+            //         throw new Error(data.error || "Something went wrong.");
+            //     } else {
+            //         router.push("/brand-onboarding")
+            //     }
+                
+            // } catch (error: any) {
+            //     setErrorMessage(error.message)
+            // }
             try {
-                const response = await fetch('/api/brandSignUp', {
+                const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNNCTION_URL}/brand-signup`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify({ email: sanitizedEmail, password: inputPassword }),
                 });
+                const data = await response.json();
                 if (!response.ok) {
-                    const data = await response.json();
-                    throw new Error(data.error || "Something went wrong.");
+                    console.log(`${data.error}, ${data.message}, ${data.code},${data.description}`);
+                    throw new Error(`${data.error}, ${data.message}, ${data.code},${data.description}` || "Something went wrong.");
                 } else {
-                    router.push("/brand-onboarding")
+                    console.log(`Data uploaded ${data.details}`)
+                    //router.push("/brand-onboarding")
                 }
-                
             } catch (error: any) {
-                setErrorMessage(error.message)
+                setErrorMessage(error)
             }
         }
     };
@@ -107,7 +125,7 @@ const RegisterBrand = () => {
         <>
             {errorMessage && (
                 <>
-                    {/* <ModalBackdrop disableInteraction={false}/> */}
+                    <ModalBackdrop disableInteraction={false}/> 
                     <ErrorModal
                         message={errorMessage}
                         onClose={() => setErrorMessage('')}
@@ -171,7 +189,7 @@ const RegisterBrandForm: React.FC<RegisterBrandFormProps> = ({
                         id="email"
                         name="email"
                         autoComplete="email"
-                        className="w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm"
+                        className="w-full rounded-md border-2 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm"
                     />
                     {errors.email && (
                         <p style={{ color: 'red' }} className="py-2">
@@ -189,7 +207,7 @@ const RegisterBrandForm: React.FC<RegisterBrandFormProps> = ({
                     <PasswordInput
                         id="password"
                         name="password"
-                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm"
+                        className="block w-full rounded-md border-2 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm"
                         value={inputPassword}
                         onChange={(e) => onPasswordChange(e.target.value)}
                     />
@@ -215,7 +233,7 @@ const RegisterBrandForm: React.FC<RegisterBrandFormProps> = ({
                     <PasswordInput
                         id="confirm_password"
                         name="confirm_password"
-                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm"
+                        className="block w-full rounded-md border-2 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm"
                         value={inputConfirmPassword}
                         onChange={(e) => onConfirmPasswordChange(e.target.value)}
                     />
@@ -270,7 +288,7 @@ const RegisterBrandForm: React.FC<RegisterBrandFormProps> = ({
                 <div className="text-sm">
                     <Button
                         type="submit"
-                        className="flex w-full bg-indigo-600 justify-center rounded-md px-3 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500"
+                        className="flex w-full justify-center rounded-md px-3 py-1.5 text-sm font-semibold text-white shadow-sm"
                     >
                         Sign Up
                     </Button>

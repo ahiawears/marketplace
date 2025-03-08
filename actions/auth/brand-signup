@@ -1,0 +1,13 @@
+import { createClient } from "../../supabase/server";
+
+
+type SignupProps = {
+    email: string, 
+    password: string,
+}
+
+export async function SignUpbrand({ email, password }: SignupProps) {
+    const supabase = await createClient();
+
+    
+}
