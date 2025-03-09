@@ -1,19 +1,17 @@
 import { AddBrandDetails } from "@/actions/add-brand";
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextResponse } from "next/server";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-    if (req.method === "POST") {
-        try {
-            const formData = req.body; // Directly accept FormData
-            const result = await AddBrandDetails(formData);
+export async function POST(request: Request) {
+    try {
+        const formData = await request.json(); // Parse JSON body
+        const result = await AddBrandDetails(formData);
 
-            res.status(200).json({ success: true, data: result });
-        } catch (error) {
-            console.error("Error adding brand:", error);
-            res.status(500).json({ success: false, error: (error as Error).message });
-        }
-    } else {
-        res.setHeader("Allow", ["POST"]);
-        res.status(405).end(`Method ${req.method} Not Allowed`);
+        return NextResponse.json({ success: true, data: result }, { status: 200 });
+    } catch (error) {
+        console.error("Error adding brand:", error);
+        return NextResponse.json(
+            { success: false, error: (error as Error).message },
+            { status: 500 }
+        );
     }
 }
