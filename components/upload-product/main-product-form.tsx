@@ -104,7 +104,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
     };
       
     const nextSlide = () => {
-        let updatedDetails = { ...localDetails };
+        const updatedDetails = { ...localDetails };
         const pCurrentSlide = updatedDetails.currentSlide;
         const maxSlideIndex = updatedDetails.images.length - 1;
         const newSlide = pCurrentSlide + 1;
@@ -117,7 +117,7 @@ const MainProductForm: React.FC<ProductVariantProps> = ({productInformation, set
     };
 
     const prevSlide = () => {
-        let updatedDetails = { ...localDetails };
+        const updatedDetails = { ...localDetails };
         const pCurrentSlide = updatedDetails.currentSlide;
         const newSlide = pCurrentSlide - 1;
         if (pCurrentSlide > 0) {

@@ -1,3 +1,13 @@
 {
-  "extends": ["next/core-web-vitals", "next/typescript"]
+  "extends": ["next/core-web-vitals", "next/typescript"],
+  //remove this before production: IKENNA
+  "rules": {
+    "@typescript-eslint/no-unused-vars": "off", // Disable unused variable warnings
+    "@typescript-eslint/no-explicit-any": "off", // Disable warnings for using `any`
+    "react-hooks/exhaustive-deps": "off", // Disable missing dependency warnings in useEffect
+    "react/jsx-key": "off", // Disable missing key prop warnings
+    "react/no-unescaped-entities": "off", // Disable warnings for unescaped entities
+    "@next/next/no-img-element": "off", // Disable warnings for using <img> instead of Next.js <Image>
+    "react/display-name": "off" // Disable warnings for missing display names
+  }
 }

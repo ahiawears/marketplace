@@ -65,7 +65,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
 
     const prevSlide = (variantIndex: number) => {
         console.log("The prev slide has been clicked, the variant Index is: ", variantIndex);
-        let updatedVariants = [...variants];
+        const updatedVariants = [...variants];
         const currentSlide = updatedVariants[variantIndex].currentSlide;
         const newSlide = currentSlide - 1;
 
@@ -78,7 +78,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
 
     const nextSlide = (variantIndex: number) => {
         console.log("The next slide has been clicked, the variant Index is: ", variantIndex);
-        let updatedVariants = [...variants];
+        const updatedVariants = [...variants];
         const currentSlide = updatedVariants[variantIndex].currentSlide;
         const maxSlideIndex = updatedVariants[variantIndex].images.length - 1;
         const newSlide = currentSlide + 1;

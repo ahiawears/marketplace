@@ -24,7 +24,7 @@ export async function getProductsTexts(supabase: any, variantId: string) {
         }
         console.log("The images data", variantImages)
 
-        let productId = variantTexts.main_product_id.id;
+        const productId = variantTexts.main_product_id.id;
         console.log("The product id is ", productId);
 
         const {data: variantTags, error: variantTagsError} = await supabase
