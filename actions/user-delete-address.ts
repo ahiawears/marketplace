@@ -1,4 +1,4 @@
-import { createClient } from "@/supabase_change/server";
+import { createClient } from "@/supabase/server";
 
 const deleteUserAddress = async (id: string) => {
     const supabase = await createClient();
