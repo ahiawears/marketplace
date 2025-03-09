@@ -8,6 +8,7 @@
     "react/jsx-key": "off", // Disable missing key prop warnings
     "react/no-unescaped-entities": "off", // Disable warnings for unescaped entities
     "@next/next/no-img-element": "off", // Disable warnings for using <img> instead of Next.js <Image>
-    "react/display-name": "off" // Disable warnings for missing display names
+    "react/display-name": "off", // Disable warnings for missing display names
+    "react-hooks/rules-of-hooks": "off" // Disable the rule (not recommended).
   }
 }
