@@ -1,7 +1,7 @@
 "use server";
 
 import { Product } from "@/lib/types";
-import { createClient } from "@/supabase_change/server";
+import { createClient } from "@/supabase/server";
 
 export const editProduct = async (data: Product) => {
   const supabase = await createClient();

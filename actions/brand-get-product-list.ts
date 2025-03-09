@@ -1,4 +1,4 @@
-import { createClient } from "@/supabase_change/server";
+import { createClient } from "@/supabase/server";
 
 export const getProductItems = async (userId: string) => { //change this to brandId
     const supabase = await createClient();

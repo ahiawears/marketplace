@@ -1,4 +1,4 @@
-import { createClient } from "@/supabase_change/server";
+import { createClient } from "@/supabase/server";
 
 type Props = {
   id: string;
