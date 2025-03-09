@@ -1,95 +1,90 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { AiOutlineHeart, AiFillHeart } from 'react-icons/ai';
 import { ProductsListType } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useSearchParams } from "next/navigation";
+import { useSearchParams } from 'next/navigation';
 import addItemToUserLiked from '@/actions/add-to-user-saved';
 import { fetchUserLikedItems } from '@/actions/fetch-user-liked-item';
 import { Button } from './button';
 import AddToCartModal from '../modals/add-to-cart-modal';
 import ModalBackdrop from '../modals/modal-backdrop';
 
-
-const ProductsList = () => { 
+function ProductsListContent() {
     const [liked, setLiked] = useState<{ [key: string]: boolean }>({});
     const [productsData, setProductsData] = useState<ProductsListType[]>([]);
     const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
     const searchParams = useSearchParams();
-    const query = searchParams.get("query") ?? "";
-    const catQuery = searchParams.get("cat") ?? "";
+    const query = searchParams.get('query') ?? '';
+    const catQuery = searchParams.get('cat') ?? '';
     const router = useRouter();
 
     const handleAddToCartClick = (productId: string) => {
         setSelectedProductId(productId);
-    }
+    };
 
     const handleAddToCart = async () => {
         console.log(`Item with ID ${selectedProductId} is added to cart`);
         setSelectedProductId(null);
-    }
+    };
 
     const handleModalCancel = async () => {
         setSelectedProductId(null);
-    }
-    //Toggle the like status for a product
+    };
+
+    // Toggle the like status for a product
     const toggleLike = async (id: string) => {
         setLiked((liked) => {
-          const isLiked = liked[id] || false;
-          return {
-            ...liked,
-            [id]: !isLiked,
-          };
+            const isLiked = liked[id] || false;
+            return {
+                ...liked,
+                [id]: !isLiked,
+            };
         });
         await updateUserLikedItem(id, !liked[id]);
     };
 
-
-
     const updateUserLikedItem = async (id: string, isLiked: boolean) => {
         const item = { id, isLiked };
         try {
-          await addItemToUserLiked(item);
-          console.log(`Successfully updated liked status for product ID: ${id}`);
+            await addItemToUserLiked(item);
+            console.log(`Successfully updated liked status for product ID: ${id}`);
         } catch (error) {
-          console.error(`Error updating liked status for product ID: ${id}`, error);
+            console.error(`Error updating liked status for product ID: ${id}`, error);
         }
     };
-  
-    
 
     useEffect(() => {
         const fetchProductsAndLikes = async () => {
             try {
                 const endpoint = query
                     ? `/api/getProducts?query=${encodeURIComponent(query)}`
-                    : `/api/getProductsinCategory?cat=${encodeURIComponent(catQuery)}`; 
+                    : `/api/getProductsinCategory?cat=${encodeURIComponent(catQuery)}`;
                 const response = await fetch(endpoint);
                 const { data: products } = await response.json();
-    
-                if (!response.ok) throw new Error("Failed to fetch products");
-    
+
+                if (!response.ok) throw new Error('Failed to fetch products');
+
                 const savedItems = await fetchUserLikedItems();
                 const likedMap: { [key: string]: boolean } = savedItems.reduce(
                     (acc, item) => ({ ...acc, [item.product_id]: true }),
                     {}
                 );
-                
+
                 const updatedProducts = products.map((product: ProductsListType) => ({
                     ...product,
                     liked: likedMap[product.id] || false,
                 }));
-    
+
                 setProductsData(updatedProducts);
-    
                 setLiked(likedMap);
             } catch (error) {
-                console.error("Error fetching products or liked items:", error);
+                console.error('Error fetching products or liked items:', error);
             }
         };
-    
+
         fetchProductsAndLikes();
     }, [query, catQuery]);
 
@@ -100,11 +95,10 @@ const ProductsList = () => {
             document.body.style.overflow = '';
         }
     }, [selectedProductId]);
-    
 
     return (
         <div>
-            <div className='bg-white'>
+            <div className="bg-white">
                 <div className="mx-auto px-4 sm:px-6 lg:w-full lg:px-8">
                     <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-3">
                         {productsData.map((product) => (
@@ -116,7 +110,7 @@ const ProductsList = () => {
                                         className="h-full w-full object-cover object-center hover:cursor-pointer"
                                         onClick={(e) => {
                                             e.preventDefault();
-                                            router.push(`/product-detail/${product.id}`); 
+                                            router.push(`/product-detail/${product.id}`);
                                         }}
                                     />
                                     <button
@@ -127,7 +121,7 @@ const ProductsList = () => {
                                             <AiFillHeart className="text-red-500" size={24} />
                                         ) : (
                                             <AiOutlineHeart className="text-black" size={24} />
-                                        )} 
+                                        )}
                                     </button>
                                     <Button
                                         onClick={() => handleAddToCartClick(product.id)}
@@ -135,13 +129,12 @@ const ProductsList = () => {
                                     >
                                         Add to Cart
                                     </Button>
-                                    
                                 </div>
                                 <div className="mt-4 flex justify-between">
                                     <div>
                                         <h3 className="text-sm text-gray-700">
-                                            <a 
-                                                href= {`product-detail/${product.id}`}
+                                            <a
+                                                href={`product-detail/${product.id}`}
                                                 className="relative"
                                             >
                                                 <span aria-hidden="true" className="absolute inset-0" />
@@ -160,16 +153,17 @@ const ProductsList = () => {
             {selectedProductId && (
                 <>
                     <ModalBackdrop disableInteraction={true} />
-
-                    <AddToCartModal 
-                        productId={selectedProductId} 
-                        onCancel={handleModalCancel} 
-                    />
+                    <AddToCartModal productId={selectedProductId} onCancel={handleModalCancel} />
                 </>
             )}
         </div>
-    )
+    );
 }
 
-
-export default ProductsList
+export default function ProductsList() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <ProductsListContent />
+        </Suspense>
+    );
+}
