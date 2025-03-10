@@ -4,7 +4,7 @@ import { createClient } from "@/supabase/server";
 import { redirect } from "next/navigation";
 import { AddBrand } from "./add-brand";
 import { revalidatePath } from "next/cache";
-
+ 
 
 export async function brandRegister(formData: FormData) {
     const supabase = await createClient();

@@ -82,41 +82,31 @@ const RegisterBrand = () => {
         // If no errors, proceed with form submission
         if (Object.keys(newErrors).length === 0) {
             const sanitizedEmail = validator.normalizeEmail(email);
-            // console.log('Form submitted:', { email: sanitizedEmail, password: inputPassword });
-            // try {
-            //     const response = await fetch('/api/brandSignUp', {
-            //         method: 'POST',
-            //         headers: { 'Content-Type': 'application/json' },
-            //         body: JSON.stringify({ email: sanitizedEmail, password: inputPassword }),
-            //     });
-            //     if (!response.ok) {
-            //         const data = await response.json();
-            //         throw new Error(data.error || "Something went wrong.");
-            //     } else {
-            //         router.push("/brand-onboarding")
-            //     }
-                
-            // } catch (error: any) {
-            //     setErrorMessage(error.message)
-            // }
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNNCTION_URL}/brand-signup`, {
+                const signupResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNNCTION_URL}/brand-signup`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ email: sanitizedEmail, password: inputPassword }),
+                    body: JSON.stringify({ email: sanitizedEmail, password: inputPassword, redirectTo: '/brand-onboarding' }),
                 });
-                const data = await response.json();
-                if (!response.ok) {
-                    console.log(`${data.error}, ${data.message}, ${data.code},${data.description}`);
-                    throw new Error(`${data.error}, ${data.message}, ${data.code},${data.description}` || "Something went wrong.");
-                } else {
-                    console.log(`Data uploaded ${data.details}`)
-                    //router.push("/brand-onboarding")
+                const signupData = await signupResponse.json();
+                if (!signupResponse.ok) {
+                    console.error('Signup failed:', signupData);
+                    setErrorMessage(`${signupData.message}` || 'Something went wrong.');
+                    return;
+                } 
+
+                if (signupResponse.ok) {
+                    router.push('/check-email')
                 }
             } catch (error: any) {
-                setErrorMessage(error)
+                let signupError;
+                if (error instanceof Error) {
+                    signupError = error.message;
+                }
+                console.error('Signup error:', error);
+                setErrorMessage( `${signupError}` || 'An unexpected error occurred. Please try again.');
             }
         }
     };
