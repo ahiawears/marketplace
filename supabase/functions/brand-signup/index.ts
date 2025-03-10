@@ -16,10 +16,10 @@ serve(async (req: Request) => {
 	}
 
 	try {
-		const { email, password, redirectTo } = await req.json();
+		const { email, password } = await req.json();
+		console.log(`The data gotten is: ${email}, ${password}`);
 		const supabase = createClient();
-
-		const response = await SignUpbrand({supabase, email, password, redirectTo});
+		const response = await SignUpbrand({supabase, email, password});
 
 		let result;
         try {

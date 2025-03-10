@@ -83,12 +83,14 @@ const RegisterBrand = () => {
         if (Object.keys(newErrors).length === 0) {
             const sanitizedEmail = validator.normalizeEmail(email);
             try {
-                const signupResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNNCTION_URL}/brand-signup`, {
+                const signupResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/brand-signup`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+
                     },
-                    body: JSON.stringify({ email: sanitizedEmail, password: inputPassword, redirectTo: '/brand-onboarding' }),
+                    body: JSON.stringify({ email: sanitizedEmail, password: inputPassword}),
                 });
                 const signupData = await signupResponse.json();
                 if (!signupResponse.ok) {
@@ -116,13 +118,13 @@ const RegisterBrand = () => {
             {errorMessage && (
                 <>
                     <ModalBackdrop disableInteraction={false}/> 
-                    <ErrorModal
-                        message={errorMessage}
-                        onClose={() => setErrorMessage('')}
-                    />
+                        <ErrorModal
+                            message={errorMessage}
+                            onClose={() => setErrorMessage('')}
+                        />
                 </>
             )}
-            <div className="flex h-screen items-center justify-center">
+            <div className="flex h-full items-center justify-center">
                 <div className="container mx-auto w-full p-5 px-10 py-10 lg:w-2/4 lg:block md:w-10/12">
                     <RegisterBrandForm
                         onSignup={handleSignUp}

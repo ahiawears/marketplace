@@ -5,16 +5,15 @@ type SignupProps = {
     supabase: any,
     email: string, 
     password: string,
-    redirectTo?: string,
 }
 
-export async function SignUpbrand({ supabase, email, password, redirectTo }: SignupProps) {
+export async function SignUpbrand({ supabase, email, password, }: SignupProps) {
 
     const { data, error } = await supabase.auth.signUp ({
         email: email,
         password: password,
         options: {
-            emailRedirectTo: redirectTo,
+            emailRedirectTo: 'http://localhost:3000/brand-onboarding',
         },
     });
 
