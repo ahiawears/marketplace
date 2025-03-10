@@ -2,17 +2,22 @@
 
 type SignupProps = {
     supabase: any,
-    email: string, 
+    email: string,
     password: string,
+    firstName: string,
+    lastName: string,
 }
 
-export async function SignUpbrand({ supabase, email, password, }: SignupProps) {
-
+export async function SignUpuser({supabase, email, password, firstName, lastName}: SignupProps) {
     const { data, error } = await supabase.auth.signUp ({
         email: email,
         password: password,
         options: {
-            emailRedirectTo: 'http://localhost:3000/brand-onboarding',
+            emailRedirectTo: 'http://localhost:3000/',
+            data: {
+                firstName: firstName,
+                lastName: lastName,
+            }
         },
     });
 

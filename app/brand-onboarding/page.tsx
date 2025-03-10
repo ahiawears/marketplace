@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import BlurFade from "@/components/ui/blur-fade";
 import { AddBrandDetails } from "@/actions/add-brand";
+import BrandBasicInformationForm from "@/components/brand-onboarding/brand-information";
 
 export default function BrandOnboardingPage() {
 	const [step, setStep] = useState(1);
@@ -75,13 +76,13 @@ export default function BrandOnboardingPage() {
 	};
 
 	return (
-		<Card className="w-full max-w-2xl h-[650px] p-8 flex flex-col">
+		<Card className="w-full h-fit border-2 p-8 flex flex-col">
 			<CardHeader>
 				<div className="flex justify-between mb-8">
 					{[1, 2, 3].map((index) => (
 						<div key={index} className="flex flex-col items-center w-1/3">
 							<div
-								className={`w-10 h-10 rounded-full border-2 flex items-center justify-center mb-2 
+								className={`w-10 h-10 border-2 flex items-center justify-center mb-2 
 									${
 									step >= index
 										? "border-primary bg-primary text-primary-foreground"
@@ -116,7 +117,9 @@ export default function BrandOnboardingPage() {
 							<p className="text-muted-foreground">
 								Let&apos;s start with your brand&apos;s basic information.
 							</p>
-							<div className="space-y-4">
+
+							<BrandBasicInformationForm />
+							{/* <div className="space-y-4">
 								<div className="space-y-2">
 									<label htmlFor="brandName" className="block text-sm font-bold text-gray-900">
 										Enter Brand Name:*
@@ -147,7 +150,7 @@ export default function BrandOnboardingPage() {
 										className="min-h-[100px]"
 									/>
 								</div>
-							</div>
+							</div> */}
 						</div>
 					</BlurFade>
 				)}

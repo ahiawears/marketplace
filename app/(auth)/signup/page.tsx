@@ -10,7 +10,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import validator from 'validator';
+import validator from 'validator';  
 import ErrorModal from "@/components/modals/error-modal";
 import { Button } from "@/components/ui/button";
 
@@ -93,21 +93,51 @@ const SignupPage = () => {
 
 		// If no errors, proceed with form submission
 		if (Object.keys(newErrors).length === 0) {
-			try {
-				const response = await fetch('/api/userSignUp', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({ email: sanitizedEmail, password: inputPassword, firstName: sanitizedFirstname, lastName: sanitizedLastname }),
-				});
-				if (!response.ok) {
-					const data = await response.json();
-					throw new Error(data.error || "Something went wrong.");
-				} else {
-					router.push("/")
-				}
+			
+			// try {
+			// 	const response = await fetch('/api/userSignUp', {
+			// 		method: 'POST',
+			// 		headers: { 'Content-Type': 'application/json' },
+			// 		body: JSON.stringify({ email: sanitizedEmail, password: inputPassword, firstName: sanitizedFirstname, lastName: sanitizedLastname }),
+			// 	});
+			// 	if (!response.ok) {
+			// 		const data = await response.json();
+			// 		throw new Error(data.error || "Something went wrong.");
+			// 	} else {
+			// 		router.push("/")
+			// 	}
 				
-			} catch (error: any) {
-				setErrorMessage(error.message)
+			// } catch (error: any) {
+			// 	setErrorMessage(error.message)
+			// }
+
+			try {
+				const signupResponse = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/user-signup`, {
+					method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+
+                    },
+                    body: JSON.stringify({ email: sanitizedEmail, password: inputPassword, firstName: sanitizedFirstname, lastName: sanitizedLastname }),
+				});
+
+				const signupData = await signupResponse.json();
+				if (!signupResponse.ok) {
+                    console.error('Signup failed:', signupData);
+                    setErrorMessage(`${signupData.message}` || 'Something went wrong.');
+                    return;
+                }
+				if (signupResponse.ok) {
+                    router.push('/check-email')
+                }
+			} catch (error) {
+				let signupError;
+                if (error instanceof Error) {
+                    signupError = error.message;
+                }
+                console.error('Signup error:', error);
+                setErrorMessage( `${signupError}` || 'An unexpected error occurred. Please try again.');
 			}
 		}
 	};

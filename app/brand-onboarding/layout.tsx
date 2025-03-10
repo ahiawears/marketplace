@@ -8,7 +8,6 @@ const BrandOnboardingLayout = ({ children }: { children: ReactNode }) => {
         <div>
           <Logo />
         </div>
-
         {children}
       </div>
     </main>  

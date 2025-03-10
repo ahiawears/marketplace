@@ -102,7 +102,7 @@ const RegisterBrand = () => {
                 if (signupResponse.ok) {
                     router.push('/check-email')
                 }
-            } catch (error: any) {
+            } catch (error) {
                 let signupError;
                 if (error instanceof Error) {
                     signupError = error.message;
