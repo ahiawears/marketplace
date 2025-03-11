@@ -114,7 +114,7 @@ export default function BrandOnboardingPage() {
 							<h2 className="text-2xl font-bold tracking-tight">
 								Brand Information
 							</h2>
-							<p className="text-muted-foreground">
+							<p className="text-muted-foreground"> 
 								Let&apos;s start with your brand&apos;s basic information.
 							</p>
 

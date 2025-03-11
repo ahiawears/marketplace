@@ -3,6 +3,7 @@ import ModalBackdrop from "../modals/modal-backdrop";
 import ErrorModal from "../modals/error-modal";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
+import { EditBrandLogo } from "../brand-dashboard/edit-brand-logo";
 
 const BrandBasicInformationForm = () => {
     const [errorMessage, setErrorMessage] = useState("");
@@ -22,7 +23,7 @@ const BrandBasicInformationForm = () => {
                 </>
             )}
             <div className="space-y-4">
-                <div className="space-y-2">
+                <div className="space-y-2">  
                     <label htmlFor="brandName" className="block text-sm font-bold text-gray-900">
                         Enter Brand Name:*
                     </label>
@@ -38,6 +39,9 @@ const BrandBasicInformationForm = () => {
                         // }
                     />
                 </div>
+
+                <EditBrandLogo />
+
                 <div className="space-y-2">
                     <label htmlFor="productName" className="block text-sm font-bold text-gray-900">
                         Enter Brand Description:*
