@@ -1,9 +1,9 @@
-export async function UploadBrandLogo(supabase: any, userId: string, blob: Blob) {
+export async function UploadBrandBanner(supabase: any, userId: string, blob: Blob) {
     try {
-        const bucketName = "brand-logo";
+        const bucketName = "brand-banner";
 
-        console.log("The brand logo is: ", blob);
-        const uniqueFileName = `${userId}/logo.png`; // Use a consistent file extension
+        console.log("The brand banner is: ", blob);
+        const uniqueFileName = `${userId}/banner.png`; // Use a consistent file extension
 
         // Delete the old file (if it exists)
         const { error: deleteError } = await supabase.storage
@@ -26,7 +26,7 @@ export async function UploadBrandLogo(supabase: any, userId: string, blob: Blob)
 
         if (uploadError) {
             console.error("Upload error:", uploadError);
-            throw new Error(`Error uploading logo: ${uploadError.message}`);
+            throw new Error(`Error uploading banner: ${uploadError.message}`);
         }
 
         console.log("File uploaded successfully:", uploadData);
@@ -44,18 +44,18 @@ export async function UploadBrandLogo(supabase: any, userId: string, blob: Blob)
 
         // Upsert into the database
         console.log("Upserting data:", { brand_id: userId, logo_url: publicUrl });
-        const { error: logoInsertionError } = await supabase
-            .from("brand_logo")
-            .upsert({ id: userId, logo_url: publicUrl }, { onConflict: 'id' });
+        const { error: bannerInsertionError } = await supabase
+            .from("brand_banner")
+            .upsert({ id: userId, banner_url: publicUrl }, { onConflict: 'id' });
 
-        if (logoInsertionError) {
-            throw new Error(`Error inserting logo URL into database: ${logoInsertionError.message}`);
+        if (bannerInsertionError) {
+            throw new Error(`Error inserting logo URL into database: ${bannerInsertionError.message}`);
         }
 
-        console.log("Logo uploaded and URL saved successfully.");
+        console.log("Banner uploaded and URL saved successfully.");
         return publicUrl;
     } catch (error) {
-        console.error("Error uploading logo:", error);
+        console.error("Error uploading banner:", error);
         throw error;
     }
 }

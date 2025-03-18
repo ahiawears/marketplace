@@ -36,6 +36,8 @@ const PaymentSettings = () => {
 		business_contact: "",
 		business_contact_mobile: "",
 		split_type: "percentage",
+		bank_name: "",
+		subaccount_id: '',
 	};
 
 
@@ -58,7 +60,7 @@ const PaymentSettings = () => {
 			const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/create-brand-subaccount`,
 				{
 					method: "POST",
-					headers: {
+					headers: { 
 						accept: "application/json",
 						"Content-Type": "application/json",
 						Authorization: `Bearer ${accessToken}`,
@@ -260,7 +262,7 @@ const AddBankForm = ({ onBack, userLocation, selectedCountry, handleCountryChang
 									))}
 								</Select>
 							</div>
-							<div className='basis-1/2'>
+							<div className='basis-1/2'> 
 								<label 
 									htmlFor="account_bank"
 									className="block text-sm font-bold text-gray-900 mb-1"

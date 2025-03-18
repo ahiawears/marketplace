@@ -8,7 +8,11 @@ import { corsHeaders } from '../_shared/cors.ts';
 
 serve(async (req: Request) => {
 	if (req.method === 'OPTIONS') {
-		return new Response('ok', { headers: corsHeaders });
+		return new Response('ok', { headers: {
+            'Access-Control-Allow-Origin': '*', // Or your frontend's domain
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        } });
 	}
 	try {
 		const url = new URL(req.url);
@@ -17,7 +21,12 @@ serve(async (req: Request) => {
 		if (!FLUTTERWAVE_SECRET_KEY) {
 			return new Response(JSON.stringify({ success: false, message: "FLUTTERWAVE_SECRET_KEY is not set." }), {
 				status: 500,
-				headers: { ...corsHeaders, "Content-Type": "application/json" },
+				headers: { 
+                    'Access-Control-Allow-Origin': '*', // Or your frontend's domain
+                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    "Content-Type": "application/json" 
+                },
 			});
 		}
 
@@ -40,11 +49,16 @@ serve(async (req: Request) => {
 		return new Response(
 			JSON.stringify({ 
 				success: true, 
-				message: "Product Gotten successfully", 
+				message: "List of Banks Gotten successfully", 
 				data: bankData,
 			}), 
 			{
-            	headers: { ...corsHeaders, 'Content-Type': 'application/json'}
+            	headers: {
+                    'Access-Control-Allow-Origin': '*', // Or your frontend's domain
+                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    'Content-Type': 'application/json'
+                }
 
         	}
 		);
@@ -56,7 +70,12 @@ serve(async (req: Request) => {
 			}), 
 			{
 				status: 500,
-				headers: {...corsHeaders, 'Content-Type': 'application/json'},
+                headers: {
+                    'Access-Control-Allow-Origin': '*', // Or your frontend's domain
+                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+                    'Content-Type': 'application/json'
+                }
         	}
 		);
 	}

@@ -142,7 +142,7 @@ const AddProductForm = () => {
         formData.append("variantColorName", productData.productInformation.colorName);
         formData.append("variantColorHex", productData.productInformation.colorHex);
         formData.append("variantProductCode", productData.productInformation.productCode);
-        formData.append("variantMeasurements", measurementsJson);
+        formData.append("variantMeasurements", measurementsJson); 
         // Add images
         const validImages = productData.productInformation.images.filter(image => image !== null);
 
@@ -240,7 +240,7 @@ const AddProductForm = () => {
 				{isPreviewModalOpen && (
                     <>
                         <div className="">
-                            <ModalBackdrop disableInteraction={true}/>
+                            <ModalBackdrop />
                             <ProductPreviewModal onClose={closeModal}>
                                 <ProductPreview
                                     productData={productData}

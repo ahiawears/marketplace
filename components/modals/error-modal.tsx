@@ -3,14 +3,14 @@ import ModalBackdrop from "./modal-backdrop";
 import { Button } from "../ui/button";
 
 interface ErrorModalProps {
-  message: string;
+  message: string; 
   onClose: () => void;
 }
 
 const ErrorModal: React.FC<ErrorModalProps> = ({ message, onClose }) => {
     return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50 px-4">
-            {/* <ModalBackdrop disableInteraction={false}/> */}
+        <div className="fixed inset-0 flex items-center justify-center bg-transparent bg-opacity-50 z-50 px-4">
+            <ModalBackdrop/>
 
             <div className="bg-red-400 p-6 rounded shadow-md w-full md:w-1/2 lg:w-1/2">
 

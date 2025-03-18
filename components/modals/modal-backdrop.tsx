@@ -1,6 +1,6 @@
-const ModalBackdrop = ({ disableInteraction }: { disableInteraction: boolean }) => (
+const ModalBackdrop = () => (
     <div 
-      className={`fixed inset-0 z-[1000] ${disableInteraction ? 'pointer-events-auto' : ''}`}
+      className="fixed inset-0 z-[1000] pointer-events-none"
     >
     </div>
 );

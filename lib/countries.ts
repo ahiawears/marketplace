@@ -1,4 +1,4 @@
-type Country = {
+export type Country = {
     name: string;
     code: string;
     alpha2: string; // Added alpha2 code

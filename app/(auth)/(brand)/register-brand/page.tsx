@@ -78,7 +78,7 @@ const RegisterBrand = () => {
 
         // Update errors state
         setErrors(newErrors);
-
+ 
         // If no errors, proceed with form submission
         if (Object.keys(newErrors).length === 0) {
             const sanitizedEmail = validator.normalizeEmail(email);
@@ -117,11 +117,10 @@ const RegisterBrand = () => {
         <>
             {errorMessage && (
                 <>
-                    <ModalBackdrop disableInteraction={false}/> 
-                        <ErrorModal
-                            message={errorMessage}
-                            onClose={() => setErrorMessage('')}
-                        />
+                    <ErrorModal
+                        message={errorMessage}
+                        onClose={() => setErrorMessage('')}
+                    />
                 </>
             )}
             <div className="flex h-full items-center justify-center">

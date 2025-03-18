@@ -258,6 +258,7 @@ export interface ProductInformation {
 export interface BrandSubAccounts {
   account_bank: string;
   account_number: string;
+  bank_name: string;
   business_name: string;
   country: string;
   split_value: number;
@@ -266,5 +267,31 @@ export interface BrandSubAccounts {
   business_contact: string;
   business_contact_mobile: string;
   split_type: string;
-  
+  subaccount_id: string;
+}
+
+export interface BrandOnboarding {
+  brandInformation: {
+    brand_name: string;
+    brand_description: string;
+    brand_logo: string;
+    brand_banner: string;
+  }
+  contactInformation: {
+    business_email: string;
+    phone_number: string;
+    social_media: {
+      website: string;
+      facebook: string;
+      instagram: string;
+      twitter: string;
+      tiktok: string;
+    }
+  }
+  businessDetails: {
+    country_of_registration: string;
+    business_registration_name: string;
+    business_registration_number: string;
+  }
+  paymentInformation: BrandSubAccounts;
 }

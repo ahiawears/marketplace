@@ -35,8 +35,6 @@ serve(async (req) => {
 
 		console.log("Received data:", requestBody);
 
-		
-
 		// Make the request to Flutterwave
         const response = await fetch(url, {
             method: 'POST',
@@ -51,7 +49,7 @@ serve(async (req) => {
 		// Parse the response from Flutterwave
         const responseData = await response.json();
 
-		 // Handle Flutterwave API errors
+		 // Handle Flutterwave API errors 
         if (!response.ok) {
             console.error("Flutterwave API error:", responseData);
             return new Response(JSON.stringify({

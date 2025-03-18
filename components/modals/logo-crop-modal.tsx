@@ -10,9 +10,10 @@ import {
 } from "@/components/ui/dialog";
 import Cropper from "react-easy-crop";
 import { Button } from "../ui/button";
+
 type Props = {
     image?: string;
-    onClose?: (image: string) => void;
+    onClose?: (image: string | undefined) => void;
 };
 
 
@@ -46,12 +47,18 @@ export const LogoCropModal = (props: Props) => {
     ) => {
         setCroppedAreaPixels(croppedAreaPixels);
     };
+
+    const handleCrop = async () => {
+        if (props.onClose && props.image) {
+            const croppedImg = await getCroppedImg(props.image, croppedAreaPixels);
+            props.onClose(croppedImg);
+        }
+    };
+
     
     const onClose = async () => {
-        if (props.onClose && props.image) {
-          const croppedImg = await getCroppedImg(props.image, croppedAreaPixels);
-    
-          props.onClose(croppedImg);
+        if (props.onClose) {    
+          props.onClose("");
         }
     };
 
@@ -60,13 +67,14 @@ export const LogoCropModal = (props: Props) => {
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Crop</DialogTitle>
+                   
                 </DialogHeader>
                 <div className="relative w-full h-64">
                     <Cropper
                         image={props.image}
                         crop={crop}
                         zoom={zoom}
-                        aspect={1} // Example: 1:1 aspect ratio
+                        aspect={1} 
                         onCropChange={setCrop}
                         onCropComplete={onCropComplete}
                         onZoomChange={setZoom}
@@ -74,7 +82,7 @@ export const LogoCropModal = (props: Props) => {
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button>Crop</Button>
+                        <Button onClick={handleCrop}>Crop</Button>
                     </DialogClose>
                 </DialogFooter>
             </DialogContent>

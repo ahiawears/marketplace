@@ -8,7 +8,7 @@ export async function updateSocialMediaLinks(supabase: any, website: string, fac
                 instagram, 
                 twitter, 
                 facebook 
-            }], { 
+            }], {  
                 onConflict: ["brand_id"] }
             );
         

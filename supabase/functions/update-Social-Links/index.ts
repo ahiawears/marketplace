@@ -33,7 +33,7 @@ serve(async (req: Request) => {
 
 		// Authenticate user
 		const { data: { user } } = await supabase.auth.getUser();
-		if (!user) {
+		if (!user) { 
 			return new Response(JSON.stringify(
 				{
 					success: false, 
@@ -45,7 +45,7 @@ serve(async (req: Request) => {
 			);
 		}
 
-
+ 
 
 		const { brand_id, website, instagram, twitter, facebook } = await req.json();
 
