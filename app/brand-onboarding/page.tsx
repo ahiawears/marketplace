@@ -29,25 +29,9 @@ import { BrandOnboarding } from "@/lib/types";
 import BrandContactForm from "@/components/brand-onboarding/brand-contact-form";
 import BrandBusinessDetailsForm from "@/components/brand-onboarding/brand-business-details-form";
 import BrandPaymentDetailsForm from "@/components/brand-onboarding/brand-payment-details-form";
-import { set } from "react-hook-form";
 import { redirect } from "next/navigation";
 
 const BrandOnboardingPage = () => {
-	const [errorMessage, setErrorMessage] = useState("");
-		
-	const { userId, userSession, loading, error, resetError } = useAuth();
-
-	if (loading) {
-        return <LoadContent />
-    }
-
-    if (error) {
-        setErrorMessage(error.message || "Something went wrong, please try again.");
-    }
-
-    if (!userId) {
-        redirect("/login-brand");
-    }
 	
 	const [step, setStep] = useState(1);
 	const [isStep1Valid, setIsStep1Valid] = useState(false);
@@ -57,6 +41,7 @@ const BrandOnboardingPage = () => {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isSaving, setIsSaving] = useState(false);
 	const [isCreatingSubaccount, setIsCreatingSubaccount] = useState(false);
+	const [errorMessage, setErrorMessage] = useState("");
 
 
 	const [brandOnboardingData, setBrandOnboardingData] = useState<BrandOnboarding>({
@@ -98,6 +83,20 @@ const BrandOnboardingPage = () => {
 		},
 	});
 
+	const { userId, userSession, loading, error, resetError } = useAuth();
+
+	if (loading) {
+        return <LoadContent />
+    }
+
+    if (error) {
+        setErrorMessage(error.message || "Something went wrong, please try again.");
+    }
+
+    if (!userId) {
+        redirect("/login-brand");
+    }
+
 	const handleNext = async () => {
 		if (step < 4) {
 			setIsSubmitting(true);
@@ -107,55 +106,51 @@ const BrandOnboardingPage = () => {
 				setIsSaving(false);
 				setStep(step + 1);
 			} catch (error) {
-				let stepError;
-				if(error instanceof Error) {
-					stepError = `Error: ${error.name}, ${error.cause}, ${error.message}`;
-				} 
-				console.error(stepError);
-				setErrorMessage(`${stepError}` || "Something went wrong, please try again.");
+				handleError(error);
 			} finally {
 				setIsSubmitting(false);
 			}
-		} else if (step === 4){
+		} else if (step === 4) {
+			setIsSubmitting(true);
 			try {
-				setIsSubmitting(true);
 				setIsCreatingSubaccount(true);
-				await createSubaccount();
+				const subaccountData = await createSubaccount(userSession?.access_token);
 				setIsCreatingSubaccount(false);
+				setBrandOnboardingData((prevData) => ({
+					...prevData,
+					paymentInformation: {
+						...prevData.paymentInformation,
+						subaccount_id: subaccountData.data.subaccount_id, // Add the subaccount_id
+					}
+				}));
 				setIsSaving(true);
-				await saveStepData(step, brandOnboardingData);
+				await saveStepData(step, {
+					...brandOnboardingData,
+					paymentInformation: {
+						...brandOnboardingData.paymentInformation,
+						subaccount_id: subaccountData.data.subaccount_id,
+					}
+				});
 				setIsSaving(false);
 				setStep(step + 1);
 			} catch (error) {
-				let stepError;
-				if(error instanceof Error) {
-					stepError = `Error: ${error.name}, ${error.cause}, ${error.message}`;
-				} 
-				console.error(stepError);
-				setErrorMessage(`${stepError}` || "Something went wrong, please try again.");
+				handleError(error);
 			} finally {
 				setIsSubmitting(false);
 			}
 		} else {
-			try {
-				setIsSubmitting(true);
-				setIsSaving(true);
-				await saveStepData(step, brandOnboardingData);
-				setIsSaving(false);
-				console.log("submitted: ", brandOnboardingData);
-				// router.push("/dashboard");
-			} catch (error) {
-				let stepError;
-				if(error instanceof Error) {
-					stepError = `Error: ${error.name}, ${error.cause}, ${error.message}`;
-				} 
-				console.error(stepError);
-				setErrorMessage(`${stepError}` || "Something went wrong, please try again.");
-			} finally {
-                setIsSubmitting(false);
-            }
+			redirect("/dashboard");
 		}
-	}; 
+	};
+	
+	const handleError = (error: any) => {
+		let stepError;
+		if (error instanceof Error) {
+			stepError = `Error: ${error.name}, ${error.cause}, ${error.message}`;
+		}
+		console.error(stepError);
+		setErrorMessage(`${stepError}` || "Something went wrong, please try again.");
+	};
 
 	const handleBack = () => {
 		if (step > 1) setStep(step - 1);
@@ -177,11 +172,10 @@ const BrandOnboardingPage = () => {
 		} else if (step === 4) {
 			setIsStep4Valid(isValid);
 		}
-
-		
-
 		// Add other steps validation
 	};
+
+	
 
 	const isStepValid = () => {
 		switch (step) {
@@ -197,6 +191,7 @@ const BrandOnboardingPage = () => {
 				return true;
 		}
 	};
+	
 
 	const saveStepData = async(step: number, data: BrandOnboarding) => {
 
@@ -235,10 +230,9 @@ const BrandOnboardingPage = () => {
         }
 	}
 
-	const createSubaccount = async () => {
-		const accessToken = userSession?.access_token;
+	const createSubaccount = async (accessToken: string) => {
 		try {
-			const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/create-subaccount`, {
+			const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/create-brand-subaccount`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
@@ -264,16 +258,8 @@ const BrandOnboardingPage = () => {
 			}
 
 			const responseData = await response.json();
-			setBrandOnboardingData((prevData) => ({
-				...prevData,
-				paymentInformation: {
-					...prevData.paymentInformation,
-					account_number: responseData.data.account_number,
-					account_bank: responseData.data.account_bank,
-					bank_name: responseData.data.bank_name,
-					subaccount_id: responseData.data.subaccount_id,
-				}
-			}));
+			console.log("Response data from create subaccount: ", responseData); // Check the response
+			return responseData;
 
 		} catch (error) {
 			console.error("Error creating subaccount:", error);
@@ -286,7 +272,6 @@ const BrandOnboardingPage = () => {
 
 	return (
 		<>
-
 			{errorMessage && (
                 <>
                     <ErrorModal
@@ -388,8 +373,7 @@ const BrandOnboardingPage = () => {
 										country: brandOnboardingData.businessDetails.country_of_registration,
 										business_email: brandOnboardingData.contactInformation.business_email,
 										business_mobile: brandOnboardingData.contactInformation.phone_number,
-										business_name: brandOnboardingData.brandInformation.brand_name,
-
+										business_name: brandOnboardingData.businessDetails.business_registration_name,
 									}} 
 									onDataChange={(data, isValid) => handleChildData({ paymentInformation: data }, isValid)} 
 								/>

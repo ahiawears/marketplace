@@ -1,21 +1,19 @@
-import { BrandOnboarding } from "@/lib/types";
-import { SupabaseClient } from "@supabase/supabase-js";
+import type {BrandOnboarding} from '../../lib/types';
 
 export const updateBrandContactDetails = async (supabase: any, data: BrandOnboarding["contactInformation"], userId: string) => {
     try {
         const {data: basicContactData, error: basicContactDataError} = await supabase
-            .from("brand_contact_details")
+            .from("brands_contact_details")
             .upsert({
                 id: userId,
                 brand_email: data.business_email,
                 phone_number: data.phone_number,
             }, {
-                onConflict: "id"
-            })
-            .select();
+                onConflict: 'id'
+            }).select();
         
         if (basicContactDataError) {
-            console.error(`The basic contact details error is ${basicContactDataError}}`)
+            console.error(`The basic contact details error is: ${JSON.stringify(basicContactDataError)}`);
             throw basicContactDataError;
         }
 
@@ -29,29 +27,29 @@ export const updateBrandContactDetails = async (supabase: any, data: BrandOnboar
                 twitter: data.social_media.twitter,
                 tiktok: data.social_media.tiktok,
             }, {
-                onConflict: "id"
+                onConflict: 'id'
             })
             .select();
         
         if(brandSocialLinksError) {
-            console.error(`The brand social links error is ${brandSocialLinksError}`)
+            console.error(`The brand social links error is: ${JSON.stringify(brandSocialLinksError)}`);
             throw brandSocialLinksError;
         }
 
         if (basicContactData && brandSocialLinks) {
-            return new Response(JSON.stringify({
+            return {
                 success: true,
                 basicContactData,
                 brandSocialLinks,
-            }), 
-            {
-                status: 200,
-            });
+            };
+        } else {
+            return {
+                success: false,
+                message: "No data returned from Supabase.",
+            }
         }
     } catch (error) {
-        return new Response(JSON.stringify({
-            success: false,
-            error: error,
-        }));
+        console.error(`The upload contact error is: ${JSON.stringify(error)}`);
+        throw error;
     }
 }

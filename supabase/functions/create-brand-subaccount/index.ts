@@ -66,7 +66,7 @@ serve(async (req) => {
 		return new Response(JSON.stringify({
             success: true,
             message: "Subaccount created successfully",
-            data: responseData,
+            data: responseData.data,
         }), {
             status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },

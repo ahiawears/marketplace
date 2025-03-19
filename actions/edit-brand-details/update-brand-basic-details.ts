@@ -1,4 +1,4 @@
-import { BrandOnboarding } from "@/lib/types";
+import type {BrandOnboarding} from '../../lib/types';
 
 export const updateBrandBasicDetails = async (supabase: any, data: BrandOnboarding["brandInformation"], userId: string) => {
     try {
@@ -13,27 +13,22 @@ export const updateBrandBasicDetails = async (supabase: any, data: BrandOnboardi
             },
             {
                 onConflict: 'id'
-            }
-        ).select();
+            }).select();
 
         if (error) {
-            console.error(`Error uploading brand basic details`);
-            throw error
+            console.error(`Error uploading brand basic details ${error.message} ${error.cause}`);
+            throw error;
+            
         }
 
         if (brandData) {
-            return new Response(JSON.stringify({
+            return {
                 success: true,
                 brandData
-            }), 
-            {
-                status: 200,
-            });
+            };
         }
     } catch ( error ) {
-        return new Response(JSON.stringify({
-            success: false,
-            error: error,
-        }));
+        console.error(`Error uploading brand basic details ${error}`);
+        throw error;
     }
 }

@@ -69,35 +69,62 @@ serve(async (req: Request) => {
 		let logoURL: string;
         let bannerURL: string;
 
-		if (logoBlob) {
-			logoURL = await UploadBrandLogo(supabase, userId, logoBlob);
-			data.brandInformation.brand_logo = logoURL;
+		if (step === 1) {
+			if (logoBlob) {
+				try {
+					logoURL = await UploadBrandLogo(supabase, userId, logoBlob);
+					data.brandInformation.brand_logo = logoURL;
+				} catch (error) {
+					console.error("Error uploading logo:", error);
+					return new Response(JSON.stringify({ success: false, message: "Error uploading logo." }), {
+						headers: corsHeaders,
+						status: 500,
+					});
+				}
+			}
+	
+			if (bannerBlob) {
+				try {
+					bannerURL = await UploadBrandBanner(supabase, userId, bannerBlob);
+					data.brandInformation.brand_banner = bannerURL;
+				} catch (error) {
+					console.error("Error uploading banner:", error);
+					return new Response(JSON.stringify({ success: false, message: "Error uploading banner." }), {
+						headers: corsHeaders,
+						status: 500,
+					});
+				}
+			}
 		}
 
-		if (bannerBlob) {
-			bannerURL = await UploadBrandBanner(supabase, userId, bannerBlob);
-			data.brandInformation.brand_banner = bannerURL;
-		}
 
 		let result;
 
-		switch(step) {
-			case 1: 
-				result = await updateBrandBasicDetails(supabase, data.brandInformation, userId);
-				break;
-			case 2: 
-				result = await updateBrandContactDetails(supabase, data.contactInformation, userId);
-				break;
-			case 3: 
-				result = await updateBrandBusinessDetails(supabase, data.businessDetails, userId);
-				break;
-			case 4: 
-				result = await updateBrandPaymentDetails(supabase, data.paymentInformation, userId);
-				break;
-			
-			default: return new Response(JSON.stringify({ success: false, message: "Invalid step number" }), {
+		try {
+			switch(step) {
+				case 1: 
+					result = await updateBrandBasicDetails(supabase, data.brandInformation, userId);
+					break;
+				case 2: 
+					result = await updateBrandContactDetails(supabase, data.contactInformation, userId);
+					break;
+				case 3: 
+					result = await updateBrandBusinessDetails(supabase, data.businessDetails, userId);
+					break;
+				case 4: 
+					result = await updateBrandPaymentDetails(supabase, data.paymentInformation, userId);
+					break;
+				
+				default: return new Response(JSON.stringify({ success: false, message: "Invalid step number" }), {
+					headers: corsHeaders,
+					status: 400,
+				});
+			}
+		} catch (error) {
+			console.error(`Error updating data for step ${step}:`, error);
+			return new Response(JSON.stringify({ success: false, message: `Error updating data for step ${step}.` }), {
 				headers: corsHeaders,
-				status: 400,
+				status: 500,
 			});
 		}
 

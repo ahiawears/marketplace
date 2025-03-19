@@ -1,5 +1,4 @@
-import { BrandOnboarding } from "@/lib/types";
-import { SupabaseClient } from "@supabase/supabase-js";
+import type { BrandOnboarding } from '../../lib/types';
 
 export const updateBrandBusinessDetails = async (supabase: any, data: BrandOnboarding["businessDetails"], userId: string) => {
     try {
@@ -11,27 +10,22 @@ export const updateBrandBusinessDetails = async (supabase: any, data: BrandOnboa
                 business_registration_number: data.business_registration_number,
                 country_of_registration: data.country_of_registration,
             }, {
-                onConflict: "id",
-            })
-            .select();
+                onConflict: 'id',
+            }).select();
 
         if(error) {
-            throw error
+            console.error(`The upload brand error is: ${error}`);
+            throw error;
         }
 
         if (businessDetails) {
-            return new Response(JSON.stringify({
+            return {
                 success: true,
                 businessDetails,
-            }), 
-            {
-                status: 200,
-            });
+            }
         }
     } catch (error) {
-        return new Response(JSON.stringify({
-            success: false,
-            error: error,
-        }));
+       console.error(`The upload brand error is: ${error}`);
+       throw error;
     }
 }

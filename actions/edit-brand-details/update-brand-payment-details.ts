@@ -1,4 +1,4 @@
-import { BrandOnboarding } from "@/lib/types";
+import type { BrandOnboarding } from '../../lib/types';
 
 export const updateBrandPaymentDetails = async (supabase: any, data: BrandOnboarding["paymentInformation"], userId: string) => {
     try {
@@ -15,25 +15,23 @@ export const updateBrandPaymentDetails = async (supabase: any, data: BrandOnboar
                 account_contact_name: data.business_contact,
                 subaccount_id: data.subaccount_id,
                 country: data.country,
-            })
+            }, {
+                onConflict: 'id',
+            }).select();
 
         if (error) {
+            console.error(`The upload brandd payment error is ${error}`);
             throw error;
         }
 
         if (brandData) {
-            return new Response(JSON.stringify({
+            return {
                 success: true,
                 brandData,
-            }), 
-            {
-                status: 200,
-            });
+            }
         }
     } catch (error) {
-        return new Response(JSON.stringify({
-            success: false,
-            error: error,
-        }));
+        console.error(`The upload brandd payment error is ${error}`);
+        throw error;
     }
 }

@@ -102,6 +102,7 @@ const BrandPaymentDetailsForm = ({ data, onDataChange }: BrandPaymentProps) => {
                             headers: {
                                 accept: 'application/json',
                                 'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
                             }
                         }
                     );
