@@ -3,7 +3,7 @@ import { CardMetricItem } from "../card-metric-item";
 
 
 const metrics = [
-    { title: 'Total Users', value: '1,250', icon: FaUsers },
+    { title: 'Orders', value: '1,250', icon: FaUsers },
     { title: 'Monthly Active Users', value: '850', icon: FaChartLine },
     { title: 'Revenue', value: '$12,500', icon: FaMoneyBillWave },
 ];

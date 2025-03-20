@@ -55,12 +55,13 @@ export const useAuth = (): AuthData => {
                         console.error("Error fetching session:", sessionError);
                         throw new Error(`Error fetching session: ${sessionError.message}, cause: ${sessionError.cause}`);
                     }
-                }
-                if (!session) {
+                } else if (!session) {
                      console.log("No session found")
                      setUserSession(null);
+                } else {
+                    setUserSession(session);
                 }
-                setUserSession(session);
+                
             } catch (err) {
                 let errorMessage;
                 if (err instanceof Error) {

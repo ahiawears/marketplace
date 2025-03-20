@@ -9,14 +9,14 @@ export const getOrderItems = async (brandID: string) => {
         .eq('brand_id', brandID);
 
     console.log("Fetched Data:", orderData);
-    console.log("Fetch Error:", orderError);
+    console.log("Fetch Error:", orderError); 
 
     if (orderError) {
         console.error("Error fetching order items:", orderError);
         throw new Error('Failed to fetch order items');
     }
 
-    if (!orderData || orderData.length === 0) {
+    if (!orderData || orderData.length === 0) { 
         console.log("No products items found for user:", brandID);
         return []; 
     }

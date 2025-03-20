@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
         const { data, error } = await supabase.auth.getUser();
 
         if (error) {
-            console.error("Error fetching brand:", error);
+            console.error("Error fetching brand:", error); 
             return NextResponse.json(
                 { error: 'Brand not authenticated' },
                 { status: 401 }

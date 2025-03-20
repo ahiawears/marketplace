@@ -8,6 +8,7 @@ import { Input } from "../ui/input";
 import { CropModal } from "../modals/crop-modal";
 import { createClient } from "@/supabase/client";
 import { LogoCropModal } from "../modals/logo-crop-modal";
+import LoadContent from "@/app/load-content/page";
 
 const dataURLtoBlob = async (dataUrl: string): Promise<Blob> => {
     const response = await fetch(dataUrl);
@@ -17,10 +18,10 @@ const dataURLtoBlob = async (dataUrl: string): Promise<Blob> => {
 
 interface EditBrandLogoProps {
     userId: string;
-    userSession: any;
+    accessToken: string;
 }
 
-export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSession }) => {
+export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, accessToken }) => {
     const [logoImage, setLogoImage] = useState('/images/ahiaproto.avif');
     const [cropImage, setCropImage] = useState<string | null>(null);
     const [isLogoChanged, setIsLogoChanged] = useState<boolean>(false);
@@ -30,10 +31,9 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSessio
     const logoInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        if(userId && userSession){
+        if(userId && accessToken){
             async function fetchLogo() {
                 try {
-                    const accessToken = userSession.access_token;
                     const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-logo?userId=${userId}`,
                         {
                             headers: {
@@ -42,7 +42,7 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSessio
                         }
                     )
                     if (!res.ok) {
-                        throw new Error("Failed to get brands logo details");
+                        throw new Error("Couldnt create a connection with the server");
                     }
                     const data = await res.json();
                     if (!data.data) {
@@ -53,17 +53,17 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSessio
                     const gotLogo = data.data.logo_url;
                    
                     setLogoImage(gotLogo);
-                } catch (error: any) {
-                    throw new Error(`Error getting brands logo url: ${error}, ${error.name}, ${error.message} `)
+                } catch (error) {
+                    throw new Error(`${error}`)
                 } finally {
                     setLoading(false);
                 }
             }
             fetchLogo();
         }
-    }, [userId, userSession]);
+    }, [userId, accessToken]);
     if (loading) {
-        return <div>Loading...</div>; 
+        return <LoadContent />; 
     }
 
     const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,7 +130,7 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSessio
             if (data.success) {
                 console.log("Logo Url sucessfully changed: ", data);
             }else{
-                console.error("Error uploadingh the logo url")
+                console.error("Error uploading the logo url")
             }
         } catch (error) {
             console.error("Error uploading brand logo:", error);
@@ -141,8 +141,7 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, userSessio
     
     return (
         <div>
-            <h2 className="font-mabry-pro text-2xl">Brand Logo</h2>
-            <div className="shadow-2xl h-[160px] max-w-[160px] relative group flex mx-auto">
+            <div className="h-[160px] max-w-[160px] relative group flex mx-auto -mb-16">
                 <Image 
                     src={logoImage}
                     alt={"brand logo image"}

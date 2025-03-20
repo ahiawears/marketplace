@@ -1,10 +1,9 @@
 export async function GetBrandLogoUrl(supabase: any, userId: string) {
-    console.log("The user id is: ", userId);
     try {
         const {data: logoURL, error: logoURLError} = await supabase
             .from('brand_logo')
             .select('logo_url')
-            .eq('brand_id', userId)
+            .eq('id', userId)
             .single();
 
         if (logoURLError) {
@@ -19,6 +18,6 @@ export async function GetBrandLogoUrl(supabase: any, userId: string) {
         console.log("Logo URL found: ", logoURL);
         return logoURL;
     } catch (error: any) {
-        throw new Error(`Error getting brand logo URL: ${error}, ${error.name}, ${error.message}`)
+        throw new Error(`Error getting brand logo URL: ${error}`)
     }
 }

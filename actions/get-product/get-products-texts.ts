@@ -5,7 +5,7 @@ export async function getProductsTexts(supabase: any, variantId: string) {
             .from("product_variants")
             .select(
                 "name, price, sku, product_code, color_id(name, hex_code), main_product_id(id, product_description, category_id(name), subcategory_id(name), currency_id(name), material_id(name))"
-            )
+            ) 
             .eq("id", variantId)
             .single();
 

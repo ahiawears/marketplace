@@ -5,68 +5,43 @@ import { BrandDescriptionField } from "@/components/brand-dashboard/brand-descri
 import { EditBrandLogo } from "@/components/brand-dashboard/edit-brand-logo";
 import { EditBrandProfileHero } from "@/components/brand-dashboard/edit-brand-profile-hero";
 import { SocialLinksForm } from "@/components/brand-dashboard/social-links-form";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Pencil } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
-export default function BrandProfilePage () {
-    const [userId, setUserId] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true); 
-    const [userSession, setUserSession] = useState<any>({});
 
+interface BrandProfilePageProps {
+    userId: string;
+    accessToken: string;
+}
 
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const { data: { user }, error } = await createClient().auth.getUser();
-
-                if (error) {
-                    console.error("Error fetching user:", error);
-                    throw new Error(`Error fetching user: ${error.message}, cause: ${error.cause}`)
-                } else if (!user) {
-                    console.log("User not found");
-                    throw new Error("User not found");
-                } else {
-                    setUserId(user.id);
-                }
-
-                const { data: {session}, error: sessionError } = await createClient().auth.getSession();
-                if (sessionError) {
-                    console.error("Error fetching user:", sessionError);
-                    throw new Error(`Error fetching user: ${sessionError.message}, cause: ${sessionError.cause}`);
-                }
-
-                setUserSession(session);
-            } catch (error: any) {
-                console.error("An error occurred while fetching the user:", error);
-                throw new Error(`An error occurred while fetching the user: ${error.message}, cause: ${error.cause}`)
-            } finally {
-                setLoading(false);
-            }
-        };
-    
-        fetchUser();
-    }, []);
-
-    if (loading) {
-        return <div>Loading...</div>; // Display a loading state
-    }
-
-    if (!userId) {
-        return <div>User not authenticated.</div>; // Handle unauthenticated users
-    }
-
+export const BrandProfilePage: React.FC<BrandProfilePageProps> = ({ userId, accessToken }) => {
 
     return (
-        <div className="flex flex-1 flex-col space-y-10">
-            {/* Brand Logo Section */}
-            <div className="w-full">
-                <EditBrandLogo userId={userId} userSession={userSession}/>
-            </div>
+        <div className="flex flex-1 flex-col">
 
             {/* Brand Profile Hero */}
-            <EditBrandProfileHero />
+            {/* <EditBrandProfileHero /> */}
+
+            
+            {/* Brand Logo Section */}
+            {/* <div className="w-full">
+                <EditBrandLogo userId={userId} userSession={userSession}/>
+            </div> */}
 
             {/* Brand Description */}
-            <BrandDescriptionField />
+            {/* <BrandDescriptionField /> */}
+
+           {/* Brand Profile Hero */}
+           <div className="relative w-full">
+                <EditBrandProfileHero userId={userId} accessToken={accessToken}/>
+                <div className="absolute bottom-4 left-4">
+                    <EditBrandLogo userId={userId} accessToken={accessToken}/>
+                </div>
+            </div>
+            
         </div>
     );
 }

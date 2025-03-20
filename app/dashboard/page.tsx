@@ -4,19 +4,42 @@ import { CardMetricsGrid } from "@/components/brand-dashboard/card-metrics-grid"
 import { TopProductsCarousel } from "@/components/brand-dashboard/top-products-carousel";
 import { AreaCharts } from "@/components/charts/area-charts";
 import { PieCharts } from "@/components/charts/pie-charts";
-import { ProductCarousel } from "@/components/product-carousel";
-import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import LoadContent from "../load-content/page";
+import { useState } from "react";
+import { redirect } from "next/navigation";
+import ErrorModal from "@/components/modals/error-modal";
 
 
 const DashboardPage = () => {
-	useEffect(() => {
+	const [errorMessage, setErrorMessage] = useState("");
 
-	})
+	const { userId, userSession, loading, error, resetError } = useAuth();
+	if (loading) {
+		return <LoadContent />
+	}
+
+	if (error) {
+		setErrorMessage(error.message || "Something went wrong, please try again.");
+	}
+
+	if (!userId) {
+		redirect("/login-brand");
+	}
 	return (
 		<div>
+			{errorMessage && (
+				<>
+					<ErrorModal
+						message={errorMessage}
+						onClose={() => {
+							setErrorMessage("");
+						}}
+					/>
+				</>
+			)}
 			<div className="flex flex-1 flex-col">
 
-				
 				{/* Brand Metrics */}
 				{/* This should have the total sales, orders,  */}
 				<div className="my-5">
@@ -52,8 +75,6 @@ const DashboardPage = () => {
 				<div className="my-5">
 					<TopProductsCarousel title="Best Selling Products" />
 				</div>
-
-
 				
 			</div>
 		</div>
