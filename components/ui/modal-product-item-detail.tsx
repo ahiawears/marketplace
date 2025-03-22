@@ -105,10 +105,9 @@ const ModalProductItem: React.FC<ProductItemProps> = ({ productId, productName, 
             </div>
             {successModal && (
                 <>
-                    <ModalBackdrop disableInteraction={true} />
+                    <ModalBackdrop/>
                     <SuccessModal
-                        productName={productName}
-                        successMessage="has been added to cart!"
+                        successMessage={productName + " has been added to your cart."}
                         onCancel={handleModalClose}
                     />
                 </>

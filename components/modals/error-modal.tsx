@@ -7,7 +7,7 @@ interface ErrorModalProps {
   onClose: () => void;
 }
 
-const ErrorModal: React.FC<ErrorModalProps> = ({ message, onClose }) => {
+const ErrorModal: React.FC<ErrorModalProps> = ({ message, onClose }) => {  
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-transparent bg-opacity-50 z-50 px-4">
             <ModalBackdrop/>

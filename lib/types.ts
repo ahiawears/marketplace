@@ -295,3 +295,15 @@ export interface BrandOnboarding {
   }
   paymentInformation: BrandSubAccounts;
 }
+
+export type BrandContactDetails = {
+  brand_contact_details: {
+    brand_email: string;
+    phone_number: string;
+  }
+  facebook: string;
+  instagram: string;
+  twitter: string;
+  tiktok: string;
+  website: string;
+}

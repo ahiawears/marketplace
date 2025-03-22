@@ -2,15 +2,14 @@ import { Button } from "../ui/button";
 import ModalBackdrop from "./modal-backdrop";
 
 interface SuccessModalProps {
-    productName: string;
     successMessage: string;
     onCancel: () => void;
 }
 
-const SuccessModal: React.FC<SuccessModalProps> = ({productName, successMessage, onCancel}) => {
+const SuccessModal: React.FC<SuccessModalProps> = ({ successMessage, onCancel}) => {
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center pointer-events-none bg-black bg-opacity-50">
-            <ModalBackdrop disableInteraction={false}/>
+            <ModalBackdrop/>
 
             <div className="pointer-events-auto bg-white p-6 rounded-lg shadow-lg w-1/3">
                 <svg 
@@ -28,7 +27,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({productName, successMessage,
                             d="M20 6 9 17l-5-5"
                         />
                 </svg>
-                <p className="text-center my-4">{productName} {successMessage}</p>
+                <p className="text-center my-4">{successMessage}</p>
 
                 <div className="flex gap-4 mx-auto bottom-0 mt-6">
                     <Button onClick={onCancel} className="w-full py-2 px-4 text-white rounded-lg">

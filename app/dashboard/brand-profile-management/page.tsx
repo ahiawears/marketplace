@@ -4,7 +4,7 @@ import NavTab from "@/components/navtab";
 import { useState } from "react";
 import BrandAccountSettings from "../brand-account-settings/page";
 import { BrandProfilePage} from "../brand-profile-page/page";
-import BrandSocialLinks from "../brand-socials-links/page";
+import { BrandSocialLinks } from "../brand-socials-links/page";
 import LoadContent from "@/app/load-content/page";
 import { useAuth } from "@/hooks/useAuth";
 import { redirect } from "next/navigation";
@@ -15,11 +15,10 @@ const BrandProfileManagemennt = () => {
 
     const [selectedTab, setSelectedTab] = useState('Profile');
     
-    
     const tabs = [
         { label: 'Profile', value: 'Profile' },
         { label: 'Account Settings', value: 'Account Settings' },
-        { label: 'Social Media', value: 'Social Media'}
+        { label: 'Contact Details', value: 'Contact Details'}
         
     ];
 
@@ -64,8 +63,8 @@ const BrandProfileManagemennt = () => {
                     {selectedTab === "Account Settings" &&
                         <BrandAccountSettings />
                     }
-                    {selectedTab === "Social Media" && 
-                        <BrandSocialLinks />
+                    {selectedTab === "Contact Details" && 
+                        <BrandSocialLinks userId={userId} accessToken={userSession.access_token}/>
                     }
                 </div>
             </div>

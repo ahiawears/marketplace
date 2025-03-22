@@ -119,7 +119,7 @@ serve(async (req: Request) => {
 					headers: corsHeaders,
 					status: 400,
 				});
-			}
+			} 
 		} catch (error) {
 			console.error(`Error updating data for step ${step}:`, error);
 			return new Response(JSON.stringify({ success: false, message: `Error updating data for step ${step}.` }), {

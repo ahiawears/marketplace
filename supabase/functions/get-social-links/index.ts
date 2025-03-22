@@ -44,7 +44,7 @@ serve(async (req: Request) => {
 		return new Response(
 			JSON.stringify({ 
 				success: true, 
-				message: "Product Gotten successfully", 
+				message: "Contact Details Gotten successfully", 
 				data: brandSocialLinks,
 			}), 
 			{

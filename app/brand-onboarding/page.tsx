@@ -175,8 +175,6 @@ const BrandOnboardingPage = () => {
 		// Add other steps validation
 	};
 
-	
-
 	const isStepValid = () => {
 		switch (step) {
 			case 1:

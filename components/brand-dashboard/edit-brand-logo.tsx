@@ -122,7 +122,6 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, accessToke
                 }
             )
             if (!res.ok) {
-                
                 throw new Error(`Could not establish a connection with the server`);
             }
 
@@ -145,11 +144,7 @@ export const EditBrandLogo: React.FC<EditBrandLogoProps> = ({ userId, accessToke
                 <Image 
                     src={logoImage}
                     alt={"brand logo image"}
-                    style={
-                        {
-                            objectFit: "cover"
-                        }
-                    }
+                    className="mx-auto object-cover border-2"
                     width={160}
                     height={160}
                     priority

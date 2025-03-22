@@ -20,7 +20,7 @@ interface BrandProfilePageProps {
 export const BrandProfilePage: React.FC<BrandProfilePageProps> = ({ userId, accessToken }) => {
 
     return (
-        <div className="flex flex-1 flex-col">
+        <div className="flex ">
 
             {/* Brand Profile Hero */}
             {/* <EditBrandProfileHero /> */}

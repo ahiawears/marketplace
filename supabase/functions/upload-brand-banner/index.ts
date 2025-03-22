@@ -1,15 +1,11 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
 
 // Setup type definitions for built-in Supabase Runtime APIs
-import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { UploadBrandLogo } from "@actions/upload-brand-logo.ts"
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from "../../server-deno.ts";
+import { UploadBrandBanner } from "@actions/upload-brand-banner.ts"
 
-
-Deno.serve(async (req: Request) => {
+Deno.serve(async (req) => {
 	if (req.method === "OPTIONS") {
 		// Handle CORS preflight request
 		return new Response('ok', { headers: corsHeaders});
@@ -21,13 +17,13 @@ Deno.serve(async (req: Request) => {
 			console.error("Missing Authorization header!");
 			return new Response("Unauthorized header", { status: 401 });
 		}
+
 		const accessToken = authHeader.split("Bearer ")[1];
 
 		if (!accessToken) {
 			console.error("Malformed Authorization header!");
 			return new Response("Unauthorized accessToken", { status: 401 });
 		}
-
 		const supabase = createClient(accessToken);
 
 		// Authenticate user
@@ -44,7 +40,7 @@ Deno.serve(async (req: Request) => {
 			);
 		}
 
-		const userId = user.id;
+		const userId = user.id
 
 
 		//Check if content type is multipart/form-data
@@ -56,24 +52,25 @@ Deno.serve(async (req: Request) => {
         }
 
 		const formData = await req.formData();
-        const logoBlob = formData.get("logo") as Blob;
+		const heroBlob = formData.get("hero") as Blob;
 
-		// Check if logoBlob is null
-        if (!logoBlob) {
-            return new Response(JSON.stringify({   
+		//Check if heroBlob is null
+		if(!heroBlob) {
+			return new Response(JSON.stringify({   
                 success: false, 
-                message: "No logo image provided."
+                message: "No banner image provided."
             }), {
                 headers: {...corsHeaders, 'Content-Type': 'application/json'},
                 status: 400,
             });
-        }
-		const logoURL = await UploadBrandLogo(supabase, userId, logoBlob);
+		}
+
+		const bannerURL = await UploadBrandBanner(supabase, userId, heroBlob);
 		return new Response(
 			JSON.stringify({ 
 				success: true, 
-				message: "Logo uploaded successfully", 
-				logoURL: logoURL
+				message: "Banner uploaded successfully", 
+				bannerURL: bannerURL
 			}), 
 			{
             	headers: { ...corsHeaders, 'Content-Type': 'application/json'}
@@ -92,7 +89,6 @@ Deno.serve(async (req: Request) => {
 			}
 		);
 	}
-  
 })
 
 /* To invoke locally:
@@ -100,7 +96,7 @@ Deno.serve(async (req: Request) => {
   1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
   2. Make an HTTP request:
 
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/upload-brand-logo' \
+  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/upload-brand-banner' \
     --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
     --header 'Content-Type: application/json' \
     --data '{"name":"Functions"}'
