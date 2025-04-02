@@ -47,7 +47,7 @@ const DashboardPage = () => {
 				</div>
 
 				<div className="my-5">
-					<div className="mx-auto py-10 sm:py-10 shadow-2xl">
+					<div className="mx-auto py-10 sm:py-10 shadow-2xl border-2">
 						<div className=" mx-auto max-w-7xl px-6 lg:px-8">
 							<div className="flex flex-col md:flex-row lg:flex-row sm:flex-col md:space-x-4 lg:space-x-4">
 								<div className="lg:basis-1/2 md:basis-1/2 sm:basis-full sm:mx-auto lg:mx-auto md:mx-auto">

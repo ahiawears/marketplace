@@ -7,14 +7,14 @@ import {GetBrandLogoUrl} from "@actions/get-brand-logo-url.ts"
 Deno.serve(async (req: Request) => {
    if (req.method === "OPTIONS") {
 		// Handle CORS preflight request
-		return new Response('ok', { headers: corsHeaders});
+		return new Response('ok', { headers: corsHeaders});  
 	}
  
 	try {
 		const url = new URL(req.url);
         const userId = url.searchParams.get("userId");
 		const authHeader = req.headers.get("Authorization");
-
+ 
 		if (!authHeader) {
 			console.error("Missing Authorization header!");
 			return new Response("Unauthorized header", { status: 401 });

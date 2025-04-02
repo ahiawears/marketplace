@@ -10,7 +10,7 @@ const metrics = [
 
 export const CardMetricsGrid = () => {
     return (
-        <div>
+        <div className="border-2">
             <div className="mx-auto py-10 sm:py-10 shadow-2xl">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <dl className="grid grid-cols-1 gap-x-8 gap-y-16 text-center lg:grid-cols-3">

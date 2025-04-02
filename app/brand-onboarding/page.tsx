@@ -163,7 +163,7 @@ const BrandOnboardingPage = () => {
 		}));
 
 		// Update validation state based on step
-		if (step === 1) {
+		if (step === 1) {  
 			setIsStep1Valid(isValid);
 		} else if (step === 2) {
 			setIsStep2Valid(isValid);

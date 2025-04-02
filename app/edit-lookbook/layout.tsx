@@ -5,7 +5,7 @@ const EditLookbook = ({ children }: {children: ReactNode }) => {
         <>
             <div className="flex flex-col">
                 <main>{ children }</main>
-            </div>
+            </div> 
         </>
     )
 }

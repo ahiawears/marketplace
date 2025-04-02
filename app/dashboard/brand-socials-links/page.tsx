@@ -1,3 +1,5 @@
+"use client"
+
 import LoadContent from "@/app/load-content/page";
 import ErrorModal from "@/components/modals/error-modal";
 import SuccessModal from "@/components/modals/success-modal";

@@ -77,14 +77,6 @@ export const AreaCharts = () => {
                             <Area type="monotone" dataKey="pv" stroke="#8884d8" fill="#FFF000" />
                         </AreaChart>
                     </ResponsiveContainer>
-                    <div className="flex lg:flex-row md:flex-row flex-col">
-                        <div className="basis-1/2 my-2">
-                            hello
-                        </div>
-                        <div className="basis-1/2 my-2">
-                            mr
-                        </div>
-                    </div>
                 </div>
             }
             

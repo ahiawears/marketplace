@@ -37,7 +37,7 @@ export function UserActionsDropdownDesktop({ user }: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild className="hidden md:flex">
-        <Button variant="outline" size={"icon"}>
+        <Button variant="outline" size={"icon"} className="border-2">
           <UserIcon />
         </Button>
       </DropdownMenuTrigger>

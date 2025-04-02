@@ -50,19 +50,19 @@ const Page = () => {
 
   const { data, isLoading } = useGetProductDetails(params.id as string);
 
-  useEffect(() => {
-    if (data) {
-      form.setValue("name", data.data?.name || "");
-      form.setValue("description", data.data?.description || "");
-      form.setValue("price", data.data?.price || 0);
-      form.setValue("weight", data.data?.weight || 0);
-      form.setValue("quantity", data.data?.quantity || 0);
-    }
-  }, [data, form]);
+  // useEffect(() => {
+  //   if (data) {
+  //     form.setValue("name", data.data?.name || "");
+  //     form.setValue("description", data.data?.description || "");
+  //     form.setValue("price", data.data?.price || 0);
+  //     form.setValue("weight", data.data?.weight || 0);
+  //     form.setValue("quantity", data.data?.quantity || 0);
+  //   }
+  // }, [data, form]);
 
-  if (isLoading) {
-    return "loading...";
-  }
+  // if (isLoading) {
+  //   return "loading...";
+  // }
 
   return (
     <section className="mt-10">

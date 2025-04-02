@@ -11,6 +11,7 @@ import { addProduct } from "../../actions/uploadProduct";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { createClient } from "@/supabase/client";
+import { boolean } from "zod";
 
 const AddProductForm = () => {
 
@@ -31,62 +32,68 @@ const AddProductForm = () => {
 			currency: "",
 			material: "",
 		},
-		productInformation: {
-			currentSlide: 0,
-			main_image_url: "",
-			productId: "",
-			variantName: "",
-			images: [],
-			colorName: "",
-			price: "",
-			colorHex: "",
-			sku: "",
-			measurements: {},
-            productCode: "",
-		},
 		productVariants: [],
+        shippingDelivery: {
+            shippingMethods: [],
+            shippingZones: [],
+            estimatedDelivery: {},
+            shippingFees: {},
+            handlingTime: "1-3 days",
+            weight: 0,
+            dimensions: { length: 0, width: 0, height: 0 },
+            customsDuties: "buyer-paid",
+            cashOnDelivery: true
+        },
+        returnRefundPolicy: {
+            returnWindow: 0,
+            refundMethod: "replacement",
+            returnShipping: "free_returns",
+            conditions: "",
+        }
 	});
 
     const validateGeneralDetails = () => {
-        const { productName, productDescription, category, currency, material } = productData.generalDetails;
+        const { productName, productDescription, category, currency, material, subCategory, tags } = productData.generalDetails;
         return (
             productName.trim() !== "" &&
             productDescription.trim() !== "" &&
             category.trim() !== "" &&
+            subCategory.trim() !== "" &&
+            tags.length > 0 &&
             currency.trim() !== "" &&
             material.trim() !== ""
         );
     };
 
-    const validateProductInformation = () => {
-        const { images, colorName, colorHex, price, sku, productCode, measurements } = productData.productInformation;
+    // const validateProductInformation = () => {
+    //     const { images, colorName, colorHex, price, sku, productCode, measurements } = productData.productInformation;
     
-        // Check if all images are uploaded
-        const areImagesUploaded = images.every((image) => image !== null);
+    //     // Check if all images are uploaded
+    //     const areImagesUploaded = images.every((image) => image !== null);
     
-        // Check if all required fields are filled
-        const areFieldsFilled = (
-            colorName.trim() !== "" &&
-            colorHex.trim() !== "" &&
-            price.trim() !== "" &&
-            sku.trim() !== "" &&
-            productCode.trim() !== ""
-        );
+    //     // Check if all required fields are filled
+    //     const areFieldsFilled = (
+    //         colorName.trim() !== "" &&
+    //         colorHex.trim() !== "" &&
+    //         price.trim() !== "" &&
+    //         sku.trim() !== "" &&
+    //         productCode.trim() !== ""
+    //     );
     
-        // Check if all selected sizes have a quantity
-        const areMeasurementsValid = Object.keys(measurements).every(
-            (size) => measurements[size].quantity
-        );
+    //     // Check if all selected sizes have a quantity
+    //     const areMeasurementsValid = Object.keys(measurements).every(
+    //         (size) => measurements[size].quantity
+    //     );
     
-        return areImagesUploaded && areFieldsFilled && areMeasurementsValid;
-    };
+    //     return areImagesUploaded && areFieldsFilled && areMeasurementsValid;
+    // };
 
     useEffect(() => {
         const isGeneralValid = validateGeneralDetails();
-        const isProductInfoValid = validateProductInformation();
+        //const isProductInfoValid = validateProductInformation();
 
         setIsGeneralDetailsComplete(isGeneralValid);
-        setIsProductInformationComplete(isProductInfoValid);
+        //setIsProductInformationComplete(isProductInfoValid);
 
         // Enable Publish button only if both accordions are saved and there are no unsaved changes
         setIsFormValid(isGeneralDetailsSaved && isProductInformationSaved);
@@ -97,33 +104,20 @@ const AddProductForm = () => {
         // Save logic for Product Information
         setIsProductInformationSaved(true);
     };
-
-    const handleProductInformationChange = (field: keyof ProductVariantType, value: string | string[]) => {
-        setProductData((prev) => ({
-            ...prev,
-            productInformation: {
-                ...prev.productInformation,
-                [field]: value,
-            },
-        }));
-    };
-    
 	  
 	const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState<ProductVariantType | null>(null);
 
 	const handlePublishClick = async () => {
-        event?.preventDefault();
 
         if (!isFormValid) {
             console.log("Form is not valid");
             return;
         }
-
 	    //setPreviewModalOpen(true);
         const formData = new FormData();
 
-        const measurementsJson = JSON.stringify(productData.productInformation.measurements);
+        //const measurementsJson = JSON.stringify(productData.productInformation.measurements);
 
         // Add General Details Begin
         formData.append("productName", productData.generalDetails.productName);
@@ -136,15 +130,15 @@ const AddProductForm = () => {
         // Add General Details End
 
         // Add Main Variant Details Begin
-        formData.append("variantName", productData.productInformation.variantName);
-        formData.append("variantSku", productData.productInformation.sku);
-        formData.append("variantPrice", productData.productInformation.price);
-        formData.append("variantColorName", productData.productInformation.colorName);
-        formData.append("variantColorHex", productData.productInformation.colorHex);
-        formData.append("variantProductCode", productData.productInformation.productCode);
-        formData.append("variantMeasurements", measurementsJson); 
-        // Add images
-        const validImages = productData.productInformation.images.filter(image => image !== null);
+        // formData.append("variantName", productData.productInformation.variantName);
+        // formData.append("variantSku", productData.productInformation.sku);
+        // formData.append("variantPrice", productData.productInformation.price);
+        // formData.append("variantColorName", productData.productInformation.colorName);
+        // formData.append("variantColorHex", productData.productInformation.colorHex);
+        // formData.append("variantProductCode", productData.productInformation.productCode);
+        // formData.append("variantMeasurements", measurementsJson); 
+        // // Add images
+        // const validImages = productData.productInformation.images.filter(image => image !== null);
 
         const convertBlobUrlToFile = async (blobUrl: string, index: number) => {
             const response = await fetch(blobUrl);
@@ -153,13 +147,13 @@ const AddProductForm = () => {
             return file;
         };
 
-        const imageFiles = await Promise.all(
-            validImages.map((blobUrl, index) => convertBlobUrlToFile(blobUrl, index))
-        );
+        // const imageFiles = await Promise.all(
+        //     validImages.map((blobUrl, index) => convertBlobUrlToFile(blobUrl, index))
+        // );
         
-        imageFiles.forEach((image) => {
-            formData.append("images", image);
-        });
+        // imageFiles.forEach((image) => {
+        //     formData.append("images", image);
+        // });
         // Add Main Variant Details End
 
         //Add other variants if available Begin
@@ -177,7 +171,6 @@ const AddProductForm = () => {
             if (!session) {
                 throw new Error("User is not authenticated.");
             }
-            
 
             console.log("Access Token:", session.access_token);
 
@@ -223,7 +216,7 @@ const AddProductForm = () => {
     return (
         <div className="container overflow-auto mx-auto p-4 mt-4">
             <div className="flex flex-col md:flex-row gap-8 h-full">
-                <div className="w-full md:w-2/3">
+                <div className="w-full md:w-3/4">
                     <AddProductDetails 
                         productData={productData} 
                         setProductData={setProductData}
@@ -239,7 +232,7 @@ const AddProductForm = () => {
 
 				{isPreviewModalOpen && (
                     <>
-                        <div className="">
+                        {/* <div className="">
                             <ModalBackdrop />
                             <ProductPreviewModal onClose={closeModal}>
                                 <ProductPreview
@@ -248,7 +241,7 @@ const AddProductForm = () => {
                                     onVariantClick={handleVariantClick}
                                 />
                             </ProductPreviewModal>
-                        </div>
+                        </div> */}
                     </>
 			    )}
             </div>

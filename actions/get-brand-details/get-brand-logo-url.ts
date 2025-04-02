@@ -8,12 +8,12 @@ export async function GetBrandLogoUrl(supabase: any, userId: string) {
 
         if (logoURLError) {
             console.error("Error getting brand logo URL: ", logoURLError);
-            throw new Error(`Error getting brand logo URL: ${logoURLError.message}`);
+            throw new Error(`Error getting brand logo URL: ${logoURLError}`);
         }
 
         if (!logoURL) {
             console.log("No logo found for the user.");
-            return null; // Return null if no logo is found
+            return null;
         }
         console.log("Logo URL found: ", logoURL);
         return logoURL;

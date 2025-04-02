@@ -1,4 +1,4 @@
-import { createClient } from "@/supabase_change/server";
+import { createClient } from "@/supabase/server";
 
 export async function UpdatePassword(formData: FormData){
     const supabase = await createClient();

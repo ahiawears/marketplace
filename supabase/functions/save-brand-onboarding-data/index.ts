@@ -69,7 +69,7 @@ serve(async (req: Request) => {
 		let logoURL: string;
         let bannerURL: string;
 
-		if (step === 1) {
+		if (step === 1) { 
 			if (logoBlob) {
 				try {
 					logoURL = await UploadBrandLogo(supabase, userId, logoBlob);

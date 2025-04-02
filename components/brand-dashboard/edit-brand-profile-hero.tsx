@@ -45,7 +45,7 @@ export const EditBrandProfileHero: React.FC<EditBrandHeroProps> = ({userId, acce
                     const data = await res.json();
 
                     if(!data.data) {
-                        console.log("No banna found for the user.");
+                        console.log("No banner found for the user.");
                         setHeroImage('/images/ahiaproto.avif');
                         return;
                     }
@@ -202,6 +202,3 @@ export const EditBrandProfileHero: React.FC<EditBrandHeroProps> = ({userId, acce
         
     );
 }
-
-// Hero Image:
-// Brands should be able to add an hero image and a text which its position could be set in the image

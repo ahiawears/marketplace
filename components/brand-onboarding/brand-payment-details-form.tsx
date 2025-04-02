@@ -190,7 +190,7 @@ const BrandPaymentDetailsForm = ({ data, onDataChange }: BrandPaymentProps) => {
                                     </option>
                                 ))}
                             </Select>
-                        </div>
+                        </div>    
                         
                         <div className='basis-1/2'> 
                             <label 
@@ -204,7 +204,6 @@ const BrandPaymentDetailsForm = ({ data, onDataChange }: BrandPaymentProps) => {
                                 getOptionLabel={(bank: any) => bank?.name}                            
                                 onSelect={(selectedBank: any) => {
                                     setSelectedBank(selectedBank.code);
-                                    console.log(`the selected bank code is ${selectedBank.code} and the name is ${selectedBank.name}`)
                                     setSelectedBankObject(selectedBank);
                                     setSelectedBankName(selectedBank.name);
                                 }}

@@ -2,11 +2,11 @@ export const categoriesList = [
     {
         name: "T-Shirts",
         measurements: [
-            "Chest (cm)",
-            "Waist (cm)",
-            "Length (cm)",
-            "Shoulder Width (cm)",
-            "Sleeve Length (cm)"
+            "Chest",
+            "Waist",
+            "Length",
+            "Shoulder Width",
+            "Sleeve Length"
         ],
         material: ["100% Cotton", "Cotton Blend", "Polyester", "Organic Cotton", "Recycled Polyester"],
         subcategories: [
@@ -32,12 +32,12 @@ export const categoriesList = [
     {
         name: "Shirts",
         measurements: [
-            "Collar Size (cm)",
-            "Chest (cm)",
-            "Waist (cm)",
-            "Length (cm)",
-            "Shoulder Width (cm)",
-            "Sleeve Length (cm)"
+            "Collar Size",
+            "Chest",
+            "Waist",
+            "Length",
+            "Shoulder Width",
+            "Sleeve Length"
         ],
         material: ["Cotton", "Polyester", "Linen", "Silk", "Oxford Fabric", "Chambray"],
         subcategories: [
@@ -65,11 +65,11 @@ export const categoriesList = [
     {
         name: "Hoodies & Sweatshirts",
         measurements: [
-            "Chest (cm)",
-            "Waist (cm)",
-            "Length (cm)",
-            "Sleeve Length (cm)",
-            "Shoulder Width (cm)"
+            "Chest",
+            "Waist",
+            "Length",
+            "Sleeve Length",
+            "Shoulder Width"
         ],
         material: ["Cotton", "Fleece", "Polyester", "Sherpa", "Knitted Fabric"],
         subcategories: [
@@ -92,11 +92,11 @@ export const categoriesList = [
     {
         name: "Jackets & Coats",
         measurements: [
-            "Chest (cm)",
-            "Waist (cm)",
-            "Length (cm)",
-            "Shoulder Width (cm)",
-            "Sleeve Length (cm)"
+            "Chest",
+            "Waist",
+            "Length",
+            "Shoulder Width",
+            "Sleeve Length"
         ],
         material: ["Wool", "Polyester", "Denim", "Leather", "Nylon", "Down Fill"],
         subcategories: [
@@ -119,12 +119,12 @@ export const categoriesList = [
     {
         name: "Jeans",
         measurements: [
-            "Waist (cm)",
-            "Hip (cm)",
-            "Inseam (cm)",
-            "Outseam (cm)",
-            "Thigh (cm)",
-            "Leg Opening (cm)"
+            "Waist",
+            "Hip",
+            "Inseam",
+            "Outseam",
+            "Thigh",
+            "Leg Opening"
         ],
         material: ["100% Denim", "Stretch Denim", "Cotton", "Selvedge Denim"],
         subcategories: [
@@ -147,12 +147,12 @@ export const categoriesList = [
     {
         name: "Trousers",
         measurements: [
-            "Waist (cm)",
-            "Hip (cm)",
-            "Inseam (cm)",
-            "Outseam (cm)",
-            "Thigh (cm)",
-            "Leg Opening (cm)"
+            "Waist",
+            "Hip",
+            "Inseam",
+            "Outseam",
+            "Thigh",
+            "Leg Opening"
         ],
         material: ["Cotton", "Linen", "Polyester", "Stretch Blend"],
         subcategories: [
@@ -175,9 +175,9 @@ export const categoriesList = [
     {
         name: "Skirts",
         measurements: [
-            "Waist (cm)",
-            "Hip (cm)",
-            "Length (cm)"
+            "Waist",
+            "Hip",
+            "Length"
         ],
         material: ["Cotton", "Polyester", "Linen", "Silk"],
         subcategories: [
@@ -200,10 +200,10 @@ export const categoriesList = [
     {
         name: "Co-Ord",
         measurements: [
-            "Chest (cm)",
-            "Waist (cm)",
-            "Length (cm)",
-            "Hip (cm)"
+            "Chest",
+            "Waist",
+            "Length",
+            "Hip"
         ],
         material: ["Cotton", "Polyester"],
         subcategories: [
@@ -221,11 +221,11 @@ export const categoriesList = [
     {
         name: "Polo Shirts",
         measurements: [
-            "Chest (cm)",
-            "Waist (cm)",
-            "Length (cm)",
-            "Shoulder Width (cm)",
-            "Collar Size (cm)"
+            "Chest",
+            "Waist",
+            "Length",
+            "Shoulder Width",
+            "Collar Size"
         ],
         material: ["Cotton", "Polyester", "Piqué Fabric"],
         subcategories: [
@@ -243,9 +243,9 @@ export const categoriesList = [
     {
         name: "Hats & Caps",
         measurements: [
-            "Circumference (cm)",
-            "Height (cm)",
-            "Brim Width (cm)"
+            "Circumference",
+            "Height",
+            "Brim Width"
         ],
         material: ["Cotton", "Wool", "Synthetic"],
         subcategories: [
@@ -282,11 +282,11 @@ export const categoriesList = [
     {
         name: "Shorts",
         measurements: [
-            "Waist (cm)",
-            "Hip (cm)",
-            "Inseam (cm)",
-            "Outseam (cm)",
-            "Thigh (cm)"
+            "Waist",
+            "Hip",
+            "Inseam",
+            "Outseam",
+            "Thigh"
         ],
         material: ["Cotton", "Polyester", "Denim"],
         subcategories: [

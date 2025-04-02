@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react"
 import { FaRegTrashAlt } from "react-icons/fa";
 import { Button } from "./button";
+import FavsListSVG from "../svg/fav-lists-svg";
 
 const FavsList = () => {
 
@@ -42,16 +43,33 @@ const FavsList = () => {
         }
     };
 
-    useEffect(() => {
-        fetchUserLikedItemList();
-    }, []);
+    // useEffect(() => {
+    //     fetchUserLikedItemList();
+    // }, []);
 
     return (
-        <div>
-            <div className="bg-slate-400">
-                <p className="mt-1 text-sm text-gray-500 text-center py-9">Favorited Items</p>
-            </div>
-            <div className="bg-white">
+        <div className="container mx-auto">
+
+            {savedProductsData.length > 0 ? (
+                <div>
+
+                </div>
+            ) : (
+                <div className="mx-auto max-w-2xl lg:max-w-7xl w-full">
+                    <div className="w-full p-8 text-center transform transition-all relative"> {/* Added relative positioning */}
+                        <div className="mx-auto ">
+                            <FavsListSVG className="w-64 h-64 mx-auto" width={256} height={256} />
+                            <p className="font-bold my-4">You have no favorited items yet</p>
+                            <Button>
+                                
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+
+            {/* <div className="bg-white">
                 <div className="mx-auto px-4 sm:px-6 lg:w-full lg:px-8">
                     <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-3">
                         {savedProductsData.map((product) => (
@@ -98,7 +116,7 @@ const FavsList = () => {
                         ))}
                     </div>
                 </div>
-            </div>
+            </div> */}
         </div>
     )
 }

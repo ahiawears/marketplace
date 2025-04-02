@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { currency } from "@/lib/currencyList";  
 import { clothingMaterials } from "@/lib/item-material-list";
 import { Button } from "../ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface GeneralProductDetailsProps {
     generalDetails: GeneralProductDetailsType;
@@ -15,17 +16,37 @@ interface GeneralProductDetailsProps {
     setIsGeneralDetailsSaved: (value: boolean) => void;
 }
 
-const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, setIsGeneralDetailsSaved }) => {
-    const [localDetails, setLocalDetails] = useState<GeneralProductDetailsType>(generalDetails);
+interface Errors {
+    productName: string;
+    productDescription: string;
+    category: string;
+    currency: string;
+    material: string;
+    subCategory: string;
+    tags: string;
+}
 
+const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, setIsGeneralDetailsSaved }) => {
+    const [errors, setErrors] = useState<Errors>({
+        productName: "",
+        productDescription: "",
+        category: "",
+        currency: "",
+        material: "",
+        subCategory: "",
+        tags: "",
+    });
+    
+    const [localDetails, setLocalDetails] = useState<GeneralProductDetailsType>(generalDetails);
     const [subcategories, setSubcategories] = useState<string[]>([]);
     const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
     const [customTags, setCustomTags] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [selectedCurrency, setSelectedCurrency] = useState("");
+    
+    const { userId, userSession, loading, error, resetError } = useAuth();
 
-     // Check if all required fields are filled
-     const isFormValid = () => {
+    const isFormValid = () => {
         return (
             localDetails.productName.trim() !== "" &&
             localDetails.productDescription.trim() !== "" &&
@@ -33,13 +54,12 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
             localDetails.currency.trim() !== "" &&
             localDetails.material.trim() !== "" &&
             localDetails.subCategory.trim() !== "" &&
-            //check if 3 tags has been selected
-            localDetails.tags.length === 3
+            localDetails.tags.length <= 5 &&
+            localDetails.tags.length > 0
         );
     };
 
     const handleSave = () => {
-        // Pass the local state to the parent component
         setGeneralDetails(localDetails);
         setIsGeneralDetailsSaved(true);
         onSaveAndContinue();
@@ -57,8 +77,6 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
         const category = categoriesList.find((cat) => cat.name === categoryName);
         setSubcategories(category?.subcategories || []);
         setCustomTags(category ? category.tags : []);
-
-        // Reset subcategory and tags if the category changes
         if (categoryName !== localDetails.category) {
             setLocalDetails((prev) => ({
                 ...prev,
@@ -72,25 +90,34 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
     };
     
     const handleTagClick = (tag: string) => {
-        if (localDetails.tags.includes(tag)) {
-            // If the tag is already selected, remove it
+        const isTagSelected = localDetails.tags.includes(tag);
+        const newTagCount = isTagSelected ? localDetails.tags.length - 1 : localDetails.tags.length + 1;
+
+        if (newTagCount > 5) {
+            setErrors((prevErrors) => ({
+                ...prevErrors,
+                tags: "You can only select up to 5 tags",
+            }));
+            setTimeout(() => {
+                setErrors((prevErrors) => ({
+                    ...prevErrors,
+                    tags: "",
+                }));
+            }, 3000);
+        } else {
+            setErrors((prevErrors) => ({
+                ...prevErrors,
+                tags: "",
+            }));
             setLocalDetails((prev) => ({
                 ...prev,
-                tags: prev.tags.filter((t) => t !== tag),
+                tags: isTagSelected
+                    ? prev.tags.filter((t) => t !== tag)
+                    : [...prev.tags, tag],
             }));
-        } else {
-            // If the tag is not selected and the limit is reached, show a message
-            if (localDetails.tags.length >= 3) {
-                console.log("You can only select up to 3 tags");
-            } else {
-                // If the tag is not selected and the limit is not reached, add it
-                setLocalDetails((prev) => ({
-                    ...prev,
-                    tags: [...prev.tags, tag],
-                }));
-            }
         }
     };
+
 
     const handleSubcategorySelect = (subcategory: string) => {
         setSelectedSubcategory(subcategory);
@@ -136,6 +163,16 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
         };
         getDetails();
     }, [localDetails.category, localDetails.subCategory, localDetails.tags]);
+
+    useEffect(() => {
+        const getBrandDetails = async () => {
+            try {
+                const response = await fetch (`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-details?data=${"legal-details"}`)
+            } catch (error) {
+
+            }
+        }
+    })
 
     return (
         <div className="product-details">
@@ -185,7 +222,6 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                             onChange={(e) => {
                                 handleCategoryChange(e);
                                 handleChange("category", e.target.value);
-                                
                             }}
                             value={localDetails.category}
                             className="border-2"
@@ -239,6 +275,15 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                                 </span>
                             ))}
                         </div>
+                        {errors.tags && (
+                            <p 
+                                style={{ color: 'red' }} 
+                                className="py-2"
+                                id="tags-error"
+                            >
+                                {errors.tags}
+                            </p>
+                        )}
                     </div>
                 )}
             </div>
@@ -262,7 +307,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                             
                             {currency.map((sCurrency) => (
                                 <option key={`${sCurrency.code}-${sCurrency.name}`} value={sCurrency.id}>
-                                    {`${sCurrency.symbol + " " + sCurrency.name + " " + sCurrency.code}`}
+                                    {`${sCurrency.symbol + " - " + sCurrency.name }`}
                                 </option>
                             ))}
                         </Select>

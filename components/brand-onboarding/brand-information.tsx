@@ -38,7 +38,7 @@ const BrandBasicInformationForm = ({ data, onDataChange}: BrandInformationProps)
 
     const logoInputRef = useRef<HTMLInputElement>(null);
     const bannerInputRef = useRef<HTMLInputElement>(null);
-
+  
     useEffect(() => {
         const isValid = brand_name.length > 0 && brand_description.length > 0 && brand_banner.length > 0 && brand_logo.length > 0;
         setIsValid(isValid);

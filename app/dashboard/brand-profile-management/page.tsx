@@ -2,7 +2,7 @@
 
 import NavTab from "@/components/navtab";
 import { useState } from "react";
-import BrandAccountSettings from "../brand-account-settings/page";
+import { BrandAccountSettings } from "../brand-account-settings/page";
 import { BrandProfilePage} from "../brand-profile-page/page";
 import { BrandSocialLinks } from "../brand-socials-links/page";
 import LoadContent from "@/app/load-content/page";
@@ -19,7 +19,6 @@ const BrandProfileManagemennt = () => {
         { label: 'Profile', value: 'Profile' },
         { label: 'Account Settings', value: 'Account Settings' },
         { label: 'Contact Details', value: 'Contact Details'}
-        
     ];
 
     const handleTabChange = (value: string) => {
@@ -61,7 +60,7 @@ const BrandProfileManagemennt = () => {
                         <BrandProfilePage userId={userId} accessToken={userSession.access_token}/>
                     }
                     {selectedTab === "Account Settings" &&
-                        <BrandAccountSettings />
+                        <BrandAccountSettings userId={userId} accessToken={userSession.access_token}/>
                     }
                     {selectedTab === "Contact Details" && 
                         <BrandSocialLinks userId={userId} accessToken={userSession.access_token}/>

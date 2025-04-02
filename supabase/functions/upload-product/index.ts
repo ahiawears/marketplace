@@ -1,14 +1,10 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
-
 // Setup type definitions for built-in Supabase Runtime APIs
 import { serve } from "https://deno.land/std@0.114.0/http/server.ts";
 import { createCategory } from "@actions/create-category.ts";
 import { createCurrency } from "@actions/create-currency.ts"; 
 import { createTags } from "@actions/create-tags.ts";
 import { createProduct } from "@actions/create-general-details.ts"; 
-import { createMaterial } from "@actions/create-material.ts";
+import { createMaterial } from "@actions/create-material.ts";  
 import { createSubCategory } from "@actions/create-subCategory.ts";
 import { createColor } from "@actions/create-color.ts";
 import { createVariant} from "@actions/create-variant.ts";
@@ -102,6 +98,7 @@ serve(async (req: Request) => {
 
 		//Insert Variant Details into database
 		const colorId = await createColor(supabase, variantColorName, variantColorHex);
+		//convert price to base currency and add base_price to the database
 		const variantId = await createVariant(supabase, variantName, variantSku, variantPrice, colorId, variantProductCode, productUploadId);
 		await createSizes(supabase, variantId, {measurements: variantMeasurements});	
 		await Promise.all(

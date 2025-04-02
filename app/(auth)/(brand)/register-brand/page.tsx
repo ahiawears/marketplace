@@ -203,7 +203,7 @@ const RegisterBrandForm: React.FC<RegisterBrandFormProps> = ({
                         onChange={(e) => onPasswordChange(e.target.value)}
                     />
                     <p className="text-sm text-gray-600 mt-2 font-bold">
-                        *Password must include uppercase, lowercase, numbers, and symbols*
+                        *Password must include uppercase, lowercase, numbers, and a symbol*
                     </p>
                     <p className="text-sm text-gray-600 mt-2">
                         Strength: {passwordStrength}

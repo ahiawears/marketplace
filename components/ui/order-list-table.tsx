@@ -26,7 +26,7 @@ const OrderTable: FC<OrderTableProps> = ({ orders }) => {
     };
     return (
         <div>
-            <div className="mx-auto py-10 sm:py-10 shadow-2xl">
+            <div className="mx-auto py-10 sm:py-10 shadow-2xl border-2">
                 <div className="mx-auto max-7xl px-6 lg:px-8">
                     <div className="p-6">
                         <h1 className="text-2xl font-bold mb-6">
@@ -34,7 +34,7 @@ const OrderTable: FC<OrderTableProps> = ({ orders }) => {
                         </h1>
                         <table className="w-full border-collapse">
                             <thead>
-                                <tr className="bg-gray-100">
+                                <tr className="bg-gray-100 border-2">
                                     <th className="p-2 text-left">Order ID</th>
                                     <th className="p-2 text-left">Date</th>
                                     <th className="p-2 text-left">Status</th>
@@ -44,7 +44,7 @@ const OrderTable: FC<OrderTableProps> = ({ orders }) => {
                             </thead>
                             <tbody>
                                 {orders.map((order) => (
-                                    <tr key={order.id} className="border-b">
+                                    <tr key={order.id} className="border-2">
                                         <td className="p-2">{order.id}</td>
                                         <td className="p-2">{order.date}</td>
                                         <td className="p-2">

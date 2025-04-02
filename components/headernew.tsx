@@ -46,7 +46,7 @@ export const HeaderNew = ({ user }: { user: any }) => {
     };
 
     return (
-        <header className="p-8 border-b border-border left-0 top-0 w-full bg-background z-50 sticky">
+        <header className="p-8 border-b-2 border-border left-0 top-0 w-full bg-background z-50 sticky">
             <div className="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
                 <div className="flex md:flex-row gap-4">
 
@@ -124,17 +124,27 @@ export const HeaderNew = ({ user }: { user: any }) => {
                     <div className="hidden lg:flex md:flex items-center gap-4 grow w-full">
                             <SearchInput 
                                 placeholder="Search products" 
-                                className="grow h-10 cursor-auto" 
+                                className="grow h-10 cursor-auto border-2" 
                                 name="searchValue" 
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onSearch={handleSearch}
                             /> 
                         
                         <div className="hidden md:flex lg:flex gap-4">
-                            <Button size={"icon"} variant="outline" onClick={goToFavorited}>
+                            <Button 
+                                size={"icon"} 
+                                variant="outline" 
+                                onClick={goToFavorited}
+                                className="border-2"
+                            >
                                 <Heart />
                             </Button>
-                            <Button size={"icon"} variant="outline" onClick={goToCart}>
+                            <Button 
+                                size={"icon"} 
+                                variant="outline" 
+                                className="border-2"
+                                onClick={goToCart}
+                            >
                                 <ShoppingCart />
                             </Button>
                         </div>
@@ -143,21 +153,21 @@ export const HeaderNew = ({ user }: { user: any }) => {
                             <Sheet>
                                 <SheetTrigger asChild>
                                     <Button size={"icon"}>
-                                    <Filter />
+                                        <Filter />
                                     </Button>
                                 </SheetTrigger>
                                 <SheetContent className="flex flex-col px-0" side={"left"}>
                                     <SheetTitle className="sr-only">Filters</SheetTitle>
                                     <ul className="flex-1">{/* TODO: Add filters */}</ul>
-                                    <SheetFooter className="border-t border-border pt-4 px-3">
+                                    <SheetFooter className="border-t-2 border-border pt-4 px-3">
                                     {!user ? (
                                         <div className="grid grid-cols-2 gap-4 w-full">
-                                        <Button asChild variant={"outline"} size={"lg"}>
-                                            <Link href={"/log-in"}>Login</Link>
-                                        </Button>
-                                        <Button size={"lg"}>
-                                            <Link href={"/signup"}>Get Started</Link>
-                                        </Button>
+                                            <Button asChild variant={"outline"} size={"lg"} className="border-2">
+                                                <Link href={"/log-in"}>Login</Link>
+                                            </Button>
+                                            <Button size={"lg"} className="border-2">
+                                                <Link href={"/signup"}>Get Started</Link>
+                                            </Button>
                                         </div>
                                     ) : (
                                         <UserActionsDropdownMobile user={user} />

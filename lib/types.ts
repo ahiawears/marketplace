@@ -160,9 +160,56 @@ export interface UserAddressType {
   mobile: string;
   country_code: string;
 }
-  
+
+// export interface ProductShippingDeliveryType {
+//   shippingMethods: string[];
+//   shippingZones: string[];
+//   estimatedDelivery: { [zone: string]: string }; // e.g., { "US": "3-5 days" }
+//   shippingFees: { [zone: string]: number }; // e.g., { "US": 10, "UK": 15 }
+//   freeShippingThreshold?: number;
+//   handlingTime: string; // e.g., "1-2 days"
+//   weight: number | string;
+//   dimensions: { length: number; width: number; height: number };
+//   customsDuties?: boolean;
+//   shippingRestrictions?: string;
+// }
+
+export interface ShippingDeliveryType {
+  shippingMethods: string[]; // ["Standard", "Express", "Local Pickup"]
+  shippingZones: string[]; // ["NG", "GH", "KE", "ZA", "TZ", "UG", "Continental"]
+  estimatedDelivery: { 
+    [zone: string]: string; // {"NG": "2-3 days", "Continental": "7-14 days"}
+  };
+  shippingFees: {
+    [zone: string]: number; // {"NG": 5, "GH": 8, "Continental": 25}
+  };
+  freeShippingThreshold?: number; // 50 (USD)
+  handlingTime: string; // "1-3 business days"
+  weight: number; // in kg
+  dimensions: {
+    length: number; // in cm
+    width: number;
+    height: number;
+  };
+  customsDuties?: 'seller-paid' | 'buyer-paid' | 'duty-free';
+  shippingRestrictions?: string;
+  // Africa-specific additions:
+  localCourierOptions?: { // For last-mile delivery partners
+    [country: string]: string[]; // {"NG": ["GIG Logistics", "Jumia Express"]}
+  };
+  intraAfricaTradeCompliant?: boolean; // AfCFTA compliance
+  cashOnDelivery?: boolean; // Important for African markets
+}
+
+export interface ReturnRefundPolicyType {
+  returnWindow: number; // e.g., 30 days
+  refundMethod: "store_credit" | "bank_refund" | "replacement";
+  returnShipping: "customer_pays" | "free_returns";
+  conditions: string;
+}
+
+
 export interface ProductVariantType {
-  currentSlide: number;
   main_image_url: string;
   productId: string;
   variantName: string;
@@ -171,6 +218,7 @@ export interface ProductVariantType {
   price: string;
   colorHex: string;
   sku: string;
+  measurementUnit: string;
   measurements: { 
     [size: string]: {
       [measurement: string]: number;
@@ -192,8 +240,9 @@ export interface GeneralProductDetailsType {
 
 export interface ProductUploadData {
   generalDetails: GeneralProductDetailsType;
-  productInformation: ProductVariantType;
   productVariants: ProductVariantType[];
+  shippingDelivery: ShippingDeliveryType;
+  returnRefundPolicy: ReturnRefundPolicyType;
 }
 
 export interface PhysicalAttributesType {
