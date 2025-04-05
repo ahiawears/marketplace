@@ -15,12 +15,10 @@ interface MeasurementSizesTableProps {
         };
     };
     onMeasurementChange: (size: string, field: string, value: number) => void; // Function to handle updates
-    setSelectedSizes: (sizes: string[]) => void;
-    selectedSizes: string[];
     measurementUnit: "Inch" | "Centimeter"; // Add this line
     setMeasurementUnit: (unit: "Inch" | "Centimeter") => void; // Add this line
-    updateVariant: (index: number, field: keyof ProductVariantType, value: string | "Inch" | "Centimeter") => void; // Add this line
-    variantIndex: number; // Add this line
+    updateVariant: (index: number, field: keyof ProductVariantType, value: string | "Inch" | "Centimeter") => void;
+    variantIndex: number; 
 }
 
 function ValidateNumber(strNumber: string, allowDecimal: boolean = false): boolean {
@@ -32,11 +30,11 @@ function ValidateNumber(strNumber: string, allowDecimal: boolean = false): boole
 }
 
 // Dynamic table component for measurements, sizes, and quantities
-const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category, measurements, onMeasurementChange, setSelectedSizes, selectedSizes, measurementUnit, setMeasurementUnit, updateVariant, variantIndex  }) => {
+const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category, measurements, onMeasurementChange, measurementUnit, setMeasurementUnit, updateVariant, variantIndex  }) => {
     if (!category) {
         return <p className="text-gray-500">Please select a category to proceed.</p>;
     }
-    const [selectedSizesLocal, setSelectedSizesLocal] = useState<string[]>(selectedSizes);
+    const [selectedSizesLocal, setSelectedSizesLocal] = useState<string[]>([]);
 
     const sizes = ["Small", "Medium", "Large", "X-L", "XX-L", "2X-L", "Oversized"]; // Extend sizes as needed
 
@@ -44,15 +42,22 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
 
     // Handle size selection
     const handleSizeSelection = (size: string) => {
-        const newSelectedSizes = selectedSizes.includes(size)
-            ? selectedSizes.filter((s) => s !== size)
-            : [...selectedSizes, size];
+        const isSizeSelected = selectedSizesLocal.includes(size);
+        const newSelectedSizes = isSizeSelected
+            ? selectedSizesLocal.filter((s) => s !== size)
+            : [...selectedSizesLocal, size];
         setSelectedSizesLocal(newSelectedSizes);
-        setSelectedSizes(newSelectedSizes); // Update parent state
-        
-        // Remove measurements and quantity for the deselected size
-        if (!newSelectedSizes.includes(size)) {
-            onMeasurementChange(size, "remove", 0); // Custom logic to handle removal
+
+        // Update measurements based on selection
+        if (!isSizeSelected) {
+            // Add the size to measurements with default values
+            onMeasurementChange(size, "quantity", 0);
+            categoryData?.measurements.forEach((measurement) => {
+                onMeasurementChange(size, measurement, 0);
+            });
+        } else {
+            // Remove the size from measurements
+            onMeasurementChange(size, "remove", 0);
         }
     };
 
@@ -61,10 +66,6 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
         const initialSelectedSizes = sizes.filter(size => measurements.hasOwnProperty(size));
         setSelectedSizesLocal(initialSelectedSizes);
     }, [measurements]);
-
-    useEffect(() => {
-        setSelectedSizesLocal(selectedSizes);
-    }, [selectedSizes]);
 
     const handleMeasurementUnitChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setMeasurementUnit(event.target.value as "Inch" | "Centimeter");
@@ -109,7 +110,6 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                                 name="measurementUnit"
                                 value="Inch"
                                 checked={measurementUnit === "Inch"}
-                                //onChange={handleMeasurementUnitChange}
                                 onChange={(e) => {
                                     handleMeasurementUnitChange(e);
                                 }}
@@ -130,7 +130,6 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                                 name="measurementUnit"
                                 value="Centimeter"
                                 checked={measurementUnit === "Centimeter"}
-                                //onChange={handleMeasurementUnitChange}
                                 onChange={(e) => {
                                     handleMeasurementUnitChange(e);
                                 }}
@@ -153,7 +152,7 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                     <div
                         key={size}
                         className={`px-3 border-2 py-1 text-sm cursor-pointer ${
-                            selectedSizes.includes(size)
+                            selectedSizesLocal.includes(size)
                                 ? "bg-black text-white border-2"
                                 : "bg-primary text-white opacity-50 border-2"}
                                 hover:bg-primary/90 hover:text-white
@@ -179,7 +178,7 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                     </tr>
                 </thead>
                 <tbody>
-                    {selectedSizes.map((size) => (
+                    {selectedSizesLocal.map((size) => (
                         <tr key={size}>
                             <td className="border-2 px-4 py-2 font-medium">
                                 {size}

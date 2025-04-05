@@ -12,8 +12,11 @@ Deno.serve(async (req) => {
 
 	try {
 		const url = new URL(req.url);
-		const data = url.searchParams.get("data");
+		const dataName = url.searchParams.get("data_name");
+		const userId = url.searchParams.get("userId");
 		const authHeader = req.headers.get("Authorization");
+
+		console.log("The dataName gotten is ", dataName);
 
 		if (!authHeader) {
 			return new Response("Unauthorized header", { status: 401 });
@@ -26,12 +29,35 @@ Deno.serve(async (req) => {
 		}
 
 		const supabase = createClient(accessToken);
+		
+		if (!userId) {
+			return new Response(JSON.stringify({ success: false, message: "User ID is required." }), {
+				status: 400,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			});
+		}
 
-		if (data === "legal-details") {
+		if (dataName === "legal-details") {
 			try {
 				const { data: legalData, error: legalError } = await supabase
 					.from('brand_legal_details')
 					.select('*')
+					.eq('id', userId)
+					.single();
+
+				if (legalError) {
+					console.log(legalError);
+					throw new Error(`Error getting legal details: ${legalError}`);
+				}
+
+				return new Response(JSON.stringify({
+					success: true,
+					message: "Legal details fetched successfully",
+					data: legalData,
+				}),
+				{
+					headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+				})
 			} catch (error) {
 				return new Response(
 					JSON.stringify({ 
@@ -51,7 +77,8 @@ Deno.serve(async (req) => {
 				message: "Data Gotten successfully", 
 			}), 
 			{
-            	headers: { ...corsHeaders, 'Content-Type': 'application/json'}
+            	headers: { ...corsHeaders, 'Content-Type': 'application/json'},
+				status: 200
 			}
 		);
 	} catch (error) {

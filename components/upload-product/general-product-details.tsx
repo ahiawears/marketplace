@@ -1,3 +1,5 @@
+"use client";
+
 import { GeneralProductDetailsType } from "@/lib/types";
 import { Input } from "../ui/input";
 import { Select } from "../ui/select";
@@ -8,6 +10,8 @@ import { currency } from "@/lib/currencyList";
 import { clothingMaterials } from "@/lib/item-material-list";
 import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import LoadContent from "@/app/load-content/page";
+import ErrorModal from "../modals/error-modal";
 
 interface GeneralProductDetailsProps {
     generalDetails: GeneralProductDetailsType;
@@ -27,6 +31,8 @@ interface Errors {
 }
 
 const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, setIsGeneralDetailsSaved }) => {
+    const { userId, userSession, loading, error, resetError } = useAuth();
+
     const [errors, setErrors] = useState<Errors>({
         productName: "",
         productDescription: "",
@@ -43,9 +49,8 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
     const [customTags, setCustomTags] = useState<string[]>([]);
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [selectedCurrency, setSelectedCurrency] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
     
-    const { userId, userSession, loading, error, resetError } = useAuth();
-
     const isFormValid = () => {
         return (
             localDetails.productName.trim() !== "" &&
@@ -118,7 +123,6 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
         }
     };
 
-
     const handleSubcategorySelect = (subcategory: string) => {
         setSelectedSubcategory(subcategory);
         setLocalDetails((prev) => ({
@@ -165,193 +169,248 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
     }, [localDetails.category, localDetails.subCategory, localDetails.tags]);
 
     useEffect(() => {
-        const getBrandDetails = async () => {
-            try {
-                const response = await fetch (`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-details?data=${"legal-details"}`)
-            } catch (error) {
+        if (userId && userSession) {
+            const getBrandDetails = async () => {
+                const access_token = userSession.access_token;
+                const dataName = "legal-details";
+                try {
+                    const response = await fetch (`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-details?data_name=${dataName}&userId=${userId}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${access_token}`,
+                                'Content-Type': 'application/json',
+                            }
+                        }
+                    )
+    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || "Couldn't create a connection with the server");
+                    }
+    
+                    const data = await response.json();
+    
+                    if (!data.data) {
+                        throw new Error("No data found for the user, please try again");
+                    }
 
+                    const brand_country = data.data.country_of_registration;
+                    const brandCurrency = currency.find((c) => c.country_alpha === brand_country);
+                    if (brandCurrency) {
+                        setLocalDetails((prev) => ({
+                            ...prev,
+                            currency: brandCurrency?.code,
+                        }));
+                        setSelectedCurrency(brandCurrency?.id.toString());
+                    }    
+                } catch (error) {
+                    //set error here
+                    if (error instanceof Error) {
+                        setErrorMessage(error.message || "An error occurred while fetching brand details.");
+                    } else {
+                        setErrorMessage("An unexpected error occurred.");
+                    }
+                }
             }
+            getBrandDetails();
         }
-    })
+    }, [userId, userSession]);
+
+    if (loading) {
+        return <LoadContent />
+    }
 
     return (
-        <div className="product-details">
-            <div className="mb-4">
-                <label htmlFor="productName" className="block text-sm font-bold text-gray-900">
-                    Enter Product Name:* 
-                </label>
-                <div className="mt-2">
-                    <Input
-                        id="productName"
-                        type="text"
-                        onChange={(e) => handleChange("productName", e.target.value)}
-                        value={localDetails.productName}
-                        required
-                        placeholder="Enter the Product Name"
-                        className="border-2"
+        <>
+            {errorMessage && (
+                <>
+                    <ErrorModal 
+                        message={errorMessage}
+                        onClose={() => {
+                            setErrorMessage("");
+                        }}
                     />
-                </div>    
-            </div>
-
-            <div className="mb-4">
-                <label htmlFor="productDescription" className="block text-sm font-bold text-gray-900">
-                    Enter Product Description:*
-                </label>
-                <div className="mt-2">
-                    <Textarea
-                        id="productDescription"
-                        name="productDescription"
-                        onChange={(e) => handleChange("productDescription", e.target.value)}
-                        value={localDetails.productDescription}
-                        rows={4}
-                        required
-                        placeholder="Enter the product description here"
-                        className="border-2"
-                    />
-                </div>
-            </div>
-
-            <div className="mb-4"> 
+                </>
+            )}
+            <div className="product-details">
                 <div className="mb-4">
-                    <label htmlFor="category" className="block text-sm font-bold text-gray-900">
-                        Category:*
+                    <label htmlFor="productName" className="block text-sm font-bold text-gray-900">
+                        Enter Product Name:* 
                     </label>
                     <div className="mt-2">
-                        <Select
-                            id="category"
-                            onChange={(e) => {
-                                handleCategoryChange(e);
-                                handleChange("category", e.target.value);
-                            }}
-                            value={localDetails.category}
+                        <Input
+                            id="productName"
+                            type="text"
+                            onChange={(e) => handleChange("productName", e.target.value)}
+                            value={localDetails.productName}
+                            required
+                            placeholder="Enter the Product Name"
                             className="border-2"
-                        >
-                            <option value="" disabled>Select a category</option>
-                            {categoriesList.map((category) => (
-                                <option key={category.name} value={category.name}>
-                                    {category.name}
-                                </option>
-                            ))}
-                        </Select>
+                        />
+                    </div>    
+                </div>
+
+                <div className="mb-4">
+                    <label htmlFor="productDescription" className="block text-sm font-bold text-gray-900">
+                        Enter Product Description:*
+                    </label>
+                    <div className="mt-2">
+                        <Textarea
+                            id="productDescription"
+                            name="productDescription"
+                            onChange={(e) => handleChange("productDescription", e.target.value)}
+                            value={localDetails.productDescription}
+                            rows={4}
+                            required
+                            placeholder="Enter the product description here"
+                            className="border-2"
+                        />
                     </div>
                 </div>
 
-                {subcategories.length > 0 && (
-                    <div className="mt-4">
-                        <p className="text-sm font-bold text-gray-900 mb-2">Subcategories:</p>
-                        <div className="flex flex-wrap gap-2">
-                            {subcategories.map((sub, index) => (
-                                <span
-                                    key={index}
-                                    onClick={() => handleSubcategorySelect(sub)}
-                                    className={`px-3 py-1 text-sm cursor-pointer 
-                                        ${selectedSubcategory === sub 
-                                            ? "bg-black text-white" 
-                                            : "bg-primary text-white opacity-50"} 
-                                        hover:bg-primary/90 hover:text-white`}
-                                >
-                                    {sub}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                {customTags.length > 0 && (
-                    <div className="mt-4">
-                        <p className="text-sm font-bold text-gray-900 mb-2">Tags:</p>
-                        <div className="flex flex-wrap gap-2">
-                            {customTags.map((tag, index) => (
-                                <span
-                                    key={index}
-                                    className={`px-3 py-1 text-sm cursor-pointer 
-                                        ${selectedTags.includes(tag) 
-                                            ? "bg-black text-white" 
-                                            : "bg-primary text-white opacity-50"} 
-                                        hover:bg-primary/90 hover:text-white` }
-                                    onClick={() => handleTagClick(tag)}
-                                >
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                        {errors.tags && (
-                            <p 
-                                style={{ color: 'red' }} 
-                                className="py-2"
-                                id="tags-error"
+                <div className="mb-4"> 
+                    <div className="mb-4">
+                        <label htmlFor="category" className="block text-sm font-bold text-gray-900">
+                            Category:*
+                        </label>
+                        <div className="mt-2">
+                            <Select
+                                id="category"
+                                onChange={(e) => {
+                                    handleCategoryChange(e);
+                                    handleChange("category", e.target.value);
+                                }}
+                                value={localDetails.category}
+                                className="border-2"
                             >
-                                {errors.tags}
-                            </p>
-                        )}
+                                <option value="" disabled>Select a category</option>
+                                {categoriesList.map((category) => (
+                                    <option key={category.name} value={category.name}>
+                                        {category.name}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
                     </div>
-                )}
-            </div>
 
-            <div className="mt-5">
-                <label htmlFor="currency" className="block text-sm font-bold text-gray-900 mb-2">
-                    Product Currency:*
-                </label>
-                <div className="flex flex-col md:flex-row gap-8">
-                    <div className="w-full md:w-1/2">
-                        <Select
-                            id="currency"
-                            onChange={(e) => {
-                                handleCurrencyChange(e);
-                                setSelectedCurrency(e?.target.value);
-                            }}
-                            value={selectedCurrency}
-                            className="block border-2 bg-transparent"
-                        >
-                            <option value="" disabled>Select Currency</option>
+                    {subcategories.length > 0 && (
+                        <div className="mt-4">
+                            <p className="text-sm font-bold text-gray-900 mb-2">Subcategories:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {subcategories.map((sub, index) => (
+                                    <span
+                                        key={index}
+                                        onClick={() => handleSubcategorySelect(sub)}
+                                        className={`px-3 py-1 text-sm cursor-pointer 
+                                            ${selectedSubcategory === sub 
+                                                ? "bg-black text-white" 
+                                                : "bg-primary text-white opacity-50"} 
+                                            hover:bg-primary/90 hover:text-white`}
+                                    >
+                                        {sub}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {customTags.length > 0 && (
+                        <div className="mt-4">
+                            <p className="text-sm font-bold text-gray-900 mb-2">Tags:</p>
+                            <div className="flex flex-wrap gap-2">
+                                {customTags.map((tag, index) => (
+                                    <span
+                                        key={index}
+                                        className={`px-3 py-1 text-sm cursor-pointer 
+                                            ${selectedTags.includes(tag) 
+                                                ? "bg-black text-white" 
+                                                : "bg-primary text-white opacity-50"} 
+                                            hover:bg-primary/90 hover:text-white` }
+                                        onClick={() => handleTagClick(tag)}
+                                    >
+                                        {tag}
+                                    </span>
+                                ))}
+                            </div>
+                            {errors.tags && (
+                                <p 
+                                    style={{ color: 'red' }} 
+                                    className="py-2"
+                                    id="tags-error"
+                                >
+                                    {errors.tags}
+                                </p>
+                            )}
+                        </div>
+                    )}
+                </div>
+
+                <div className="mt-5">
+                    <label htmlFor="currency" className="block text-sm font-bold text-gray-900 mb-2">
+                        Product Currency:*
+                    </label>
+                    <div className="flex flex-col md:flex-row gap-8">
+                        <div className="w-full md:w-1/2">
+                            <Select
+                                id="currency"
+                                onChange={(e) => {
+                                    handleCurrencyChange(e);
+                                    setSelectedCurrency(e?.target.value);
+                                }}
+                                value={selectedCurrency}
+                                className="block border-2 bg-transparent"
+                                disabled
+                            >
+                                <option value="" disabled>Select Currency</option>
+                                
+                                {currency.map((sCurrency) => (
+                                    <option key={`${sCurrency.code}-${sCurrency.name}`} value={sCurrency.id}>
+                                        {`${sCurrency.symbol + " - " + sCurrency.name }`}
+                                    </option>
+                                ))}
+                            </Select>
                             
-                            {currency.map((sCurrency) => (
-                                <option key={`${sCurrency.code}-${sCurrency.name}`} value={sCurrency.id}>
-                                    {`${sCurrency.symbol + " - " + sCurrency.name }`}
-                                </option>
-                            ))}
-                        </Select>
-                        
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <div className="mt-5">
-                <label htmlFor="material" className="block text-sm font-bold text-gray-900 mb-2">
-                    Product Material:*
-                </label>
+                <div className="mt-5">
+                    <label htmlFor="material" className="block text-sm font-bold text-gray-900 mb-2">
+                        Product Material:*
+                    </label>
 
-                <div className="flex flex-col md:flex-row gap-8">
-                    <div className="w-full">
-                        <Select
-                            id="material"
-                            name="material"
-                            onChange={(e) => {
-                                handleChange("material", e.target.value);
-                            }}
-                            value={localDetails.material}
-                            className="block border-2 bg-transparent"
-                        >
-                            <option value="" disabled>Select Material</option>
-                            {clothingMaterials.map((material) => (
-                                <option key={material} value={material}>
-                                    {material}
-                                </option>
-                            ))}
-                        </Select>
+                    <div className="flex flex-col md:flex-row gap-8">
+                        <div className="w-full">
+                            <Select
+                                id="material"
+                                name="material"
+                                onChange={(e) => {
+                                    handleChange("material", e.target.value);
+                                }}
+                                value={localDetails.material}
+                                className="block border-2 bg-transparent"
+                            >
+                                <option value="" disabled>Select Material</option>
+                                {clothingMaterials.map((material) => (
+                                    <option key={material} value={material}>
+                                        {material}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
                     </div>
                 </div>
+                <div className="mt-5">
+                    <Button
+                        onClick={handleSave}
+                        disabled={!isFormValid()}
+                        className="flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                    >
+                        Save and continue
+                    </Button>
+                </div>
             </div>
-            <div className="mt-5">
-                <Button
-                    onClick={handleSave}
-                    disabled={!isFormValid()}
-                    className="flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
-                >
-                    Save and continue
-                </Button>
-            </div>
-        </div>
+        </>
     );
 }
 

@@ -263,8 +263,9 @@ const BrandOnboardingPage = () => {
 			console.error("Error creating subaccount:", error);
 			if (error instanceof Error) {
 				setErrorMessage(`${error.message} ${error.cause}` || "Something went wrong, please try again.");
+			} else {
+				setErrorMessage("Something went wrong, please try again.");
 			}
-			throw error;
 		}
 	}
 

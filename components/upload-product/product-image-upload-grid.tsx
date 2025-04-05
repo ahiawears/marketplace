@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { FiX, FiPlus } from "react-icons/fi";
 import Image from "next/image";
 import { Button } from "../ui/button";
@@ -17,6 +17,11 @@ const ProductImageUploadGrid: React.FC<ProductImageUploadGridProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [cropImage, setCropImage] = useState<string | null>(null);
   const [cropIndex, setCropIndex] = useState<number | -1>(-1);
+  const [localImages, setLocalImages] = useState<string[]>(images);
+
+  useEffect(() => {
+    setLocalImages(images);
+  }, [images]);
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -30,17 +35,22 @@ const ProductImageUploadGrid: React.FC<ProductImageUploadGridProps> = ({
       reader.onload = (e) => {
         if (e.target?.result) {
           setCropImage(e.target.result as string);
-          setCropIndex(images.findIndex(img => img === ""));
+          setCropIndex(localImages.findIndex(img => img === ""));
         }
       };
       reader.readAsDataURL(file);
+      // Reset the file input value to null
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
   const handleCroppedImage = (croppedImage: string) => {
     if (cropIndex !== -1) {
-      const newImages = [...images];
+      const newImages = [...localImages];
       newImages[cropIndex] = croppedImage;
+      setLocalImages(newImages);
       onImagesChange(newImages);
     }
     setCropImage(null);
@@ -48,9 +58,15 @@ const ProductImageUploadGrid: React.FC<ProductImageUploadGridProps> = ({
   };
 
   const handleRemoveImage = (index: number) => {
-    const newImages = [...images];
+    const newImages = [...localImages];
     newImages[index] = "";
-    onImagesChange(newImages);
+
+    // Shift images to fill the gap
+    const filteredImages = newImages.filter(img => img !== "");
+    const updatedImages = [...filteredImages, ...Array(newImages.length - filteredImages.length).fill("")];
+
+    setLocalImages(updatedImages);
+    onImagesChange(updatedImages);
   };
 
   const handleAddImageClick = () => {
@@ -62,7 +78,7 @@ const ProductImageUploadGrid: React.FC<ProductImageUploadGridProps> = ({
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
-        {images.map((image, index) => (
+        {localImages.map((image, index) => (
           <div key={index} className="relative aspect-[510/650]">
             {image ? (
               <>
@@ -108,7 +124,7 @@ const ProductImageUploadGrid: React.FC<ProductImageUploadGridProps> = ({
           image={cropImage}
           onClose={(croppedImage) => {
             if (croppedImage) {
-              handleCroppedImage(croppedImage)
+              handleCroppedImage(croppedImage) 
             } else {
               setCropImage(null);
             }

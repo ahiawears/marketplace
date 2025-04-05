@@ -16,7 +16,7 @@ interface BrandProfilePageProps {
 export const BrandProfilePage: React.FC<BrandProfilePageProps> = ({ userId, accessToken }) => {
     const [loading, setLoading] = useState(true);
     const [brandName, setBrandName] = useState("");
-    const [brandDescription, setBrandDescription] = useState("");
+    const [brandDescription, setBrandDescription] = useState(""); 
 
     useEffect(() => {
         if (userId && accessToken) {

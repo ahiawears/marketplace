@@ -6,11 +6,10 @@ import { GeneralProductDetailsType, ProductUploadData, ProductVariantType } from
 import ProductVariantForm from "../upload-product/product-variant-form";
 import GeneralProductDetails from "../upload-product/general-product-details";
 import Accordion from "./Accordion";
-import MainProductForm from "../upload-product/main-product-form";
 import React from "react";
 import ProductShippingDetails from "../upload-product/product-shipping-details";
     
-const AddProductDetails = ({ productData, setProductData, onSaveProductInformation, setIsGeneralDetailsSaved }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>, onSaveProductInformation: () => void,  setIsGeneralDetailsSaved: (value: boolean) => void }) => {
+const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSaved, onVariantSaved, savedStatus }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>, setIsGeneralDetailsSaved: (value: boolean) => void, onVariantSaved: (index: number, isSaved: boolean) => void,  savedStatus: boolean[] }) => {
     const [sizes, setSizes] = useState<string[]>([]);
     const [isFirstAccordionCompleted, setIsFirstAccordionCompleted] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
@@ -36,7 +35,6 @@ const AddProductDetails = ({ productData, setProductData, onSaveProductInformati
             ...prev, 
             productVariants: typeof variants === 'function' ? variants(prev.productVariants) : variants,
         }));
-        
     };
     
     const accordionItems = [
@@ -59,8 +57,12 @@ const AddProductDetails = ({ productData, setProductData, onSaveProductInformati
                         sizes={sizes} 
                         currencySymbol={productCurrencySymbol} 
                         category={productData.generalDetails.category}
+                        onVariantSaved={onVariantSaved}
+                        savedStatus={savedStatus}
+
                     />,
-            disabled: !isFirstAccordionCompleted,
+            //disabled: !isFirstAccordionCompleted,
+            disabled: false,
         },
         {
             title: "Product Shipping Details",

@@ -226,6 +226,9 @@ export interface ProductVariantType {
     };
   };
   productCode: string;
+  colorDescription: string; // "Red/Blue stripes", "Ombre green", etc.
+  colorHexes: string[]; // ["#FF0000", "#0000FF"]
+  mainColor: string; // Primary color for filters (#FF0000)
 }
 
 export interface GeneralProductDetailsType {

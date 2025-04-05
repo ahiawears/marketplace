@@ -6,20 +6,15 @@ import AddProductDetails from "./add-product-details";
 import ProductPreviewModal from "../modals/product-preview-modal";
 import ProductPreview from "../upload-product/product-preview";
 import { ProductUploadData, ProductVariantType } from "../../lib/types";
-import ModalBackdrop from "../modals/modal-backdrop";
-import { addProduct } from "../../actions/uploadProduct";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { createClient } from "@/supabase/client";
-import { boolean } from "zod";
 
 const AddProductForm = () => {
 
     const [isFormValid, setIsFormValid] = useState<boolean>(false);
-    const [isGeneralDetailsComplete, setIsGeneralDetailsComplete] = useState<boolean>(false);
-    const [isProductInformationComplete, setIsProductInformationComplete] = useState<boolean>(false);
     const [isGeneralDetailsSaved, setIsGeneralDetailsSaved] = useState<boolean>(false);
-    const [isProductInformationSaved, setIsProductInformationSaved] = useState<boolean>(false);
+    const [variantSavedStatus, setVariantSavedStatus] = useState<boolean[]>([]);
 
     const router = useRouter();
 	const [productData, setProductData] = useState<ProductUploadData>({
@@ -52,64 +47,42 @@ const AddProductForm = () => {
         }
 	});
 
-    const validateGeneralDetails = () => {
-        const { productName, productDescription, category, currency, material, subCategory, tags } = productData.generalDetails;
-        return (
-            productName.trim() !== "" &&
-            productDescription.trim() !== "" &&
-            category.trim() !== "" &&
-            subCategory.trim() !== "" &&
-            tags.length > 0 &&
-            currency.trim() !== "" &&
-            material.trim() !== ""
-        );
+    const isAllVariantsSaved = () => {
+        return variantSavedStatus.length > 0 && 
+               variantSavedStatus.every(status => status);
     };
 
-    // const validateProductInformation = () => {
-    //     const { images, colorName, colorHex, price, sku, productCode, measurements } = productData.productInformation;
-    
-    //     // Check if all images are uploaded
-    //     const areImagesUploaded = images.every((image) => image !== null);
-    
-    //     // Check if all required fields are filled
-    //     const areFieldsFilled = (
-    //         colorName.trim() !== "" &&
-    //         colorHex.trim() !== "" &&
-    //         price.trim() !== "" &&
-    //         sku.trim() !== "" &&
-    //         productCode.trim() !== ""
-    //     );
-    
-    //     // Check if all selected sizes have a quantity
-    //     const areMeasurementsValid = Object.keys(measurements).every(
-    //         (size) => measurements[size].quantity
-    //     );
-    
-    //     return areImagesUploaded && areFieldsFilled && areMeasurementsValid;
-    // };
+    const isVariantSaved = (index: number) => {
+        return productData.productVariants[index] ? true : false;
+    };
+
+    const handleVariantSaved = (index: number, isSaved: boolean) => {
+        setVariantSavedStatus(prev => {
+            // Ensure the array is long enough
+            const newStatus = [...prev];
+            while (newStatus.length <= index) {
+                newStatus.push(false);
+            }
+            newStatus[index] = isSaved;
+            return newStatus;
+        });
+    };
 
     useEffect(() => {
-        const isGeneralValid = validateGeneralDetails();
-        //const isProductInfoValid = validateProductInformation();
-
-        setIsGeneralDetailsComplete(isGeneralValid);
-        //setIsProductInformationComplete(isProductInfoValid);
-
         // Enable Publish button only if both accordions are saved and there are no unsaved changes
-        setIsFormValid(isGeneralDetailsSaved && isProductInformationSaved);
-
-    }, [productData, isGeneralDetailsSaved, isProductInformationSaved]);
-
-    const handleSaveProductInformation = () => {
-        // Save logic for Product Information
-        setIsProductInformationSaved(true);
-    };
+        setIsFormValid(isGeneralDetailsSaved && isAllVariantsSaved());
+        console.log("The isGeneralDetailsSaved is ", isGeneralDetailsSaved);
+        console.log("The isAllVariantsSaved is ", isAllVariantsSaved());
+    }, [isGeneralDetailsSaved, variantSavedStatus]);
 	  
 	const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState<ProductVariantType | null>(null);
 
+    const handlePubClick = async () => {
+        console.log("The Product general details are ", productData.generalDetails);
+        console.log("The product variants data are ", productData.productVariants);
+    }
 	const handlePublishClick = async () => {
-
         if (!isFormValid) {
             console.log("Form is not valid");
             return;
@@ -220,14 +193,14 @@ const AddProductForm = () => {
                     <AddProductDetails 
                         productData={productData} 
                         setProductData={setProductData}
-                        onSaveProductInformation={handleSaveProductInformation}
                         setIsGeneralDetailsSaved={setIsGeneralDetailsSaved}
-                        // onProductInformationChange={handleProductInformationChange}
-                        // hasUnsavedChanges={hasUnsavedChanges}
+                        onVariantSaved={handleVariantSaved}
+                        savedStatus={variantSavedStatus}
                     />
                 </div>
                 <div className="w-full md:w-1/4 mt-12">
-                    <PublishProduct onPublishClick={handlePublishClick} isFormValid={isFormValid}/>
+                    <PublishProduct onPublishClick={handlePubClick} isFormValid={isFormValid} isAllVariantsSaved={isAllVariantsSaved()}
+                    />
                 </div>
 
 				{isPreviewModalOpen && (

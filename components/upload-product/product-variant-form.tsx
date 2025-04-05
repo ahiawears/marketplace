@@ -1,15 +1,15 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { ProductVariantType } from "@/lib/types";
-import { ColourList } from "@/lib/coloursList";
 import MeasurementSizesTable from "./measurement-sizes-table";
 import { findNearestColor } from "@/lib/findNearestColor";
 import ProductImageUploadGrid from "./product-image-upload-grid";
 import { MoneyInput } from "../ui/money-input";
-import { SearchableSelect } from "../ui/searchable-select";
+import { Plus } from 'lucide-react'
+import { X } from 'lucide-react'
 
 interface ProductVariantProps {
     variants: ProductVariantType[];
@@ -18,31 +18,25 @@ interface ProductVariantProps {
     sizes: string[];
     currencySymbol: string;
     category: string;
+    onVariantSaved: (index: number, isSaved: boolean) => void;
+    savedStatus: boolean[];
 }
 
-const generateSKU = (productName: string, color: string) => {
+const generateSKU = (productName: string, color: string): string => {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const shortName = productName.replace(/\s+/g, "").substring(0, 5).toUpperCase();
-    const shortColor = color.substring(0, 3).toUpperCase();
-    return `${shortName}-${shortColor}-${randomNum}`;
+    return `${productName.slice(0, 5).replace(/\s+/g, "").toUpperCase()}-${
+        color.slice(0, 3).toUpperCase()
+    }-${randomNum}`;
+};
+  
+const generateProductCode = (productName: string): string => {
+    return `${productName.slice(0, 5).replace(/\s+/g, "").toUpperCase()}-${Date.now().toString()}`;
 };
 
-const generateProductCode = (productName: string,) => {
-    const shortName = productName.replace(/\s+/g, "").substring(0, 5).toUpperCase();
-    return `${shortName}-${Date.now().toString()}`;
-};
+const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariants, originalProductName, sizes, currencySymbol, category, onVariantSaved, savedStatus}) => {
+    const [measurementUnit, setMeasurementUnit] = useState<"Inch" | "Centimeter">("Inch");
 
-const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariants, originalProductName, sizes, currencySymbol, category}) => {
-    const [measurementUnit, setMeasurementUnit] = useState<"Inch" | "Centimeter">("Inch"); // Add this line
-    const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
-    const [selectedColor, setSelectedColor] = useState("#000000");
-    const [colorName, setColorName] = useState("Black");
     // Transform ColourList for SearchableSelect
-    const colorOptions = ColourList.map((color) => ({
-        hex: color.hex,
-        name: color.name,
-    }));
-
     const addProductVariant = () => {
         const initialQuantities = sizes.reduce((acc, size) => {
             acc[size] = 0;
@@ -61,23 +55,46 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             measurementUnit: measurementUnit,
             measurements: {},
             productCode: "",
+            colorDescription: "",
+            mainColor: "",
+            colorHexes: ["#000000"]
         };
         setVariants([...variants, newVariant]);
+         // Notify parent that a new variant was added (unsaved by default)
+        onVariantSaved(variants.length, false);
+    };
+
+    const isVariantValid = (index: number): boolean => {
+        const variant = variants[index];
+        
+        // Required fields validation
+        const requiredFieldsValid = [
+            variant.variantName?.trim(),
+            variant.productCode?.trim(),
+            variant.sku?.trim(),
+            variant.colorName?.trim(),
+            variant.price?.trim(),
+            variant.measurementUnit?.trim(),
+            variant.colorHexes[0]?.trim(),
+            variant.colorDescription?.trim(),
+            
+        ].every(field => field && field.length > 0);
+      
+        // Image validation (at least one image)
+        const imagesValid = variant.images.some(img => img.trim() !== "");
+      
+        // Measurements validation (if category requires sizes)
+        const measurementsValid = Object.keys(variant.measurements).every(size => {
+            return variant.measurements[size]?.quantity > 0;
+        });
+
+
+        return requiredFieldsValid && imagesValid && measurementsValid;
     };
 
     const updateVariant = (index: number, field: keyof ProductVariantType, value: string) => {
         const updatedVariants = [...variants];
         updatedVariants[index] = { ...updatedVariants[index], [field]: value };
-
-        if (field === "colorHex") {
-            const colorName = findNearestColor(value);
-            updatedVariants[index].colorName = colorName;
-            updatedVariants[index].variantName = `${originalProductName} in ${colorName}`;
-
-            if (!updatedVariants[index].sku) {
-                updatedVariants[index].sku = generateSKU(originalProductName, colorName);
-            }
-        }
 
         if (field === "variantName" && !updatedVariants[index].sku) {
             updatedVariants[index].sku = generateSKU(originalProductName, updatedVariants[index].colorName);
@@ -90,30 +107,17 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         if (field === "measurementUnit") {
             updatedVariants[index].measurementUnit = value as "Inch" | "Centimeter";
         }
-        setVariants(updatedVariants);
-    };
 
-    const handleColorChange = (index: number, hex: string) => {
-        // Validate the hex code
-        if (!hex || typeof hex !== "string" || !/^#([0-9A-Fa-f]{3}){1,2}$/.test(hex)) {
-            console.error("Invalid hex code:", hex);
-            return; // Exit the function if the hex code is invalid
+        // Set mainColor to the first color in colorHexes if it exists
+        if (field === "colorHexes" && Array.isArray(value) && value.length > 0) {
+            updatedVariants[index].mainColor = value[0];
+            if (!updatedVariants[index].colorHex) {
+                updatedVariants[index].colorHex = value[0];
+                const colorName = findNearestColor(value[0]);
+                updatedVariants[index].colorName = colorName;
+                updatedVariants[index].variantName = `${originalProductName} in ${colorName}`;
+            }
         }
-
-        // Check if ColourList is available
-        if (!ColourList || ColourList.length === 0) {
-            console.error("ColourList is not available.");
-            return;
-        }
-
-        const colorName = findNearestColor(hex);
-        setSelectedColor(hex);
-        setColorName(colorName);
-
-        const updatedVariants = [...variants];
-        updatedVariants[index].colorHex = hex;
-        updatedVariants[index].colorName = colorName;
-        updatedVariants[index].variantName = `${originalProductName} in ${colorName}`;
         setVariants(updatedVariants);
     };
 
@@ -122,28 +126,22 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         const targetVariant = updatedVariants[variantIndex];
 
         if (field === "remove") {
-             // Remove the size from measurements
-             const updatedMeasurements = { ...targetVariant.measurements };
-             delete updatedMeasurements[size];
-             updatedVariants[variantIndex] = {
-                 ...targetVariant,
-                 measurements: updatedMeasurements,
-             };
-             //update selectedSizes
-             const updatedSelectedSizes = selectedSizes.filter(s => s !== size);
-             setSelectedSizes(updatedSelectedSizes);
-        } else {
-            // Update the measurement for the given size
-            const updatedMeasurements = {
-                ...targetVariant.measurements,
-                [size]: {
-                    ...(targetVariant.measurements[size] || {}),
-                    [field]: value,
-                },
+            const { [size]: _, ...remaining } = targetVariant.measurements;
+            updatedVariants[variantIndex] = {
+              ...targetVariant,
+              measurements: remaining
             };
+            //setSelectedSizes(prev => prev.filter(s => s !== size));
+        } else {
             updatedVariants[variantIndex] = {
                 ...targetVariant,
-                measurements: updatedMeasurements,
+                measurements: {
+                    ...targetVariant.measurements,
+                    [size]: {
+                        ...(targetVariant.measurements[size] || {}),
+                        [field]: value
+                    }
+                }
             };
         }
         setVariants(updatedVariants);
@@ -156,25 +154,64 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         setVariants(updatedVariants);
     };
 
-    const handleFormSave = () => {
-        const variantsData = [...variants];
-        //check if form is valid
-        console.log("The variant data is: ", variantsData);
+    const handleFormSave = (index: number) => {
+        if (isVariantValid(index)) {
+            const variantsData = variants[index];
+            console.log("The variant data is: ", variantsData);
+            onVariantSaved(index, true);
+        }
     }
+    useEffect(() => {
+        variants.forEach((_, index) => {
+            if (savedStatus[index] && !isVariantValid(index)) {
+                onVariantSaved(index, false);
+            }
+        });
+    }, [variants]);
 
+    const handleColorHexChange = (index: number, colorIndex: number, value: string) => {
+        const updatedVariants = [...variants];
+        const updatedColorHexes = [...updatedVariants[index].colorHexes];
+        updatedColorHexes[colorIndex] = value;
+        updatedVariants[index].colorHexes = updatedColorHexes;
+        
+        // Update mainColor to the first color in the array
+        if (colorIndex === 0 && updatedColorHexes.length > 0) {
+            updatedVariants[index].mainColor = updatedColorHexes[0];
+        }
+
+        const mainColorName = findNearestColor(updatedColorHexes[0]);
+        updatedVariants[index].variantName = `${originalProductName} in ${mainColorName}`;
+        updatedVariants[index].colorName = mainColorName;
+        
+        setVariants(updatedVariants);
+    };
+
+    const addColorHex = (index: number) => {
+        const updatedVariants = [...variants];
+        updatedVariants[index].colorHexes = [...updatedVariants[index].colorHexes, "#000000"];
+        setVariants(updatedVariants);
+    };
+
+    const removeColorHex = (index: number, colorIndex: number) => {
+        const updatedVariants = [...variants];
+        const updatedColorHexes = updatedVariants[index].colorHexes.filter((_, idx) => idx !== colorIndex);
+        updatedVariants[index].colorHexes = updatedColorHexes;
+        
+        // Update mainColor if we removed the first color
+        if (colorIndex === 0 && updatedColorHexes.length > 0) {
+            updatedVariants[index].mainColor = updatedColorHexes[0];
+            
+            const mainColorName = findNearestColor(updatedColorHexes[0]);
+            updatedVariants[index].variantName = `${originalProductName} in ${mainColorName}`;
+        }
+        
+        setVariants(updatedVariants);
+    };
 
     return (
         <div className="my-6">
-            <div className="mt-5">
-                <Button
-                    type="button"
-                    onClick={addProductVariant}
-                    className="text-black bg-transparent hover:text-white px-4 py-2 rounded-md"
-                >
-                    + Add Product Variant 
-                </Button>
-            </div>
-
+            
             {/* Product Variants Container */}
             <div className="mt-5 space-y-8">
                 {variants.map((variant, index) => (
@@ -183,21 +220,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
 
                         {/* Variant Form Fields */}
                         <div>
-                            {/* Variant Name */}
-                            <div className="mt-4">
-                                <label htmlFor={`variantName-${index}`} className="block text-sm font-bold text-gray-900 my-4">
-                                    Product Variant Name:
-                                </label>
-                                <Input
-                                    id={`variantName-${index}`}
-                                    name={`variantName-${index}`}
-                                    type="text"
-                                    value={variant.variantName}
-                                    onChange={(e) => updateVariant(index, "variantName", e.target.value)}
-                                    placeholder="Enter the variant name"
-                                    className="mb-4 border-2"
-                                />
-                            </div>
                             
                             {/* Add Product Images and Information */}
                             <div className="mb-4">
@@ -214,44 +236,62 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                             {/* Colours of Product Variant*/}
                             <div className="space-y-4 my-5">
                                 <div>
-                                    <label htmlFor={`colorPicker-${index}`} className="block text-sm font-bold text-gray-900">
-                                        Products Colour:
+                                    <label className="block text-sm font-bold mb-1">
+                                        Color Pattern Description *
                                     </label>
-                                    <div className="flex flex-col md:flex-row gap-2">
-                                        <div className="w-full md:w-1/6">
-                                            <Input
-                                                type="color"
-                                                id={`colorPicker-${index}`}
-                                                value={variant.colorHex ? variant.colorHex : selectedColor}
-                                                onChange={(e) => {
-                                                    handleColorChange(index, e.target.value);
-                                                }}
-                                                
-                                                className="mt-2 w-full h-12 border-2"
-                                            />
-                                        </div>
-                                        {/* Dont clear, come back */}
-                                        {/* <div className="w-full md:w-5/6">
-                                            <div className="relative">
-                                                <SearchableSelect
-                                                    options={colorOptions} 
-                                                    getOptionLabel={(color) => color.name} 
-                                                    
-                                                    onSelect={(selectedColor) => {
-                                                        if (selectedColor) {
-                                                            handleColorChange(index, selectedColor.hex);
-                                                        }
-                                                    }}
-                                                    className="w-full mt-2" 
-                                                    placeholder="Search and select a color"
+                                    <Input
+                                        value={variant.colorDescription}
+                                        onChange={(e) => updateVariant(index, "colorDescription", e.target.value)}
+                                        placeholder="e.g., 'Red and blue stripes'"
+                                    />
+                                
+                                    <label className="block text-sm font-bold mt-3 mb-1">
+                                        Primary Colors *
+                                    </label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {variant.colorHexes.map((hex, i) => (
+                                            <div key={i} className="flex items-center">
+                                                <Input
+                                                    type="color"
+                                                    value={hex}
+                                                    onChange={(e) => handleColorHexChange(index, i, e.target.value)}
+                                                    className="w-8 h-8 p-0 border-2"
+                                                    style={{ minWidth: '40px' }}
                                                 />
+                                                <Input
+                                                    type="text"
+                                                    value={hex}
+                                                    onChange={(e) => handleColorHexChange(index, i, e.target.value)}
+                                                    className="w-24 h-8 text-sm border-2"
+                                                    maxLength={7}
+                                                    placeholder="#FFFFFF"
+                                                />
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => removeColorHex(index, i)}
+                                                    className="text-red-500 hover:text-red-700"
+                                                >
+                                                    <span><X size={16} strokeWidth={2}/></span>
+                                                </Button>
                                             </div>
-                                        </div> */}
+                                        ))}
+                                        <Button
+                                            type="button"
+                                            onClick={() => addColorHex(index)}
+                                            className="h-10 w-10"
+                                        >
+                                            <span><Plus size={16} strokeWidth={2}/></span>
+                                        </Button>
                                     </div>
+                                    
                                 </div>
                                 <div>
-                                    <p>
-                                        Selected Color: <span>{variant.colorName}</span> (<span>{variant.colorHex}</span>)
+                                    <p className="text-sm">
+                                        Selected Colors: {variant.colorHexes.join(", ")}
+                                    </p>
+                                    <p className="text-sm">
+                                        Main Color: {variant.mainColor} ({findNearestColor(variant.mainColor)})
                                     </p>
                                 </div>
                             </div>
@@ -266,8 +306,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                             onMeasurementChange={(size, field, value) =>
                                                 handleMeasurementChange(index, size, field, value)
                                             }
-                                            setSelectedSizes={setSelectedSizes}
-                                            selectedSizes={selectedSizes}
                                             measurementUnit={measurementUnit}
                                             setMeasurementUnit={setMeasurementUnit}
                                             updateVariant={updateVariant} 
@@ -315,7 +353,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                 <div className="lg:basis-1/2 ">
                                     <div className="mt-3">
                                         <label htmlFor={`variantSku-${index}`} className="block text-sm font-bold text-gray-900 my-4">
-                                            Product SKU:
+                                            Product Variant SKU:
                                         </label>
                                         <Input
                                             id={`variantSku-${index}`}
@@ -323,13 +361,14 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                             type="text"
                                             value={variant.sku}
                                             onChange={(e) => updateVariant(index, "sku", e.target.value)}
-                                            placeholder="Auto-generated if left blank"
+                                            placeholder="Enter the variant SKU"
                                         />
                                         <Button 
                                             className="my-2 h-[30px] text-sm/6"
                                             onClick={() =>
                                                 {
-                                                    const sku = generateSKU(originalProductName, variant.colorName);
+                                                    const mainColor = findNearestColor(variant.colorHexes[0]);
+                                                    const sku = generateSKU(originalProductName, mainColor);
                                                     updateVariant(index, "sku", sku);
                                                 }
                                             }    
@@ -342,7 +381,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                 <div className="lg:basis-1/2 ">
                                     <div className="mt-3">
                                         <label htmlFor={`productCode-${index}`} className="block text-sm font-bold text-gray-900 my-4">
-                                            Product Code:
+                                            Product Variant Code:
                                         </label>
                                         <Input
                                             id={`productCode-${index}`}
@@ -350,7 +389,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                             type="text"
                                             value={variant.productCode}
                                             onChange={(e) => updateVariant(index, "productCode", e.target.value)}
-                                            placeholder="Auto-generated if left blank"
+                                            placeholder="Enter the variant code"
                                         />
                                         <Button 
                                             className="my-2 h-[30px] text-sm/6"
@@ -367,28 +406,43 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                 </div>
                             </div>
                         </div>
-                        <div className="flex w-2/5 flex-col md:flex-row lg:flex-row">
-                            {/* <div className="basis-2/4">
-                                <Button type="button" onClick={() => setVariants(variants.filter((_, i) => i !== index))} className="text-red-500 mt-2 bg-transparent">
+                        <div className="flex w-full flex-col md:flex-row lg:flex-row mt-10 justify-end gap-4">
+                            <div>
+                                <Button 
+                                    type="button" 
+                                    onClick={() => setVariants(variants.filter((_, i) => i !== index))} 
+                                    className="flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black hover:bg-red-500"
+                                >
                                     Remove
                                 </Button>
                             </div>
-                            <div className="basis-2/4">
+                            <div>
                                 <Button 
-                                    type="button" 
-                                    //onClick={() => handleFormSave} 
-                                    onClick={handleFormSave}
-                                    className="flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                                    type="button"
+                                    onClick={() => handleFormSave(index)}
+                                    disabled={!isVariantValid(index)}
+                                    className={`flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold shadow-sm ${
+                                      isVariantValid(index)
+                                        ? "bg-black text-white hover:bg-gray-800"
+                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    }`}
                                 >
                                     Save and continue
                                 </Button>
-                            </div> */}
+                            </div>
                         </div>
                         
                     </div>
-                    
-                    
                 ))}
+            </div>
+            <div className="mt-5">
+                <Button
+                    type="button"
+                    onClick={addProductVariant}
+                    className="text-black bg-transparent hover:text-white px-4 py-2 rounded-md"
+                >
+                    <span><Plus size={16} strokeWidth={2}/></span> Add Product Variant 
+                </Button>
             </div>
         </div>
         
