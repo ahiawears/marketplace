@@ -18,6 +18,8 @@ interface GeneralProductDetailsProps {
     setGeneralDetails: (details: GeneralProductDetailsType | ((prev: GeneralProductDetailsType) => GeneralProductDetailsType)) => void;
     onSaveAndContinue: () => void;
     setIsGeneralDetailsSaved: (value: boolean) => void;
+    userId: string | null;
+    accessToken: string | null;
 }
 
 interface Errors {
@@ -30,8 +32,7 @@ interface Errors {
     tags: string;
 }
 
-const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, setIsGeneralDetailsSaved }) => {
-    const { userId, userSession, loading, error, resetError } = useAuth();
+const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, setIsGeneralDetailsSaved, userId, accessToken }) => {
 
     const [errors, setErrors] = useState<Errors>({
         productName: "",
@@ -169,15 +170,14 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
     }, [localDetails.category, localDetails.subCategory, localDetails.tags]);
 
     useEffect(() => {
-        if (userId && userSession) {
+        if (userId && accessToken) {
             const getBrandDetails = async () => {
-                const access_token = userSession.access_token;
                 const dataName = "legal-details";
                 try {
                     const response = await fetch (`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-details?data_name=${dataName}&userId=${userId}`,
                         {
                             headers: {
-                                Authorization: `Bearer ${access_token}`,
+                                Authorization: `Bearer ${accessToken}`,
                                 'Content-Type': 'application/json',
                             }
                         }
@@ -214,11 +214,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
             }
             getBrandDetails();
         }
-    }, [userId, userSession]);
-
-    if (loading) {
-        return <LoadContent />
-    }
+    }, [userId, accessToken]);
 
     return (
         <>

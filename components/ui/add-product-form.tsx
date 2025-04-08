@@ -9,12 +9,19 @@ import { ProductUploadData, ProductVariantType } from "../../lib/types";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { createClient } from "@/supabase/client";
+import LoadContent from "@/app/load-content/page";
+import { useAuth } from "@/hooks/useAuth";
+import { set } from "react-hook-form";
 
 const AddProductForm = () => {
-
+    const { userId, userSession, loading, error, resetError } = useAuth();
+    const [accessToken, setAccessToken] = useState<string>("");
+    
     const [isFormValid, setIsFormValid] = useState<boolean>(false);
     const [isGeneralDetailsSaved, setIsGeneralDetailsSaved] = useState<boolean>(false);
     const [variantSavedStatus, setVariantSavedStatus] = useState<boolean[]>([]);
+    const [formError, setFormError] = useState<string | null>("");
+    
 
     const router = useRouter();
 	const [productData, setProductData] = useState<ProductUploadData>({
@@ -52,10 +59,6 @@ const AddProductForm = () => {
                variantSavedStatus.every(status => status);
     };
 
-    const isVariantSaved = (index: number) => {
-        return productData.productVariants[index] ? true : false;
-    };
-
     const handleVariantSaved = (index: number, isSaved: boolean) => {
         setVariantSavedStatus(prev => {
             // Ensure the array is long enough
@@ -67,20 +70,77 @@ const AddProductForm = () => {
             return newStatus;
         });
     };
-
-    useEffect(() => {
-        // Enable Publish button only if both accordions are saved and there are no unsaved changes
-        setIsFormValid(isGeneralDetailsSaved && isAllVariantsSaved());
-        console.log("The isGeneralDetailsSaved is ", isGeneralDetailsSaved);
-        console.log("The isAllVariantsSaved is ", isAllVariantsSaved());
-    }, [isGeneralDetailsSaved, variantSavedStatus]);
 	  
 	const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState<ProductVariantType | null>(null);
 
     const handlePubClick = async () => {
-        console.log("The Product general details are ", productData.generalDetails);
-        console.log("The product variants data are ", productData.productVariants);
+        
+        console.log("The Product is ", productData);
+        try {
+            const formData = new FormData();
+
+            // Append general details
+            formData.append('generalDetails', JSON.stringify(productData.generalDetails));
+
+            // Append variants
+            for (const variant of productData.productVariants) {
+                const variantIndex = productData.productVariants.indexOf(variant);
+                
+                // Append variant data
+                formData.append(`variants[${variantIndex}][variantName]`, variant.variantName);
+                formData.append(`variants[${variantIndex}][sku]`, variant.sku);
+                formData.append(`variants[${variantIndex}][price]`, variant.price.replace(/,/g, '')); // Ensure price is a number
+                formData.append(`variants[${variantIndex}][colorName]`, variant.colorName);
+                formData.append(`variants[${variantIndex}][mainColor]`, variant.mainColor);
+                formData.append(`variants[${variantIndex}][productCode]`, variant.productCode);
+                formData.append(`variants[${variantIndex}][measurementUnit]`, variant.measurementUnit);
+                formData.append(`variants[${variantIndex}][measurements]`, JSON.stringify(variant.measurements));
+                formData.append(`variants[${variantIndex}][colorDescription]`, variant.colorDescription);
+
+                // Append image blobs
+                for (const [index, blobUrl] of variant.images.filter(img => img.startsWith('blob:')).entries()) {
+                    const response = await fetch(blobUrl);
+                    const blob = await response.blob();
+                    const filename = `variant_${variantIndex}_image_${index + 1}.jpg`; // Generate a filename
+                    formData.append(`variants[${variantIndex}][images]`, blob, filename);
+                }
+                // Append non-blob images
+                for (const [index, imageUrl] of variant.images.filter(img => !img.startsWith('blob:')).entries()) {
+                    formData.append(`variants[${variantIndex}][images]`, imageUrl);
+                }
+            }
+
+            console.log(`The formData is `, formData.get('generalDetails') as string);
+
+            const res =  await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`, 
+                {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`,
+                        //"Content-Type": "application/json"
+                    },
+                    body: formData,
+                });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.error("Server Error Details:", errorData);
+                throw new Error(`Failed to upload product. Response error: ${res.status} - ${res.statusText}`);
+            }
+
+            const data = await res.json();
+
+            if (data.success) {
+                console.log("Product uploaded successfully:", data);
+                //router.push(`/dashboard/products`);
+            } else {
+                throw new Error(data.message || "Product upload failed");
+            }
+
+        } catch (error) {
+            console.error("Error publishing product:", error);console.log(error)
+        } 
     }
 	const handlePublishClick = async () => {
         if (!isFormValid) {
@@ -185,6 +245,25 @@ const AddProductForm = () => {
 	const closeModal = () => {
 		setPreviewModalOpen(false); 
 	};
+    useEffect(() => {
+        if (userId && userSession) {
+            setAccessToken(userSession.access_token);
+        } else {
+            console.log("No user id or session found");
+        }
+    }, [userId, userSession]);
+
+    useEffect(() => {
+        // Enable Publish button only if both accordions are saved and there are no unsaved changes
+        setIsFormValid(isGeneralDetailsSaved && isAllVariantsSaved());
+        console.log("The isGeneralDetailsSaved is ", isGeneralDetailsSaved);
+        console.log("The isAllVariantsSaved is ", isAllVariantsSaved());
+    }, [isGeneralDetailsSaved, variantSavedStatus]);
+
+    if (loading) {
+        return <LoadContent />
+    }
+    
 
     return (
         <div className="container overflow-auto mx-auto p-4 mt-4">
@@ -196,6 +275,8 @@ const AddProductForm = () => {
                         setIsGeneralDetailsSaved={setIsGeneralDetailsSaved}
                         onVariantSaved={handleVariantSaved}
                         savedStatus={variantSavedStatus}
+                        userId={userId}
+                        accessToken={accessToken}
                     />
                 </div>
                 <div className="w-full md:w-1/4 mt-12">

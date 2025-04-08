@@ -8,25 +8,29 @@ export async function createTags(supabase: any, tags: string[], productId: strin
                 .from("tags")
                 .upsert({ name: tag }, { onConflict: ["name"] }) // Ensures unique name constraint
                 .select()
-                .single();
+                .single(); 
 
             if (tagError) {
-                throw new Error(`Error inserting or retrieving tag '${tag}': ${tagError.message}`);
+                throw tagError;
             }
 
             if (newTagData) {
+                console.log("The tag data is: ", newTagData);
+                console.log("The product id is: ", productId);
                 tagData.push({ product_id: productId, tag_id: newTagData.id });
             }
         }
 
         if (tagData.length > 0) {
-            const { error: tagInsertionError } = await supabase
+            const { data: insertedTags, error: tagInsertionError } = await supabase
                 .from("product_tags")
-                .insert(tagData);
+                .insert(tagData)
+                .select();
 
             if (tagInsertionError) {
-                throw new Error(`Error adding product tags: ${tagInsertionError.message}`);
+                throw tagInsertionError;
             }
+            console.log("The inserted tags are: ", insertedTags);
         }
     } catch (error) {
         console.error("Error creating tags: ", error);

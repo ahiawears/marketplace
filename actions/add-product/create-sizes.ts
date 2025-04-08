@@ -7,99 +7,82 @@ interface MeasurementSizesProps {
     };
 }
 
-export async function createSizes(supabase: any, variantId: string, { measurements }: MeasurementSizesProps) {
+export async function createSizes(
+    supabase: any,
+    variantId: string,
+    { measurements }: MeasurementSizesProps,
+    measurementUnit: string
+) {
     try {
+        // First delete existing sizes and measurements for this variant
+        const { error: deleteError } = await supabase
+            .from("product_sizes")
+            .delete()
+            .eq("product_id", variantId);
+        
+        if (deleteError) throw deleteError;
+
         for (const sizeName in measurements) {
             const sizeData = measurements[sizeName];
 
-            let { data: existingSize, error: sizeError } = await supabase
+            // 1. Handle Size - use upsert to avoid duplicates
+            const { data: sizeRecord, error: sizeError } = await supabase
                 .from("sizes")
+                .upsert(
+                    { name: sizeName },
+                    { onConflict: "name", ignoreDuplicates: false }
+                )
                 .select("id")
-                .eq("name", sizeName)
-                .maybeSingle();
-
-            if (sizeError) throw new Error(`Error checking size '${sizeName}': ${sizeError.message}`);
-
-            if (!existingSize) {
-                const { data: newSize, error: newSizeError } = await supabase
-                    .from("sizes")
-                    .insert({ name: sizeName })
-                    .select()
-                    .single();
-
-                if (newSizeError) throw new Error(`Error adding new size '${sizeName}': ${newSizeError.message}`);
-                existingSize = newSize;
-            }
-
-            const { data: productSize, error: productSizeError } = await supabase
-                .from("product_sizes")
-                .insert({ product_id: variantId, size_id: existingSize.id, quantity: sizeData.quantity })
-                .select()
                 .single();
 
-            if (productSizeError) throw new Error(`Error adding product size for '${sizeName}': ${productSizeError.message}`);
-            if (!productSize) throw new Error(`Failed to insert product size for '${sizeName}'.`);
+            if (sizeError) throw sizeError;
 
+            // 2. Create Product Size
+            const { data: productSize, error: productSizeError } = await supabase
+                .from("product_sizes")
+                .insert({
+                    product_id: variantId,
+                    size_id: sizeRecord.id,
+                    quantity: sizeData.quantity
+                })
+                .select("id")
+                .single();
+
+            if (productSizeError) throw productSizeError;
+
+            // 3. Handle Measurements
             for (const measurementType in sizeData) {
                 if (measurementType === "quantity") continue;
-
                 const measurementValue = sizeData[measurementType];
-                if (measurementValue === undefined || measurementValue === null) {
-                    console.warn(`Skipping measurement '${measurementType}' for size '${sizeName}' because value is missing.`);
-                    continue;
-                }
+                if (measurementValue === undefined || measurementValue === null) continue;
 
-                console.log("Checking measurement type:", measurementType);
-
-                let { data: measurementRecord, error: measurementError } = await supabase
+                // Use upsert for measurement type
+                const { data: measurementTypeRecord, error: typeError } = await supabase
                     .from("measurement_types")
+                    .upsert(
+                        { name: measurementType },
+                        { onConflict: "name", ignoreDuplicates: false }
+                    )
                     .select("id")
-                    .eq("name", measurementType)
-                    .maybeSingle();
+                    .single();
 
-                if (measurementError) throw new Error(`Error checking measurement type '${measurementType}': ${measurementError.message}`);
+                if (typeError) throw typeError;
 
-                if (!measurementRecord) {
-                    const { data: newMeasurement, error: newMeasurementError } = await supabase
-                        .from("measurement_types")
-                        .insert({ name: measurementType })
-                        .select()
-                        .single();
-
-                    if (newMeasurementError) throw new Error(`Error adding measurement type '${measurementType}': ${newMeasurementError.message}`);
-
-                    measurementRecord = newMeasurement;
-                }
-
-                if (!measurementRecord) throw new Error(`Failed to insert or find measurement type '${measurementType}'.`);
-
-                console.log("Inserting measurement:", {
-                    product_size_id: productSize.id,
-                    measurement_type_id: measurementRecord.id,
-                    value: measurementValue
-                });
-
-                const { data: insertedMeasurement, error: productMeasurementError } = await supabase
+                // Insert measurement
+                const { error: measurementError } = await supabase
                     .from("product_measurements")
                     .insert({
                         product_size_id: productSize.id,
-                        measurement_type_id: measurementRecord.id,
-                        value: measurementValue
-                    })
-                    .select()
-                    .single();
+                        measurement_type_id: measurementTypeRecord.id,
+                        value: measurementValue,
+                        measurement_unit: measurementUnit
+                    });
 
-                if (productMeasurementError) {
-                    throw new Error(`Error adding measurement '${measurementType}' for size '${sizeName}': ${productMeasurementError.message || "No error message provided"}`);
-                }
-
-                console.log("Inserted measurement:", insertedMeasurement);
+                if (measurementError) throw measurementError;
             }
         }
-
-        console.log("Sizes and measurements added successfully!");
     } catch (error) {
-        console.error("Error inserting sizes and measurements:", error);
+        console.error("Error in createSizes:", error);
         throw error;
     }
 }

@@ -9,7 +9,7 @@ import Accordion from "./Accordion";
 import React from "react";
 import ProductShippingDetails from "../upload-product/product-shipping-details";
     
-const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSaved, onVariantSaved, savedStatus }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>, setIsGeneralDetailsSaved: (value: boolean) => void, onVariantSaved: (index: number, isSaved: boolean) => void,  savedStatus: boolean[] }) => {
+const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSaved, onVariantSaved, savedStatus, userId, accessToken }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>, setIsGeneralDetailsSaved: (value: boolean) => void, onVariantSaved: (index: number, isSaved: boolean) => void,  savedStatus: boolean[], userId: string | null, accessToken: string | null }) => {
     const [sizes, setSizes] = useState<string[]>([]);
     const [isFirstAccordionCompleted, setIsFirstAccordionCompleted] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
@@ -45,6 +45,8 @@ const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSav
                         setGeneralDetails={setGeneralDetails}
                         onSaveAndContinue={handleNextAccordion} 
                         setIsGeneralDetailsSaved={setIsGeneralDetailsSaved}
+                        userId={userId}
+                        accessToken={accessToken}
                     />,
             disabled: false,
         }, 

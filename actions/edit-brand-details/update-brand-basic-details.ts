@@ -7,7 +7,7 @@ export const updateBrandBasicDetails = async (supabase: any, data: BrandOnboardi
             .upsert({
                 id: userId,
                 name: data.brand_name,
-                description: data.brand_description,
+                description: data.brand_description, 
                 logo: data.brand_logo,
                 banner: data.brand_banner,
             },

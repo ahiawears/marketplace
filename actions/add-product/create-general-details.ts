@@ -2,7 +2,7 @@ export async function createProduct(supabase: any, categoryId: string, subCatego
     try {
         const { data: productDataInserted, error: productError } = await supabase  
             .from("products_list")
-            .insert({ 
+            .upsert({ 
                 name: name,
                 product_description: description, 
                 material_id: materialId,
@@ -10,14 +10,16 @@ export async function createProduct(supabase: any, categoryId: string, subCatego
                 subcategory_id: subCategoryId,
                 currency_id: currencyId,
                 brand_id: brandId
+            }, {
+                onConflict: 'id'
             })
-            .select()
+            .select('id')
             .single();
         
         if (productError) {
-            throw new Error(`Error adding product: ${productError.message}`);
+            throw productError;
         }
-
+        console.log("The product data is: ", productDataInserted);
         return productDataInserted.id;
     } catch(error) {
         console.error("Error creating product:", error);

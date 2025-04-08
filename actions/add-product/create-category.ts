@@ -4,27 +4,21 @@ export async function createCategory(supabase: any, category: string) {
     try {
         const { data: categoryData, error: categoryError } = await supabase
             .from("categories")
-            .select("id, name")
-            .eq("name", category)
-            .maybeSingle();
+            .upsert({
+                name: category
+            }, {
+                onConflict: 'name'
+            })
+            .select('id')
+            .single(); 
 
         if (categoryError) {
-            throw new Error(categoryError.message); // Re-throw Supabase error
+            throw categoryError;
         }
 
         if (categoryData) {
+            console.log("The category data is: ", categoryData);
             return categoryData.id;
-        } else {
-            const { data: newCategoryData, error: newCategoryError } = await supabase
-                .from("categories")
-                .insert({ name: category })
-                .select()
-                .single();
-
-            if (newCategoryError) {
-                throw new Error(newCategoryError.message);
-            }
-            return newCategoryData.id;
         }
         
     } catch (error) {

@@ -208,7 +208,6 @@ export interface ReturnRefundPolicyType {
   conditions: string;
 }
 
-
 export interface ProductVariantType {
   main_image_url: string;
   productId: string;
@@ -226,9 +225,9 @@ export interface ProductVariantType {
     };
   };
   productCode: string;
-  colorDescription: string; // "Red/Blue stripes", "Ombre green", etc.
-  colorHexes: string[]; // ["#FF0000", "#0000FF"]
-  mainColor: string; // Primary color for filters (#FF0000)
+  colorDescription: string;
+  colorHexes: string[];
+  mainColor: string; 
 }
 
 export interface GeneralProductDetailsType {

@@ -2,6 +2,7 @@
 	"imports": {
 		"importMap": "./import_map.json",
 		"@actions/": "../../../actions/add-product/",
-		"@supabase/": "../../../supabase"
+		"@supabase/": "../../../supabase",
+		"@hooks/": "../../../hooks/"
 	}
 }

@@ -1,29 +1,24 @@
 export async function createSubCategory(supabase: any, subCategory: string, categoryId: string) {
     try {
+        
         const { data: subCategoryData, error: subCategoryError } = await supabase
             .from("subcategories")
-            .select("id, name")
-            .eq("name", subCategory)
-            .eq("category_id", categoryId)
-            .maybeSingle();
+            .upsert({
+                name: subCategory,
+                category_id: categoryId
+            }, {
+                onConflict: 'name'
+            })
+            .select('id')
+            .single();
 
         if (subCategoryError) {
-            throw new Error(subCategoryError.message);
+            throw subCategoryError;
         }
 
         if (subCategoryData) {
+            console.log("The subcategory data is: ", subCategoryData);
             return subCategoryData.id;
-        } else {
-            const { data: newSubCategoryData, error: newSubCategoryError } = await supabase
-                .from("subcategories")
-                .insert({ name: subCategory, category_id: categoryId })
-                .select()
-                .single();
-
-            if (newSubCategoryError) {
-                throw new Error(newSubCategoryError.message);
-            }
-            return newSubCategoryData.id;
         }
     } catch (error) {
         console.error("Error creating subcategory:", error);
