@@ -29,7 +29,7 @@ interface Errors {
     currency: string;
     material: string;
     subCategory: string;
-    tags: string;
+    tags: string; 
 }
 
 const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, setIsGeneralDetailsSaved, userId, accessToken }) => {

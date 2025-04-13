@@ -15,8 +15,8 @@ interface MeasurementSizesTableProps {
         };
     };
     onMeasurementChange: (size: string, field: string, value: number) => void; // Function to handle updates
-    measurementUnit: "Inch" | "Centimeter"; // Add this line
-    setMeasurementUnit: (unit: "Inch" | "Centimeter") => void; // Add this line
+    measurementUnit: "Inch" | "Centimeter"; 
+    setMeasurementUnit: (unit: "Inch" | "Centimeter") => void; 
     updateVariant: (index: number, field: keyof ProductVariantType, value: string | "Inch" | "Centimeter") => void;
     variantIndex: number; 
 }

@@ -5,12 +5,12 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import { serve } from "https://deno.land/std@0.114.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
-import { createClient } from "../../server-deno.ts";
+import { createClient } from "../../server-deno.ts"; 
 import { updateBrandContactDetails } from '@actions/update-brand-contact-details.ts'
 import { BrandOnboarding } from '@lib/types.ts';
 
 serve(async (req: Request) => {
-  	if (req.method === "OPTIONS") {
+  	if (req.method === "OPTIONS") {  
       // Handle CORS preflight request
       return new Response('ok', { headers: corsHeaders});
     }

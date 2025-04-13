@@ -263,7 +263,6 @@ export const BrandSocialLinks: React.FC<BrandSocialLinksProps> = ({ userId, acce
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-
         try {
             setLoading(true);
             const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/update-Social-Links`,

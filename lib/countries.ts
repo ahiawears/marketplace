@@ -70,7 +70,7 @@ export const brandCountries: Country[] = [
     { name: "Nigeria", code: "+234", alpha2: "NG", flag: "🇳🇬" },
     { name: "Ghana", code: "+233", alpha2: "GH", flag: "🇬🇭" },
     { name: "Kenya", code: "+254", alpha2: "KE", flag: "🇰🇪" },
+    { name: "South Africa", code: "+27", alpha2: "ZA", flag: "🇿🇦"},
     { name: "Tanzania", code: "+255", alpha2: "TZ", flag: "🇹🇿"},
     { name: "Uganda", code: "+256", alpha2: "UG", flag: "🇺🇬"},
-    { name: "South Africa", code: "+27", alpha2: "ZA", flag: "🇿🇦"},
 ]

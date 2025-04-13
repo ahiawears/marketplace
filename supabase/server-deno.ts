@@ -13,6 +13,6 @@ export function createClient(accessToken?: string) {
     });
   }
   
-  // @ts-ignore (Ignore TypeScript error about 'Deno'
+  // @ts-ignore (Ignore TypeScript error about 'Deno')
   return createSupabaseClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 }

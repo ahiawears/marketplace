@@ -161,6 +161,45 @@ export interface UserAddressType {
   country_code: string;
 }
 
+export interface ShippingConfigType {
+  shippingMethods: {
+    sameDayDelivery: boolean;
+    standardShipping: boolean;
+    expressShipping: boolean;
+    internationalShipping: boolean;
+  };
+  shippingZones: {
+    domestic: boolean;
+    regional: boolean;
+    international: boolean;
+  };
+  handlingTime: {
+    from: number;
+    to: number;
+  };
+  shippingFees: {
+      sameDayFee: number;
+      standardFee: number;
+      expressFee: number;
+      internationalFee: number;
+  };
+  defaultPackage: {
+      weight: number;
+      dimensions: {
+          dimensionsUnit: "Inch" | "Centimeter"
+          length: number;
+          width: number;
+          height: number;
+      };
+  };
+  freeShippingThreshold?: number;
+  estimatedDeliveryTimes: {
+      domestic: { from: string; to: string };
+      regional: { from: string; to: string };
+      international: { from: string; to: string };
+  };
+}
+
 // export interface ProductShippingDeliveryType {
 //   shippingMethods: string[];
 //   shippingZones: string[];

@@ -1,0 +1,9 @@
+{
+	"imports": {
+		"importMap": "./import_map.json",
+		"@actions/": "../../../actions/edit-brand-details/",
+		"@supabase/": "../../../supabase",
+		"@lib/": "../../../lib/"
+	}
+}
+  
