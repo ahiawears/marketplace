@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 const ProductDetail: React.FC = () => {
     const params = useParams();
     let productId = params?.id || "";
-    if (Array.isArray(productId)) {
+    if (Array.isArray(productId)) { 
         productId = productId[0];
     }
     const [product, setProduct] = useState<Product | null>(null);
@@ -22,8 +22,8 @@ const ProductDetail: React.FC = () => {
                     const data = await response.json();
                     setProduct(data.data);
                 } catch (error: any) {
-                    throw new Error(`Error fetching product details: ${error}, ${error.message}, ${error.name}}`);
                     console.error("Error fetching product details:", error);
+                    throw new Error(`Error fetching product details: ${error}, ${error.message}, ${error.name}}`);
                 }
             };
             fetchProductDetails();

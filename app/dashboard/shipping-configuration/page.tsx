@@ -78,41 +78,61 @@ const COUNTRIES_WITH_SAME_DAY = [
 const DEFAULT_SHIPPING_CONFIG: ShippingDetails = {
     shippingMethods: {
         sameDayDelivery: false,
-        standardShipping: true,
+        standardShipping: false,
         expressShipping: false,
         internationalShipping: false,
     },
     shippingZones: {
-        domestic: true,
+        domestic: false,
         regional: false,
         international: false,
     },
     handlingTime: {
-		from: 1,
-		to: 3
+		from: 0,
+		to: 0
 	},
     shippingFees: {
-        sameDayFee: 10,
-        standardFee: 5,
-        expressFee: 15,
-        internationalFee: 25,
+        sameDayFee: 0,
+        standardFee: 0,
+        expressFee: 0,
+        internationalFee: 0,
     },
     defaultPackage: {
-        weight: 0.5,
+        weight: 0,
         dimensions: {
             dimensionsUnit: "Inch",
-            length: 20,
-            width: 15,
-            height: 10,
+            length: 0,
+            width: 0,
+            height: 0,
         }
     },
-    freeShippingThreshold: 100,
+    freeShippingThreshold: 0,
     estimatedDeliveryTimes: {
-        domestic: { from: "1", to: "3" },
-        regional: { from: "3", to: "5" },
-        international: { from: "7", to: "14" },
+        domestic: { from: "0", to: "0" },
+        regional: { from: "0", to: "0" },
+        international: { from: "0", to: "0" },
     }
 };
+
+interface DatabaseShippingData {
+    id: string;
+    brand_id: string;
+    handling_time_from: number;
+    handling_time_to: number;
+    free_shipping_threshold?: number;
+    default_package: {
+        id: string;
+        width: number;
+        height: number;
+        length: number;
+        weight: number;
+        dimensions_unit?: "Inch" | "Centimeter"; // Assuming it might be in the DB
+    };
+    shipping_methods: { method_type: string; is_active: boolean; fee: number }[];
+    shipping_zones: { zone_type: string; is_active: boolean; delivery_time_from: string; delivery_time_to: string }[];
+    created_at: string;
+    updated_at: string;
+}
 
 const ShippingConfiguration = () => {
     const [config, setConfig] = useState<ShippingDetails>(DEFAULT_SHIPPING_CONFIG);
@@ -220,10 +240,116 @@ const ShippingConfiguration = () => {
                 uploadErrorMessage = error.message; 
             }
             setErrorMessage(uploadErrorMessage || "An error occurred while saving the configuration.");
+            setTimeout(() => setErrorMessage(""), 3000);   
+
         } finally {
             setIsSaving(false);
         }
     };
+
+    const setShippingDetailsFromDatabase = (data: DatabaseShippingData) => {
+        const shippingMethods: ShippingDetails['shippingMethods'] = {
+            sameDayDelivery: data.shipping_methods.find(m => m.method_type === 'same_day')?.is_active  || false,
+            standardShipping: data.shipping_methods.find(m => m.method_type === 'standard')?.is_active || false,
+            expressShipping: data.shipping_methods.find(m => m.method_type === 'express')?.is_active || false,
+            internationalShipping: data.shipping_methods.find(m => m.method_type === 'international')?.is_active || false,
+        };
+
+        const shippingFees: ShippingDetails['shippingFees'] = {
+            sameDayFee: data.shipping_methods.find(m => m.method_type === 'same_day')?.fee || 0,
+            standardFee: data.shipping_methods.find(m => m.method_type === 'standard')?.fee || 0,
+            expressFee: data.shipping_methods.find(m => m.method_type === 'express')?.fee || 0,
+            internationalFee: data.shipping_methods.find(m => m.method_type === 'international')?.fee || 0,
+        };
+
+        const shippingZones: ShippingDetails['shippingZones'] = {
+            domestic: data.shipping_zones.find(z => z.zone_type === 'domestic')?.is_active || false,
+            regional: data.shipping_zones.find(z => z.zone_type === 'regional')?.is_active || false,
+            international: data.shipping_zones.find(z => z.zone_type === 'international')?.is_active || false,
+        };
+
+        const estimatedDeliveryTimes: ShippingDetails['estimatedDeliveryTimes'] = {
+            domestic: {
+                from: data.shipping_zones.find(z => z.zone_type === 'domestic')?.delivery_time_from || '1', 
+                to: data.shipping_zones.find(z => z.zone_type === 'domestic')?.delivery_time_to || '3', 
+            },
+            regional: {
+                from: data.shipping_zones.find(z => z.zone_type === 'regional')?.delivery_time_from || '3',
+                to: data.shipping_zones.find(z => z.zone_type === 'regional')?.delivery_time_to || '5', 
+            },
+            international: {
+                from: data.shipping_zones.find(z => z.zone_type === 'international')?.delivery_time_from || '7',
+                to: data.shipping_zones.find(z => z.zone_type === 'international')?.delivery_time_to || '14',
+            },
+        };
+
+        return {
+            shippingMethods,
+            shippingZones,
+            handlingTime: {
+                from: data.handling_time_from,
+                to: data.handling_time_to,
+            },
+            shippingFees,
+            defaultPackage: {
+                weight: data.default_package.weight,
+                dimensions: {
+                    dimensionsUnit: data.default_package.dimensions_unit || "Inch", // Default to "Inch" if not found
+                    length: data.default_package.length,
+                    width: data.default_package.width,
+                    height: data.default_package.height,
+                },
+            },
+            freeShippingThreshold: data.free_shipping_threshold,
+            estimatedDeliveryTimes,
+        };
+    };
+
+    useEffect(() => {
+        if (userId && userSession?.access_token) {
+            const  getBrandConfig = async () => {
+                try {
+                    const response = await fetch (`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-shipping-config`, {
+                        headers: {
+                            "Authorization": `Bearer ${userSession.access_token}`,
+                            'Content-Type': 'application/json',
+                        }
+                    })
+
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || "Couldn't create a connection with the server");
+                    }
+					
+					const data = await response.json();
+
+                    if (data.data) {
+                        console.log("Raw Shipping Data from API (data.data):", JSON.stringify(data.data, null, 2));
+                    }
+
+                    if (!data.data) {
+                        setConfig(DEFAULT_SHIPPING_CONFIG);
+                    }
+
+                    const formattedShippingDetails = setShippingDetailsFromDatabase(data.data);
+                    setConfig(formattedShippingDetails); // Set the state with the fetched data
+                    console.log("Fetched and set shipping config:", formattedShippingDetails);
+                    //setConfig(data.data);
+                } catch (error) {
+                    console.error("Error fetching or processing shipping config:", error); // Log the actual error object
+                    if (error instanceof Error) {
+                        setErrorMessage(error.message || "Failed to load shipping configuration.");
+                    } else {
+                        setErrorMessage("An unknown error occurred while loading shipping configuration.");
+                    }
+                    setTimeout(() => setErrorMessage(""), 5000);
+                    // Consider setting default config on error too
+                    setConfig(DEFAULT_SHIPPING_CONFIG);
+                } 
+            }
+            getBrandConfig();
+        }
+    }, [userId, userSession?.access_token, setConfig, setErrorMessage]);
 
 	useEffect(() => {
 		if (userId && userSession?.access_token) {
@@ -253,12 +379,6 @@ const ShippingConfiguration = () => {
 					const brand_country = data.data.country_of_registration;
 					const brandCurrency = currency.find((c) => c.country_alpha === brand_country);
 					if (brandCurrency) {
-						// setLocalDetails((prev) => ({
-						// 	...prev,
-						// 	currency: brandCurrency?.code,
-						// }));
-						// setSelectedCurrency(brandCurrency?.id.toString());
-						
 						setBrandCurrency(brandCurrency?.code);
 					}    
 				} catch (error) {
@@ -284,6 +404,8 @@ const ShippingConfiguration = () => {
 	if (!userId) {
 		redirect("/login-brand");
 	}
+
+    
 
     return (
         <div className="max-w-6xl mx-auto p-4 space-y-6 border-2">
