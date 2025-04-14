@@ -193,6 +193,7 @@ export interface ShippingConfigType {
       };
   };
   freeShippingThreshold?: number;
+  freeShippingMethod?: string;
   estimatedDeliveryTimes: {
       domestic: { from: string; to: string };
       regional: { from: string; to: string };

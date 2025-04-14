@@ -7,6 +7,7 @@ export const updateBrandShippingConfig = async (supabase: any, data: ShippingCon
         handlingTime, 
         shippingFees, 
         freeShippingThreshold, 
+        freeShippingMethod,
         estimatedDeliveryTimes, 
         defaultPackage 
     } = data;
@@ -20,6 +21,7 @@ export const updateBrandShippingConfig = async (supabase: any, data: ShippingCon
                 handling_time_from: handlingTime.from,
                 handling_time_to: handlingTime.to,
                 free_shipping_threshold: freeShippingThreshold,
+                free_shipping_method: freeShippingMethod,
                 updated_at: new Date().toISOString()
             }, {
                 onConflict: 'brand_id'

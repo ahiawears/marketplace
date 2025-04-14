@@ -44,6 +44,7 @@ interface ShippingDetails {
         };
     };
     freeShippingThreshold?: number;
+    freeShippingMethod?: string;
     estimatedDeliveryTimes: {
         domestic: { from: string; to: string };
         regional: { from: string; to: string };
@@ -107,6 +108,7 @@ const DEFAULT_SHIPPING_CONFIG: ShippingDetails = {
         }
     },
     freeShippingThreshold: 0,
+    freeShippingMethod: "",
     estimatedDeliveryTimes: {
         domestic: { from: "0", to: "0" },
         regional: { from: "0", to: "0" },
@@ -120,6 +122,7 @@ interface DatabaseShippingData {
     handling_time_from: number;
     handling_time_to: number;
     free_shipping_threshold?: number;
+    free_shipping_method?: string;
     default_package: {
         id: string;
         width: number;
@@ -134,6 +137,13 @@ interface DatabaseShippingData {
     updated_at: string;
 }
 
+const SHIPPING_METHOD_DISPLAY_NAMES: { [key: string]: string } = {
+    same_day: "Same Day",
+    standard: "Standard Shipping",
+    express: "Express Shipping",
+    international: "International Shipping",
+};
+
 const ShippingConfiguration = () => {
     const [config, setConfig] = useState<ShippingDetails>(DEFAULT_SHIPPING_CONFIG);
 	const { userId, userSession, loading, error, resetError } = useAuth();
@@ -142,6 +152,7 @@ const ShippingConfiguration = () => {
     const [successMessage, setSuccessMessage] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
 	const [brandCurrency, setBrandCurrency] = useState("");
+    const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
 
     const canOfferSameDay = COUNTRIES_WITH_SAME_DAY.includes("Nigeria");
 
@@ -194,6 +205,16 @@ const ShippingConfiguration = () => {
             }
         }));
     };
+
+    const handleFreeShippingMethod = (method: string) => {
+        const isFSMethodSelected = config.freeShippingMethod === method;
+        const newFSMethod = isFSMethodSelected ? method : method;
+        setConfig(prev => ({
+            ...prev,
+            freeShippingMethod: newFSMethod
+        }));
+        console.log(newFSMethod);
+    }
 
     const handleSave = async () => {
         try {
@@ -283,31 +304,39 @@ const ShippingConfiguration = () => {
             },
         };
 
-        return {
-            shippingMethods,
-            shippingZones,
-            handlingTime: {
-                from: data.handling_time_from,
-                to: data.handling_time_to,
-            },
-            shippingFees,
-            defaultPackage: {
-                weight: data.default_package.weight,
-                dimensions: {
-                    dimensionsUnit: data.default_package.dimensions_unit || "Inch", // Default to "Inch" if not found
-                    length: data.default_package.length,
-                    width: data.default_package.width,
-                    height: data.default_package.height,
+        const activeMethodTypes = data.shipping_methods
+            .filter(method => method.is_active) // Filter for active methods
+            .map(method => method.method_type); // Get their 'method_type'
+
+            return {
+                formattedConfig: {
+                    shippingMethods,
+                    shippingZones,
+                    handlingTime: {
+                        from: data.handling_time_from,
+                        to: data.handling_time_to,
+                    },
+                    shippingFees,
+                    defaultPackage: {
+                        weight: data.default_package.weight,
+                        dimensions: {
+                            dimensionsUnit: data.default_package.dimensions_unit || "Inch",
+                            length: data.default_package.length,
+                            width: data.default_package.width,
+                            height: data.default_package.height,
+                        },
+                    },
+                    freeShippingThreshold: data.free_shipping_threshold,
+                    freeShippingMethod: data.free_shipping_method,
+                    estimatedDeliveryTimes,
                 },
-            },
-            freeShippingThreshold: data.free_shipping_threshold,
-            estimatedDeliveryTimes,
-        };
+                activeMethods: activeMethodTypes // The array of active method_type strings
+            };
     };
 
     useEffect(() => {
         if (userId && userSession?.access_token) {
-            const  getBrandConfig = async () => {
+            const getBrandConfig = async () => {
                 try {
                     const response = await fetch (`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-shipping-config`, {
                         headers: {
@@ -331,10 +360,10 @@ const ShippingConfiguration = () => {
                         setConfig(DEFAULT_SHIPPING_CONFIG);
                     }
 
-                    const formattedShippingDetails = setShippingDetailsFromDatabase(data.data);
-                    setConfig(formattedShippingDetails); // Set the state with the fetched data
-                    console.log("Fetched and set shipping config:", formattedShippingDetails);
-                    //setConfig(data.data);
+                    const { formattedConfig, activeMethods } = setShippingDetailsFromDatabase(data.data);
+
+                    setConfig(formattedConfig); // Set the state with the fetched data
+                    setSelectedMethods(activeMethods);
                 } catch (error) {
                     console.error("Error fetching or processing shipping config:", error); // Log the actual error object
                     if (error instanceof Error) {
@@ -640,11 +669,11 @@ const ShippingConfiguration = () => {
 
             {/* Free Shipping Threshold */}
             <div className="bg-white rounded-lg shadow p-6 border-2">
-                <h3 className="text-lg font-semibold mb-4">Free Shipping</h3>
+                <h3 className="text-lg font-semibold mb-4">Free Shipping Threshold</h3>
                 <div className="flex items-center space-x-4">
                     <div className="flex-1">
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Minimum Order Value (USD)
+                            Minimum Order Value ({brandCurrency})
                         </label>
                         <Input
                             type="number"
@@ -659,6 +688,36 @@ const ShippingConfiguration = () => {
                         />
                     </div>
                 </div>
+
+                {selectedMethods.length > 0 && (
+                    <div className="flex items-center space-x-4 my-4">
+                        <div className="flex-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Active Shipping Methods:
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {selectedMethods.map((method, index) => ( 
+                                    <span
+                                        key={index}
+                                        onClick={() => handleFreeShippingMethod(method)} // Keep onClick if you need interaction
+                                        className={`px-3 py-1 text-sm cursor-pointer
+                                            ${config.freeShippingMethod !== "" && config.freeShippingMethod === method // This just styles based on inclusion, adjust if needed
+                                                ? "bg-black text-white"
+                                                : "bg-primary text-white opacity-50"}
+                                            hover:bg-primary/90 hover:text-white` }
+                                    >
+                                        {/* Use the mapping here, with a fallback to the original method name */}
+                                        {SHIPPING_METHOD_DISPLAY_NAMES[method] || method}
+                                    </span>
+                                ))}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-2">
+                                Free shipping will apply to orders meeting the threshold if any of these methods are selected by the customer at checkout.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
             </div>
             {successMessage && (
                 <div className="bg-green-100 border-2 border-green-400 text-green-700 px-4 py-3 rounded">

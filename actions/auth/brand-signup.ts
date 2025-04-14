@@ -12,7 +12,7 @@ export async function SignUpbrand({ supabase, email, password, }: SignupProps) {
         email: email,
         password: password,
         options: {
-            emailRedirectTo: 'http://localhost:3000/brand-onboarding',
+            emailRedirectTo: 'https://marketplace-n78f-ahias-projects.vercel.app/brand-onboarding',
         },
     });
 

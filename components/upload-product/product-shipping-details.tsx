@@ -13,7 +13,11 @@ const ProductShippingDetails = () => {
         shippingFees: {},
         handlingTime: "1-3 days",
         weight: 0,
-        dimensions: { length: 0, width: 0, height: 0 },
+        dimensions: { 
+            length: 0, 
+            width: 0, 
+            height: 0 
+        },
         customsDuties: "buyer-paid",
         cashOnDelivery: true
     });
