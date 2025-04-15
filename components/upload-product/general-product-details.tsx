@@ -299,7 +299,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                                         onClick={() => handleSubcategorySelect(sub)}
                                         className={`px-3 py-1 text-sm cursor-pointer 
                                             ${selectedSubcategory === sub 
-                                                ? "bg-black text-white" 
+                                                ? "bg-black text-white ring-2 ring-offset-1 ring-black"
                                                 : "bg-primary text-white opacity-50"} 
                                             hover:bg-primary/90 hover:text-white`}
                                     >
@@ -319,7 +319,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                                         key={index}
                                         className={`px-3 py-1 text-sm cursor-pointer 
                                             ${selectedTags.includes(tag) 
-                                                ? "bg-black text-white" 
+                                                ? "bg-black text-white ring-2 ring-offset-1 ring-black" 
                                                 : "bg-primary text-white opacity-50"} 
                                             hover:bg-primary/90 hover:text-white` }
                                         onClick={() => handleTagClick(tag)}

@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
 
   console.log("The next value is ", next);
 
-    if (token_hash && type) {
+    if (token_hash && type && next) {
         const supabase = await createClient()
 
         const { error } = await supabase.auth.verifyOtp({
@@ -25,6 +25,10 @@ export async function GET(request: NextRequest) {
             // redirect user to specified redirect URL or root of app
             console.log(`The next value is ${next}`)
             redirect(next)
+        }
+
+        if (error) {
+          throw new Error(error.message);
         }
     }
 

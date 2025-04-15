@@ -152,19 +152,38 @@ const ShippingConfiguration = () => {
     const [successMessage, setSuccessMessage] = useState("");
 	const [errorMessage, setErrorMessage] = useState("");
 	const [brandCurrency, setBrandCurrency] = useState("");
-    const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
 
     const canOfferSameDay = COUNTRIES_WITH_SAME_DAY.includes("Nigeria");
 
     const handleMethodToggle = (method: keyof ShippingDetails['shippingMethods'], checked: boolean) => {
-        setConfig(prev => ({
-        ...prev,
-        shippingMethods: {
-            ...prev.shippingMethods,
-            [method]: checked
-        }
-        }));
+        // Map the UI state key (e.g., 'standardShipping') to the DB key (e.g., 'standard')
+        const methodDbKeyMap: { [key in keyof ShippingDetails['shippingMethods']]?: string } = {
+            sameDayDelivery: 'same_day',
+            standardShipping: 'standard',
+            expressShipping: 'express',
+            internationalShipping: 'international',
+        };
+        const dbKey = methodDbKeyMap[method]; // Get the corresponding database key
+    
+        setConfig(prev => {
+            const newState = {
+                ...prev,
+                shippingMethods: {
+                    ...prev.shippingMethods,
+                    [method]: checked // Update the active status
+                }
+            };
+    
+            // If turning the method OFF *and* it was the selected free shipping method
+            if (!checked && dbKey && prev.freeShippingMethod === dbKey) {
+                newState.freeShippingMethod = ""; // Reset the free shipping method selection
+                console.log(`Reset freeShippingMethod because ${dbKey} was deactivated.`);
+            }
+    
+            return newState;
+        });
     };
+    
 
     const handleZoneToggle = (zone: keyof ShippingDetails['shippingZones'], checked: boolean) => {
         setConfig(prev => ({
@@ -206,22 +225,151 @@ const ShippingConfiguration = () => {
         }));
     };
 
-    const handleFreeShippingMethod = (method: string) => {
-        const isFSMethodSelected = config.freeShippingMethod === method;
-        const newFSMethod = isFSMethodSelected ? method : method;
+    const handleFreeShippingMethod = (methodDbKey: string) => { // Renamed param for clarity
+        // No need to check if it's already selected, just set it
         setConfig(prev => ({
             ...prev,
-            freeShippingMethod: newFSMethod
+            // Set the freeShippingMethod using the dbKey ('standard', 'express', etc.)
+            freeShippingMethod: methodDbKey
         }));
-        console.log(newFSMethod);
+        console.log("Selected Free Shipping Method (DB Key):", methodDbKey);
     }
+    
 
     const handleSave = async () => {
+        // --- Method Fee Validation ---
+        const methodErrors: string[] = [];
+        const methodDetails: { [key in keyof ShippingDetails['shippingMethods']]?: { feeKey: keyof ShippingDetails['shippingFees']; display: string } } = {
+            sameDayDelivery: { feeKey: 'sameDayFee', display: 'Same Day Delivery' },
+            standardShipping: { feeKey: 'standardFee', display: 'Standard Shipping' },
+            expressShipping: { feeKey: 'expressFee', display: 'Express Shipping' },
+            internationalShipping: { feeKey: 'internationalFee', display: 'International Shipping' },
+        };
+    
+        for (const methodKey in methodDetails) {
+            const key = methodKey as keyof ShippingDetails['shippingMethods'];
+            const details = methodDetails[key];
+    
+            if (config.shippingMethods[key] && details) {
+                const fee = config.shippingFees[details.feeKey];
+                if (fee === undefined || fee === null || isNaN(fee) || fee <= 0) {
+                    if (key === 'sameDayDelivery' && !canOfferSameDay) {
+                        continue;
+                    }
+                    methodErrors.push(details.display);
+                }
+            }
+        }
+    
+        // --- Zone Delivery Time Validation ---
+        const zoneErrors: string[] = [];
+        const zoneDetails: { [key in keyof ShippingDetails['shippingZones']]: { display: string } } = {
+            domestic: { display: 'Domestic (Nigeria)' },
+            regional: { display: 'Regional (Africa)' },
+            international: { display: 'International' }
+        };
+    
+        for (const zoneKey in zoneDetails) {
+            const key = zoneKey as keyof ShippingDetails['shippingZones'];
+    
+            if (config.shippingZones[key]) {
+                const times = config.estimatedDeliveryTimes[key];
+                const fromStr = times.from;
+                const toStr = times.to;
+                const fromNum = parseInt(fromStr, 10);
+                const toNum = parseInt(toStr, 10);
+                const minAllowedFrom = (key === 'domestic' && canOfferSameDay) ? 0 : 1;
+                let zoneHasError = false;
+                let errorReason = "";
+    
+                if (!fromStr || !toStr) {
+                    zoneHasError = true;
+                    errorReason = "missing 'From' or 'To'";
+                } else if (isNaN(fromNum) || isNaN(toNum)) {
+                    zoneHasError = true;
+                    errorReason = "invalid number format";
+                } else if (fromNum < minAllowedFrom) {
+                    zoneHasError = true;
+                    errorReason = `'From' time cannot be less than ${minAllowedFrom}`;
+                } else if (toNum < fromNum) {
+                    zoneHasError = true;
+                    errorReason = "'To' time cannot be less than 'From' time";
+                }
+    
+                if (zoneHasError) {
+                    if (!zoneErrors.includes(zoneDetails[key].display)) {
+                        zoneErrors.push(zoneDetails[key].display);
+                        console.log(`Validation Error for Zone '${zoneDetails[key].display}': ${errorReason}`);
+                    }
+                }
+            }
+        }
+    
+        // --- Combine Initial Errors ---
+        const allErrorMessages: string[] = [];
+        if (methodErrors.length > 0) {
+            allErrorMessages.push(`Please set a valid fee (> 0) for active methods: ${methodErrors.join(', ')}.`); // Added period
+        }
+        if (zoneErrors.length > 0) {
+            allErrorMessages.push(`Please set valid delivery times ('From' and 'To', with To >= From, and From >= ${canOfferSameDay ? 0 : 1}) for active zones: ${zoneErrors.join(', ')}.`); // Added period
+        }
+    
+        // --- Free Shipping Threshold/Method Validation ---
+        const threshold = config.freeShippingThreshold;
+        const method = config.freeShippingMethod;
+    
+        // Check 1: Method selected, but threshold is zero or missing/undefined/null
+        if (method && method.trim() !== "" && (!threshold || threshold <= 0)) {
+            allErrorMessages.push("A free shipping method is selected, but the minimum order threshold is not set or is zero. Please set a threshold greater than 0.");
+        }
+        // Check 2: Threshold set (>0), but no method selected (empty string, null, or undefined)
+        else if (threshold && threshold > 0 && (!method || method.trim() === "")) {
+            // Check if there are actually any active methods available to select from
+            const anyActiveMethods = Object.values(config.shippingMethods).some(isActive => isActive);
+            if (anyActiveMethods) {
+                allErrorMessages.push("A free shipping threshold is set, but no active shipping method is selected to apply it to. Please select a method under 'Free Shipping Threshold'.");
+            } else {
+                // If no methods are active at all, guide the user differently
+                allErrorMessages.push("A free shipping threshold is set, but no shipping methods are currently active. Please activate at least one shipping method first before selecting it for free shipping.");
+            }
+        }
+
+        const { from: handlingFrom, to: handlingTo } = config.handlingTime;
+        let handlingTimeError = "";
+
+        if (isNaN(handlingFrom) || isNaN(handlingTo)) {
+            handlingTimeError = "Handling time 'From' and 'To' must be valid numbers. Please check for non-numeric characters.";
+        }else if (handlingFrom < 0 || handlingTo < 0) {
+            handlingTimeError = "Handling time 'From' and 'To' values cannot be negative.";
+        }else if (handlingFrom > handlingTo) {
+            handlingTimeError = "Handling time 'From' value cannot be greater than the 'To' value.";
+        } else if ( handlingTo === 0) {
+            handlingTimeError = "Handling time 'To' value cannot be negative or '0'.";
+        }
+
+        if (handlingTimeError) {
+            allErrorMessages.push(handlingTimeError);
+        } else {
+            console.log("Handling Time Validation Passed"); // Log success for debugging
+        }
+    
+        // --- Final Error Check and Save Logic ---
+        if (allErrorMessages.length > 0) {
+            // Join messages with a newline for better readability if multiple errors occur
+            setErrorMessage(allErrorMessages.join(' \n'));
+            setSuccessMessage("");
+            setIsSaving(false);
+            return; // Stop the function execution
+        }
+    
+        // Clear any previous error message if all validation passes
+        setErrorMessage("");
+    
         try {
             setIsSaving(true);
-            console.log(config);
-            // Simulate API call
-            const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-shipping-config`, 
+            console.log("Saving config:", config); // Log the config being sent
+    
+            const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-shipping-config`,
                 {
                     method: "POST",
                     headers: {
@@ -231,42 +379,38 @@ const ShippingConfiguration = () => {
                     body: JSON.stringify(config),
                 }
             )
-
+    
             if (!res.ok) {
                 let errorData;
                 try {
-                    // Try to parse error details from the response body
                     errorData = await res.json();
                 } catch (parseError) {
-                    // If parsing fails, use the status text
                     errorData = { message: res.statusText };
                 }
-                // Throw an error with details from the server or status text
                 throw new Error(errorData?.message || `Failed to submit shipping configuration data. Status: ${res.status}`);
             }
-
+    
             const data = await res.json();
-
+    
             if (data.success) {
                 setSuccessMessage("Shipping configuration saved successfully!");
-                setTimeout(() => setSuccessMessage(""), 3000);   
+                setTimeout(() => setSuccessMessage(""), 3000);
             } else {
-                // Handle cases where response is ok (2xx) but operation failed logically
                 throw new Error(data.message || "Saving configuration failed on the server.");
             }
         } catch (error) {
             let uploadErrorMessage;
             console.error("Error saving shipping configurations:", error);
             if (error instanceof Error) {
-                uploadErrorMessage = error.message; 
+                uploadErrorMessage = error.message;
             }
             setErrorMessage(uploadErrorMessage || "An error occurred while saving the configuration.");
-            setTimeout(() => setErrorMessage(""), 3000);   
-
         } finally {
             setIsSaving(false);
         }
     };
+    
+    
 
     const setShippingDetailsFromDatabase = (data: DatabaseShippingData) => {
         const shippingMethods: ShippingDetails['shippingMethods'] = {
@@ -304,34 +448,29 @@ const ShippingConfiguration = () => {
             },
         };
 
-        const activeMethodTypes = data.shipping_methods
-            .filter(method => method.is_active) // Filter for active methods
-            .map(method => method.method_type); // Get their 'method_type'
-
-            return {
-                formattedConfig: {
-                    shippingMethods,
-                    shippingZones,
-                    handlingTime: {
-                        from: data.handling_time_from,
-                        to: data.handling_time_to,
-                    },
-                    shippingFees,
-                    defaultPackage: {
-                        weight: data.default_package.weight,
-                        dimensions: {
-                            dimensionsUnit: data.default_package.dimensions_unit || "Inch",
-                            length: data.default_package.length,
-                            width: data.default_package.width,
-                            height: data.default_package.height,
-                        },
-                    },
-                    freeShippingThreshold: data.free_shipping_threshold,
-                    freeShippingMethod: data.free_shipping_method,
-                    estimatedDeliveryTimes,
+        return {
+            formattedConfig: {
+                shippingMethods,
+                shippingZones,
+                handlingTime: {
+                    from: data.handling_time_from,
+                    to: data.handling_time_to,
                 },
-                activeMethods: activeMethodTypes // The array of active method_type strings
-            };
+                shippingFees,
+                defaultPackage: {
+                    weight: data.default_package.weight,
+                    dimensions: {
+                        dimensionsUnit: data.default_package.dimensions_unit || "Inch",
+                        length: data.default_package.length,
+                        width: data.default_package.width,
+                        height: data.default_package.height,
+                    },
+                },
+                freeShippingThreshold: data.free_shipping_threshold,
+                freeShippingMethod: data.free_shipping_method,
+                estimatedDeliveryTimes,
+            },
+        };
     };
 
     useEffect(() => {
@@ -360,10 +499,9 @@ const ShippingConfiguration = () => {
                         setConfig(DEFAULT_SHIPPING_CONFIG);
                     }
 
-                    const { formattedConfig, activeMethods } = setShippingDetailsFromDatabase(data.data);
+                    const { formattedConfig } = setShippingDetailsFromDatabase(data.data);
 
                     setConfig(formattedConfig); // Set the state with the fetched data
-                    setSelectedMethods(activeMethods);
                 } catch (error) {
                     console.error("Error fetching or processing shipping config:", error); // Log the actual error object
                     if (error instanceof Error) {
@@ -675,48 +813,69 @@ const ShippingConfiguration = () => {
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                             Minimum Order Value ({brandCurrency})
                         </label>
-                        <Input
-                            type="number"
+                        <MoneyInput 
+                            type="text"
                             value={config.freeShippingThreshold || ''}
-                            onChange={(e) => setConfig(prev => ({
-                                ...prev,
-                                freeShippingThreshold: e.target.value ? Number(e.target.value) : undefined
-                            }))}
+                            onChange={(e) => {
+                                const formattedValue = e.target.value;
+                                const cleanedValue = formattedValue.replace(/,/g, '');
+                                const numericValue = parseFloat(cleanedValue);
+                                setConfig(prev => ({
+                                    ...prev,
+                                    freeShippingThreshold: isNaN(numericValue) ? 0 : numericValue
+                                }))}
+                            }
                             min="0"
-                            placeholder="Enter amount for free shipping"
+                            placeholder="0.00"
                             className="border-2"
                         />
                     </div>
                 </div>
 
-                {selectedMethods.length > 0 && (
-                    <div className="flex items-center space-x-4 my-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Active Shipping Methods:
-                            </label>
-                            <div className="flex flex-wrap gap-2">
-                                {selectedMethods.map((method, index) => ( 
-                                    <span
-                                        key={index}
-                                        onClick={() => handleFreeShippingMethod(method)} // Keep onClick if you need interaction
-                                        className={`px-3 py-1 text-sm cursor-pointer
-                                            ${config.freeShippingMethod !== "" && config.freeShippingMethod === method // This just styles based on inclusion, adjust if needed
-                                                ? "bg-black text-white"
-                                                : "bg-primary text-white opacity-50"}
-                                            hover:bg-primary/90 hover:text-white` }
-                                    >
-                                        {/* Use the mapping here, with a fallback to the original method name */}
-                                        {SHIPPING_METHOD_DISPLAY_NAMES[method] || method}
-                                    </span>
-                                ))}
+                {(() => { 
+                    const methodMapping: { [key in keyof ShippingDetails['shippingMethods']]?: { dbKey: string; display: string } } = {
+                        sameDayDelivery: { dbKey: 'same_day', display: 'Same Day Delivery' },
+                        standardShipping: { dbKey: 'standard', display: 'Standard Shipping' },
+                        expressShipping: { dbKey: 'express', display: 'Express Shipping' },
+                        internationalShipping: { dbKey: 'international', display: 'International Shipping' },
+                    };
+
+                    const activeMethodsToDisplay = Object.entries(config.shippingMethods)
+                        .filter(([key, isActive]) => isActive && methodMapping[key as keyof ShippingDetails['shippingMethods']]) // Filter for active and mapped methods
+                        .map(([key]) => methodMapping[key as keyof ShippingDetails['shippingMethods']]!); // Get the mapping details {dbKey, display}
+
+                    if (activeMethodsToDisplay.length === 0) {
+                        return null;
+                    }
+
+                    return (
+                        <div className="flex items-center space-x-4 my-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Select Active Method for Free Shipping:
+                                </label>
+                                <div className="flex flex-wrap gap-2">
+                                    {activeMethodsToDisplay.map(({ dbKey, display }) => (
+                                        <span
+                                            key={dbKey} // Use the database key
+                                            onClick={() => handleFreeShippingMethod(dbKey)} // Pass the database key
+                                            className={`px-3 py-1 text-sm cursor-pointer transition-colors duration-150 ease-in-out
+                                                ${config.freeShippingMethod === dbKey 
+                                                    ? "bg-black text-white ring-2 ring-offset-1 ring-black"
+                                                    : "bg-primary text-white opacity-50"} 
+                                                `}
+                                        >
+                                            {display} {/* Show the display name */}
+                                        </span>
+                                    ))}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Click an active method above to use it when the free shipping threshold is met.
+                                </p>
                             </div>
-                            <p className="text-xs text-gray-500 mt-2">
-                                Free shipping will apply to orders meeting the threshold if any of these methods are selected by the customer at checkout.
-                            </p>
                         </div>
-                    </div>
-                )}
+                    );
+                })()}
 
             </div>
             {successMessage && (
