@@ -201,6 +201,67 @@ export interface ShippingConfigType {
   };
 }
 
+export interface ShippingDetails {
+  shippingMethods: {
+      sameDayDelivery: boolean;
+      standardShipping: boolean;
+      expressShipping: boolean;
+      internationalShipping: boolean;
+  };
+  shippingZones: {
+      domestic: boolean;
+      regional: boolean;
+      international: boolean;
+  };
+  handlingTime: {
+  from: number;
+  to: number;
+};
+  shippingFees: {
+      sameDayFee: number;
+      standardFee: number;
+      expressFee: number;
+      internationalFee: number;
+  };
+  defaultPackage: {
+      weight: number;
+      dimensions: {
+          dimensionsUnit: "Inch" | "Centimeter"
+          length: number;
+          width: number;
+          height: number;
+      };
+  };
+  freeShippingThreshold?: number;
+  freeShippingMethod?: string;
+  estimatedDeliveryTimes: {
+      domestic: { from: string; to: string };
+      regional: { from: string; to: string };
+      international: { from: string; to: string };
+  };
+}
+
+export interface DatabaseShippingData {
+  id: string;
+  brand_id: string;
+  handling_time_from: number;
+  handling_time_to: number;
+  free_shipping_threshold?: number;
+  free_shipping_method?: string;
+  default_package: {
+      id: string;
+      width: number;
+      height: number;
+      length: number;
+      weight: number;
+      dimensions_unit?: "Inch" | "Centimeter"; // Assuming it might be in the DB
+  };
+  shipping_methods: { method_type: string; is_active: boolean; fee: number }[];
+  shipping_zones: { zone_type: string; is_active: boolean; delivery_time_from: string; delivery_time_to: string }[];
+  created_at: string;
+  updated_at: string;
+}
+
 // export interface ProductShippingDeliveryType {
 //   shippingMethods: string[];
 //   shippingZones: string[];

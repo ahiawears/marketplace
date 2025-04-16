@@ -66,7 +66,6 @@ export const useAuth = (): AuthData => {
                 let errorMessage;
                 if (err instanceof Error) {
                     errorMessage = err.message;
-                    console.error('Function Error:', errorMessage); // Log the error
                 } 
                 setError(errorMessage ? new Error(errorMessage) : new Error('An unknown error occurred.'));
             } finally {
