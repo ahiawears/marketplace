@@ -124,12 +124,20 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
         }
     };
 
-    const handleSubcategorySelect = (subcategory: string) => {
-        setSelectedSubcategory(subcategory);
-        setLocalDetails((prev) => ({
-            ...prev,
-            subCategory: subcategory,
-        }));
+    const handleSubcategorySelect = (subcategoryString: string) => {
+        if (subcategoryString === localDetails.subCategory) {
+            setSelectedSubcategory("");
+            setLocalDetails((prev) => ({
+                ...prev,
+                subCategory: "",
+            }));
+        }else {
+            setSelectedSubcategory(subcategoryString);
+            setLocalDetails((prev) => ({
+                ...prev,
+                subCategory: subcategoryString,
+            }));
+        }
     };
 
     const handleCurrencyChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
@@ -291,7 +299,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
 
                     {subcategories.length > 0 && (
                         <div className="mt-4">
-                            <p className="text-sm font-bold text-gray-900 mb-2">Subcategories:</p>
+                            <p className="text-sm font-bold text-gray-900 mb-2">Subcategory:</p>
                             <div className="flex flex-wrap gap-2">
                                 {subcategories.map((sub, index) => (
                                     <span

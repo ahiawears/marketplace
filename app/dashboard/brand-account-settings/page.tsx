@@ -149,17 +149,6 @@ export const BrandAccountSettings: React.FC<BrandSccountSettingsProps> = ({userI
                     </form>
                 </div>
             </>
-            <>
-                <div className="border-2">
-                    <form className="mx-auto p-10 sm:p-4 shadow-2xl">
-                        <div className="my-5 spce-y-1">
-                            <label htmlFor="">
-                                
-                            </label>
-                        </div>
-                    </form>
-                </div>
-            </>
         </div>
     );
 }

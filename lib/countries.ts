@@ -5,7 +5,7 @@ export type Country = {
     flag: string;
 };
 
-export const countries: Country[] = [
+export const countries: Country[] = [ 
     { name: "Algeria", code: "+213", alpha2: "DZ", flag: "🇩🇿" },
     { name: "Argentina", code: "+54", alpha2: "AR", flag: "🇦🇷" },
     { name: "Australia", code: "+61", alpha2: "AU", flag: "🇦🇺" },

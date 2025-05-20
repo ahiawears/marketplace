@@ -1,14 +1,6 @@
 export default function PageLoading() {
     return(
         <div>
-            {/* <div className="hidden lg:block">
-				<div className="p-4">
-					Loading Screen
-				</div>
-			</div>
-			<div className="w-full py-10 lg:hidden">
-                Loading Screen
-            </div> */}
             <div className="mx-auto h-screen bg-[#BFCFBB] shadow-2xl">
                 <div className="absolute m-auto w-full h-full">
                     <button type="button" className="py-2 px-4 flex justify-center items-center  bg-blue-600 hover:bg-blue-700 focus:ring-blue-500 focus:ring-offset-blue-200 text-white w-full transition ease-in duration-200 text-center text-base font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2  rounded-lg max-w-md">
@@ -20,6 +12,6 @@ export default function PageLoading() {
                     </button>
                 </div>
             </div>
-        </div>//add loading page
+        </div>
     );
 }

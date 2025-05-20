@@ -2,13 +2,13 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from "../../server-deno.ts";
-import { ShippingConfigType } from "@lib/types.ts";
+import { ShippingConfigDataProps } from "@lib/types.ts";
 import { updateBrandShippingConfig } from '@actions/update-brand-shipping-config.ts';
 
 Deno.serve(async (req) => {
 	if (req.method === "OPTIONS") {  
 		// Handle CORS preflight request
-		return new Response('ok', { headers: corsHeaders});
+		return new Response('ok', { headers: corsHeaders}); 
 	}
 
 	try {
@@ -42,14 +42,14 @@ Deno.serve(async (req) => {
 		}
 
 		// Directly parse the incoming JSON body into configData
-		const configData: ShippingConfigType = await req.json();
+		const configData: ShippingConfigDataProps = await req.json();
 
-		// Optional but recommended: Add a check to ensure data was parsed correctly
+		// Check if data was parsed correctly
 		if (!configData || typeof configData !== 'object') {
 			console.error("Invalid or missing request body.");
 			return new Response(JSON.stringify({ success: false, message: "Invalid request body." }), {
 				headers: {...corsHeaders, 'Content-Type': 'application/json'},
-				status: 400, // Bad Request
+				status: 400, 
 			});
 		}
 		
@@ -69,6 +69,7 @@ Deno.serve(async (req) => {
 		if(!result) {
 			throw new Error(`Error Updating shipping configuration data: ${result}`)
 		}
+		console.log(result);
 		
 		return new Response(
 			JSON.stringify({ 

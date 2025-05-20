@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryProvider } from "@/components/query-provider";
+import { ClientEffects } from "@/components/client-effects"; // Import the new component
 
 const mabryPro = localFont({
   src: [
@@ -35,6 +36,7 @@ export default function RootLayout({
       <body className={`${mabryPro.variable} font-mabry-pro antialiased`}>
         <QueryProvider>{children}</QueryProvider>
         <Toaster />
+        <ClientEffects />
       </body>
     </html>
   );

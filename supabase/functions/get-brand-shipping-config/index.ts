@@ -46,43 +46,72 @@ Deno.serve(async (req) => {
 			});
 		}
 
-		const { data: configData, error: configError } = await supabase
-			.from('shipping_configurations')
-			.select(`
-				*,
-				shipping_methods:shipping_methods(*),
-				shipping_zones:shipping_zones(*),
-				default_package:default_shipping_config(*)
-			`)
-			.eq('brand_id', userId)
-			.single();
+		// 1. Fetch main configuration
+        const { data: configData, error: configError } = await supabase
+          .from('shipping_configurations')
+          .select('*')
+          .eq('brand_id', userId)
+          .single();
 
-		if (configError) {
-			throw configError;
+        if (configError) throw configError;
+        if (!configData) throw new Error('No shipping configuration found');
+		if (configData) {
+			console.log(configData);
 		}
 
-		if (!configData) {
-			return new Response(
-				JSON.stringify({ 
-					success: true, 
-					message: "No Shipping Configuration Data Found For User", 
-				}), 
-				{
-					headers: { ...corsHeaders, 'Content-Type': 'application/json'}
-				}
-			)
-		}
+		// 2. Fetch related data in parallel
+		console.log("Running parallel queries...");
 
+		const [ { data: methodsData },{ data: deliveryData },{ data: zonesData },{ data: exclusionsData },{ data: freeShippingData }, { data: sameDayCitiesData}] = await Promise.all([
+			supabase
+				.from('shipping_methods')
+				.select('*')
+            	.eq('config_id', configData.id),
+			supabase
+				.from('shipping_method_delivery')
+				.select('*')
+				.eq('config_id', configData.id),
+			supabase
+				.from('shipping_zones')
+				.select('*')
+				.eq('config_id', configData.id),
+			supabase
+				.from('zone_exclusions')
+				.select('*')
+				.eq('config_id', configData.id),
+			supabase
+				.from('free_shipping_rules')
+				.select('*')
+				.eq('config_id', configData.id),
+			supabase
+				.from('same_day_applicable_cities')
+				.select('city_name')
+				.eq('config_id', configData.id),
+
+		])
+       
+		console.log("The configuration data is: ", configData, methodsData, deliveryData, zonesData, exclusionsData, freeShippingData);
+		
 		return new Response(
-			JSON.stringify({ 
-				success: true, 
+			JSON.stringify({
+				success: true,
 				message: "Shipping Configuration Data Gotten Successfully",
-				data: configData 
+				//data: dataConfig
+				data: {
+					shipping_configurations: configData,
+					shipping_methods: methodsData,
+					shipping_method_delivery: deliveryData,
+					shipping_zones: zonesData,
+					zone_exclusions: exclusionsData,
+					free_shipping_rules: freeShippingData,
+					same_day_applicable_cities: sameDayCitiesData,
+				}
 			}), 
 			{
-				headers: { ...corsHeaders, 'Content-Type': 'application/json'}
+				headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
 			}
 		)
+
 	} catch (error) {
 		let errorMessage;
 		if (error instanceof Error) {

@@ -6,12 +6,11 @@ import AddProductDetails from "./add-product-details";
 import ProductPreviewModal from "../modals/product-preview-modal";
 import ProductPreview from "../upload-product/product-preview";
 import { ProductUploadData, ProductVariantType } from "../../lib/types";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import React from "react";
 import { createClient } from "@/supabase/client";
 import LoadContent from "@/app/load-content/page";
 import { useAuth } from "@/hooks/useAuth";
-import { set } from "react-hook-form";
 
 const AddProductForm = () => {
     const { userId, userSession, loading, error, resetError } = useAuth();
@@ -90,7 +89,7 @@ const AddProductForm = () => {
                 // Append variant data
                 formData.append(`variants[${variantIndex}][variantName]`, variant.variantName);
                 formData.append(`variants[${variantIndex}][sku]`, variant.sku);
-                formData.append(`variants[${variantIndex}][price]`, variant.price.replace(/,/g, '')); // Ensure price is a number
+                formData.append(`variants[${variantIndex}][price]`, variant.price.toFixed(2)); // Ensure price is a number
                 formData.append(`variants[${variantIndex}][colorName]`, variant.colorName);
                 formData.append(`variants[${variantIndex}][mainColor]`, variant.mainColor);
                 formData.append(`variants[${variantIndex}][productCode]`, variant.productCode);
@@ -169,6 +168,10 @@ const AddProductForm = () => {
         return <LoadContent />
     }
     
+    if (!userId) {
+        redirect("/login-brand");
+        return null;
+    }
 
     return (
         <div className="container overflow-auto mx-auto p-4 mt-4">

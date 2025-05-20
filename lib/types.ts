@@ -62,7 +62,6 @@ export type OrderType = {
   };
 };
 
-
 export type ProductDetails = {
   id: string;
   name: string;
@@ -214,9 +213,9 @@ export interface ShippingDetails {
       international: boolean;
   };
   handlingTime: {
-  from: number;
-  to: number;
-};
+    from: number;
+    to: number;
+  };
   shippingFees: {
       sameDayFee: number;
       standardFee: number;
@@ -232,6 +231,11 @@ export interface ShippingDetails {
           height: number;
       };
   };
+  ifSameDay:{
+      cutOffTime: string,
+      timeZone: string,
+      cutOffDays: string[]
+  },
   freeShippingThreshold?: number;
   freeShippingMethod?: string;
   estimatedDeliveryTimes: {
@@ -239,6 +243,70 @@ export interface ShippingDetails {
       regional: { from: string; to: string };
       international: { from: string; to: string };
   };
+}
+
+export interface ShippingConfigDataProps {
+  handlingTime: {
+    from: number;
+    to: number;
+  }
+  shippingMethods: {
+      sameDayDelivery: {
+          available: boolean;
+          fee: number;
+          estimatedDelivery?: {  
+              cutOffTime: string;  
+              timeZone: string;  
+          };
+          conditions?: {
+              applicableCities?: string[];
+              excludePublicHolidays: boolean;
+          };
+      };
+      standardShipping: {
+          available: boolean;
+          estimatedDelivery: { 
+              domestic: { from: number; to: number; fee: number; }; 
+              regional: { from: number; to: number; fee: number;  }; 
+              sub_regional: { from: number; to: number; fee: number;  };
+              global: { from: number; to: number; fee: number;  }; 
+          };
+      };
+      expressShipping: {
+          available: boolean;
+          estimatedDelivery: {
+              domestic: { from: number; to: number; fee: number; };
+              regional: { from: number; to: number; fee: number; };
+              sub_regional: { from: number; to: number; fee: number; };
+              global: { from: number; to: number; fee: number; };
+          };
+      };
+    
+  };
+  shippingZones: {
+      domestic: {
+          available: boolean;
+          excludedCities: string[];
+      };
+      regional: {
+          available: boolean;
+          excludedCountries: string[];
+      };
+      sub_regional: {
+          available: boolean;
+          excludedCountries: string[];
+      }
+      global: {
+          available: boolean;
+          excludedCountries: string[];
+      };
+  }
+  freeShipping?: {
+      available: boolean;
+      threshold: number; 
+      applicableMethods: ("standard" | "express")[];
+      excludedCountries?: string[];
+  }
 }
 
 export interface DatabaseShippingData {
@@ -315,7 +383,7 @@ export interface ProductVariantType {
   variantName: string;
   images: string[];
   colorName: string;
-  price: string;
+  price: number;
   colorHex: string;
   sku: string;
   measurementUnit: string;

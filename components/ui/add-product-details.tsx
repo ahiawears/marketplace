@@ -13,6 +13,15 @@ const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSav
     const [sizes, setSizes] = useState<string[]>([]);
     const [isFirstAccordionCompleted, setIsFirstAccordionCompleted] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
+    const [user_id, setUserId] = useState("");
+    const [access_token, setAccessToken] = useState("");
+
+    useEffect(() => {
+        if (userId && accessToken) {
+            setUserId(userId);
+            setAccessToken(accessToken);
+        }
+    }, [userId, accessToken]);
 
     const handleNextAccordion = () => {
         setActiveIndex(activeIndex === 0 ? activeIndex + 1 : activeIndex); 
@@ -68,7 +77,10 @@ const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSav
         },
         {
             title: "Product Shipping Details",
-            content: <ProductShippingDetails />,
+            content: <ProductShippingDetails 
+                        userId={user_id}
+                        accessToken={access_token}
+                    />,
             disabled: false,
         }
     ];

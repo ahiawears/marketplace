@@ -191,16 +191,16 @@ export const EditBrandProfileHero: React.FC<EditBrandHeroProps> = ({
       )}
 
       {isHeroChanged && (
-        <div className="my-4 w-1/4 float-right">
-          <div className="flex lg:flex-row flex-col space-y-2 lg:space-y-0">
-            <div className="basis-1/2">
+        <div className="my-4 w-full ">
+          <div className="flex lg:flex-row flex-col space-y-2 lg:space-y-0 space x-4">
+            <div >
               <Button className="bg-red-400" onClick={handleResetBanner}>
                 Cancel
               </Button>
             </div>
-            <div className="basis-1/2">
+            <div >
               <Button className="border-2" onClick={handleSaveBanner}>
-                Save
+                Save Brand Banner
               </Button>
             </div>
           </div>

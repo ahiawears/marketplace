@@ -15,9 +15,9 @@ const DashboardLayout = async (props: Props) => {
     <SidebarProvider defaultOpen={defaultOpen}>
       <AppSidebar />
       <div className="w-full flex flex-col h-screen">
-        <header className="border-b p-4">
+        <header className="border-b-2 p-4">
           <div className="flex gap-4 items-center">
-            <SidebarTrigger />
+            <SidebarTrigger/>
             <h1 className="font-bold">Dashboard</h1>
           </div>
         </header>

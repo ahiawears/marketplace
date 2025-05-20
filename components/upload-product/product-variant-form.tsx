@@ -50,7 +50,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             colorHex: "",
             main_image_url: "",
             images: ["", "", "", ""], 
-            price: "",
+            price: 0,
             sku: "",
             measurementUnit: measurementUnit,
             measurements: {},
@@ -73,7 +73,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             variant.productCode?.trim(),
             variant.sku?.trim(),
             variant.colorName?.trim(),
-            variant.price?.trim(),
+            variant.price?.toFixed(2),
             variant.measurementUnit?.trim(),
             variant.colorHexes[0]?.trim(),
             variant.colorDescription?.trim(),
@@ -91,6 +91,13 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
 
         return requiredFieldsValid && imagesValid && measurementsValid;
     };
+
+    const updateVariantPrice = (index: number, field: keyof ProductVariantType, value: number) => {
+        const updatedVariants = [...variants];
+        updatedVariants[index] = { ...updatedVariants[index], [field]: value };
+
+        setVariants(updatedVariants);
+    }
 
     const updateVariant = (index: number, field: keyof ProductVariantType, value: string) => {
         const updatedVariants = [...variants];
@@ -335,15 +342,14 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                             <MoneyInput 
                                                 name="price"
                                                 className="block border-2 p-2 text-gray-900 bg-transparent w-10/12 [&::-webkit-inner-spin-button]:appearance-none"
-                                                value={variant.price}
-                                                onChange={(e) => updateVariant(index, "price", e.target.value)}
+                                                numericValue={variant.price}
+                                                onNumericChange={(value) => updateVariantPrice(index, "price", value)}
                                                 required
                                                 placeholder="0.00"
                                             />
                                         </div>
-                                        <p className="my-5 ">
-                                            Product Variant Price: <span className="text-green-700">&emsp;{currencySymbol} {variant.price}</span>
-                                        </p>
+                                        
+                                        
                                     </div>
                                 </div>
                             </div>

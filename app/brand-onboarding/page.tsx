@@ -190,7 +190,6 @@ const BrandOnboardingPage = () => {
 		}
 	};
 	
-
 	const saveStepData = async(step: number, data: BrandOnboarding) => {
 
 		const accessToken = userSession?.access_token;
@@ -354,7 +353,6 @@ const BrandOnboardingPage = () => {
 									Provide your business's registration details and country of incorporation.
 								</p>
 								<BrandBusinessDetailsForm data={brandOnboardingData.businessDetails} onDataChange={(data, isValid) => handleChildData({ businessDetails: data }, isValid)} />
-
 							</div>
 						</BlurFade>
 					)}

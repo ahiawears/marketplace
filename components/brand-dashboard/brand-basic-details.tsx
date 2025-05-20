@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Input } from "../ui/input";
-
+ 
 interface BrandDetails {
 	brandName: string;
 	brandEmail: string;

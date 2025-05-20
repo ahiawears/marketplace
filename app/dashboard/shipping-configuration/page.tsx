@@ -1,414 +1,433 @@
 "use client";
 
-import React, { use, useEffect, useState } from "react";
+import LoadContent from "@/app/load-content/page";
+import FreeShippingSection from "@/components/brand-shipping-config/free-shipping-section";
+import MethodToggle from "@/components/brand-shipping-config/shipping-methods";
+import ZoneToggle from "@/components/brand-shipping-config/zone-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { useShippingConfig } from "@/hooks/get-brand-config";
 import { useAuth } from "@/hooks/useAuth";
-import LoadContent from "@/app/load-content/page";
+import { ValidateShippingConfig } from "@/lib/shippingConfigValidation";
 import { redirect } from "next/navigation";
-import { currency } from "@/lib/currencyList";
-import { MoneyInput } from "@/components/ui/money-input";
-import { getBrandConfigDetails } from "@/hooks/get-brand-config";
+import { useEffect, useState } from "react";
 
-interface ShippingDetails {
-    shippingMethods: {
-        sameDayDelivery: boolean;
-        standardShipping: boolean;
-        expressShipping: boolean;
-        internationalShipping: boolean;
-    };
-    shippingZones: {
-        domestic: boolean;
-        regional: boolean;
-        international: boolean;
-    };
+
+export interface ShippingDetails {
     handlingTime: {
-		from: number;
-		to: number;
-	};
-    shippingFees: {
-        sameDayFee: number;
-        standardFee: number;
-        expressFee: number;
-        internationalFee: number;
-    };
-    defaultPackage: {
-        weight: number;
-        dimensions: {
-            dimensionsUnit: "Inch" | "Centimeter"
-            length: number;
-            width: number;
-            height: number;
+        from: number;
+        to: number;
+    }
+    shippingMethods: {
+        sameDayDelivery: {
+            available: boolean;
+            fee: number;
+            estimatedDelivery?: {  // Only for same-day
+                cutOffTime: string;  // e.g., "14:00" (2PM UTC+1)
+                timeZone: string;  
+            };
+            conditions?: {
+                applicableCities?: string[]; // e.g., ["Lagos", "Abuja"]
+                excludePublicHolidays: boolean;
+            };
         };
+        standardShipping: {
+            available: boolean;
+            estimatedDelivery: { 
+                domestic: { from: number; to: number; fee: number; }; 
+                regional: { from: number; to: number; fee: number;  }; 
+                sub_regional: { from: number; to: number; fee: number;  };
+                global: { from: number; to: number; fee: number;  }; 
+            };
+        };
+        expressShipping: {
+            available: boolean;
+            estimatedDelivery: {
+                domestic: { from: number; to: number; fee: number; };
+                regional: { from: number; to: number; fee: number; };
+                sub_regional: { from: number; to: number; fee: number; };
+                global: { from: number; to: number; fee: number; };
+            };
+        };
+       
     };
-    freeShippingThreshold?: number;
-    freeShippingMethod?: string;
-    estimatedDeliveryTimes: {
-        domestic: { from: string; to: string };
-        regional: { from: string; to: string };
-        international: { from: string; to: string };
-    };
+    shippingZones: {
+        domestic: {
+            available: boolean;
+            excludedCities: string[];
+        };
+        regional: {
+            available: boolean;
+            excludedCountries: string[];
+        };
+        sub_regional: {
+            available: boolean;
+            excludedCountries: string[];
+        }
+        global: {
+            available: boolean;
+            excludedCountries: string[];
+        };
+    }
+    freeShipping?: {
+        available: boolean;
+        threshold: number; 
+        applicableMethods: ("standard" | "express")[];
+        excludedCountries?: string[];
+    }
 }
 
-interface MethodToggleProps {
-    label: string;
-    checked: boolean;
-    fee: number;
-    onToggle: (checked: boolean) => void;
-    onFeeChange: (fee: number) => void;
-    currency: string;
-}
+// Define the type for the zones within non-same-day methods
+export type DeliveryZone = 'domestic' | 'sub_regional' | 'regional' | 'global';
 
-interface ZoneToggleProps {
-    label: string;
-    checked: boolean;
-    deliveryTime: { from: string; to: string };
-    onToggle: (checked: boolean) => void;
-    onTimeFromChange: (from: string) => void;
-    onTimeToChange: (to: string) => void;
-    canOfferSameDay: boolean;
-}
+// Define the type for the fields within same-day delivery
+type SameDayField = 'cutOffTime' | 'timeZone';
 
-const COUNTRIES_WITH_SAME_DAY = [
-    'Nigeria', 'Ghana', 'Kenya', 'South Africa',
-    'Tanzania', 'Uganda'
-];
-
-const DEFAULT_SHIPPING_CONFIG: ShippingDetails = {
+export const DEFAULT_SHIPPING_CONFIG: ShippingDetails = {
+    handlingTime: {
+        from: 0,
+        to: 1
+    },
     shippingMethods: {
-        sameDayDelivery: false,
-        standardShipping: false,
-        expressShipping: false,
-        internationalShipping: false,
+        sameDayDelivery: {
+            available: false,
+            fee: 0,
+            estimatedDelivery: {
+                cutOffTime: "12:00",
+                timeZone: ""
+            },
+            conditions: {
+                applicableCities: [],
+                excludePublicHolidays: false
+            }
+        },
+        standardShipping: {
+            available: false,
+            estimatedDelivery: {
+                domestic: {
+                    from: 2,
+                    to: 5,
+                    fee: 0
+                },
+                regional: {
+                    from: 4,
+                    to: 8,
+                    fee: 0
+                },
+                sub_regional: {
+                    from: 5,
+                    to: 7,
+                    fee: 0
+                },
+                global: {
+                    from: 8,
+                    to: 14,
+                    fee: 0
+                }
+            }
+        },
+        expressShipping: {
+            available: false,
+            estimatedDelivery: {
+                domestic: {
+                    from: 1,
+                    to: 3,
+                    fee: 0
+                },
+                regional: {
+                    from: 2,
+                    to: 5,
+                    fee: 0
+                },
+                sub_regional: {
+                    from: 5,
+                    to: 7,
+                    fee: 0
+                },
+                global: {
+                    from: 5,
+                    to: 10,
+                    fee: 0
+                }
+            },
+        },
     },
     shippingZones: {
-        domestic: false,
-        regional: false,
-        international: false,
-    },
-    handlingTime: {
-		from: 0,
-		to: 0
-	},
-    shippingFees: {
-        sameDayFee: 0,
-        standardFee: 0,
-        expressFee: 0,
-        internationalFee: 0,
-    },
-    defaultPackage: {
-        weight: 0,
-        dimensions: {
-            dimensionsUnit: "Inch",
-            length: 0,
-            width: 0,
-            height: 0,
+        domestic: {
+            available: false,
+            excludedCities: []
+        },
+        regional: {
+            available: false,
+            excludedCountries: []
+        },
+        sub_regional: {
+            available: false,
+            excludedCountries: []
+        },
+        global: {
+            available: false,
+            excludedCountries: []
         }
     },
-    freeShippingThreshold: 0,
-    freeShippingMethod: "",
-    estimatedDeliveryTimes: {
-        domestic: { from: "0", to: "0" },
-        regional: { from: "0", to: "0" },
-        international: { from: "0", to: "0" },
+    freeShipping: {
+        available: false,
+        threshold: 0,
+        applicableMethods: [],
+        excludedCountries: [],
     }
-};
+}
 
 const ShippingConfiguration = () => {
-	const { userId, userSession, loading: authLoading, error, resetError } = useAuth();
+    const { userId, userSession, loading: authLoading, error, resetError } = useAuth();
     const [ user_id, setUserId ] = useState("");
-
+    
     useEffect(() => {
         if (userId) {
             setUserId(userId);
         }
     }, [userId]);
-    
-    const { shippingConfig, configLoading, configError} = getBrandConfigDetails(user_id, userSession?.access_token);
+    const { config: shippingConfig, loading: configLoading, error: configError, refetch } = useShippingConfig(user_id, userSession?.access_token);
+
+    const [brandCurrency, setBrandCurrency] = useState("NGN");
+    const [brandCountry, setBrandCountry] = useState("NG");
 
     const [errorMessage, setErrorMessage] = useState("");
-    const [isSaving, setIsSaving] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
-	const [brandCurrency, setBrandCurrency] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
 
     const [config, setConfig] = useState<ShippingDetails>(DEFAULT_SHIPPING_CONFIG);
 
     useEffect(() => {
-        if(configLoading === false) {
+        if (configLoading === false && shippingConfig) {
             setConfig(shippingConfig);
+            console.log("The shipping config is", shippingConfig);
         }
     }, [configLoading, shippingConfig]);
 
-    useEffect(() => {
-		if (userId && userSession?.access_token) {
-			const getBrandData = async () => {
-				const dataName = "legal-details";
-				try {
-					const response = await fetch (`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-details?data_name=${dataName}&userId=${userId}`,
-						{
-							headers: {
-								Authorization:`Bearer ${userSession.access_token}`,
-                                'Content-Type': 'application/json',
-							}
-						}
-					)
-
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || "Couldn't create a connection with the server");
-                    }
-					
-					const data = await response.json();
-    
-                    if (!data.data) {
-                        throw new Error("No data found for the user, please try again");
-                    }
-
-					const brand_country = data.data.country_of_registration;
-					const brandCurrency = currency.find((c) => c.country_alpha === brand_country);
-					if (brandCurrency) {
-						setBrandCurrency(brandCurrency?.code);
-					}    
-				} catch (error) {
-					if (error instanceof Error) {
-                        setErrorMessage(error.message || "An error occurred while fetching brand details.");
-                    } else {
-                        setErrorMessage("An unexpected error occurred.");
-                    }
-				}
-			}
-			getBrandData();
-		}
-	}, [userId, userSession?.access_token]);
-
     const isLoading = authLoading || configLoading;
 
+    useEffect(() => {
+        if (error) {
+            setErrorMessage(error.message || "Something went wrong with authentication, please try again.");
+        } else if (configError) {
+            // Assuming configError is an Error object, use configError.message
+            // If configError can be a string, then (configError.message || configError) might be needed
+            setErrorMessage(configError || "Something went wrong fetching configuration, please try again.");
+        }
+    }, [error, configError]);
+
     if (isLoading || config === null) {
-		return <LoadContent />;
-	}
-
-	if (error) {
-        setErrorMessage(error.message || "Something went wrong, please try again.");
-	}
-
-    if (configError) {
-        setErrorMessage(configError || "Something went wrong, please try again.");
+        return <LoadContent />;
     }
 
-	if (!userId) {
-		redirect("/login-brand");
-        return null;
-	}
-
-    const canOfferSameDay = COUNTRIES_WITH_SAME_DAY.includes("Nigeria");
+    if(!user_id) {
+        redirect("/login-brand");
+    }
 
     const handleMethodToggle = (method: keyof ShippingDetails['shippingMethods'], checked: boolean) => {
         const methodDbKeyMap: { [key in keyof ShippingDetails['shippingMethods']]?: string } = {
             sameDayDelivery: 'same_day',
             standardShipping: 'standard',
             expressShipping: 'express',
-            internationalShipping: 'international',
         };
+
         const dbKey = methodDbKeyMap[method]; 
-    
+
         setConfig(prev => {
             const newState = {
                 ...prev,
                 shippingMethods: {
                     ...prev.shippingMethods,
-                    [method]: checked // Update the active status
+                    [method]: {
+                        ...prev.shippingMethods[method],
+                        available: checked
+                    }
+                }
+            }
+            return newState;
+        })
+    }
+
+    const handleZoneToggle = (zone: keyof ShippingDetails['shippingZones'], checked: boolean) => {
+        setConfig(prev => {
+            const newState = {
+                ...prev,
+                shippingZones: {
+                    ...prev.shippingZones,
+                    [zone]: {
+                        ...prev.shippingZones[zone],
+                        available: checked
+                    }
+                }
+            }
+            return newState;
+        })
+    }
+
+    const handleFreeShippingToggle = (checked: boolean) => {
+        setConfig(prev => {
+            // When enabling, calculate initial excluded countries
+            const combinedExcluded = checked ? getCombinedExcludedCountries(prev.shippingZones) : [];
+            return {
+                ...prev,
+                freeShipping: {
+                    ...(prev.freeShipping ?? { threshold: 0, applicableMethods: [], excludedCountries: [] }), // Ensure freeShipping exists
+                    available: checked,
+                    // Reset threshold and methods if disabling, keep if enabling
+                    threshold: checked ? (prev.freeShipping?.threshold ?? 0) : 0,
+                    applicableMethods: checked ? (prev.freeShipping?.applicableMethods ?? []) : [],
+                    excludedCountries: combinedExcluded // Update excluded countries based on current zones
                 }
             };
-    
-            // If turning the method OFF *and* it was the selected free shipping method
-            if (!checked && dbKey && prev.freeShippingMethod === dbKey) {
-                newState.freeShippingMethod = ""; // Reset the free shipping method selection
-                console.log(`Reset freeShippingMethod because ${dbKey} was deactivated.`);
-            }
-    
-            return newState;
         });
     };
 
-    const handleZoneToggle = (zone: keyof ShippingDetails['shippingZones'], checked: boolean) => {
-        setConfig(prev => ({
-			...prev,
-			shippingZones: {
-				...prev.shippingZones,
-				[zone]: checked
-			}
-        }));
-    };
-
-    const handleFeeChange = (feeType: keyof ShippingDetails['shippingFees'], value: number) => {
-        setConfig(prev => ({
-			...prev,
-			shippingFees: {
-				...prev.shippingFees,
-				[feeType]: value
-			}
-        }));
-    };
-
-    const handleDeliveryTimeFromChange = (zone: keyof ShippingDetails['estimatedDeliveryTimes'], from: string) => {
-        setConfig(prev => ({
-        ...prev,
-        estimatedDeliveryTimes: {
-            ...prev.estimatedDeliveryTimes,
-            [zone]: { ...prev.estimatedDeliveryTimes[zone], from }
-        }
-        }));
-    };
-
-    const handleDeliveryTimeToChange = (zone: keyof ShippingDetails['estimatedDeliveryTimes'], to: string) => {
+    const handleFreeShippingThresholdChange = (value: number) => {
         setConfig(prev => ({
             ...prev,
-            estimatedDeliveryTimes: {
-                ...prev.estimatedDeliveryTimes,
-                [zone]: { ...prev.estimatedDeliveryTimes[zone], to }
+            freeShipping: {
+                ...(prev.freeShipping ?? { available: false, applicableMethods: [], excludedCountries: [] }), // Ensure freeShipping exists
+                threshold: value // Assign the number, default to 0 if invalid
             }
         }));
     };
 
-    const handleFreeShippingMethod = (methodDbKey: string) => { // Renamed param for clarity
+    const handleFreeShippingMethodsChange = (methods: ("standard" | "express")[]) => {
         setConfig(prev => ({
             ...prev,
-            freeShippingMethod: methodDbKey
+            freeShipping: {
+                ...(prev.freeShipping ?? { available: false, threshold: 0, excludedCountries: [] }), // Ensure freeShipping exists
+                applicableMethods: methods
+            }
         }));
-        console.log("Selected Free Shipping Method (DB Key):", methodDbKey);
+    };
+
+    // Helper function to get combined excluded countries
+    const getCombinedExcludedCountries = (zones: ShippingDetails['shippingZones']) => {
+        const combined = new Set<string>();
+        zones.regional?.excludedCountries?.forEach(c => combined.add(c));
+        zones.sub_regional?.excludedCountries?.forEach(c => combined.add(c));
+        zones.global?.excludedCountries?.forEach(c => combined.add(c));
+        return Array.from(combined);
+    };
+
+    const handleSameDayFeeChange = (value: number) => {
+        setConfig(prev => ({
+            ...prev,
+            shippingMethods: {
+                ...prev.shippingMethods,
+                sameDayDelivery: {
+                    ...prev.shippingMethods.sameDayDelivery,
+                    fee: value
+                }
+            }
+        }))
     }
-    
+
+    // Handles fee changes within specific zones for Standard/Express
+    const handleZoneFeeChange = (
+        method: 'standardShipping' | 'expressShipping',
+        zone: DeliveryZone,
+        value: number
+    ) => {
+        setConfig(prev => ({
+            ...prev,
+            shippingMethods: {
+                ...prev.shippingMethods,
+                [method]: {
+                    ...prev.shippingMethods[method],
+                    estimatedDelivery: {
+                        ...prev.shippingMethods[method].estimatedDelivery,
+                        [zone]: { ...prev.shippingMethods[method].estimatedDelivery[zone], fee: value }
+                    }
+                }
+            }
+        }));
+    };
+
+
+    const handleSameDayInputChange = (field: SameDayField, value: string) => {
+        setConfig(prev => {
+            // Make sure estimatedDelivery exists
+            const currentSameDay = prev.shippingMethods.sameDayDelivery;
+            const estimatedDelivery = currentSameDay.estimatedDelivery ?? { cutOffTime: '', timeZone: '' }; // Provide default if null/undefined
+
+            return {
+                ...prev,
+                shippingMethods: {
+                    ...prev.shippingMethods,
+                    sameDayDelivery: {
+                        ...currentSameDay,
+                        estimatedDelivery: {
+                            ...estimatedDelivery,
+                            [field]: value // Update the specific field (cutOffTime or timeZone)
+                        }
+                    }
+                }
+            };
+        });
+        console.log(`Same Day Update - Field: ${field}, Value: ${value}`); // Log updates
+    };
+
+    const handleDeliveryTimeChange = (
+        method: keyof ShippingDetails['shippingMethods'],
+        zone: DeliveryZone,
+        field: 'from' | 'to',
+        value: number
+    ) => {
+        setConfig(prev => {
+            // Ensure the method and estimatedDelivery exist before trying to update
+            if (!prev.shippingMethods[method]?.estimatedDelivery) {
+                console.warn(`Estimated delivery not configured for method: ${method}`);
+                return prev; // Return previous state if structure is missing
+            }
+            // Ensure the specific zone exists within estimatedDelivery
+            if (!(zone in prev.shippingMethods[method].estimatedDelivery!)) {
+                //console.warn(`Zone ${zone} not configured for method: ${method}`);
+                return prev;
+            }
+
+            return {
+                ...prev,
+                shippingMethods: {
+                    ...prev.shippingMethods,
+                    [method]: {
+                        ...prev.shippingMethods[method],
+                        estimatedDelivery: {
+                            ...prev.shippingMethods[method].estimatedDelivery,
+                            [zone]: {
+                                // Spread existing zone data and update the specific field
+                                ...(prev.shippingMethods[method].estimatedDelivery as any)[zone], // Cast to any to bypass strict typing here if needed, or use a more specific type guard
+                                [field]: value
+                            }
+                        }
+                    }
+                }
+            };
+        });
+    };
 
     const handleSave = async () => {
-        // --- Method Fee Validation ---
-        const methodErrors: string[] = [];
-        const methodDetails: { [key in keyof ShippingDetails['shippingMethods']]?: { feeKey: keyof ShippingDetails['shippingFees']; display: string } } = {
-            sameDayDelivery: { feeKey: 'sameDayFee', display: 'Same Day Delivery' },
-            standardShipping: { feeKey: 'standardFee', display: 'Standard Shipping' },
-            expressShipping: { feeKey: 'expressFee', display: 'Express Shipping' },
-            internationalShipping: { feeKey: 'internationalFee', display: 'International Shipping' },
-        };
-    
-        for (const methodKey in methodDetails) {
-            const key = methodKey as keyof ShippingDetails['shippingMethods'];
-            const details = methodDetails[key];
-    
-            if (config.shippingMethods[key] && details) {
-                const fee = config.shippingFees[details.feeKey];
-                if (fee === undefined || fee === null || isNaN(fee) || fee <= 0) {
-                    if (key === 'sameDayDelivery' && !canOfferSameDay) {
-                        continue;
-                    }
-                    methodErrors.push(details.display);
-                }
-            }
-        }
-    
-        // --- Zone Delivery Time Validation ---
-        const zoneErrors: string[] = [];
-        const zoneDetails: { [key in keyof ShippingDetails['shippingZones']]: { display: string } } = {
-            domestic: { display: 'Domestic (Nigeria)' },
-            regional: { display: 'Regional (Africa)' },
-            international: { display: 'International' }
-        };
-    
-        for (const zoneKey in zoneDetails) {
-            const key = zoneKey as keyof ShippingDetails['shippingZones'];
-    
-            if (config.shippingZones[key]) {
-                const times = config.estimatedDeliveryTimes[key];
-                const fromStr = times.from;
-                const toStr = times.to;
-                const fromNum = parseInt(fromStr, 10);
-                const toNum = parseInt(toStr, 10);
-                const minAllowedFrom = (key === 'domestic' && canOfferSameDay) ? 0 : 1;
-                let zoneHasError = false;
-                let errorReason = "";
-    
-                if (!fromStr || !toStr) {
-                    zoneHasError = true;
-                    errorReason = "missing 'From' or 'To'";
-                } else if (isNaN(fromNum) || isNaN(toNum)) {
-                    zoneHasError = true;
-                    errorReason = "invalid number format";
-                } else if (fromNum < minAllowedFrom) {
-                    zoneHasError = true;
-                    errorReason = `'From' time cannot be less than ${minAllowedFrom}`;
-                } else if (toNum < fromNum) {
-                    zoneHasError = true;
-                    errorReason = "'To' time cannot be less than 'From' time";
-                }
-    
-                if (zoneHasError) {
-                    if (!zoneErrors.includes(zoneDetails[key].display)) {
-                        zoneErrors.push(zoneDetails[key].display);
-                        console.log(`Validation Error for Zone '${zoneDetails[key].display}': ${errorReason}`);
-                    }
-                }
-            }
-        }
-    
-        // --- Combine Initial Errors ---
-        const allErrorMessages: string[] = [];
-        if (methodErrors.length > 0) {
-            allErrorMessages.push(`Please set a valid fee (> 0) for active methods: ${methodErrors.join(', ')}.`); // Added period
-        }
-        if (zoneErrors.length > 0) {
-            allErrorMessages.push(`Please set valid delivery times ('From' and 'To', with To >= From, and From >= ${canOfferSameDay ? 0 : 1}) for active zones: ${zoneErrors.join(', ')}.`); // Added period
-        }
-    
-        const threshold = config.freeShippingThreshold;
-        const method = config.freeShippingMethod;
-    
-        if (method && method.trim() !== "" && (!threshold || threshold <= 0)) {
-            allErrorMessages.push("A free shipping method is selected, but the minimum order threshold is not set or is zero. Please set a threshold greater than 0.");
-        }
-        else if (threshold && threshold > 0 && (!method || method.trim() === "")) {
-            const anyActiveMethods = Object.values(config.shippingMethods).some(isActive => isActive);
-            if (anyActiveMethods) {
-                allErrorMessages.push("A free shipping threshold is set, but no active shipping method is selected to apply it to. Please select a method under 'Free Shipping Threshold'.");
-            } else {
-                allErrorMessages.push("A free shipping threshold is set, but no shipping methods are currently active. Please activate at least one shipping method first before selecting it for free shipping.");
-            }
+        //handle validation function call here
+        setErrorMessage(""); // Clear previous errors
+        setSuccessMessage("");
+
+        const validationErrors = ValidateShippingConfig(config);
+
+        if (validationErrors.length > 0) {
+            // Join errors with a newline for better readability in the error message display
+            setErrorMessage(validationErrors.join('\n'));
+            setIsSaving(false); // Ensure saving state is reset
+            return; 
         }
 
-        const { from: handlingFrom, to: handlingTo } = config.handlingTime;
-        let handlingTimeError = "";
-
-        if (isNaN(handlingFrom) || isNaN(handlingTo)) {
-            handlingTimeError = "Handling time 'From' and 'To' must be valid numbers. Please check for non-numeric characters.";
-        }else if (handlingFrom < 0 || handlingTo < 0) {
-            handlingTimeError = "Handling time 'From' and 'To' values cannot be negative.";
-        }else if (handlingFrom > handlingTo) {
-            handlingTimeError = "Handling time 'From' value cannot be greater than the 'To' value.";
-        } else if ( handlingTo === 0) {
-            handlingTimeError = "Handling time 'To' value cannot be negative or '0'.";
-        }
-
-        if (handlingTimeError) {
-            allErrorMessages.push(handlingTimeError);
-        } else {
-            console.log("Handling Time Validation Passed"); // Log success for debugging
-        }
-    
-        // --- Final Error Check and Save Logic ---
-        if (allErrorMessages.length > 0) {
-            // Join messages with a newline for better readability if multiple errors occur
-            setErrorMessage(allErrorMessages.join(' \n'));
-            setSuccessMessage("");
-            setIsSaving(false);
-            return; // Stop the function execution
-        }
-    
-        // Clear any previous error message if all validation passes
-        setErrorMessage("");
-    
+        // If validation passes, proceed with saving
         try {
             setIsSaving(true);
-            console.log("Saving config:", config); // Log the config being sent
-    
-            const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-shipping-config`,
+            console.log("Validation passed. Saving config:", config); // Log the config being sent
+
+            const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-shipping-config`, 
                 {
                     method: "POST",
                     headers: {
@@ -418,7 +437,6 @@ const ShippingConfiguration = () => {
                     body: JSON.stringify(config),
                 }
             )
-    
             if (!res.ok) {
                 let errorData;
                 try {
@@ -428,7 +446,7 @@ const ShippingConfiguration = () => {
                 }
                 throw new Error(errorData?.message || `Failed to submit shipping configuration data. Status: ${res.status}`);
             }
-    
+
             const data = await res.json();
     
             if (data.success) {
@@ -439,319 +457,309 @@ const ShippingConfiguration = () => {
             }
         } catch (error) {
             let uploadErrorMessage;
-            console.error("Error saving shipping configurations:", error);
+            console.log("Error saving shipping configurations:", error);
             if (error instanceof Error) {
                 uploadErrorMessage = error.message;
             }
             setErrorMessage(uploadErrorMessage || "An error occurred while saving the configuration.");
         } finally {
-            setIsSaving(false);
+            setTimeout(() => {
+                setSuccessMessage("Configuration saved successfully!");
+                setIsSaving(false);
+                setTimeout(() => setSuccessMessage(""), 3000); 
+            }, 1500);
         }
-    };
+
+    }
 
     return (
         <div className="max-w-6xl mx-auto p-4 space-y-6 border-2">
-            <div className="flex justify-between items-center">
+            <div className="space-y-2">
                 <h2 className="text-2xl font-bold">
-                    Shipping Configuration
+                    Shipping & Fulfillment Settings
                 </h2>
+                <p className="subtitle text-gray-500">
+                    Configure how your orders are delivered — set shipping methods, fees, and delivery zones.
+                </p>
             </div>
 
-            {/* Handling Time Section */}
+            {/* Handling time selection */}
             <div className="bg-white rounded-lg shadow p-6 border-2">
-                <h3 className="text-lg font-semibold mb-4">Handling Time</h3>
+                <div className="space-y-2 my-2">
+                    <h3 className="text-lg font-semibold">
+                        Handling Time
+                    </h3>
+                    <p className="subtitle text-gray-500">
+                        Specify the time (in days) it takes to prepare an order for shipment after it's placed. This does <span className="font-extrabold text-black">NOT</span> include delivery time.
+                    </p>
+                </div>
                 <div className="flex items-center space-x-2 w-full">
-					<div className="w-full">
-						<Input
-							name="handlingTimeFrom"
-							type="number"
-							value={config.handlingTime.from}
-							onChange={(e) => setConfig(prev => ({
+                    <div className="w-full">
+                        <Input
+                            name="handlingTimeFrom"
+                            type="number"
+                            className="border-2 w-full"
+                            value={config.handlingTime.from === 0 ? 0 : config.handlingTime.from}
+                            onChange={(e) => setConfig(prev => ({
 								...prev,
 								handlingTime: {
 									...prev.handlingTime,
 									from: Number(e.target.value)
 								}
 							}))}
-							className="border-2 w-full"
-						/>
-						<label htmlFor="handlingTimeFrom" className="block text-sm font-medium text-gray-700 my-4">From:</label>
-					</div>
-					<div className="w-full">
-						<Input
-							name="handlingTimeTo"
-							type="number"
-							value={config.handlingTime.to}
-							onChange={(e) => setConfig(prev => ({
-								...prev,
-								handlingTime: {
-									...prev.handlingTime,
-									to: Number(e.target.value)
-								}
-							}))}
-							className="border-2 w-full"
-						/>
-						<label htmlFor="handlingTimeTo" className="block text-sm font-medium text-gray-700 my-4">To:</label>
-					</div>
-                </div>
-				<p className="text-sm font-medium text-gray-500">Enter '0 to 1' for same-day handling time.</p>
-
-            </div>
-
-            {/* Shipping Methods Section */}
-            <div className="bg-white rounded-lg shadow p-6 border-2">
-                <h3 className="text-lg font-semibold mb-4">Shipping Methods</h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {canOfferSameDay && (
-                        <MethodToggle
-                            label="Same Day Delivery"
-                            checked={config.shippingMethods.sameDayDelivery}
-                            fee={config.shippingFees.sameDayFee}
-                            onToggle={(checked) => handleMethodToggle('sameDayDelivery', checked)}
-                            onFeeChange={(fee) => handleFeeChange('sameDayFee', fee)}
-                            currency={`${brandCurrency}`}
                         />
-                    )}
-
-                    <MethodToggle
-                        label="Standard Shipping"
-                        checked={config.shippingMethods.standardShipping}
-                        fee={config.shippingFees.standardFee}
-                        onToggle={(checked) => handleMethodToggle('standardShipping', checked)}
-                        onFeeChange={(fee) => handleFeeChange('standardFee', fee)}
-                        currency={`${brandCurrency}`}
-                    />
-
-                    <MethodToggle
-                        label="Express Shipping"
-                        checked={config.shippingMethods.expressShipping}
-                        fee={config.shippingFees.expressFee}
-                        onToggle={(checked) => handleMethodToggle('expressShipping', checked)}
-                        onFeeChange={(fee) => handleFeeChange('expressFee', fee)}
-                        currency={`${brandCurrency}`}
-                    />
-
-                    <MethodToggle
-                        label="International Shipping"
-                        checked={config.shippingMethods.internationalShipping}
-                        fee={config.shippingFees.internationalFee}
-                        onToggle={(checked) => handleMethodToggle('internationalShipping', checked)}
-                        onFeeChange={(fee) => handleFeeChange('internationalFee', fee)}
-                        currency={`${brandCurrency}`}
-                    />
+                        <label htmlFor="handlingTimeFrom" className="block text-sm font-medium text-gray-700 my-2">From:</label>
+                    </div>
+                    <div className="w-full">
+                        <Input
+                            name="handlingTimeTo"
+                            type="number"
+                            value={config.handlingTime.to === 0 ? 0 : config.handlingTime.to}
+                            onChange={(e) => setConfig(prev => ({
+                                ...prev,
+                                handlingTime: {
+                                    ...prev.handlingTime,
+                                    to: Number(e.target.value),
+                                }
+                            }))}
+                            className="border-2 w-full"
+                        />
+                        <label htmlFor="handlingTimeTo" className="block text-sm font-medium text-gray-700 my-2">To:</label>
+                    </div>
                 </div>
             </div>
 
             {/* Shipping Zones Section */}
             <div className="bg-white rounded-lg shadow p-6 border-2">
-                <h3 className="text-lg font-semibold mb-4">Shipping Zones & Estimated Delivery Time</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2 my-2">
+                    <h3 className="text-lg font-semibold">
+                        Shipping Zones
+                    </h3>
+                    <p className="subtitle text-gray-500">
+                        Choose your shipping options. For each method you enable, specify the customer fee and the typical delivery timeframe (in days).
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <ZoneToggle
-                        label={`Domestic (Nigeria)`}
-                        checked={config.shippingZones.domestic}
-                        deliveryTime={config.estimatedDeliveryTimes.domestic}
+                        label={`Domestic`}
+                        checked={config.shippingZones.domestic.available}
                         onToggle={(checked) => handleZoneToggle('domestic', checked)}
-                        onTimeFromChange={(from) => handleDeliveryTimeFromChange('domestic', from)}
-                        onTimeToChange={(to) => handleDeliveryTimeToChange('domestic', to)}
-                        canOfferSameDay={canOfferSameDay}
+                        country={brandCountry}
+                         // Pass the selected cities for Same Day Delivery
+                        selectedCities={config.shippingZones.domestic.excludedCities}
+                        // Pass the handler to update the selected cities in the parent state
+                        onCitiesChange={(cities) => {
+                            setConfig(prev => ({
+                                ...prev,
+                                shippingZones: {
+                                    ...prev.shippingZones,
+                                    domestic: { ...prev.shippingZones.domestic, excludedCities: cities }
+                                }
+                            }));
+                         }}
                     />
 
                     <ZoneToggle
-                        label={`Regional (Africa)`}
-                        checked={config.shippingZones.regional}
-                        deliveryTime={config.estimatedDeliveryTimes.regional}
+                        label={`Sub-Region`}
+                        checked={config.shippingZones.sub_regional.available}
+                        onToggle={(checked) => handleZoneToggle('sub_regional', checked)}
+                        country={brandCountry}
+                        // Pass excluded countries and handler
+                        excludedCountries={config.shippingZones.sub_regional.excludedCountries}
+                        onExcludedCountriesChange={(countries) => {
+                            setConfig(prev => ({
+                                ...prev,
+                                shippingZones: {
+                                    ...prev.shippingZones,
+                                    sub_regional: { ...prev.shippingZones.sub_regional, excludedCountries: countries }
+                                }
+                            }));
+                        }}
+                    />
+
+                     <ZoneToggle
+                        label={`Continental`}
+                        checked={config.shippingZones.regional.available}
                         onToggle={(checked) => handleZoneToggle('regional', checked)}
-                        onTimeFromChange={(from) => handleDeliveryTimeFromChange('regional', from)}
-                        onTimeToChange={(to) => handleDeliveryTimeToChange('regional', to)}
-                        canOfferSameDay={canOfferSameDay}
+                        country={brandCountry}
+                        // Pass excluded countries and handler
+                        excludedCountries={config.shippingZones.regional.excludedCountries}
+                        onExcludedCountriesChange={(countries) => {
+                            setConfig(prev => ({
+                                ...prev,
+                                shippingZones: {
+                                    ...prev.shippingZones,
+                                    regional: { ...prev.shippingZones.regional, excludedCountries: countries }
+                                }
+                            }));
+                        }}
                     />
-
-                    <ZoneToggle
+                    
+                     <ZoneToggle
                         label="International"
-                        checked={config.shippingZones.international}
-                        deliveryTime={config.estimatedDeliveryTimes.international}
-                        onToggle={(checked) => handleZoneToggle('international', checked)}
-                        onTimeFromChange={(from) => handleDeliveryTimeFromChange('international', from)}
-                        onTimeToChange={(to) => handleDeliveryTimeToChange('international', to)}
-                        canOfferSameDay={canOfferSameDay}
+                        checked={config.shippingZones.global.available}
+                        onToggle={(checked) => handleZoneToggle('global', checked)}
+                        country={brandCountry}
+                        // Pass excluded countries and handler
+                        excludedCountries={config.shippingZones.global.excludedCountries}
+                        onExcludedCountriesChange={(countries) => {
+                            setConfig(prev => ({
+                                ...prev,
+                                shippingZones: {
+                                    ...prev.shippingZones,
+                                    global: { ...prev.shippingZones.global, excludedCountries: countries }
+                                }
+                            }));
+                        }}
                     />
                 </div>
             </div>
 
-            {/* Package Details Section */}
+            {/* Shipping Methods Section */}
             <div className="bg-white rounded-lg shadow p-6 border-2">
-                <h3 className="text-lg font-semibold mb-4">Default Package Details</h3>
-                <div className="flex gap-4 my-4">
-                    <div className="flex items-center">
-                        <Input
-                            type="radio"
-                            id="packageUnitInch"
-                            name="packageUnit"
-                            value="Inch"
-                            checked={config.defaultPackage.dimensions.dimensionsUnit === "Inch"}
-                            onChange={(e) => setConfig(prev => ({
-                                ...prev,
-                                defaultPackage: {
-                                    ...prev.defaultPackage,
-                                    dimensions: {
-                                        ...prev.defaultPackage.dimensions,
-                                        dimensionsUnit: "Inch"
-                                    }
-                                }
-                            }))}
-                            className={cn(
-                                "h-4 w-4 border-2 p-2 text-black focus:ring-0 focus:ring-offset-0",
-                                "peer appearance-none",
-                                "checked:bg-black checked:border-transparent",
-                                "hover:border-gray-500 cursor-pointer"
-                            )}
-                        />
-                        <label htmlFor="packageUnitInch" className="ml-2 text-sm peer-checked:text-black">Inch</label>
-                    </div>
-                    <div className="flex items-center">
-                        <Input
-                            type="radio"
-                            id="packageUnitCentimeter"
-                            name="packageUnit"
-                            value="Centimeter"
-                            checked={config.defaultPackage.dimensions.dimensionsUnit === "Centimeter"}
-                            onChange={(e) => setConfig(prev => ({
-                                ...prev,
-                                defaultPackage: {
-                                    ...prev.defaultPackage,
-                                    dimensions: {
-                                        ...prev.defaultPackage.dimensions,
-                                        dimensionsUnit: "Centimeter"
-                                    }
-                                }
-                            }))}
-                            className={cn(
-                                "h-4 w-4 border-2 p-2 text-black focus:ring-0 focus:ring-offset-0",
-                                "peer appearance-none",
-                                "checked:bg-black checked:border-transparent",
-                                "hover:border-gray-500 cursor-pointer"
-                            )}
-                        />
-                        <label htmlFor="packageUnitCentimeter" className="ml-2 text-sm peer-checked:text-black">Centimeter</label>
-                    </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
-                        <Input
-                            type="number"
-                            value={config.defaultPackage.weight}
-                            onChange={(e) => setConfig(prev => ({
-                                ...prev,
-                                defaultPackage: {
-                                    ...prev.defaultPackage,
-                                    weight: Number(e.target.value)
-                                }
-                            }))}
-                            min="0.1"
-                            step="0.1"
-                            className="border-2"
-                        />
-                    </div>
-                    {['length', 'width', 'height'].map((dim) => (
-                        <div key={dim}>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                {dim.charAt(0).toUpperCase() + dim.slice(1)} ({config.defaultPackage.dimensions.dimensionsUnit === "Inch" ? "in" : "cm"})
-                            </label>
-                            <Input
-                                type="number"
-                                value={config.defaultPackage.dimensions[dim as keyof typeof config.defaultPackage.dimensions]}
-                                onChange={(e) => setConfig(prev => ({
-                                ...prev,
-                                defaultPackage: {
-                                    ...prev.defaultPackage,
-                                    dimensions: {
-                                    ...prev.defaultPackage.dimensions,
-                                    [dim]: Number(e.target.value)
-                                    }
-                                }
-                                }))}
-                                min="1"
-                                className="border-2"
-                            />
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Free Shipping Threshold */}
-            <div className="bg-white rounded-lg shadow p-6 border-2">
-                <h3 className="text-lg font-semibold mb-4">Free Shipping Threshold</h3>
-                <div className="flex items-center space-x-4">
-                    <div className="flex-1">
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                            Minimum Order Value ({brandCurrency})
-                        </label>
-                        <MoneyInput 
-                            type="text"
-                            value={config.freeShippingThreshold || ''}
-                            onChange={(e) => {
-                                const formattedValue = e.target.value;
-                                const cleanedValue = formattedValue.replace(/,/g, '');
-                                const numericValue = parseFloat(cleanedValue);
-                                setConfig(prev => ({
-                                    ...prev,
-                                    freeShippingThreshold: isNaN(numericValue) ? 0 : numericValue
-                                }))}
-                            }
-                            min="0"
-                            placeholder="0.00"
-                            className="border-2"
-                        />
-                    </div>
-                </div>
-
-                {(() => { 
-                    const methodMapping: { [key in keyof ShippingDetails['shippingMethods']]?: { dbKey: string; display: string } } = {
-                        sameDayDelivery: { dbKey: 'same_day', display: 'Same Day Delivery' },
-                        standardShipping: { dbKey: 'standard', display: 'Standard Shipping' },
-                        expressShipping: { dbKey: 'express', display: 'Express Shipping' },
-                        internationalShipping: { dbKey: 'international', display: 'International Shipping' },
-                    };
-
-                    const activeMethodsToDisplay = Object.entries(config.shippingMethods)
-                        .filter(([key, isActive]) => isActive && methodMapping[key as keyof ShippingDetails['shippingMethods']]) // Filter for active and mapped methods
-                        .map(([key]) => methodMapping[key as keyof ShippingDetails['shippingMethods']]!); // Get the mapping details {dbKey, display}
-
-                    if (activeMethodsToDisplay.length === 0) {
-                        return null;
+                {(() => {
+                    //determine which areas are zones are applicable
+                    const availableAreas: ("domestic" | "regional" | "sub_regional" |"global")[] = [];
+                    if (config.shippingZones.domestic.available) {
+                        availableAreas.push("domestic");
                     }
 
+                    if (config.shippingZones.sub_regional.available) {
+                        availableAreas.push("sub_regional");
+                    } 
+
+                    if (config.shippingZones.regional.available) {
+                        availableAreas.push("regional");
+                    } 
+
+                    if (config.shippingZones.global.available) {
+                        availableAreas.push("global");
+                    } 
+                        
                     return (
-                        <div className="flex items-center space-x-4 my-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Select Active Method for Free Shipping:
-                                </label>
-                                <div className="flex flex-wrap gap-2">
-                                    {activeMethodsToDisplay.map(({ dbKey, display }) => (
-                                        <span
-                                            key={dbKey} // Use the database key
-                                            onClick={() => handleFreeShippingMethod(dbKey)} // Pass the database key
-                                            className={`px-3 py-1 text-sm cursor-pointer transition-colors duration-150 ease-in-out
-                                                ${config.freeShippingMethod === dbKey 
-                                                    ? "bg-black text-white ring-2 ring-offset-1 ring-black"
-                                                    : "bg-primary text-white opacity-50"} 
-                                                `}
-                                        >
-                                            {display} {/* Show the display name */}
-                                        </span>
-                                    ))}
-                                </div>
-                                <p className="text-xs text-gray-500 mt-2">
-                                    Click an active method above to use it when the free shipping threshold is met.
+                        <div>
+                            <div className="space-y-2 my-2">
+                                <h3 className="text-lg font-semibold">
+                                    Shipping Methods
+                                </h3>
+                                <p className="subtitle text-gray-500">
+                                    Choose your shipping options. For each method you enable, specify the customer fee and the typical delivery timeframe (in days).
                                 </p>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {/* Same Day Delivery */}
+                                <MethodToggle
+                                    label="Same Day Delivery"
+                                    checked={config.shippingMethods.sameDayDelivery.available}
+                                    fee={config.shippingMethods.sameDayDelivery.fee}
+                                    onToggle={(checked) => handleMethodToggle('sameDayDelivery', checked)}
+                                    onFeeChange={handleSameDayFeeChange} // Use the specific handler for same-day fee
+                                    currency={brandCurrency}
+                                    country={brandCountry}
+                                    cutOffTimeValue={config.shippingMethods.sameDayDelivery.estimatedDelivery?.cutOffTime}
+                                    timeZoneValue={config.shippingMethods.sameDayDelivery.estimatedDelivery?.timeZone}
+                                    onSameDayInputChange={handleSameDayInputChange}
+                                    estimatedDelivery={{}} // Pass empty object or adjust type
+                                    onDeliveryTimeChange={() => {}} // Dummy function
+                                    onCitiesChange={(cities) => {
+                                        setConfig(prev => ({
+                                            ...prev, // Keep the rest of the config
+                                            shippingMethods: {
+                                                ...prev.shippingMethods,
+                                                sameDayDelivery: {
+                                                    ...prev.shippingMethods.sameDayDelivery, // Keep its other properties
+                                                    conditions: { // Target the conditions object
+                                                        ...(prev.shippingMethods.sameDayDelivery.conditions ?? { excludePublicHolidays: false }), // Keep other conditions, provide default if needed
+                                                        applicableCities: cities // Update the applicableCities array
+                                                    }
+                                                }
+                                            }
+                                        }));
+                                    }}
+                                    onZoneFeeChange={() => {}} // Dummy function for zone fee
+                                    selectedCities={config.shippingMethods.sameDayDelivery.conditions?.applicableCities}
+                                />
+
+                                {/* Standard Shipping */}
+                                <MethodToggle
+                                    label="Standard Shipping"
+                                    checked={config.shippingMethods.standardShipping.available}
+                                    fee={0} // Pass a dummy fee, it won't be used/rendered
+                                    onToggle={(checked) => handleMethodToggle('standardShipping', checked)}
+                                    onFeeChange={() => {}} 
+                                    currency={brandCurrency}
+                                    enabledZones={availableAreas}
+                                    country={brandCountry}
+                                    estimatedDelivery={config.shippingMethods.standardShipping.estimatedDelivery}
+                                    onDeliveryTimeChange={(zone, field, value) => handleDeliveryTimeChange('standardShipping', zone as DeliveryZone, field, value)}
+                                    onZoneFeeChange={(zone, value) => handleZoneFeeChange('standardShipping', zone as DeliveryZone, value)} // Pass zone fee handler
+                                    onSameDayInputChange={() => {}}
+                                />
+
+                                {/* Express Shipping */}
+                                <MethodToggle
+                                    label="Express Shipping"
+                                    checked={config.shippingMethods.expressShipping.available}
+                                    fee={0}
+                                    onToggle={(checked) => handleMethodToggle('expressShipping', checked)}
+                                    onFeeChange={() => {}} 
+                                    currency={brandCurrency}
+                                    enabledZones={availableAreas}
+                                    country={brandCountry}
+                                    estimatedDelivery={config.shippingMethods.expressShipping.estimatedDelivery}
+                                    onDeliveryTimeChange={(zone, field, value) => handleDeliveryTimeChange('expressShipping', zone as DeliveryZone, field, value)}
+                                    onZoneFeeChange={(zone, value) => handleZoneFeeChange('expressShipping', zone as DeliveryZone, value)} // Pass zone fee handler
+                                    onSameDayInputChange={() => {}}
+                                />
                             </div>
                         </div>
                     );
                 })()}
+            </div>
 
+            {/* Free Shipping Section */}
+            <div className="bg-white rounded-lg shadow p-6 border-2">
+                {(() => {
+                    // Determine which methods (standard/express) are currently available overall
+                    const availableMethodsForFreeShipping: ("standard" | "express")[] = [];
+                    if (config.shippingMethods.standardShipping.available) {
+                        availableMethodsForFreeShipping.push("standard");
+                    }
+                    if (config.shippingMethods.expressShipping.available) {
+                        availableMethodsForFreeShipping.push("express");
+                    }
+
+                    // Get combined excluded countries from zones
+                    const combinedExcludedCountries = getCombinedExcludedCountries(config.shippingZones);
+
+                    return (
+                        <div>
+                             <div className="space-y-2 my-2">
+                                <h3 className="text-lg font-semibold">
+                                    Free Shipping Settings
+                                </h3>
+                                <p className="subtitle text-gray-500">
+                                    Configure free shipping eligibility by setting a minimum order threshold and selecting the applicable shipping methods.
+                                </p>
+                            </div>
+                            <FreeShippingSection
+                                label="Free Shipping"
+                                checked={config.freeShipping?.available ?? false}
+                                onToggle={handleFreeShippingToggle}
+                                threshold={config.freeShipping?.threshold ?? 0} // Provide 0 as default if undefined
+                                onThresholdChange={(threshold) => handleFreeShippingThresholdChange(threshold)}
+                                availableMethods={availableMethodsForFreeShipping} // Pass the *possible* methods
+                                selectedMethods={config.freeShipping?.applicableMethods ?? []} // Pass the *currently selected* methods
+                                onSelectedMethodsChange={handleFreeShippingMethodsChange}
+                                excludedCountries={combinedExcludedCountries} // Pass the combined list
+                                currency={brandCurrency} // Pass currency for threshold input
+                            />
+                        </div>
+                        
+                    );
+                })()}
             </div>
             {successMessage && (
                 <div className="bg-green-100 border-2 border-green-400 text-green-700 px-4 py-3 rounded">
@@ -760,10 +768,11 @@ const ShippingConfiguration = () => {
             )}
 
             {errorMessage && (
-                <div className="bg-red-100 border-2 border-red-400 text-red-700 px-4 py-3 rounded">
+                <div className="bg-red-100 border-2 border-red-400 text-red-700 px-4 py-3 rounded whitespace-pre-line">
                     {errorMessage}
                 </div>
             )}
+            {/* Save Configuration */}
             <div className="flex justify-end">
                 <Button
                     onClick={handleSave}
@@ -774,115 +783,7 @@ const ShippingConfiguration = () => {
                 </Button>
             </div>
         </div>
-    );
-};
-
-const MethodToggle: React.FC<MethodToggleProps> = ({
-    label,
-    checked,
-    fee,
-    onToggle,
-    onFeeChange,
-    currency
-}) => (
-    <div className="flex flex-col p-4 border-2 rounded-lg space-y-3">
-        <label className="flex items-center space-x-3">
-            <Input
-                type="checkbox"
-                checked={checked}
-                onChange={(e) => onToggle(e.target.checked)}
-                className={cn(
-                    "h-4 w-4 border-2 p-2 text-black focus:ring-0 focus:ring-offset-0",
-                    "peer appearance-none",
-                    "checked:bg-black checked:border-transparent",
-                    "hover:border-gray-500 cursor-pointer"
-                )}
-            />
-            <span className="font-medium">{label}</span>
-        </label>
-        {checked && (
-            <div className="flex items-center space-x-2 justify-between">
-                <span className="text-sm text-gray-600">Fee:</span>
-				<MoneyInput 
-                    type="text"
-					value={fee}
-					className="w-full border-2"
-                    onChange={(e) => {
-                        // This existing parsing logic is still correct for handling
-                        // the formatted string coming *from* MoneyInput's onChange
-                        const formattedValue = e.target.value;
-                        const cleanedValue = formattedValue.replace(/,/g, '');
-                        const numericValue = parseFloat(cleanedValue);
-                        onFeeChange(isNaN(numericValue) ? 0 : numericValue);
-                    }}				
-                    placeholder="0.00"
-				/>
-                <span className="text-sm text-gray-600">{`${currency}`}</span>
-            </div>
-        )}
-    </div>
-);
-
-const ZoneToggle: React.FC<ZoneToggleProps> = ({ 
-	label, 
-	checked, 
-	deliveryTime, 
-	onToggle, 
-	onTimeFromChange, 
-	onTimeToChange,
-	canOfferSameDay 
-}) => (
-	<div className="border-2 p-4 rounded-lg space-y-3">
-		<label className="flex items-center space-x-3">
-			<Input
-				type="checkbox"
-                checked={checked}
-                onChange={(e) => onToggle(e.target.checked)}
-                className={cn(
-                    "h-4 w-4 border-2 p-2 text-black focus:ring-0 focus:ring-offset-0",
-                    "peer appearance-none",
-                    "checked:bg-black checked:border-transparent",
-                    "hover:border-gray-500 cursor-pointer"
-                )}
-            />
-            <span className="font-medium">{label}</span>
-        </label>
-        {checked && (
-            <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">Estimated Delivery Time (Days)</label>
-                <div className="flex items-center space-x-2 w-full justify-between">
-					<div>
-						<Input
-							type="number"
-							value={deliveryTime.from}
-							onChange={(e) => onTimeFromChange(e.target.value)}
-							className="w-20 border-2 text-center"
-							min={canOfferSameDay && label.includes('Domestic') ? "0" : "1"}
-						/>
-						<label htmlFor="" className="block text-sm font-medium text-gray-700 my-2">From: </label>
-
-					</div>
-					<div className="vertical-align text-center">
-						<span className="text-gray-500">to</span>
-					</div>
-					<div>
-						<Input
-							type="number"
-							value={deliveryTime.to}
-							onChange={(e) => onTimeToChange(e.target.value)}
-							className="w-20 border-2 text-center"
-							min={deliveryTime.from || (canOfferSameDay && label.includes('Domestic') ? "0" : "1")}
-						/>
-						<label htmlFor="" className="block text-sm font-medium text-gray-700 my-2">To: </label>
-
-					</div>
-                </div>
-                {canOfferSameDay && label.includes('Domestic') && (
-                    <p className="text-xs text-gray-500">Enter '0' for same-day delivery.</p>
-                )}
-            </div>
-        )}
-    </div>
-);
+    )
+}
 
 export default ShippingConfiguration;
