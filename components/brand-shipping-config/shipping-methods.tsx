@@ -80,7 +80,6 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
     }, [country])
 
     const renderSameDayInput = () => {
-        
         // Ensure the handler exists before using it
         const handleTimeChange = (time: string) => {
             if (onSameDayInputChange) {

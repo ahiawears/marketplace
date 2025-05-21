@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { cn } from "@/lib/utils";
 import { Select } from "../ui/select";
-import { getBrandConfigDetails } from "@/hooks/get-brand-configs";
+import { useShippingConfig } from "@/hooks/get-brand-config";
 import LoadContent from "@/app/load-content/page";
 import { Key } from "lucide-react";
 import { set } from "react-hook-form";
@@ -105,72 +105,76 @@ interface ShippingZoneItem {
 }
 
 const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId, accessToken }) => {
-    const { shippingConfig, configLoading, configError} = getBrandConfigDetails(userId, accessToken);
+    const { config: shippingConfig, loading: configLoading, error: configError, refetch } = useShippingConfig(userId, accessToken);
     const [ config, setConfig ] = useState<ShippingDetails>(DEFAULT_SHIPPING_CONFIG);
     const [ availableShippingMethods, setAvailableShippingMethods] = useState<ShippingMethodItem[]>([]);
     const [ selectedShippingMethods, setSelectedShippingMethods ] = useState<string[]>([]);
     const [ methodFees, setMethodFees ] = useState<{ [key: string]: number }>({});
     const [ availableShippingZones, setAvailableShippingZones ] = useState<ShippingZoneItem[]>([]);
     const [ selectedShippingZones, setSelectedShippingZones ] = useState<string[]>([]);
+    const { shippingMethods, shippingZones } = shippingConfig;
 
-    useEffect(() => {
-        if (configLoading === false && shippingConfig) {
-            setConfig(shippingConfig); // Set the full config
 
-            const methodMapping: { [key in keyof ShippingDetails['shippingMethods']]?: { dbKey: keyof ShippingDetails['shippingMethods']; display: string; feeKey: keyof ShippingDetails['shippingFees'] } } = {
-                sameDayDelivery: { dbKey: 'sameDayDelivery', display: 'Same Day Delivery', feeKey: 'sameDayFee' },
-                standardShipping: { dbKey: 'standardShipping', display: 'Standard Shipping', feeKey: 'standardFee' },
-                expressShipping: { dbKey: 'expressShipping', display: 'Express Shipping', feeKey: 'expressFee' },
-                internationalShipping: { dbKey: 'internationalShipping', display: 'International Shipping', feeKey: 'internationalFee' },
-            };
+    // useEffect(() => {
+    //     if (configLoading === false && shippingConfig) {
+    //         console.log("The config in product shipping is: ", shippingConfig);
 
-            const activeShippingMethods: ShippingMethodItem[] = Object.entries(shippingConfig.shippingMethods)
-                .filter(([key, isActive]) => isActive && methodMapping[key as keyof ShippingDetails['shippingMethods']])
-                .map(([key]) => {
-                    const methodInfo = methodMapping[key as keyof ShippingDetails['shippingMethods']]!;
-                    return {
-                        display: methodInfo.display,
-                        dbKey: methodInfo.dbKey,
-                        feeKey: methodInfo.feeKey,
-                        feeValue: shippingConfig.shippingFees[methodInfo.feeKey],
-                    };
-                });
+    //         //setConfig(shippingConfig); // Set the full config
 
-            setAvailableShippingMethods(activeShippingMethods);
+    //         const methodMapping: { [key in keyof ShippingDetails['shippingMethods']]?: { dbKey: keyof ShippingDetails['shippingMethods']; display: string; feeKey: keyof ShippingDetails['shippingFees'] } } = {
+    //             sameDayDelivery: { dbKey: 'sameDayDelivery', display: 'Same Day Delivery', feeKey: 'sameDayFee' },
+    //             standardShipping: { dbKey: 'standardShipping', display: 'Standard Shipping', feeKey: 'standardFee' },
+    //             expressShipping: { dbKey: 'expressShipping', display: 'Express Shipping', feeKey: 'expressFee' },
+    //             internationalShipping: { dbKey: 'internationalShipping', display: 'International Shipping', feeKey: 'internationalFee' },
+    //         };
 
-            // Initialize method fees with existing config
-            const initialFees: { [key: string]: number } = {};
-            activeShippingMethods.forEach(method => {
-                if (method.display) {
-                    initialFees[method.display] = method.feeValue !== undefined ? method.feeValue : 0;
-                }
-            });
-            setMethodFees(initialFees);
+    //         const activeShippingMethods: ShippingMethodItem[] = Object.entries(shippingConfig.shippingMethods)
+    //             .filter(([key, isActive]) => isActive && methodMapping[key as keyof ShippingDetails['shippingMethods']])
+    //             .map(([key]) => {
+    //                 const methodInfo = methodMapping[key as keyof ShippingDetails['shippingMethods']]!;
+    //                 return {
+    //                     display: methodInfo.display,
+    //                     dbKey: methodInfo.dbKey,
+    //                     feeKey: methodInfo.feeKey,
+    //                     feeValue: shippingConfig.shippingFees[methodInfo.feeKey],
+    //                 };
+    //             });
 
-            // Get shipping zones available
-            const zoneMapping: { [key in keyof ShippingDetails['shippingZones']]: { display: string; timeKey: keyof ShippingDetails['estimatedDeliveryTimes'] } } = {
-                domestic: { display: 'Domestic (Nigeria)', timeKey: 'domestic' },
-                regional: { display: 'Regional (Africa)', timeKey: 'regional' },
-                international: { display: 'International', timeKey: 'international' },
-            };
+    //         setAvailableShippingMethods(activeShippingMethods);
 
-            const activeShippingZones: ShippingZoneItem[] = Object.entries(shippingConfig.shippingZones)
-                .filter(([key, isActive]) => isActive && zoneMapping[key as keyof ShippingDetails['shippingZones']]) // Filter active & mapped
-                .map(([key]) => {
-                    const zoneInfo = zoneMapping[key as keyof ShippingDetails['shippingZones']]!;
-                    const deliveryTimes = shippingConfig.estimatedDeliveryTimes[zoneInfo.timeKey];
-                    return {
-                        display: zoneInfo.display,
-                        dbKey: key as keyof ShippingDetails['shippingZones'], // Keep the original key
-                        timeKey: zoneInfo.timeKey,
-                        deliveryTime: deliveryTimes || { from: 'N/A', to: 'N/A' } // Add delivery time info, with fallback
-                    };
-                });
+    //         // Initialize method fees with existing config
+    //         const initialFees: { [key: string]: number } = {};
+    //         activeShippingMethods.forEach(method => {
+    //             if (method.display) {
+    //                 initialFees[method.display] = method.feeValue !== undefined ? method.feeValue : 0;
+    //             }
+    //         });
+    //         setMethodFees(initialFees);
 
-            setAvailableShippingZones(activeShippingZones);
+    //         // Get shipping zones available
+    //         const zoneMapping: { [key in keyof ShippingDetails['shippingZones']]: { display: string; timeKey: keyof ShippingDetails['estimatedDeliveryTimes'] } } = {
+    //             domestic: { display: 'Domestic (Nigeria)', timeKey: 'domestic' },
+    //             regional: { display: 'Regional (Africa)', timeKey: 'regional' },
+    //             international: { display: 'International', timeKey: 'international' },
+    //         };
 
-        }
-    }, [configLoading, shippingConfig]);
+    //         const activeShippingZones: ShippingZoneItem[] = Object.entries(shippingConfig.shippingZones)
+    //             .filter(([key, isActive]) => isActive && zoneMapping[key as keyof ShippingDetails['shippingZones']]) // Filter active & mapped
+    //             .map(([key]) => {
+    //                 const zoneInfo = zoneMapping[key as keyof ShippingDetails['shippingZones']]!;
+    //                 const deliveryTimes = shippingConfig.estimatedDeliveryTimes[zoneInfo.timeKey];
+    //                 return {
+    //                     display: zoneInfo.display,
+    //                     dbKey: key as keyof ShippingDetails['shippingZones'], // Keep the original key
+    //                     timeKey: zoneInfo.timeKey,
+    //                     deliveryTime: deliveryTimes || { from: 'N/A', to: 'N/A' } // Add delivery time info, with fallback
+    //                 };
+    //             });
+
+    //         setAvailableShippingZones(activeShippingZones);
+
+    //     }
+    // }, [configLoading, shippingConfig]);
 
     const handleMethodSelect = (method: string) => {
         const isMethodSelected = selectedShippingMethods.includes(method);
@@ -284,6 +288,94 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                     </div>
                 </CardContent>
             </Card>
+
+            <div>
+                <h2>Available Shipping Methods & Fees</h2>
+
+                {/* Same Day Delivery */}
+                {shippingMethods.sameDayDelivery.available && (
+                    <div>
+                        <h3>Same Day Delivery</h3>
+                        <p>Fee: ${shippingMethods.sameDayDelivery.fee.toFixed(2)}</p>
+                        <p>Cut-off: {shippingMethods.sameDayDelivery.estimatedDelivery?.cutOffTime} ({shippingMethods.sameDayDelivery.estimatedDelivery?.timeZone})</p>
+                        <p>Applicable Cities: {shippingMethods.sameDayDelivery.conditions?.applicableCities?.join(', ') || 'N/A'}</p>
+                    </div>
+                )}
+
+                {/* Standard Shipping */}
+                {shippingMethods.standardShipping.available && (
+                    <div>
+                        <h3>Standard Shipping</h3>
+                        {Object.entries(shippingMethods.standardShipping.estimatedDelivery).map(([zoneKey, details]) => {
+                            // Ensure the zoneKey is a valid key for shippingZones
+                            const typedZoneKey = zoneKey as keyof typeof shippingZones;
+                            if (shippingZones[typedZoneKey]?.available && details) {
+                                return (
+                                    <div key={`standard-${zoneKey}`} style={{ marginLeft: '20px', marginTop: '10px' }}>
+                                        <h4>{zoneKey.charAt(0).toUpperCase() + zoneKey.slice(1).replace('_', '-')} Zone</h4>
+                                        <p>Delivery: {details.from}-{details.to} days</p>
+                                        <p>Fee: ${details.fee.toFixed(2)}</p>
+                                        {typedZoneKey === 'domestic' && shippingZones.domestic.excludedCities.length > 0 && (
+                                            <p>Excluded Cities: {shippingZones.domestic.excludedCities.join(', ')}</p>
+                                        )}
+                                        {(typedZoneKey === 'regional' || typedZoneKey === 'sub_regional' || typedZoneKey === 'global') && 
+                                        (shippingZones[typedZoneKey] as any).excludedCountries?.length > 0 && (
+                                            <p>Excluded Countries: {(shippingZones[typedZoneKey] as any).excludedCountries.join(', ')}</p>
+                                        )}
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })}
+                    </div>
+                )}
+
+                {/* Express Shipping */}
+                {shippingMethods.expressShipping.available && (
+                    <div>
+                        <h3>Express Shipping</h3>
+                        {Object.entries(shippingMethods.expressShipping.estimatedDelivery).map(([zoneKey, details]) => {
+                            const typedZoneKey = zoneKey as keyof typeof shippingZones;
+                            if (shippingZones[typedZoneKey]?.available && details) {
+                                return (
+                                    <div key={`express-${zoneKey}`} style={{ marginLeft: '20px', marginTop: '10px' }}>
+                                        <h4>{zoneKey.charAt(0).toUpperCase() + zoneKey.slice(1).replace('_', '-')} Zone</h4>
+                                        <p>Delivery: {details.from}-{details.to} days</p>
+                                        <p>Fee: ${details.fee.toFixed(2)}</p>
+                                        {typedZoneKey === 'domestic' && shippingZones.domestic.excludedCities.length > 0 && (
+                                            <p>Excluded Cities: {shippingZones.domestic.excludedCities.join(', ')}</p>
+                                        )}
+                                        {(typedZoneKey === 'regional' || typedZoneKey === 'sub_regional' || typedZoneKey === 'global') && 
+                                        (shippingZones[typedZoneKey] as any).excludedCountries?.length > 0 && (
+                                            <p>Excluded Countries: {(shippingZones[typedZoneKey] as any).excludedCountries.join(', ')}</p>
+                                        )}
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })}
+                    </div>
+                )}
+
+                {/* Free Shipping */}
+                {/* {config.freeShipping?.available && (
+                    <div>
+                        <h3>Free Shipping</h3>
+                        <p>Threshold: ${config.freeShipping.threshold.toFixed(2)}</p>
+                        <p>Applicable Methods: {config.freeShipping.applicableMethods.join(', ')}</p>
+                        {config.freeShipping.excludedCountries && config.freeShipping.excludedCountries.length > 0 && (
+                            <p>Excluded Countries for Free Shipping: {config.freeShipping.excludedCountries.join(', ')}</p>
+                        )}
+                    </div>
+                )} */}
+
+                {/* {!shippingMethods.sameDayDelivery.available &&
+                !shippingMethods.standardShipping.available &&
+                !shippingMethods.expressShipping.available &&
+                !config.freeShipping?.available && (
+                    <p>No shipping methods configured or available.</p>
+                )} */}
+            </div>
 
             {/* --- Shipping Methods Section --- */}
             {availableShippingMethods.length > 0 && (
