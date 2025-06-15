@@ -17,7 +17,6 @@ const AddProductForm = () => {
     const [accessToken, setAccessToken] = useState<string>("");
     
     const [isFormValid, setIsFormValid] = useState<boolean>(false);
-    const [isGeneralDetailsSaved, setIsGeneralDetailsSaved] = useState<boolean>(false);
     const [variantSavedStatus, setVariantSavedStatus] = useState<boolean[]>([]);
     const [formError, setFormError] = useState<string | null>("");
     
@@ -32,25 +31,42 @@ const AddProductForm = () => {
 			tags: [],
 			currency: "",
 			material: "",
+            gender: "",
+            season: "",
 		},
 		productVariants: [],
         shippingDelivery: {
-            shippingMethods: [],
-            shippingZones: [],
-            estimatedDelivery: {},
-            shippingFees: {},
-            handlingTime: "1-3 days",
+            methods: {
+                sameDay: {
+                    available: false,
+                    fee: 0,
+                },
+                standard: {},
+                express: {}
+            },
             weight: 0,
-            dimensions: { length: 0, width: 0, height: 0 },
-            customsDuties: "buyer-paid",
-            cashOnDelivery: true
+            dimensions: {
+                length: 0,
+                width: 0,
+                height: 0
+            },
+
         },
         returnRefundPolicy: {
             returnWindow: 0,
             refundMethod: "replacement",
             returnShipping: "free_returns",
             conditions: "",
+        },
+        careInstructions: {
+            washingInstruction: "",
+            bleachingInstruction: "",
+            dryingInstruction: "",
+            ironingInstruction: "",
+            dryCleaningInstruction: "",
+            specialCases: ""
         }
+
 	});
 
     const isAllVariantsSaved = () => {
@@ -157,13 +173,6 @@ const AddProductForm = () => {
         }
     }, [userId, userSession]);
 
-    useEffect(() => {
-        // Enable Publish button only if both accordions are saved and there are no unsaved changes
-        setIsFormValid(isGeneralDetailsSaved && isAllVariantsSaved());
-        console.log("The isGeneralDetailsSaved is ", isGeneralDetailsSaved);
-        console.log("The isAllVariantsSaved is ", isAllVariantsSaved());
-    }, [isGeneralDetailsSaved, variantSavedStatus]);
-
     if (loading) {
         return <LoadContent />
     }
@@ -180,7 +189,6 @@ const AddProductForm = () => {
                     <AddProductDetails 
                         productData={productData} 
                         setProductData={setProductData}
-                        setIsGeneralDetailsSaved={setIsGeneralDetailsSaved}
                         onVariantSaved={handleVariantSaved}
                         savedStatus={variantSavedStatus}
                         userId={userId}

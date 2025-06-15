@@ -12,29 +12,23 @@ import { Button } from "../ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import LoadContent from "@/app/load-content/page";
 import ErrorModal from "../modals/error-modal";
+import { generateSeasonOptions, getCurrentSeason, getSecondarySeason } from "@/hooks/generate-fashion-season";
+import { GeneralDetailsErrors, validateGeneralProductDetails } from "@/lib/productDataValidation";
 
 interface GeneralProductDetailsProps {
     generalDetails: GeneralProductDetailsType;
     setGeneralDetails: (details: GeneralProductDetailsType | ((prev: GeneralProductDetailsType) => GeneralProductDetailsType)) => void;
     onSaveAndContinue: () => void;
-    setIsGeneralDetailsSaved: (value: boolean) => void;
     userId: string | null;
     accessToken: string | null;
 }
 
-interface Errors {
-    productName: string;
-    productDescription: string;
-    category: string;
-    currency: string;
-    material: string;
-    subCategory: string;
-    tags: string; 
-}
+const gender = ["Male", "Female", "Unisex"];
 
-const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, setIsGeneralDetailsSaved, userId, accessToken }) => {
 
-    const [errors, setErrors] = useState<Errors>({
+const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, userId, accessToken }) => {
+
+    const [errors, setErrors] = useState<GeneralDetailsErrors>({
         productName: "",
         productDescription: "",
         category: "",
@@ -42,6 +36,7 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
         material: "",
         subCategory: "",
         tags: "",
+        gender: "",
     });
     
     const [localDetails, setLocalDetails] = useState<GeneralProductDetailsType>(generalDetails);
@@ -51,7 +46,8 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
     const [selectedTags, setSelectedTags] = useState<string[]>([]);
     const [selectedCurrency, setSelectedCurrency] = useState("");
     const [errorMessage, setErrorMessage] = useState("");
-    
+    const seasonOptions = generateSeasonOptions();
+
     const isFormValid = () => {
         return (
             localDetails.productName.trim() !== "" &&
@@ -61,14 +57,19 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
             localDetails.material.trim() !== "" &&
             localDetails.subCategory.trim() !== "" &&
             localDetails.tags.length <= 5 &&
-            localDetails.tags.length > 0
+            localDetails.tags.length > 0 &&
+            localDetails.gender.trim() !== ""
         );
     };
 
     const handleSave = () => {
-        setGeneralDetails(localDetails);
-        setIsGeneralDetailsSaved(true);
-        onSaveAndContinue();
+        const { isValid, errors: validationErrors } = validateGeneralProductDetails(localDetails);
+        setErrors(validationErrors);
+        if (isValid) {
+            setGeneralDetails(localDetails);
+            onSaveAndContinue();
+        }
+        console.log(localDetails);
     };
 
     const handleChange = (field: keyof GeneralProductDetailsType, value: string | string[]) => {
@@ -248,9 +249,18 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                             onChange={(e) => handleChange("productName", e.target.value)}
                             value={localDetails.productName}
                             required
-                            placeholder="Enter the Product Name"
+                            placeholder="Enter a clear and concise name for your product. This will be the main title customers see."
                             className="border-2"
                         />
+                        {errors.productName && (
+                            <p 
+                                style={{ color: 'red' }} 
+                                className="py-2 text-xs"
+                                id="productName-error"
+                            >
+                                {errors.productName}
+                            </p>
+                        )}
                     </div>    
                 </div>
 
@@ -266,9 +276,18 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                             value={localDetails.productDescription}
                             rows={4}
                             required
-                            placeholder="Enter the product description here"
+                            placeholder="Provide a detailed description of your product. Highlight key features, materials, and what makes it unique. Good descriptions help sales!"
                             className="border-2"
                         />
+                         {errors.productDescription && (
+                            <p 
+                                style={{ color: 'red' }} 
+                                className="py-2 text-xs"
+                                id="productDescription-error"
+                            >
+                                {errors.productDescription}
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -287,19 +306,32 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                                 value={localDetails.category}
                                 className="border-2"
                             >
-                                <option value="" disabled>Select a category</option>
+                                <option value="" disabled>Select the main category that best fits your product.</option>
                                 {categoriesList.map((category) => (
                                     <option key={category.name} value={category.name}>
                                         {category.name}
                                     </option>
                                 ))}
                             </Select>
+                            {errors.category && (
+                                <p 
+                                    style={{ color: 'red' }} 
+                                    className="py-2 text-xs"
+                                    id="productCategory-error"
+                                >
+                                    {errors.category}
+                                </p>
+                            )}
                         </div>
                     </div>
 
                     {subcategories.length > 0 && (
                         <div className="mt-4">
-                            <p className="text-sm font-bold text-gray-900 mb-2">Subcategory:</p>
+                            <div className="my-3">
+                                <p className="text-sm font-bold text-gray-900">Subcategory:*</p>
+                                <span className="text-sm text-gray-500">Choose a subcategory to further classify your product.</span>
+                            </div>
+                            
                             <div className="flex flex-wrap gap-2">
                                 {subcategories.map((sub, index) => (
                                     <span
@@ -315,12 +347,24 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                                     </span>
                                 ))}
                             </div>
+                            {errors.subCategory && (
+                                <p 
+                                    style={{ color: 'red' }} 
+                                    className="py-2 text-xs"
+                                    id="productSubCategory-error"
+                                >
+                                    {errors.subCategory}
+                                </p>
+                            )}
                         </div>
                     )}
 
                     {customTags.length > 0 && (
                         <div className="mt-4">
-                            <p className="text-sm font-bold text-gray-900 mb-2">Tags:</p>
+                            <div className="my-3">
+                                <p className="text-sm font-bold text-gray-900">Tags:*</p>
+                                <span className="text-sm/3 text-gray-500">Add relevant keywords or tags that customers might use to search for this type of product. This helps improve discoverability.</span>
+                            </div>
                             <div className="flex flex-wrap gap-2">
                                 {customTags.map((tag, index) => (
                                     <span
@@ -350,35 +394,6 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                 </div>
 
                 <div className="mt-5">
-                    <label htmlFor="currency" className="block text-sm font-bold text-gray-900 mb-2">
-                        Product Currency:*
-                    </label>
-                    <div className="flex flex-col md:flex-row gap-8">
-                        <div className="w-full md:w-1/2">
-                            <Select
-                                id="currency"
-                                onChange={(e) => {
-                                    handleCurrencyChange(e);
-                                    setSelectedCurrency(e?.target.value);
-                                }}
-                                value={selectedCurrency}
-                                className="block border-2 bg-transparent"
-                                disabled
-                            >
-                                <option value="" disabled>Select Currency</option>
-                                
-                                {currency.map((sCurrency) => (
-                                    <option key={`${sCurrency.code}-${sCurrency.name}`} value={sCurrency.id}>
-                                        {`${sCurrency.symbol + " - " + sCurrency.name }`}
-                                    </option>
-                                ))}
-                            </Select>
-                            
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-5">
                     <label htmlFor="material" className="block text-sm font-bold text-gray-900 mb-2">
                         Product Material:*
                     </label>
@@ -394,16 +409,92 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
                                 value={localDetails.material}
                                 className="block border-2 bg-transparent"
                             >
-                                <option value="" disabled>Select Material</option>
+                                <option value="" disabled >Select the main material used in your product.</option>
                                 {clothingMaterials.map((material) => (
                                     <option key={material} value={material}>
                                         {material}
                                     </option>
                                 ))}
                             </Select>
+                            {errors.material && (
+                                <p 
+                                    style={{ color: 'red' }} 
+                                    className="py-2 text-xs"
+                                    id="productMaterial-error"
+                                >
+                                    {errors.material}
+                                </p>
+                            )}
                         </div>
                     </div>
                 </div>
+
+                <div className="mt-5 w-full">
+                    <div className="flex flex-col md:flex-row gap-8">
+                        <div className="w-full md:w-1/2">
+                           <label htmlFor="season" className="block text-sm font-bold text-gray-900 mb-2">
+                                Season:
+                            </label> 
+
+                            <div className="flex flex-col md:flex-row gap-8">
+                                <div className="w-full">
+                                    <Select
+                                        id="season"
+                                        name="season"
+                                        onChange={(e) => {
+                                            handleChange("season", e.target.value);
+                                        }}
+                                        value={localDetails.season}
+                                        className="block border-2 bg-transparent"
+                                    >
+                                        <option value="" disabled>Indicate the fashion season this product is most suitable for(e.g., Spring/Summer, Autumn/Winter).</option>
+                                        {seasonOptions.map((season) => (
+                                            <option key={season.name} value={season.code}>
+                                                {season.name} ({season.code})
+                                            </option>
+                                        ))}
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="w-full md:w-1/2">
+                            <label htmlFor="gender" className="block text-sm font-bold text-gray-900 mb-2">
+                                Target Gender:*
+                            </label>
+
+                            <div className="flex flex-col md:flex-row gap-8">
+                                <div className="w-full">
+                                    <Select
+                                        id="gender"
+                                        name="gender"
+                                        onChange={(e) => {
+                                            handleChange("gender", e.target.value);
+                                        }}
+                                        value={localDetails.gender}
+                                        className="block border-2 bg-transparent"
+                                    >
+                                        <option value="" disabled>Specify the gender this product is primarily designed for.</option>
+                                        {gender.map((g) => (
+                                            <option key={g} value={g}>
+                                                {g}
+                                            </option>
+                                        ))}
+                                    </Select>
+                                    {errors.gender && (
+                                        <p 
+                                            style={{ color: 'red' }} 
+                                            className="py-2 text-xs"
+                                            id="gender-error"
+                                        >
+                                            {errors.gender}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="mt-5">
                     <Button
                         onClick={handleSave}

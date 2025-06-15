@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { currency } from "../../lib/currencyList";
-import { GeneralProductDetailsType, ProductUploadData, ProductVariantType } from "../../lib/types";
+import { GeneralProductDetailsType, ProductCareInstruction, ProductShippingDeliveryType, ProductUploadData, ProductVariantType } from "../../lib/types";
 import ProductVariantForm from "../upload-product/product-variant-form";
 import GeneralProductDetails from "../upload-product/general-product-details";
 import Accordion from "./Accordion";
 import React from "react";
 import ProductShippingDetails from "../upload-product/product-shipping-details";
+import CareInstructions from "../upload-product/care-instructions";
     
-const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSaved, onVariantSaved, savedStatus, userId, accessToken }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>, setIsGeneralDetailsSaved: (value: boolean) => void, onVariantSaved: (index: number, isSaved: boolean) => void,  savedStatus: boolean[], userId: string | null, accessToken: string | null }) => {
+const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedStatus, userId, accessToken }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>, onVariantSaved: (index: number, isSaved: boolean) => void,  savedStatus: boolean[], userId: string | null, accessToken: string | null }) => {
     const [sizes, setSizes] = useState<string[]>([]);
     const [isFirstAccordionCompleted, setIsFirstAccordionCompleted] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
@@ -36,7 +37,6 @@ const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSav
             generalDetails: typeof details === 'function' ? details(prev.generalDetails) : details,
         }));
         setIsFirstAccordionCompleted(true);
-        setIsGeneralDetailsSaved(true);
     };
 
     const setProductVariants = (variants: ProductVariantType[] | ((prev: ProductVariantType[]) => ProductVariantType[])) => {
@@ -45,6 +45,20 @@ const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSav
             productVariants: typeof variants === 'function' ? variants(prev.productVariants) : variants,
         }));
     };
+
+    const setProductShippingConfiguration = (productShippingDetails: ProductShippingDeliveryType | ((prev: ProductShippingDeliveryType) => ProductShippingDeliveryType)) => {
+        setProductData((prev) => ({
+            ...prev,
+            shippingDelivery: typeof productShippingDetails === 'function' ? productShippingDetails(prev.shippingDelivery) : productShippingDetails,
+        }));
+    };
+
+    const setCareInstructions = (careInstructions: ProductCareInstruction | ((prev: ProductCareInstruction) => ProductCareInstruction)) => {
+        setProductData((prev) => ({
+            ...prev,
+            careInstructions: typeof careInstructions === 'function' ? careInstructions(prev.careInstructions) : careInstructions,
+        }));
+    }
     
     const accordionItems = [
         {
@@ -52,8 +66,7 @@ const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSav
             content:<GeneralProductDetails 
                         generalDetails={productData.generalDetails} 
                         setGeneralDetails={setGeneralDetails}
-                        onSaveAndContinue={handleNextAccordion} 
-                        setIsGeneralDetailsSaved={setIsGeneralDetailsSaved}
+                        onSaveAndContinue={handleNextAccordion}
                         userId={userId}
                         accessToken={accessToken}
                     />,
@@ -80,6 +93,16 @@ const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSav
             content: <ProductShippingDetails 
                         userId={user_id}
                         accessToken={access_token}
+                        currencySymbol={productCurrencySymbol}
+                        onSaveShippingDetails={setProductShippingConfiguration}
+                    />,
+            disabled: false,
+        },
+        {
+            title: "Care Instructions",
+            content: <CareInstructions
+                        initialCareInstructions={productData.careInstructions}
+                        onSaveCareinstructions={setCareInstructions}
                     />,
             disabled: false,
         }
@@ -101,5 +124,3 @@ const AddProductDetails = ({ productData, setProductData, setIsGeneralDetailsSav
 }
 
 export default AddProductDetails
-
-

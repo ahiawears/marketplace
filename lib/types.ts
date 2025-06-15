@@ -330,18 +330,28 @@ export interface DatabaseShippingData {
   updated_at: string;
 }
 
-// export interface ProductShippingDeliveryType {
-//   shippingMethods: string[];
-//   shippingZones: string[];
-//   estimatedDelivery: { [zone: string]: string }; // e.g., { "US": "3-5 days" }
-//   shippingFees: { [zone: string]: number }; // e.g., { "US": 10, "UK": 15 }
-//   freeShippingThreshold?: number;
-//   handlingTime: string; // e.g., "1-2 days"
-//   weight: number | string;
-//   dimensions: { length: number; width: number; height: number };
-//   customsDuties?: boolean;
-//   shippingRestrictions?: string;
-// }
+// Defines the standard delivery zone keys
+export type DeliveryZoneKey = 'domestic' | 'sub_regional' | 'regional' | 'global';
+
+// Configuration for a specific shipping method (e.g., standard, express) for a product within a specific zone
+export interface ProductMethodZoneConfig {
+  available?: boolean;
+  fee?: number;
+  
+}
+
+export interface ProductShippingDeliveryType {
+  methods?: {
+    standard?: Partial<Record<DeliveryZoneKey, ProductMethodZoneConfig>>;
+    express?: Partial<Record<DeliveryZoneKey, ProductMethodZoneConfig>>;
+    sameDay?: {
+      available?: boolean;
+      fee?: number;
+    };
+  };
+  weight: number;
+  dimensions: { length: number; width: number; height: number };
+}
 
 export interface ShippingDeliveryType {
   shippingMethods: string[]; // ["Standard", "Express", "Local Pickup"]
@@ -382,6 +392,7 @@ export interface ProductVariantType {
   productId: string;
   variantName: string;
   images: string[];
+  imagesDescription: string;
   colorName: string;
   price: number;
   colorHex: string;
@@ -389,14 +400,15 @@ export interface ProductVariantType {
   measurementUnit: string;
   measurements: { 
     [size: string]: {
-      [measurement: string]: number;
-      quantity: number;
+      [measurement: string]: number | undefined;
+      quantity: number | undefined;
     };
   };
   productCode: string;
   colorDescription: string;
   colorHexes: string[];
   mainColor: string; 
+  availableDate?: string;
 }
 
 export interface GeneralProductDetailsType {
@@ -407,13 +419,25 @@ export interface GeneralProductDetailsType {
   tags: string[];
   currency: string;
   material: string;
+  gender: string;
+  season: string;
+}
+
+export interface ProductCareInstruction {
+  washingInstruction?: string | null;
+  bleachingInstruction?: string | null;
+  dryingInstruction?: string | null;
+  ironingInstruction?: string | null;
+  dryCleaningInstruction?: string | null;
+  specialCases?: string | null;
 }
 
 export interface ProductUploadData {
   generalDetails: GeneralProductDetailsType;
   productVariants: ProductVariantType[];
-  shippingDelivery: ShippingDeliveryType;
+  shippingDelivery: ProductShippingDeliveryType;
   returnRefundPolicy: ReturnRefundPolicyType;
+  careInstructions: ProductCareInstruction;
 }
 
 export interface PhysicalAttributesType {
@@ -422,7 +446,6 @@ export interface PhysicalAttributesType {
 	width: string;
 	depth: string;
 }
-
 
 export interface ProductInformation {
 	variantTexts: {

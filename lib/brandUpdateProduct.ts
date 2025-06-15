@@ -1,4 +1,4 @@
-import { createClient } from "@/supabase_change/server";
+import { createClient } from "@/supabase/server";
 import { ProductDetails } from "./types";
 
 export const fetchProductById = async (id: string): Promise<ProductDetails | null> => {

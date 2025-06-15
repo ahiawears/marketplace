@@ -10,24 +10,18 @@ interface MeasurementSizesTableProps {
     category: string; 
     measurements: {
         [size: string]: {
-          [measurement: string]: number | string; // Measurements (e.g., "chest", "waist", etc.)
-          quantity: number;
+          [measurement: string]: number | undefined; // Measurements (e.g., "chest", "waist", etc.)
+          quantity: number | undefined;
         };
     };
-    onMeasurementChange: (size: string, field: string, value: number) => void; // Function to handle updates
+    onMeasurementChange: (size: string, field: string, value: number | undefined) => void; // Function to handle updates
     measurementUnit: "Inch" | "Centimeter"; 
     setMeasurementUnit: (unit: "Inch" | "Centimeter") => void; 
     updateVariant: (index: number, field: keyof ProductVariantType, value: string | "Inch" | "Centimeter") => void;
     variantIndex: number; 
 }
 
-function ValidateNumber(strNumber: string, allowDecimal: boolean = false): boolean {
-    if (allowDecimal) {
-        return /^\d+(\.\d+)?$/.test(strNumber) && !/[eE]/.test(strNumber); // Allows integers and decimals, but not 'e' or 'E'
-    } else {
-        return /^\d+$/.test(strNumber) && !/[eE]/.test(strNumber); // Only allows integers, but not 'e' or 'E'
-    }
-}
+
 
 // Dynamic table component for measurements, sizes, and quantities
 const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category, measurements, onMeasurementChange, measurementUnit, setMeasurementUnit, updateVariant, variantIndex  }) => {
@@ -75,24 +69,45 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement>,
         size: string,
-        measurement: string,
+        measurementType: string,
         isQuantity: boolean
       ) => {
         const inputValue = e.target.value;
-        
-        if (!ValidateNumber(inputValue)) {
-            // If not a valid number, remove the last character
-            e.target.value = inputValue.slice(0, -1);
-            return;
-        }
+        const fieldName = isQuantity ? "quantity" : measurementType;
 
-        if (/[eE]/.test(inputValue)) {
-            e.target.value = inputValue.replace(/[eE]/g, "");
-            return;
+        if (inputValue === "") {
+            onMeasurementChange(size, fieldName, undefined);
+        } else {
+            let numericValue: number | undefined = undefined;
+
+            if (isQuantity) {
+                // For quantity, allow only non-negative integers.
+                // The /^[eE-]/ check at the top should prevent negative signs and 'e'.
+                if (/^\d+$/.test(inputValue)) {
+                    const parsed = parseInt(inputValue, 10);
+                    if (!isNaN(parsed) && parsed >= 0) { // Ensure it's a non-negative integer
+                        numericValue = parsed;
+                    }
+                }
+            } else {
+                // For measurements, allow only non-negative decimals.
+                // The /^[eE-]/ check at the top should prevent negative signs and 'e'.
+                // This regex checks for valid positive float patterns (e.g., "123", "123.45", ".5").
+                if (/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(inputValue)) {
+                    const parsed = parseFloat(inputValue);
+                    if (!isNaN(parsed) && parsed >= 0) { // Ensure it's a non-negative float
+                        numericValue = parsed;
+                    }
+                }
+            }
+
+           
+            if (numericValue !== undefined) {
+                onMeasurementChange(size, fieldName, numericValue);
+            }
+            // If isNaN(numericValue) (e.g. user typed "--"), onMeasurementChange is not called.
+            // The input field will show what the user typed, but the state won't update with an invalid number.
         }
-      
-        // Update the state with the numeric value
-        onMeasurementChange(size, isQuantity ? "quantity" : measurement, inputValue ? parseFloat(inputValue) : 0);
     };
     return (
         <div className="overflow-x-auto mt-5">
@@ -146,6 +161,14 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                     </div>
                 </div>
             </div>
+
+            <div className="my-2">
+                <p
+                    className="text-sm"
+                >
+                    Select applicable sizes, then input their specific measurements and available stock quantity.
+                </p>
+            </div>
             {/* Size Selection */}
             <div className="flex flex-wrap gap-2 mb-4">
                 {sizes.map((size) => (
@@ -164,6 +187,7 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                     </div>
                 ))}
             </div>
+            
             {/* Measurements Table */}
             <table className="table-auto w-full border-collapse border border-gray-300">
                 <thead>
