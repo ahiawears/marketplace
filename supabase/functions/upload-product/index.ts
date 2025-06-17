@@ -40,6 +40,8 @@ interface GeneralDetails {
     tags: string[];
     currency: string;
     material: string;
+    season: string;
+    gender: string;
 }
 
 Deno.serve(async (req: Request) => {

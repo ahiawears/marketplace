@@ -9,8 +9,9 @@ import Accordion from "./Accordion";
 import React from "react";
 import ProductShippingDetails from "../upload-product/product-shipping-details";
 import CareInstructions from "../upload-product/care-instructions";
+import { uploadGeneralDetails, uploadProductCareInstruction, uploadProductShippingDetails, uploadProductVariants } from "@/actions/add-product/publish-product-action";
     
-const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedStatus, userId, accessToken }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>, onVariantSaved: (index: number, isSaved: boolean) => void,  savedStatus: boolean[], userId: string | null, accessToken: string | null }) => {
+const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedStatus, userId, accessToken }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>, onVariantSaved: (index: number, isSaved: boolean) => void,  savedStatus: boolean[], userId: string | null, accessToken: string }) => {
     const [sizes, setSizes] = useState<string[]>([]);
     const [isFirstAccordionCompleted, setIsFirstAccordionCompleted] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
@@ -31,33 +32,104 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
     const productCurrency = productData.generalDetails.currency;
     const productCurrencySymbol = currency.find((c) => c.code === productCurrency)?.symbol || "";
 
-    const setGeneralDetails = (details: GeneralProductDetailsType | ((prev: GeneralProductDetailsType) => GeneralProductDetailsType)) => {
+    const setGeneralDetails = async (detailsInput: GeneralProductDetailsType | ((prev: GeneralProductDetailsType) => GeneralProductDetailsType)) => {
+        // Resolve detailsInput to the actual GeneralProductDetailsType object
+        const resolvedDetails: GeneralProductDetailsType = 
+            typeof detailsInput === 'function' 
+                ? detailsInput(productData.generalDetails) 
+                : detailsInput;
+
         setProductData((prev) => ({
             ...prev,
-            generalDetails: typeof details === 'function' ? details(prev.generalDetails) : details,
+            generalDetails: resolvedDetails,
         }));
-        setIsFirstAccordionCompleted(true);
+
+
+        const result = await uploadGeneralDetails(resolvedDetails, accessToken);
+        try {
+            if (result.success) {
+                console.log(result.message);
+            } else {
+                // Handle error from the action (e.g., show a message)
+                console.error("Failed to upload general details:", result.message);
+            }
+        } catch (error) {
+            console.error("Error during general details upload:", error);
+        }
+        //setIsFirstAccordionCompleted(true);
     };
 
-    const setProductVariants = (variants: ProductVariantType[] | ((prev: ProductVariantType[]) => ProductVariantType[])) => {
+    const setProductVariants = async (variants: ProductVariantType[] | ((prev: ProductVariantType[]) => ProductVariantType[])) => {
+        const productIdg = "12314567";
+        const resolvedDetails: ProductVariantType[] = 
+            typeof variants === 'function' 
+                ? variants(productData.productVariants) 
+                : variants;
+
         setProductData((prev) => ({
             ...prev, 
-            productVariants: typeof variants === 'function' ? variants(prev.productVariants) : variants,
+            productVariants: resolvedDetails,
         }));
+        const result = await uploadProductVariants(resolvedDetails, productIdg, accessToken);
+        try {
+            if (result.success) {
+                console.log(result.message);
+            } else {
+                // Handle error from the action (e.g., show a message)
+                console.error("Failed to upload general details:", result.message);
+            }
+        } catch (error) {
+            console.error("Error during general details upload:", error);
+        }
     };
 
-    const setProductShippingConfiguration = (productShippingDetails: ProductShippingDeliveryType | ((prev: ProductShippingDeliveryType) => ProductShippingDeliveryType)) => {
+    const setProductShippingConfiguration = async (productShippingDetails: ProductShippingDeliveryType | ((prev: ProductShippingDeliveryType) => ProductShippingDeliveryType)) => {
+        const productIdg = "12314567";
+
+        const resolvedDetails: ProductShippingDeliveryType = 
+            typeof productShippingDetails === 'function'
+                ? productShippingDetails(productData.shippingDelivery)
+                : productShippingDetails;
+
         setProductData((prev) => ({
             ...prev,
-            shippingDelivery: typeof productShippingDetails === 'function' ? productShippingDetails(prev.shippingDelivery) : productShippingDetails,
+            shippingDelivery: resolvedDetails
         }));
+        const result = await uploadProductShippingDetails(resolvedDetails, productIdg, accessToken);
+        try {
+            if (result.success) {
+                console.log(result.message);
+            } else {
+                // Handle error from the action (e.g., show a message)
+                console.error("Failed to upload general details:", result.message);
+            }
+        } catch (error) {
+            console.error("Error during general details upload:", error);
+        }
     };
 
-    const setCareInstructions = (careInstructions: ProductCareInstruction | ((prev: ProductCareInstruction) => ProductCareInstruction)) => {
+    const setCareInstructions = async (careInstructions: ProductCareInstruction | ((prev: ProductCareInstruction) => ProductCareInstruction)) => {
+        const productIdg = "12314567";
+        const resolvedDetails: ProductCareInstruction = 
+            typeof careInstructions === 'function'
+                ? careInstructions(productData.careInstructions)
+                : careInstructions;
+
         setProductData((prev) => ({
             ...prev,
-            careInstructions: typeof careInstructions === 'function' ? careInstructions(prev.careInstructions) : careInstructions,
+            careInstructions: resolvedDetails
         }));
+        const result = await uploadProductCareInstruction( resolvedDetails, productIdg, accessToken );
+        try {
+            if (result.success) {
+                console.log(result.message);
+            } else {
+                // Handle error from the action (e.g., show a message)
+                console.error("Failed to upload general details:", result.message);
+            }
+        } catch (error) {
+            console.error("Error during general details upload:", error);
+        }
     }
     
     const accordionItems = [
@@ -107,10 +179,6 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
             disabled: false,
         }
     ];
-
-    useEffect(() => {
-        console.log("General Details updated:", productData);
-    }, [productData]);
 
     return (
         <div className="rounded-lg shadow-sm mx-auto">

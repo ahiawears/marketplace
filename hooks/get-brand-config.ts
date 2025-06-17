@@ -247,16 +247,13 @@ export const useShippingConfig = (userId?: string, accessToken?: string) => {
             
             // The API response has a `data` field which contains the actual shipping data object
             if (apiResponse.data) {
-                console.log("Raw Shipping Data from API (data.data):", apiResponse.data);
                 const transformedConfig = transformApiDataToShippingDetails(apiResponse.data as RawApiData);
                 setConfig(transformedConfig);
             } else {
-                console.log("No shipping data found in API response, using default configuration.");
                 setConfig(DEFAULT_SHIPPING_CONFIG); // Fallback to default if data key is missing or null
             }
-        } catch (e: any) {
-            console.error("Failed to fetch or transform shipping config:", e);
-            setError(e.message || "An unexpected error occurred.");
+        } catch (error: any) {
+            setError(error.message || "An unexpected error occurred.");
             setConfig(DEFAULT_SHIPPING_CONFIG); // Fallback to default on any error
         } finally {
             setLoading(false);

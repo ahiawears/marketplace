@@ -1,3 +1,4 @@
+import { categoriesList } from "./categoriesList";
 import { DeliveryZoneKey, GeneralProductDetailsType, ProductCareInstruction, ProductShippingDeliveryType, ProductVariantType, ShippingConfigDataProps } from "./types";
 
 export interface GeneralDetailsErrors {
@@ -100,7 +101,7 @@ const isValidDateString = (dateStr: string): boolean => {
     return /^\d{4}-\d{2}-\d{2}$/.test(dateStr) && !isNaN(new Date(dateStr).getTime());
 };
 
-export const validateProductVariant = (variant: ProductVariantType): { isValid: boolean; errors: ProductVariantErrors } => {
+export const validateProductVariant = (variant: ProductVariantType, categoryName: string): { isValid: boolean; errors: ProductVariantErrors } => {
     const errors: ProductVariantErrors = {
         variantName: "",
         sku: "",
@@ -179,67 +180,96 @@ export const validateProductVariant = (variant: ProductVariantType): { isValid: 
         isValid = false;
     }
 
-    if (!variant.measurements || Object.keys(variant.measurements).length === 0) {
-        // This check depends on whether measurements are always required or category-dependent.
-        // For now, assuming if the measurements object exists, it should not be empty.
-        // Adjust if measurements are optional for some categories.
-        errors.measurements = "At least one size with measurements and quantity is required.";
-        isValid = false;
-    } else {
-        for (const size in variant.measurements) {
-            const sizeData = variant.measurements[size];
-            // Validate Quantity
-            if (sizeData.quantity === undefined || sizeData.quantity === null) {
-                errors.measurements = `Quantity for size '${size}' is required and must be a positive number.`;
-                isValid = false;
-                break;
-            } else if (isNaN(sizeData.quantity)) {
-                errors.measurements = `Only valid numbers allowed for quantity in size '${size}'.`;
-                isValid = false;
-                break;
-            } else if (sizeData.quantity <= 0) { // Assuming quantity must be greater than 0
-                errors.measurements = `Quantity for size '${size}' must be a positive number.`;
-                isValid = false;
-                break;
-            }
+    // if (!variant.measurements || Object.keys(variant.measurements).length === 0) {
+    //     // This check depends on whether measurements are always required or category-dependent.
+    //     // For now, assuming if the measurements object exists, it should not be empty.
+    //     // Adjust if measurements are optional for some categories.
+    //     errors.measurements = "At least one size with measurements and quantity is required.";
+    //     isValid = false;
+    // } else {
+    //     for (const size in variant.measurements) {
+    //         const sizeData = variant.measurements[size];
+    //         // Validate Quantity
+    //         if (sizeData.quantity === undefined || sizeData.quantity === null) {
+    //             errors.measurements = `Quantity for size '${size}' is required and must be a positive number.`;
+    //             isValid = false;
+    //             break;
+    //         } else if (isNaN(sizeData.quantity)) {
+    //             errors.measurements = `Only valid numbers allowed for quantity in size '${size}'.`;
+    //             isValid = false;
+    //             break;
+    //         } else if (sizeData.quantity <= 0) { // Assuming quantity must be greater than 0
+    //             errors.measurements = `Quantity for size '${size}' must be a positive number.`;
+    //             isValid = false;
+    //             break;
+    //         }
 
 
-            // Check 2: All other measurement types for this size must be positive numbers
-            // This is only relevant if quantity > 0, which is ensured by the check above.
-            for (const measurementType in sizeData) {
-                if (measurementType !== 'quantity') { // Skip the quantity field itself for this check
-                    const measurementValue = sizeData[measurementType];
-                     if (measurementValue === undefined || measurementValue === null) {
-                        errors.measurements = `Measurement '${measurementType}' for size '${size}' is required and must be a positive number.`;
+    //         // Check 2: All other measurement types for this size must be positive numbers
+    //         // This is only relevant if quantity > 0, which is ensured by the check above.
+    //         for (const measurementType in sizeData) {
+    //             if (measurementType !== 'quantity') { // Skip the quantity field itself for this check
+    //                 const measurementValue = sizeData[measurementType];
+    //                  if (measurementValue === undefined || measurementValue === null) {
+    //                     errors.measurements = `Measurement '${measurementType}' for size '${size}' is required and must be a positive number.`;
+    //                     isValid = false;
+    //                     break; 
+    //                 } else if (isNaN(measurementValue)) {
+    //                     errors.measurements = `Only valid numbers allowed for measurement '${measurementType}' in size '${size}'.`;
+    //                     isValid = false;
+    //                     break;
+    //                 } else if (measurementValue <= 0) {
+    //                     errors.measurements = `Measurement '${measurementType}' for size '${size}' must be a positive number.`;
+    //                     isValid = false;
+    //                     break; // Exit inner loop
+    //                 }
+    //             }
+    //         }
+            
+    //         if (!isValid) {
+    //             break; // Exit outer loop if an inner measurement was invalid
+    //         }
+    //     }
+    // }
+
+    // Enhanced Measurement Validation
+    if (categoryName && variant.measurements && Object.keys(variant.measurements).length > 0) {
+        const categoryDetails = categoriesList.find(cat => cat.name === categoryName);
+        if (categoryDetails && categoryDetails.measurements && categoryDetails.measurements.length > 0) {
+            const expectedMeasurementTypes = categoryDetails.measurements; // e.g., ["Chest", "Waist", "Length"]
+
+            for (const sizeKey in variant.measurements) {
+                // Check only if the sizeKey is an own property and is selected (i.e., present in variant.measurements)
+                if (Object.prototype.hasOwnProperty.call(variant.measurements, sizeKey)) {
+                    const sizeMeasurements = variant.measurements[sizeKey];
+
+                    // Check quantity
+                    if (sizeMeasurements.quantity === undefined || sizeMeasurements.quantity === null || sizeMeasurements.quantity <= 0) {
                         isValid = false;
+                        errors.measurements = `Quantity for size '${sizeKey}' must be a positive number.`;
                         break; 
-                    } else if (isNaN(measurementValue)) {
-                        errors.measurements = `Only valid numbers allowed for measurement '${measurementType}' in size '${size}'.`;
-                        isValid = false;
-                        break;
-                    } else if (measurementValue <= 0) {
-                        errors.measurements = `Measurement '${measurementType}' for size '${size}' must be a positive number.`;
-                        isValid = false;
-                        break; // Exit inner loop
                     }
+
+                    // Check each expected measurement type
+                    for (const measurementType of expectedMeasurementTypes) {
+                        const measurementValue = sizeMeasurements[measurementType];
+                        if (measurementValue === undefined || measurementValue === null || measurementValue <= 0) {
+                            isValid = false;
+                            errors.measurements = `Measurement '${measurementType}' for size '${sizeKey}' must be a positive number.`;
+                            break; 
+                        }
+                    }
+                    if (!isValid) break; // Stop checking other sizes if an error is found for the current one
                 }
             }
-            
-            if (!isValid) {
-                break; // Exit outer loop if an inner measurement was invalid
-            }
         }
-    }
+    } // else if category expects measurements but none are provided, this could be another check if needed.
+
     
     if (variant.availableDate && !isValidDateString(variant.availableDate)) {
         errors.availableDate = "Available date must be in YYYY-MM-DD format.";
         isValid = false;
     }
-
-
-    // Note: colorName and mainColor are often derived.
-    // If they are directly user-editable, add validations for them.
-    // productId is usually system-generated, so not typically validated here.
 
     return { isValid, errors };
 };

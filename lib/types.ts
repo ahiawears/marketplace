@@ -436,7 +436,7 @@ export interface ProductUploadData {
   generalDetails: GeneralProductDetailsType;
   productVariants: ProductVariantType[];
   shippingDelivery: ProductShippingDeliveryType;
-  returnRefundPolicy: ReturnRefundPolicyType;
+  returnRefundPolicy: ReturnRefundPolicyType;   
   careInstructions: ProductCareInstruction;
 }
 

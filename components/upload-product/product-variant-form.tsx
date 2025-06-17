@@ -74,7 +74,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
 
       // Updated validation check
     const runVariantValidation = (index: number): boolean => {
-        const { isValid, errors } = validateProductVariant(variants[index]);
+        const { isValid, errors } = validateProductVariant(variants[index], category);
         setVariantErrors(prevErrors => {
             const newErrors = [...prevErrors];
             newErrors[index] = errors;
@@ -83,16 +83,14 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         return isValid;
     };
 
-    const [selectedDate, setSelectedDate] = useState(""); // State to hold the date
 
-    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedDate(e.target.value);
+    const handleDateChange = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+        updateVariant(index, "availableDate", e.target.value);
     };
 
     const updateVariantPrice = (index: number, field: keyof ProductVariantType, value: number) => {
         const updatedVariants = [...variants];
         updatedVariants[index] = { ...updatedVariants[index], [field]: value };
-
         setVariants(updatedVariants);
     }
 
@@ -156,7 +154,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         updatedVariants[variantIndex].images = newImages;
         updatedVariants[variantIndex].main_image_url = newImages[0];
         setVariants(updatedVariants);
-
     };
 
     // const handleFormSave = (index: number) => {
@@ -181,7 +178,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
 
     useEffect(() => {
         variants.forEach((_, index) => {
-            if (savedStatus[index] && !validateProductVariant(variants[index]).isValid) {
+            if (savedStatus[index] && !validateProductVariant(variants[index], category).isValid) {
                 onVariantSaved(index, false);
             }
         });
@@ -506,8 +503,8 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                         <DatePicker
                                             id="availableDate"
                                             name="availableDate"
-                                            value={selectedDate}
-                                            onChange={handleDateChange}
+                                             value={variant.availableDate || ""} // Use variant's date
+                                            onChange={(e) => handleDateChange(index, e)} // Pass index
                                             min={new Date().toISOString().split("T")[0]}
                                             className="border-2"
                                             placeholder="mm/dd/yyyy"
@@ -529,7 +526,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                             onMeasurementChange={(size, field, value) =>
                                                 handleMeasurementChange(index, size, field, value)
                                             }
-                                            measurementUnit={measurementUnit}
+                                            measurementUnit={variants[index].measurementUnit}
                                             setMeasurementUnit={setMeasurementUnit}
                                             updateVariant={updateVariant} 
                                             variantIndex={index} 
@@ -556,11 +553,11 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                 <Button 
                                     type="button"
                                     onClick={() => handleFormSave(index)}
-                                    disabled={!validateProductVariant(variants[index])}
+                                    disabled={!validateProductVariant(variants[index], category).isValid}
                                     //disabled={savedStatus[index]} // Or use a different logic for disabling
 
                                     className={`flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold shadow-sm ${
-                                     validateProductVariant(variants[index]).isValid
+                                     validateProductVariant(variants[index], category).isValid
                                         ? "bg-black text-white hover:bg-gray-800"
                                         : "bg-gray-300 text-gray-500 cursor-not-allowed"
                                     }`}

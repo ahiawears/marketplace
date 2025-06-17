@@ -25,7 +25,6 @@ interface GeneralProductDetailsProps {
 
 const gender = ["Male", "Female", "Unisex"];
 
-
 const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, userId, accessToken }) => {
 
     const [errors, setErrors] = useState<GeneralDetailsErrors>({
@@ -69,7 +68,6 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
             setGeneralDetails(localDetails);
             onSaveAndContinue();
         }
-        console.log(localDetails);
     };
 
     const handleChange = (field: keyof GeneralProductDetailsType, value: string | string[]) => {

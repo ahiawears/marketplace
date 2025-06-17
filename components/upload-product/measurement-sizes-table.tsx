@@ -15,7 +15,7 @@ interface MeasurementSizesTableProps {
         };
     };
     onMeasurementChange: (size: string, field: string, value: number | undefined) => void; // Function to handle updates
-    measurementUnit: "Inch" | "Centimeter"; 
+    measurementUnit: string; 
     setMeasurementUnit: (unit: "Inch" | "Centimeter") => void; 
     updateVariant: (index: number, field: keyof ProductVariantType, value: string | "Inch" | "Centimeter") => void;
     variantIndex: number; 
@@ -121,8 +121,8 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                         <div className="flex items-center">
                             <Input 
                                 type="radio"
-                                id="measurementUnitInch"
-                                name="measurementUnit"
+                                id={`measurementUnitInch-${variantIndex}`}
+                                name={`measurementUnit-${variantIndex}`}
                                 value="Inch"
                                 checked={measurementUnit === "Inch"}
                                 onChange={(e) => {
@@ -141,8 +141,8 @@ const MeasurementSizesTable: React.FC<MeasurementSizesTableProps> = ({ category,
                         <div className="flex items-center">
                             <Input
                                 type="radio"
-                                id="measurementUnitCentimeter"
-                                name="measurementUnit"
+                                id={`measurementUnitCentimeter-${variantIndex}`}
+                                name={`measurementUnit-${variantIndex}`}
                                 value="Centimeter"
                                 checked={measurementUnit === "Centimeter"}
                                 onChange={(e) => {

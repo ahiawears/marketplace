@@ -5,6 +5,7 @@ import { Select } from "../ui/select";
 import { Button } from "../ui/button";
 import { useState } from "react";
 import { ProductCareInstruction } from "@/lib/types";
+import { on } from "events";
 
 interface CareInstructionsProps {
     initialCareInstructions: ProductCareInstruction;
@@ -25,7 +26,7 @@ const CareInstructions: React.FC<CareInstructionsProps> = ({ initialCareInstruct
     }
 
     const handleSave = (instructions: ProductCareInstruction) => {
-        console.log(instructions);
+        onSaveCareinstructions(instructions);
     }
     return (
         <div className="my-6 space-y-4">
