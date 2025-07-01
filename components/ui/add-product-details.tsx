@@ -10,18 +10,62 @@ import React from "react";
 import ProductShippingDetails from "../upload-product/product-shipping-details";
 import CareInstructions from "../upload-product/care-instructions";
 import { uploadGeneralDetails, uploadProductCareInstruction, uploadProductShippingDetails, uploadProductVariants } from "@/actions/add-product/publish-product-action";
+import LoadContent from "@/app/load-content/page";
     
 const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedStatus, userId, accessToken }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>, onVariantSaved: (index: number, isSaved: boolean) => void,  savedStatus: boolean[], userId: string | null, accessToken: string }) => {
-    const [sizes, setSizes] = useState<string[]>([]);
-    const [isFirstAccordionCompleted, setIsFirstAccordionCompleted] = useState(false);
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
-    const [user_id, setUserId] = useState("");
-    const [access_token, setAccessToken] = useState("");
+    const [productId, setProductId] = useState<string>("");
+    const [product_currency, setProductCurrency] = useState<string>("");
+    const [productCurrencySymbol, setProductCurrencySymbol] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
+    const [savingVariantIndex, setSavingVariantIndex] = useState<number | null>(null);
+
 
     useEffect(() => {
         if (userId && accessToken) {
-            setUserId(userId);
-            setAccessToken(accessToken);
+            const getBrandDetails = async () => {
+                const dataName = "legal-details";
+                try {
+                    const response = await fetch (`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-details?data_name=${dataName}&userId=${userId}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${accessToken}`,
+                                'Content-Type': 'application/json',
+                            }
+                        }
+                    )
+    
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || "Couldn't create a connection with the server");
+                    }
+    
+                    const data = await response.json();
+    
+                    if (!data.data) {
+                        throw new Error("No data found for the user, please try again");
+                    }
+
+                    const brand_country = data.data.country_of_registration;
+                    const brandCurrency = currency.find((c) => c.country_alpha === brand_country);
+                    if (brandCurrency) {
+                        setProductCurrency(brandCurrency?.code.toString());
+                        setProductCurrencySymbol(brandCurrency?.symbol.toString());
+                        
+                    }    
+                } catch (error) {
+                    //set error here
+                    if (error instanceof Error) {
+                        console.error("Error fetching brand details:", error.message);
+                        //setErrorMessage(error.message || "An error occurred while fetching brand details.");
+                    } else {
+                        console.log("An unexpected error occurred.");
+                        //setErrorMessage("An unexpected error occurred.");
+                    }
+                }
+            }
+            getBrandDetails();
         }
     }, [userId, accessToken]);
 
@@ -29,57 +73,142 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
         setActiveIndex(activeIndex === 0 ? activeIndex + 1 : activeIndex); 
     };
 
-    const productCurrency = productData.generalDetails.currency;
-    const productCurrencySymbol = currency.find((c) => c.code === productCurrency)?.symbol || "";
 
     const setGeneralDetails = async (detailsInput: GeneralProductDetailsType | ((prev: GeneralProductDetailsType) => GeneralProductDetailsType)) => {
-        // Resolve detailsInput to the actual GeneralProductDetailsType object
-        const resolvedDetails: GeneralProductDetailsType = 
-            typeof detailsInput === 'function' 
-                ? detailsInput(productData.generalDetails) 
-                : detailsInput;
-
-        setProductData((prev) => ({
-            ...prev,
-            generalDetails: resolvedDetails,
-        }));
-
-
-        const result = await uploadGeneralDetails(resolvedDetails, accessToken);
+        setLoading(true);
+        setError(null);
         try {
+            // Resolve detailsInput to the actual GeneralProductDetailsType object
+            const resolvedDetails: GeneralProductDetailsType = 
+                typeof detailsInput === 'function' 
+                    ? detailsInput(productData.generalDetails) 
+                    : detailsInput;
+
+            setProductData((prev) => ({
+                ...prev,
+                generalDetails: resolvedDetails,
+            }));
+
+            const result = await uploadGeneralDetails(resolvedDetails, accessToken);
+
             if (result.success) {
-                console.log(result.message);
+                console.log("General details saved, Product ID:", result.data);
+                setProductId(result.data);
+                handleNextAccordion(); // Proceed to the next step only on success
             } else {
-                // Handle error from the action (e.g., show a message)
+                // Handle controlled error from the action (e.g., validation failure)
                 console.error("Failed to upload general details:", result.message);
+                setError(result.message);
             }
         } catch (error) {
-            console.error("Error during general details upload:", error);
+            console.error("An unexpected error occurred during general details upload:", error);
+            setError(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.");
+        } finally {
+            setLoading(false);
         }
-        //setIsFirstAccordionCompleted(true);
     };
 
     const setProductVariants = async (variants: ProductVariantType[] | ((prev: ProductVariantType[]) => ProductVariantType[])) => {
-        const productIdg = "12314567";
-        const resolvedDetails: ProductVariantType[] = 
+        if (productId !== null ) {
+            const resolvedDetails: ProductVariantType[] = 
             typeof variants === 'function' 
                 ? variants(productData.productVariants) 
                 : variants;
 
-        setProductData((prev) => ({
-            ...prev, 
-            productVariants: resolvedDetails,
+            setProductData((prev) => ({
+                ...prev, 
+                productVariants: resolvedDetails,
+            }));
+            const result = await uploadProductVariants(resolvedDetails, productId, product_currency, accessToken);
+            try {
+                if (result.success) {
+                    console.log(result.message);
+                } else {
+                    // Handle error from the action (e.g., show a message)
+                    console.error("Failed to upload general details:", result.message);
+                }
+            } catch (error) {
+                console.error("Error during general details upload:", error);
+            }
+            
+        } else {
+            //let the accordionn be locked, BUT YOU ARE STILL TESTING
+        }
+        
+    };
+
+     // This function ONLY updates the local component state
+    const updateLocalVariants = (variants: ProductVariantType[] | ((prev: ProductVariantType[]) => ProductVariantType[])) => {
+        const resolvedVariants = typeof variants === 'function'
+            ? variants(productData.productVariants)
+            : variants;
+
+        setProductData(prev => ({
+            ...prev,
+            productVariants: resolvedVariants,
         }));
-        const result = await uploadProductVariants(resolvedDetails, productIdg, accessToken);
+    };
+
+    // This function handles the API call to save all variants
+    const saveProductVariants = async (variantIndex?: number) => {
+        if (!productId) {
+            setError("Cannot save variants. Product ID is missing. Please complete the general details step first.");
+            return;
+        }
+
+        let variantsToSave: ProductVariantType[];
+
+        if (typeof variantIndex === 'number') {
+            // Logic to save a single variant
+            const variant = productData.productVariants[variantIndex];
+            if (!variant) {
+                setError(`Variant at index ${variantIndex} not found.`);
+                return;
+            }
+            variantsToSave = [variant];
+        } else {
+            // Logic to save all variants (e.g., for a "Save and Continue" button)
+            if (productData.productVariants.length === 0) {
+                setError("Please add at least one variant to save.");
+                return;
+            }
+            variantsToSave = productData.productVariants;
+        }
+
+        console.log("Uploading variants:", variantsToSave);
+
+        // Use per-variant loading state if saving a single variant
+        if (typeof variantIndex === 'number') {
+            setSavingVariantIndex(variantIndex);
+        } else {
+            setLoading(true); // Use global loading for "save all"
+        }
+        setError(null);
+
         try {
+            const result = await uploadProductVariants(variantsToSave, productId, product_currency, accessToken);
             if (result.success) {
-                console.log(result.message);
+                console.log("Product variants saved successfully:", result.message);
+                if (typeof variantIndex === 'number') {
+                    onVariantSaved(variantIndex, true); // Notify that a specific variant is saved
+                } else {
+                    setActiveIndex(activeIndex === 1 ? activeIndex + 1 : activeIndex); // Move to next accordion on "save all"
+                }            
             } else {
-                // Handle error from the action (e.g., show a message)
-                console.error("Failed to upload general details:", result.message);
+                setError(result.message);
+                if (typeof variantIndex === 'number') {
+                    onVariantSaved(variantIndex, false);
+                }
             }
         } catch (error) {
-            console.error("Error during general details upload:", error);
+            setError(error instanceof Error ? error.message : "An unexpected error occurred while saving variants.");
+        } finally {
+            // Reset the correct loading state
+            if (typeof variantIndex === 'number') {
+                setSavingVariantIndex(null);
+            } else {
+                setLoading(false);
+            }
         }
     };
 
@@ -138,7 +267,6 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
             content:<GeneralProductDetails 
                         generalDetails={productData.generalDetails} 
                         setGeneralDetails={setGeneralDetails}
-                        onSaveAndContinue={handleNextAccordion}
                         userId={userId}
                         accessToken={accessToken}
                     />,
@@ -148,13 +276,15 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
             title: "Add Product Variants",
             content: <ProductVariantForm 
                         variants={productData.productVariants} 
-                        setVariants={setProductVariants} 
+                        setVariants={updateLocalVariants} 
                         originalProductName={productData.generalDetails.productName} 
-                        sizes={sizes} 
+                        productId={productId}
                         currencySymbol={productCurrencySymbol} 
                         category={productData.generalDetails.category}
                         onVariantSaved={onVariantSaved}
                         savedStatus={savedStatus}
+                        saveVariant={saveProductVariants}
+                        savingVariantIndex={savingVariantIndex}
 
                     />,
             //disabled: !isFirstAccordionCompleted,
@@ -163,8 +293,8 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
         {
             title: "Product Shipping Details",
             content: <ProductShippingDetails 
-                        userId={user_id}
-                        accessToken={access_token}
+                        userId={userId!}
+                        accessToken={accessToken}
                         currencySymbol={productCurrencySymbol}
                         onSaveShippingDetails={setProductShippingConfiguration}
                     />,
@@ -180,8 +310,18 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
         }
     ];
 
+    if (loading) {
+        return <LoadContent />
+    }
+
     return (
         <div className="rounded-lg shadow-sm mx-auto">
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong className="font-bold">Error: </strong>
+                    <span className="block sm:inline">{error}</span>
+                </div>
+            )}
             <Accordion 
                 items={accordionItems} 
                 activeIndex={activeIndex} 

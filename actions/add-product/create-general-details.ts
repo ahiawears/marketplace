@@ -1,4 +1,4 @@
-export async function createProduct(supabase: any, categoryId: string, subCategoryId: string, materialId: string, description: string, name: string, currencyId: string, brandId: string){
+export async function createProduct(supabase: any, categoryId: string, subCategoryId: string, materialId: string, description: string, name: string, currencyId: string, genderId: string, seasonId: string, brandId: string){
     try {
         const { data: productDataInserted, error: productError } = await supabase  
             .from("products_list")
@@ -9,6 +9,8 @@ export async function createProduct(supabase: any, categoryId: string, subCatego
                 category_id: categoryId, 
                 subcategory_id: subCategoryId,
                 currency_id: currencyId,
+                gender_id: genderId,
+                season_id: seasonId,
                 brand_id: brandId
             }, {
                 onConflict: 'id'

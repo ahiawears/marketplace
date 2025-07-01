@@ -18,11 +18,13 @@ interface ProductVariantProps {
     variants: ProductVariantType[];
     setVariants: (variants: ProductVariantType[]) => void;
     originalProductName: string;
-    sizes: string[];
+    productId: string;
     currencySymbol: string;
     category: string;
     onVariantSaved: (index: number, isSaved: boolean) => void;
     savedStatus: boolean[];
+    saveVariant: (index: number) => void;
+    savingVariantIndex?: number | null;
 }
 
 const generateSKU = (productName: string, color: string): string => {
@@ -36,22 +38,16 @@ const generateProductCode = (productName: string): string => {
     return `${productName.slice(0, 5).replace(/\s+/g, "").toUpperCase()}-${Date.now().toString()}`;
 };
 
-const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariants, originalProductName, sizes, currencySymbol, category, onVariantSaved, savedStatus}) => {
+const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariants, originalProductName, productId, currencySymbol, category, onVariantSaved, savedStatus, saveVariant, savingVariantIndex}) => {
     const [measurementUnit, setMeasurementUnit] = useState<"Inch" | "Centimeter">("Inch");
 
     const [variantErrors, setVariantErrors] = useState<ProductVariantErrors[]>([]);
 
 
-    // Transform ColourList for SearchableSelect
     const addProductVariant = () => {
-        const initialQuantities = sizes.reduce((acc, size) => {
-            acc[size] = 0;
-            return acc;
-        }, {} as { [size: string]: number });
-    
         const newVariant: ProductVariantType = {
             variantName: "",
-            productId: "",
+            productId: productId,
             colorName: "",
             colorHex: "",
             main_image_url: "",
@@ -68,7 +64,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             availableDate: ""
         };
         setVariants([...variants, newVariant]);
-         // Notify parent that a new variant was added (unsaved by default)
+        // Notify parent that a new variant was added (unsaved by default)
         onVariantSaved(variants.length, false);
     };
 
@@ -169,6 +165,7 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
             const variantsData = variants[index];
             console.log("The variant data is: ", variantsData);
             onVariantSaved(index, true);
+            saveVariant(index);
         } else {
             console.log("Validation errors for variant " + index + ":", variantErrors[index]);
             onVariantSaved(index, false);
@@ -553,22 +550,14 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                 <Button 
                                     type="button"
                                     onClick={() => handleFormSave(index)}
-                                    disabled={!validateProductVariant(variants[index], category).isValid}
-                                    //disabled={savedStatus[index]} // Or use a different logic for disabling
-
+                                    disabled={!validateProductVariant(variants[index], category).isValid || savingVariantIndex === index}
                                     className={`flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold shadow-sm ${
                                      validateProductVariant(variants[index], category).isValid
                                         ? "bg-black text-white hover:bg-gray-800"
                                         : "bg-gray-300 text-gray-500 cursor-not-allowed"
                                     }`}
-
-                                    // className={`flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold shadow-sm ${
-                                    //     !savedStatus[index] // Example: enable if not saved
-                                    //         ? "bg-black text-white hover:bg-gray-800"
-                                    //         : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                    // }`}
                                 >
-                                    Save and continue
+                                    {savingVariantIndex === index ? "Saving..." : "Save"}
                                 </Button>
                             </div>
                         </div>
@@ -586,7 +575,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                 </Button>
             </div>
         </div>
-        
     );
 };
 

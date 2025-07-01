@@ -18,20 +18,18 @@ import { GeneralDetailsErrors, validateGeneralProductDetails } from "@/lib/produ
 interface GeneralProductDetailsProps {
     generalDetails: GeneralProductDetailsType;
     setGeneralDetails: (details: GeneralProductDetailsType | ((prev: GeneralProductDetailsType) => GeneralProductDetailsType)) => void;
-    onSaveAndContinue: () => void;
     userId: string | null;
     accessToken: string | null;
 }
 
 const gender = ["Male", "Female", "Unisex"];
 
-const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, onSaveAndContinue, userId, accessToken }) => {
+const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDetails, setGeneralDetails, userId, accessToken }) => {
 
     const [errors, setErrors] = useState<GeneralDetailsErrors>({
         productName: "",
         productDescription: "",
         category: "",
-        currency: "",
         material: "",
         subCategory: "",
         tags: "",
@@ -52,7 +50,6 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
             localDetails.productName.trim() !== "" &&
             localDetails.productDescription.trim() !== "" &&
             localDetails.category.trim() !== "" &&
-            localDetails.currency.trim() !== "" &&
             localDetails.material.trim() !== "" &&
             localDetails.subCategory.trim() !== "" &&
             localDetails.tags.length <= 5 &&
@@ -66,7 +63,8 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
         setErrors(validationErrors);
         if (isValid) {
             setGeneralDetails(localDetails);
-            onSaveAndContinue();
+        } else {
+            setErrors(validationErrors);        
         }
     };
 
@@ -175,53 +173,6 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
         };
         getDetails();
     }, [localDetails.category, localDetails.subCategory, localDetails.tags]);
-
-    useEffect(() => {
-        if (userId && accessToken) {
-            const getBrandDetails = async () => {
-                const dataName = "legal-details";
-                try {
-                    const response = await fetch (`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-details?data_name=${dataName}&userId=${userId}`,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${accessToken}`,
-                                'Content-Type': 'application/json',
-                            }
-                        }
-                    )
-    
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || "Couldn't create a connection with the server");
-                    }
-    
-                    const data = await response.json();
-    
-                    if (!data.data) {
-                        throw new Error("No data found for the user, please try again");
-                    }
-
-                    const brand_country = data.data.country_of_registration;
-                    const brandCurrency = currency.find((c) => c.country_alpha === brand_country);
-                    if (brandCurrency) {
-                        setLocalDetails((prev) => ({
-                            ...prev,
-                            currency: brandCurrency?.code,
-                        }));
-                        setSelectedCurrency(brandCurrency?.id.toString());
-                    }    
-                } catch (error) {
-                    //set error here
-                    if (error instanceof Error) {
-                        setErrorMessage(error.message || "An error occurred while fetching brand details.");
-                    } else {
-                        setErrorMessage("An unexpected error occurred.");
-                    }
-                }
-            }
-            getBrandDetails();
-        }
-    }, [userId, accessToken]);
 
     return (
         <>

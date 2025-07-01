@@ -187,7 +187,7 @@ const AddProductForm = () => {
             <div className="flex flex-col md:flex-row gap-8 h-full">
                 <div className="w-full md:w-3/4">
                     <AddProductDetails 
-                        productData={productData} 
+                        productData={productData}  
                         setProductData={setProductData}
                         onVariantSaved={handleVariantSaved}
                         savedStatus={variantSavedStatus}

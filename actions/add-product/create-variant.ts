@@ -1,4 +1,4 @@
-export async function createVariant(supabase: any, variantName: string, variantSku: string, variantPrice: number,  baseCurrencyPrice: number, colorId: string, colorDescription: string, variantProductCode: string, mainProdductId: string){
+export async function createVariant(supabase: any, variantName: string, variantSku: string, variantPrice: number,  baseCurrencyPrice: number, colorId: string, colorDescription: string, variantProductCode: string, availableDate: string, imagesDescription: string, mainProdductId: string){
     try {
         const { data: variantDataInserted, error: variantError } = await supabase
             .from("product_variants")
@@ -10,7 +10,9 @@ export async function createVariant(supabase: any, variantName: string, variantS
                 product_code: variantProductCode,
                 main_product_id: mainProdductId,
                 base_currency_price: baseCurrencyPrice,
-                color_description: colorDescription
+                color_description: colorDescription,
+                available_date: availableDate,
+                images_description: imagesDescription
             })
             .select('id')
             .single();

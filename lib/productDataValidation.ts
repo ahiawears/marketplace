@@ -5,7 +5,6 @@ export interface GeneralDetailsErrors {
     productName: string;
     productDescription: string;
     category: string;
-    currency: string;
     material: string;
     subCategory: string;
     tags: string;
@@ -17,7 +16,6 @@ export const validateGeneralProductDetails = (details: GeneralProductDetailsType
         productName: "",
         productDescription: "",
         category: "",
-        currency: "",
         material: "",
         subCategory: "",
         tags: "",
@@ -36,10 +34,6 @@ export const validateGeneralProductDetails = (details: GeneralProductDetailsType
     }
     if (!details.category.trim()) {
         errors.category = "Category is required.";
-        isValid = false;
-    }
-    if (!details.currency.trim()) { // Assuming currency is required, adjust if not
-        errors.currency = "Currency is required.";
         isValid = false;
     }
     if (!details.material.trim()) {

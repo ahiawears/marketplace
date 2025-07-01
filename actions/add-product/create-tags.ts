@@ -15,8 +15,6 @@ export async function createTags(supabase: any, tags: string[], productId: strin
             }
 
             if (newTagData) {
-                console.log("The tag data is: ", newTagData);
-                console.log("The product id is: ", productId);
                 tagData.push({ product_id: productId, tag_id: newTagData.id });
             }
         }
