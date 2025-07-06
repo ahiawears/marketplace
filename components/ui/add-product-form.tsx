@@ -36,6 +36,7 @@ const AddProductForm = () => {
 		},
 		productVariants: [],
         shippingDelivery: {
+            productId: "",
             methods: {
                 sameDay: {
                     available: false,

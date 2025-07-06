@@ -134,20 +134,45 @@ export const uploadProductVariants = async (
 
 export const uploadProductShippingDetails = async (
     productShippingConfig: ProductShippingDeliveryType,
-    productId: string,
     accessToken: string,
 ) : Promise<PublishProductResponse> => {
     try {
         const formData = new FormData();
-        formData.append('productId', productId);
+        formData.append('operation', 'ProductShippingData');
         formData.append('productShippingConfig', JSON.stringify(productShippingConfig));
-        console.log(`productShippingConfig: ${JSON.stringify(productShippingConfig)}`);
-        return {
-            success: true,
-            message: "Product Shipping Details Uploaded Successfully",
-            data: `${productShippingConfig}`,
-            loading: false
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`,
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+                body: formData
+            }
+        )
+
+        console.log(formData.get('productShippingConfig'));
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Server Error Details:", errorData);
+            throw new Error(`Failed to upload products shipping details. Response error: ${response.status} - ${response.statusText}`);
         }
+
+         const data = await response.json();
+
+         if (data.success) {
+            console.log("Product shipping details uploaded successfully:", data);
+            return {
+                success: true,
+                message: "Product Shipping Details Uploaded Successfully",
+                data: `${productShippingConfig}`,
+                loading: false
+            }
+        } else {
+            throw new Error(data.message || "Product Shipping Details upload failed");
+        }
+
     } catch (error) {
         return {
             success: false,

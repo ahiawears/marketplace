@@ -3,6 +3,7 @@
 		"importMap": "./import_map.json",
 		"@actions/": "../../../actions/add-product/",
 		"@supabase/": "../../../supabase",
-		"@hooks/": "../../../hooks/"
+		"@hooks/": "../../../hooks/",
+		"@lib/": "../../../lib/"
 	}
 }

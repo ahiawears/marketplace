@@ -14,6 +14,7 @@ interface ProductShippingDetailsProps {
     userId: string;
     accessToken: string;
     currencySymbol: string;
+    productId: string;
     onSaveShippingDetails: (details: ProductShippingDeliveryType) => void;
 }
 
@@ -35,7 +36,7 @@ interface ProductShippingSettings {
 
 }
 
-const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId, accessToken, currencySymbol, onSaveShippingDetails }) => {
+const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId, accessToken, currencySymbol, productId, onSaveShippingDetails }) => {
     const { config: shippingConfig, loading: configLoading, error: configError, refetch } = useShippingConfig(userId, accessToken);
     const [ selectedShippingMethods, setSelectedShippingMethods ] = useState<string[]>([]);
     const [ methodFees, setMethodFees ] = useState<ProductShippingDeliveryType["methods"]>({});
@@ -44,12 +45,12 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
     const [ availableShippingZones, setAvailableShippingZones ] = useState<ShippingZoneItem[]>([]);
     const { shippingMethods, shippingZones } = shippingConfig;
     const [ errorMessage, setErrorMessage ] = useState("");
-    const [isSaveButtonDisabled, setIsSaveButtonDisabled] = useState<boolean>(true);
-    const [measurementUnit, setMeasurementUnit] = useState<"Inch" | "Centimeter">("Inch");
+    const [ isSaveButtonDisabled, setIsSaveButtonDisabled ] = useState<boolean>(true);
+    const [ measurementUnit, setMeasurementUnit ] = useState<"Inch" | "Centimeter">("Inch");
 
 
     useEffect(() => {
-        if (shippingConfig && !configLoading && shippingConfig.shippingMethods && shippingConfig.shippingZones) {
+        if (shippingConfig && !configLoading && shippingConfig.shippingMethods && shippingConfig.shippingZones && productId !== "" && productId !== null) {
             const initialFees: ProductShippingDeliveryType["methods"] = {};
 
             // Same Day Delivery
@@ -90,7 +91,7 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
             }
             setMethodFees(initialFees);
         }
-    }, [shippingConfig, configLoading]);
+    }, [shippingConfig, configLoading, productId]);
 
 
     const handleMethodSelect = (method: string) => {
@@ -174,6 +175,7 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
         });
 
         const shippingDetailsToSave: ProductShippingDeliveryType = {
+            productId: productId,
             methods: selectedMethodsAndFees,
             weight: productWeight,
             dimensions: productDimensions,

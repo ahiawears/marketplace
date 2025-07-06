@@ -12,6 +12,7 @@ import { createColor } from "@actions/create-color.ts";
 import { createVariant } from "@actions/create-variant.ts";
 import { createSizes } from "@actions/create-sizes.ts";
 import { createImages } from "@actions/create-images.ts";
+import { createProductShippingDetails } from "@actions/create-shipping-details.ts";
 import validator from "npm:validator";
 import { createClient } from "../../server-deno.ts";  
 import { corsHeaders } from '../_shared/cors.ts';
@@ -304,7 +305,39 @@ Deno.serve(async (req: Request) => {
                 );
                 break;
 
-        
+            case 'ProductShippingData':
+                const productShippingConfigRaw = formData.get('productShippingConfig');
+
+                if (!productShippingConfigRaw || typeof productShippingConfigRaw !== 'string') {
+                    return new Response(JSON.stringify({ success: false, message: "Missing or invalid productShippingConfig" }), { status: 400, headers: corsHeaders });
+                }
+                let productShippingConfig; 
+                try {
+                    productShippingConfig = JSON.parse(productShippingConfigRaw);
+                } catch (e) {
+                    console.error("Error parsing productShippingConfig JSON:", e);
+                    return new Response(JSON.stringify({ success: false, message: "Invalid JSON in productShippingConfig" }), { status: 400, headers: corsHeaders });
+                }              
+                
+                // Get the productId from the parsed config object itself.
+                const productId = productShippingConfig.productId;
+
+                if (!productId || typeof productId !== 'string') {
+                    return new Response(JSON.stringify({ success: false, message: "Missing or invalid productId within the shipping configuration data." }), { status: 400, headers: corsHeaders });
+                }
+
+                // Call the action to create/update shipping details and method fees
+                const productShippingDetailsId = await createProductShippingDetails(supabase, productShippingConfig); 
+                return new Response(
+                    JSON.stringify({
+                        success: true,
+                        message: "Product Shipping Details Uploaded Successfully",
+                        product_shipping_details_id: productShippingDetailsId,
+                    }),
+                    { status: 200, headers: corsHeaders }
+                );
+                break;
+
             default:
                 break;
         }

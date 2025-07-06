@@ -213,7 +213,6 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
     };
 
     const setProductShippingConfiguration = async (productShippingDetails: ProductShippingDeliveryType | ((prev: ProductShippingDeliveryType) => ProductShippingDeliveryType)) => {
-        const productIdg = "12314567";
 
         const resolvedDetails: ProductShippingDeliveryType = 
             typeof productShippingDetails === 'function'
@@ -224,7 +223,7 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
             ...prev,
             shippingDelivery: resolvedDetails
         }));
-        const result = await uploadProductShippingDetails(resolvedDetails, productIdg, accessToken);
+        const result = await uploadProductShippingDetails(resolvedDetails, accessToken);
         try {
             if (result.success) {
                 console.log(result.message);
@@ -296,6 +295,7 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
                         userId={userId!}
                         accessToken={accessToken}
                         currencySymbol={productCurrencySymbol}
+                        productId={productId}
                         onSaveShippingDetails={setProductShippingConfiguration}
                     />,
             disabled: false,

@@ -341,6 +341,7 @@ export interface ProductMethodZoneConfig {
 }
 
 export interface ProductShippingDeliveryType {
+  productId: string;
   methods?: {
     standard?: Partial<Record<DeliveryZoneKey, ProductMethodZoneConfig>>;
     express?: Partial<Record<DeliveryZoneKey, ProductMethodZoneConfig>>;
