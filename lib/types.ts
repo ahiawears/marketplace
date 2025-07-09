@@ -425,6 +425,7 @@ export interface GeneralProductDetailsType {
 }
 
 export interface ProductCareInstruction {
+  productId: string;
   washingInstruction?: string | null;
   bleachingInstruction?: string | null;
   dryingInstruction?: string | null;
@@ -433,12 +434,19 @@ export interface ProductCareInstruction {
   specialCases?: string | null;
 }
 
+export interface ProductReleaseDetails {
+  isPublished: boolean;
+  releaseDate?: string;
+  timeZone?: string;
+}
+
 export interface ProductUploadData {
   generalDetails: GeneralProductDetailsType;
   productVariants: ProductVariantType[];
   shippingDelivery: ProductShippingDeliveryType;
   returnRefundPolicy: ReturnRefundPolicyType;   
   careInstructions: ProductCareInstruction;
+  release: ProductReleaseDetails;
 }
 
 export interface PhysicalAttributesType {

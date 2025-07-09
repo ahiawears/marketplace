@@ -3,18 +3,20 @@
 import { bleachingInstruction, dryCleaningInstruction, dryingInstruction, ironingInstruction, specialCases, washingInstruction } from "@/lib/productCareInstruction";
 import { Select } from "../ui/select";
 import { Button } from "../ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ProductCareInstruction } from "@/lib/types";
-import { on } from "events";
 
 interface CareInstructionsProps {
     initialCareInstructions: ProductCareInstruction;
     onSaveCareinstructions: (instructions: ProductCareInstruction) => void;
+    productId: string;
+    userId: string;
+    accessToken: string;
     // Optional: if you want to notify the parent immediately on change
     // onCareInstructionsChange?: (instructions: ProductCareInstruction) => void;
 }
 
-const CareInstructions: React.FC<CareInstructionsProps> = ({ initialCareInstructions, onSaveCareinstructions }) => {
+const CareInstructions: React.FC<CareInstructionsProps> = ({ initialCareInstructions, onSaveCareinstructions, productId, userId, accessToken }) => {
     const [careInstructions, setCareInstructions] = useState<ProductCareInstruction>(initialCareInstructions || {});
 
     const handleChange = (field: keyof ProductCareInstruction, value: string) => {
@@ -26,7 +28,16 @@ const CareInstructions: React.FC<CareInstructionsProps> = ({ initialCareInstruct
     }
 
     const handleSave = (instructions: ProductCareInstruction) => {
-        onSaveCareinstructions(instructions);
+        const instructionsToSave: ProductCareInstruction = {
+            productId: productId,
+            washingInstruction: instructions.washingInstruction,
+            bleachingInstruction: instructions.bleachingInstruction,
+            dryingInstruction: instructions.dryingInstruction,
+            ironingInstruction: instructions.ironingInstruction,
+            dryCleaningInstruction: instructions.dryCleaningInstruction,
+            specialCases: instructions.specialCases,
+        }
+        onSaveCareinstructions(instructionsToSave);
     }
     return (
         <div className="my-6 space-y-4">

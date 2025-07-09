@@ -11,8 +11,26 @@ import ProductShippingDetails from "../upload-product/product-shipping-details";
 import CareInstructions from "../upload-product/care-instructions";
 import { uploadGeneralDetails, uploadProductCareInstruction, uploadProductShippingDetails, uploadProductVariants } from "@/actions/add-product/publish-product-action";
 import LoadContent from "@/app/load-content/page";
+
+interface AddProductDetailsProps {
+    productData: ProductUploadData;
+    setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>;
+    onVariantSaved: (index: number, isSaved: boolean) => void;
+    savedStatus: boolean[];
+    userId: string | null;
+    accessToken: string;
+    setMainProductId: (id: string) => void;
+    setIsAllDetailsSaved: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+interface SaveStatus {
+    general: boolean;
+    variants: boolean;
+    shipping: boolean;
+    care: boolean;
+}
     
-const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedStatus, userId, accessToken }: { productData: ProductUploadData, setProductData: React.Dispatch<React.SetStateAction<ProductUploadData>>, onVariantSaved: (index: number, isSaved: boolean) => void,  savedStatus: boolean[], userId: string | null, accessToken: string }) => {
+const AddProductDetails: React.FC<AddProductDetailsProps> = ({ productData, setProductData, onVariantSaved, savedStatus, userId, accessToken, setMainProductId, setIsAllDetailsSaved }) => {
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
     const [productId, setProductId] = useState<string>("");
     const [product_currency, setProductCurrency] = useState<string>("");
@@ -21,6 +39,14 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
     const [error, setError] = useState<string | null>(null);
     const [savingVariantIndex, setSavingVariantIndex] = useState<number | null>(null);
 
+    const [ generalDetailsSaved, setGeneralDetailsSaved ] = useState<boolean>(false);
+    const [ productVariantsSaved, setProductVariantsSaved ] = useState<boolean>(false);
+    const [ productShippingSaved, setProductShippingSaved ] = useState<boolean>(false);
+    const [ careInstructionsSaved, setCareInstructionsSaved ] = useState<boolean>(false);
+
+    const [saveStatus, setSaveStatus] = useState<SaveStatus>({
+        general: false, variants: false, shipping: false, care: false
+    });
 
     useEffect(() => {
         if (userId && accessToken) {
@@ -93,8 +119,10 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
 
             if (result.success) {
                 console.log("General details saved, Product ID:", result.data);
-                setProductId(result.data);
-                handleNextAccordion(); // Proceed to the next step only on success
+                setProductId(result.data); 
+                setMainProductId(result.data);
+                setSaveStatus(prev => ({ ...prev, general: true }));
+                setActiveIndex(1); // Open next accordion
             } else {
                 // Handle controlled error from the action (e.g., validation failure)
                 console.error("Failed to upload general details:", result.message);
@@ -189,11 +217,13 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
             const result = await uploadProductVariants(variantsToSave, productId, product_currency, accessToken);
             if (result.success) {
                 console.log("Product variants saved successfully:", result.message);
+                setProductVariantsSaved(true);     
                 if (typeof variantIndex === 'number') {
                     onVariantSaved(variantIndex, true); // Notify that a specific variant is saved
                 } else {
-                    setActiveIndex(activeIndex === 1 ? activeIndex + 1 : activeIndex); // Move to next accordion on "save all"
-                }            
+                    setSaveStatus(prev => ({ ...prev, variants: true }));
+                    setActiveIndex(2); // Move to next accordion on "save all"                
+                }    
             } else {
                 setError(result.message);
                 if (typeof variantIndex === 'number') {
@@ -213,7 +243,6 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
     };
 
     const setProductShippingConfiguration = async (productShippingDetails: ProductShippingDeliveryType | ((prev: ProductShippingDeliveryType) => ProductShippingDeliveryType)) => {
-
         const resolvedDetails: ProductShippingDeliveryType = 
             typeof productShippingDetails === 'function'
                 ? productShippingDetails(productData.shippingDelivery)
@@ -226,7 +255,9 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
         const result = await uploadProductShippingDetails(resolvedDetails, accessToken);
         try {
             if (result.success) {
-                console.log(result.message);
+                console.log("Shipping details saved:", result.message);
+                setSaveStatus(prev => ({ ...prev, shipping: true }));
+                setActiveIndex(3); // Open next accordion
             } else {
                 // Handle error from the action (e.g., show a message)
                 console.error("Failed to upload general details:", result.message);
@@ -237,7 +268,6 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
     };
 
     const setCareInstructions = async (careInstructions: ProductCareInstruction | ((prev: ProductCareInstruction) => ProductCareInstruction)) => {
-        const productIdg = "12314567";
         const resolvedDetails: ProductCareInstruction = 
             typeof careInstructions === 'function'
                 ? careInstructions(productData.careInstructions)
@@ -247,10 +277,11 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
             ...prev,
             careInstructions: resolvedDetails
         }));
-        const result = await uploadProductCareInstruction( resolvedDetails, productIdg, accessToken );
+        const result = await uploadProductCareInstruction( resolvedDetails, accessToken );
         try {
             if (result.success) {
-                console.log(result.message);
+                console.log("Care instructions saved:", result.message);
+                setSaveStatus(prev => ({ ...prev, care: true }));
             } else {
                 // Handle error from the action (e.g., show a message)
                 console.error("Failed to upload general details:", result.message);
@@ -259,6 +290,12 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
             console.error("Error during general details upload:", error);
         }
     }
+
+    useEffect(() => {
+        if ((generalDetailsSaved && productVariantsSaved && productShippingSaved && careInstructionsSaved) === true){
+            setIsAllDetailsSaved(true);
+        }
+    }, [generalDetailsSaved, productVariantsSaved, productShippingSaved, careInstructionsSaved]);
     
     const accordionItems = [
         {
@@ -305,6 +342,9 @@ const AddProductDetails = ({ productData, setProductData, onVariantSaved, savedS
             content: <CareInstructions
                         initialCareInstructions={productData.careInstructions}
                         onSaveCareinstructions={setCareInstructions}
+                        productId={productId}
+                        userId={userId!}
+                        accessToken={accessToken}
                     />,
             disabled: false,
         }

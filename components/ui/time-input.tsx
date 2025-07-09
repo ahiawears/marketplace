@@ -78,8 +78,8 @@ export const TimeScroller = ({value, onChange, timeFormat = "24h", withTimezone 
 	return (
 		<div className={cn("relative", className)}>
 			<Button
-				variant="outline"
-				className="w-full justify-between border-2"
+				variant="outline" 
+				className="w-full justify-between border-2 h-12"
 				onClick={() => setIsOpen(!isOpen)}
 			>
 				<div className="flex items-center">

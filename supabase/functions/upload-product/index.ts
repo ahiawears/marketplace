@@ -12,12 +12,15 @@ import { createColor } from "@actions/create-color.ts";
 import { createVariant } from "@actions/create-variant.ts";
 import { createSizes } from "@actions/create-sizes.ts";
 import { createImages } from "@actions/create-images.ts";
+import { createProductCareInstruction } from "@actions/create-care-instruction.ts";
 import { createProductShippingDetails } from "@actions/create-shipping-details.ts";
 import validator from "npm:validator";
 import { createClient } from "../../server-deno.ts";  
 import { corsHeaders } from '../_shared/cors.ts';
 import { validateGeneralProductDetails, GeneralDetails as ValidationGeneralDetails, GeneralDetailsErrors } from "../_shared/product-data-validation.ts"; // Import validation
 import { GetExchangeRates } from '@hooks/get-exchange-rate.ts';
+import { ProductReleaseDetails } from "@lib/types.ts";
+import { DateTime } from "npm:luxon";
 
 interface ParsedEdgeVariant {
     variantName: string;
@@ -336,6 +339,115 @@ Deno.serve(async (req: Request) => {
                     }),
                     { status: 200, headers: corsHeaders }
                 );
+                break;
+            case 'ProductCareInstruction':
+                const careInstructionsRaw = formData.get('productCareInstruction');
+                let productCareInstruction;
+
+                try {
+                    productCareInstruction = JSON.parse(careInstructionsRaw as string);
+                } catch (error) {
+                    console.error("Error parsing productCareInstruction JSON:", error);
+                    return new Response(JSON.stringify({ success: false, message: "Invalid JSON in productCareInstruction"}), { status: 400, headers: corsHeaders });
+                }
+
+                const main_ProductId = productCareInstruction.productId;
+
+                if ( !main_ProductId || typeof main_ProductId !== 'string') {
+                    return new Response(JSON.stringify({ success: false, message: "Missing or invalid productId within the shipping care instruction data." }), { status: 400, headers: corsHeaders });
+                }
+
+                //call action to create/update shipping details and method fees
+                const productCareInstructionId = await createProductCareInstruction( supabase, productCareInstruction );
+
+                return new Response(
+                    JSON.stringify({
+                        success: true,
+                        message: "Product Care Instruction Uploaded Successfully",
+                        product_care_instruction_id: productCareInstructionId,
+                    }),
+                    { status: 200, headers: corsHeaders}
+                );
+                break;
+
+            case 'ProductReleaseDetails':
+                const releaseProductIdRaw = formData.get('productId') as string;
+                const releaseDetailsRaw = formData.get('releaseDetails') as string;
+
+                if (!releaseProductIdRaw || !releaseDetailsRaw) {
+                    return new Response(
+                        JSON.stringify({
+                            success: false,
+                            message: "Missing product ID or release details."
+                        }),
+                        {
+                            status: 400,
+                            headers: corsHeaders
+                        }
+                    )
+                }
+
+                const releaseDetails: ProductReleaseDetails = JSON.parse(releaseDetailsRaw);
+
+                const updatePayload: {
+                    is_published: boolean;
+                    release_date?: string | null;
+                    release_timezone?: string | null;
+                } = {
+                    is_published: false,
+                };
+
+                if (releaseDetails.isPublished) {
+                    // If publishing now, mark as published and set the release date to now.
+                    updatePayload.is_published = true;
+                    updatePayload.release_date = new Date().toISOString();
+                    updatePayload.release_timezone = "UTC";
+                } else if (releaseDetails.releaseDate && releaseDetails.timeZone) {
+                    // If scheduling, convert the local date/time to a UTC ISO string
+                    // A cron job will handle flipping is_published to true later.
+
+                    const dt = DateTime.fromISO(releaseDetails.releaseDate, { zone: releaseDetails.timeZone });
+                    if (dt.isValid) {
+                        updatePayload.release_date = dt.toUTC().toISO();
+                        updatePayload.release_timezone = releaseDetails.timeZone;
+                    } else {
+                        return new Response(
+                            JSON.stringify({ 
+                                success: false, 
+                                message: `Invalid date/time or time zone: ${dt.invalidReason}` 
+                            }), { 
+                                status: 400,
+                                headers: corsHeaders 
+                            }
+                        );
+                    }
+                } else {
+                    // This case handles un-publishing or clearing a schedule.
+                    // is_published is already false from the default.                    
+                    updatePayload.release_date = null;
+                    updatePayload.release_timezone = null;
+                }
+
+                console.log(`The update payload is ${JSON.stringify(updatePayload)}`);
+
+                const { error: updateError } = await supabase
+                    .from('products_list')
+                    .update(updatePayload)
+                    .eq('id', releaseProductIdRaw);
+
+                if (updateError) {
+                    console.error('Error updating product release details:', updateError);
+                    return new Response(JSON.stringify({ success: false, message: 'Database error while updating release details.' }), { status: 500, headers: corsHeaders });
+                }
+
+                return new Response(
+                    JSON.stringify({ 
+                        success: true, 
+                        message: 'Product release details updated.' 
+                    }), { 
+                        status: 200, 
+                        headers: corsHeaders 
+                    });
                 break;
 
             default:

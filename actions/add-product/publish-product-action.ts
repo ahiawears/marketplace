@@ -1,4 +1,4 @@
-import { GeneralProductDetailsType, ProductCareInstruction, ProductShippingDeliveryType, ProductUploadData, ProductVariantType } from "@/lib/types";
+import { GeneralProductDetailsType, ProductCareInstruction, ProductReleaseDetails, ProductShippingDeliveryType, ProductUploadData, ProductVariantType } from "@/lib/types";
 
 export interface PublishProductResponse {
     success: boolean;
@@ -49,8 +49,8 @@ export const uploadGeneralDetails = async (
     } catch (error) {
         return {
             success: false, 
-            message: "Uh oh! Something went wrong.",
-            data: `${error}`,
+            message: error instanceof Error ? error.message : "An unexpected error occurred.",
+            data: null,
             loading: false
         }
     } 
@@ -125,8 +125,8 @@ export const uploadProductVariants = async (
     } catch (error) {
         return {
             success: false,
-            message: "Uh oh! Something went wrong.",
-            data: `${error}`,
+            message: error instanceof Error ? error.message : "An unexpected error occurred.",
+            data: null,
             loading: false
         }
     }
@@ -159,7 +159,7 @@ export const uploadProductShippingDetails = async (
             throw new Error(`Failed to upload products shipping details. Response error: ${response.status} - ${response.statusText}`);
         }
 
-         const data = await response.json();
+        const data = await response.json();
 
          if (data.success) {
             console.log("Product shipping details uploaded successfully:", data);
@@ -176,8 +176,8 @@ export const uploadProductShippingDetails = async (
     } catch (error) {
         return {
             success: false,
-            message: "Uh oh! Something went wrong.",
-            data: `${error}`,
+            message: error instanceof Error ? error.message : "An unexpected error occurred.",
+            data: null,
             loading: false
 
         }
@@ -186,28 +186,101 @@ export const uploadProductShippingDetails = async (
 
 export const uploadProductCareInstruction = async (
     productCareInstruction: ProductCareInstruction,
-    productId: string,
     accessToken: string,
 ) : Promise<PublishProductResponse> => {
     try {
         const formData = new FormData();
-        formData.append('productId', productId);
         formData.append('productCareInstruction', JSON.stringify(productCareInstruction));
-        console.log(`productCareInstruction: ${JSON.stringify(productCareInstruction)}`);
-        return {
-            success: true,
-            message: "Product Care Instruction Uploaded Successfully",
-            data: `${productCareInstruction}`, 
-            loading: false
+        formData.append('operation', 'ProductCareInstruction');
 
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`,
+            {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+                body: formData
+            }
+        )
+
+        console.log(formData.get('productCareInstruction'));
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Server Error Details:", errorData);
+            throw new Error(`Failed to upload products care instruction details. Response error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+         if (data.success) {
+            console.log("Product Care Instruction uploaded successfully:", data);
+            return {
+                success: true,
+                message: "Product Care Instruction Uploaded Successfully",
+                data: `${productCareInstruction}`,
+                loading: false
+            }
+        } else {
+            throw new Error(data.message || "Product Care Instruction Details upload failed");
         }
     } catch (error) {
         return {
             success: false,
-            message: "Uh oh! Something went wrong.",
-            data: `${error}`,
+            message: error instanceof Error ? error.message : "An unexpected error occurred.",
+            data: null,
             loading: false
 
+        }
+    }
+}
+
+export const publishProduct = async (
+    productId: string,
+    releaseDetails: ProductReleaseDetails,
+    accessToken: string,
+) : Promise<PublishProductResponse> => {
+    try {
+        const formData = new FormData();
+        formData.append('operation', 'ProductReleaseDetails');
+        formData.append('productId', productId);
+        formData.append('releaseDetails', JSON.stringify(releaseDetails));
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Server Error Details:", errorData);
+            throw new Error(`Failed to publish product. Response error: ${response.status} - ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+            return {
+                success: true,
+                message: "Product release details saved successfully!",
+                data: data,
+                loading: false
+            };
+        } else {
+            throw new Error(data.message || "Failed to save product release details.");
+        }
+
+    } catch (error) {
+        console.error("Error in publishProduct action:", error);
+
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : "An unexpected error occurred.",
+            data: null,
+            loading: false
         }
     }
 }
