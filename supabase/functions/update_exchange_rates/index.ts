@@ -4,10 +4,12 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
-import { createClient } from "../../server-deno.ts";
+import { createClient as createSupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.48.1";
 import { corsHeaders } from '../_shared/cors.ts';
 
 Deno.serve(async () => {
+
+	console.log("update_exchange_rates function called");
 	
     const EXCHANGE_API_KEY = Deno.env.get("EXCHANGE_API_KEY");
 	const BASE_CURRENCY = "USD";
@@ -25,7 +27,11 @@ Deno.serve(async () => {
 			throw new Error(`Failed to fetch exchange rates.`);
 		}
 
-		const supabase = createClient();
+		// Get the service role key from Vault
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const serviceRoleKey = Deno.env.get("SERVICE_ROLE_KEY")!;
+
+		const supabase = createSupabaseClient(supabaseUrl, serviceRoleKey);
 
 		const exchangeRates = Object.entries(data.conversion_rates).map(([currency, rate]) => ({
 			base_currency: BASE_CURRENCY,

@@ -152,14 +152,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
         setVariants(updatedVariants);
     };
 
-    // const handleFormSave = (index: number) => {
-    //     if (isVariantValid(index)) {
-    //         const variantsData = variants[index];
-    //         console.log("The variant data is: ", variantsData);
-    //         onVariantSaved(index, true);
-    //     }
-    // }
-
     const handleFormSave = (index: number) => {
         if (runVariantValidation(index)) {
             const variantsData = variants[index];

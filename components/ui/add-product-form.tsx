@@ -6,13 +6,14 @@ import AddProductDetails from "./add-product-details";
 import ProductPreviewModal from "../modals/product-preview-modal";
 import ProductPreview from "../upload-product/product-preview";
 import { ProductReleaseDetails, ProductUploadData, ProductVariantType } from "../../lib/types";
-import { redirect, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 import React from "react";
-import { createClient } from "@/supabase/client";
 import LoadContent from "@/app/load-content/page";
 import { useAuth } from "@/hooks/useAuth";
 import ReviewAndPublishModal from "../modals/review-publish-product-modal";
 import { publishProduct } from "@/actions/add-product/publish-product-action";
+import { Toaster } from "sonner";
+import { ProductFormProvider } from "@/app/contexts/product-form-context";
 
 const AddProductForm = () => {
     const { userId, userSession, loading, error, resetError } = useAuth();
@@ -155,41 +156,46 @@ const AddProductForm = () => {
         return null;
     }
 
+    const contextValue = {
+        productData,
+        setProductData,
+        productId,
+        setProductId,
+        isAllDetailsSaved,
+        setIsAllDetailsSaved,
+        userId,
+        accessToken,
+        variantSavedStatus,
+        handleVariantSaved,
+    };
+
     return (
-        <div className="container overflow-auto mx-auto p-4 mt-4">
-            <div className="flex flex-col md:flex-row gap-8 h-full">
-                <div className="w-full md:w-3/4">
-                    <AddProductDetails 
-                        productData={productData}  
-                        setProductData={setProductData}
-                        onVariantSaved={handleVariantSaved}
-                        savedStatus={variantSavedStatus}
-                        userId={userId}
-                        accessToken={accessToken}
-                        setMainProductId={setProductId}
-                        setIsAllDetailsSaved={setIsAllDetailsSaved}
-
-                    />
+        <ProductFormProvider value={contextValue}>
+            <div className="container overflow-auto mx-auto p-4 mt-4">
+                <Toaster position="top-right" richColors />
+                <div className="flex flex-col md:flex-row gap-8 h-full">
+                    <div className="w-full md:w-3/4">
+                        <AddProductDetails />
+                    </div>
+                    <div className="w-full md:w-1/4 mt-12">
+                        <PublishProduct 
+                            isAllDetailsSaved={isAllDetailsSaved} 
+                            isAllVariantsSaved={isAllVariantsSaved()}
+                            productData={productData}
+                            onPublishClick={handleOpenPublishModal}
+                        />
+                    </div>
+                    {isPublishModalOpen && (
+                        <ReviewAndPublishModal
+                            productData={productData}
+                            onClose={handleClosePublishModal}
+                            onPreview={handlePreviewFromPublishModal}
+                            onPublish={handlePublish}
+                        />
+                    )}
                 </div>
-                <div className="w-full md:w-1/4 mt-12">
-                    <PublishProduct 
-                        isAllDetailsSaved={isAllDetailsSaved} 
-                        isAllVariantsSaved={isAllVariantsSaved()}
-                        productData={productData}
-                        onPublishClick={handleOpenPublishModal}
-                    />
-                </div>
-
-				{isPublishModalOpen && (
-                    <ReviewAndPublishModal
-                        productData={productData}
-                        onClose={handleClosePublishModal}
-                        onPreview={handlePreviewFromPublishModal}
-                        onPublish={handlePublish}
-                    />
-                )}
             </div>
-        </div>
+        </ProductFormProvider>
     );
 };
 
