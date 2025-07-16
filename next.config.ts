@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   /* config options here */
   images: {
-    domains: ['via.placeholder.com', 'qzelstvozsotobpbedfr.supabase.co', 'placehold.co', 'images.unsplash.com'], // Add the allowed domains here
+    domains: ['via.placeholder.com', 'qzelstvozsotobpbedfr.supabase.co', 'placehold.co', 'images.unsplash.com', 'randomuser.me'], // Add the allowed domains here
     remotePatterns: [
       {
         protocol: 'https',

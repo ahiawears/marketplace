@@ -11,6 +11,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { ValidateShippingConfig } from "@/lib/shippingConfigValidation";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Toaster } from "sonner";
+import { toast } from "sonner";
 
 
 export interface ShippingDetails {
@@ -193,7 +195,6 @@ const ShippingConfiguration = () => {
     const [brandCountry, setBrandCountry] = useState("NG");
 
     const [errorMessage, setErrorMessage] = useState("");
-    const [successMessage, setSuccessMessage] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 
     const [config, setConfig] = useState<ShippingDetails>(DEFAULT_SHIPPING_CONFIG);
@@ -209,11 +210,11 @@ const ShippingConfiguration = () => {
 
     useEffect(() => {
         if (error) {
-            setErrorMessage(error.message || "Something went wrong with authentication, please try again.");
+            toast.error(error.message || "Something went wrong with authentication, please try again.");
         } else if (configError) {
             // Assuming configError is an Error object, use configError.message
             // If configError can be a string, then (configError.message || configError) might be needed
-            setErrorMessage(configError || "Something went wrong fetching configuration, please try again.");
+            toast.error(configError || "Something went wrong fetching configuration, please try again.");
         }
     }, [error, configError]);
 
@@ -411,7 +412,6 @@ const ShippingConfiguration = () => {
     const handleSave = async () => {
         //handle validation function call here
         setErrorMessage(""); // Clear previous errors
-        setSuccessMessage("");
 
         const validationErrors = ValidateShippingConfig(config);
 
@@ -450,30 +450,25 @@ const ShippingConfiguration = () => {
             const data = await res.json();
     
             if (data.success) {
-                setSuccessMessage("Shipping configuration saved successfully!");
-                setTimeout(() => setSuccessMessage(""), 3000);
+                toast.success("Shipping configuration saved successfully!");
             } else {
                 throw new Error(data.message || "Saving configuration failed on the server.");
             }
         } catch (error) {
             let uploadErrorMessage;
-            console.log("Error saving shipping configurations:", error);
             if (error instanceof Error) {
                 uploadErrorMessage = error.message;
             }
             setErrorMessage(uploadErrorMessage || "An error occurred while saving the configuration.");
         } finally {
-            setTimeout(() => {
-                setSuccessMessage("Configuration saved successfully!");
-                setIsSaving(false);
-                setTimeout(() => setSuccessMessage(""), 3000); 
-            }, 1500);
+            setIsSaving(false);
         }
 
     }
 
     return (
         <div className="max-w-6xl mx-auto p-4 space-y-6 border-2">
+            <Toaster position="top-right" richColors />
             <div className="space-y-2">
                 <h2 className="text-2xl font-bold">
                     Shipping & Fulfillment Settings
@@ -761,11 +756,6 @@ const ShippingConfiguration = () => {
                     );
                 })()}
             </div>
-            {successMessage && (
-                <div className="bg-green-100 border-2 border-green-400 text-green-700 px-4 py-3 rounded">
-                    {successMessage}
-                </div>
-            )}
 
             {errorMessage && (
                 <div className="bg-red-100 border-2 border-red-400 text-red-700 px-4 py-3 rounded whitespace-pre-line">

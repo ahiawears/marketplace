@@ -21,7 +21,7 @@ const DashboardLayout = async (props: Props) => {
             <h1 className="font-bold">Dashboard</h1>
           </div>
         </header>
-        <main className="container py-8 flex-1">{props.children}</main>
+        <main className="container py-8 flex-1 h-[calc(100vh-64px)]">{props.children}</main>
       </div>
     </SidebarProvider>
   );

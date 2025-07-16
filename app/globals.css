@@ -103,8 +103,7 @@ body {
 
 /* Show scrollbar on hover or while scrolling */
 body:hover::-webkit-scrollbar,
-body:active::-webkit-scrollbar,
-body:focus::-webkit-scrollbar {
+body.scrolling::-webkit-scrollbar {
   width: 10px;
   background: #fff;
 }
