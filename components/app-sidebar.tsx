@@ -1,12 +1,17 @@
 import {
   ArrowLeft,
+  BarChart,
   BookImage,
+  HelpCircle,
   Home,
   ListOrdered,
+  MessageCircle,
   Settings,
   ShoppingBasket,
+  Star,
   TicketPercent,
   UserPenIcon,
+  Wallet,
 } from "lucide-react";
 
 import {
@@ -38,80 +43,67 @@ const items: SibarMenuItem[] = [
     url: "/dashboard",
     icon: Home,
   },
-
   {
     title: "Products",
     url: "/dashboard/products",
     icon: ShoppingBasket,
     subitems: [
-      {
-        title: "Add Products",
-        url: "/dashboard/add-product",
-        icon: undefined,
-      },
-      {
-        title: "Products List",
-        url: "/dashboard/products-list",
-        icon: undefined,
-      }
+      { title: "Add Product", url: "/dashboard/add-product" },
+      { title: "Products List", url: "/dashboard/products-list" },
+      { title: "Inventory", url: "/dashboard/inventory" },
+      { title: "Lookbook", url: "/dashboard/lookbook" },
     ],
   },
-
   {
-    title: "Lookbook",
-    url: "/dashboard/lookbook",
-    icon: BookImage,
-  },
-
-  {
-    title: "Coupons",
-    url: "/dashboard/coupons",
-    icon: TicketPercent,
-    subitems: [
-      {
-        title: "Add Coupon",
-        url: "/dashboard/add-coupon",
-        icon: undefined,
-      },
-    ],
-  },
-
-  {
-    title: "Orders",
+    title: "Orders & Customers",
     url: "/dashboard/orders",
     icon: ListOrdered,
+    subitems: [
+      { title: "Orders", url: "/dashboard/orders" },
+      { title: "Messages", url: "/dashboard/messages" },
+      { title: "Reviews", url: "/dashboard/reviews" },
+    ],
   },
-
   {
-    title: "Brand Profile Management",
-    url: "/dashboard/brand-profile-management",
-    icon: UserPenIcon,
-   
+    title: "Marketing",
+    url: "/dashboard/marketing",
+    icon: TicketPercent,
+    subitems: [
+      { title: "Coupons", url: "/dashboard/add-coupons" },
+      { title: "Lookbook", url: "/dashboard/lookbook" }, // optional if relevant here too
+    ],
   },
-
   {
-    title: "Settings",
+    title: "Analytics",
+    url: "/dashboard/analytics",
+    icon: BarChart,
+  },
+  {
+    title: "Brand Settings",
     url: "/dashboard/settings",
     icon: Settings,
     subitems: [
-      {
-        title: "Shipping Configuration",
-        url: "/dashboard/shipping-configuration",
-        icon: undefined,
-      },
-      {
-        title: "Payment Settings",
-        url: "/dashboard/payment-settings",
-        icon: undefined,
-      },
-      {
-        title: "Notifications",
-        url: "/dashboard/notifications",
-        icon: undefined,
-      },
+      { title: "Brand Profile", url: "/dashboard/brand-profile-management" },
+      { title: "Shipping Configuration", url: "/dashboard/shipping-configuration" },
+      { title: "Payment Settings", url: "/dashboard/payment-settings" },
+      { title: "Notifications", url: "/dashboard/notifications" },
     ],
   },
+  {
+    title: "Finance",
+    url: "/dashboard/payouts",
+    icon: Wallet,
+    subitems: [
+      { title: "Payouts", url: "/dashboard/payouts" },
+    ],
+  },
+  {
+    title: "Support",
+    url: "/dashboard/support",
+    icon: HelpCircle,
+  },
 ];
+
 
 export function AppSidebar() {
   return (

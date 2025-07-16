@@ -2,9 +2,9 @@
 export interface ProductTableType {
   id: string;
   name: string;
-  main_image_url: string;
   category_name: string;
-  sku: string;
+  subCategory: string;
+  season: string;
 }
 
 // export interface OrderTableType {
@@ -337,7 +337,6 @@ export type DeliveryZoneKey = 'domestic' | 'sub_regional' | 'regional' | 'global
 export interface ProductMethodZoneConfig {
   available?: boolean;
   fee?: number;
-  
 }
 
 export interface ProductShippingDeliveryType {
@@ -559,3 +558,62 @@ export type BrandContactDetails = {
   tiktok: string;
   website: string;
 }
+
+
+// Notification Settings Types
+
+export type BrandNotificationType =
+  | "new_order"
+  | "order_status_update"
+  | "review"
+  | "payout"
+  | "support"
+  | "general";
+
+export type Channel = "email" | "sms" | "in_app";
+
+export interface FetchedBrandNotificationSettingFromDB {
+  id: string;
+  created_at: string;
+  brand_id: string;
+  notification_type: BrandNotificationType;
+  email: boolean;
+  sms: boolean;  
+  in_app: boolean; 
+  updated_at: string | null; 
+}
+
+
+export const BRAND_NOTIFICATION_TYPES: BrandNotificationType[] = [
+  "new_order",
+  "order_status_update",
+  "review",
+  "payout",
+  "support",
+  "general",
+];
+
+export const CHANNELS: Channel[] = ["email", "sms", "in_app"];
+
+// This interface is for your table of checkboxes
+export interface BrandNotificationSettingCheckboxTable {
+  type: BrandNotificationType;
+  channels: {
+    email: boolean;
+    sms: boolean;
+    in_app: boolean;
+  };
+}
+
+// Default settings: all channels set to false for each notification type
+export const DEFAULT_BRAND_NOTIFICATION_SETTINGS: BrandNotificationSettingCheckboxTable[] = BRAND_NOTIFICATION_TYPES.map(type => ({
+  type,
+  channels: {
+    email: false,
+    sms: false,
+    in_app: false,
+  },
+}));
+
+
+// Notification Settings Types

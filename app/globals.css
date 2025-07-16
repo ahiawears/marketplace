@@ -94,3 +94,35 @@ body {
     margin: 0;
   }
 }
+
+/* width */
+::-webkit-scrollbar {
+    width: 0px;
+    background: transparent;
+}
+
+/* Show scrollbar on hover or while scrolling */
+body:hover::-webkit-scrollbar,
+body:active::-webkit-scrollbar,
+body:focus::-webkit-scrollbar {
+  width: 10px;
+  background: #fff;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+    background: #fff;
+    border-radius: 0px;
+}
+
+/* Handle */
+::-webkit-scrollbar-thumb {
+    background: #000;
+    border-radius: 0px;
+    
+  }
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

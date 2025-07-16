@@ -95,15 +95,10 @@ const AddProductForm = () => {
         });
     };
 	  
-	const [isPreviewModalOpen, setPreviewModalOpen] = useState(false);
     const [selectedVariant, setSelectedVariant] = useState<ProductVariantType | null>(null);
 
     const handleVariantClick = (variant: ProductVariantType) => {
 		setSelectedVariant(variant);
-	};
-
-	const closeModal = () => {
-		setPreviewModalOpen(false); 
 	};
 
     const handleOpenPublishModal = () => setIsPublishModalOpen(true);
@@ -112,7 +107,6 @@ const AddProductForm = () => {
     const handlePreviewFromPublishModal = () => {
         // This will close the publish modal and open the preview modal
         setIsPublishModalOpen(false);
-        setPreviewModalOpen(true);
     };
 
     const handlePublish = async (releaseDetails: ProductReleaseDetails) => {
