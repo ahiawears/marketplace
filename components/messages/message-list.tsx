@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 
 interface MessageListProps{
     messagesList: MessageListItem[];
+    handleMessageOpen: (id: string) => void;
 }
 
 export interface MessageListItem{
@@ -23,7 +24,7 @@ const formatTimestamp = (timestamp: string): string => {
     return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 };
 
-const MessageList = ({messagesList}: MessageListProps) => {
+const MessageList = ({messagesList, handleMessageOpen}: MessageListProps) => {
 
     const [isClient, setIsClient] = useState(false);
 
@@ -48,7 +49,11 @@ const MessageList = ({messagesList}: MessageListProps) => {
                     </Button>
             </header>
             {sortedMessages.map((message) => (
-                <div key={message.id} className={`flex items-start space-x-3 border-b shadow-lg hover:bg-gray-100 p-3 ${message.unread ? 'bg-gray-200' : 'bg-white'}`}>
+                <div 
+                    key={message.id} 
+                    className={`flex items-start space-x-3 border-b shadow-lg hover:bg-gray-100 p-3 ${message.unread ? 'bg-gray-200' : 'bg-white'}`}
+                    onClick={() => handleMessageOpen(message.id)}
+                >
                     <Image 
                         src={message.image_url} 
                         alt={message.recipient_name} 

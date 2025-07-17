@@ -1,43 +1,94 @@
-import { Paperclip, Send } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, Paperclip, Send } from "lucide-react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import Image from "next/image";
 
+type MessageStatus = "sent" | "delivered" | "seen";
+type SenderRole = "brand" | "customer";
 
-interface ConversationListItems{
+interface ChatMessage {
     id: string;
-    timestamp: string;
-    recipient_name: string;
-    recipient_id: string;
+    senderId: string;
+    senderRole: SenderRole;  
     text?: string;
     image?: string;
-    
+    timestamp: string; // e.g., "10:00 AM"
+    status: MessageStatus;
 }
 
-const Chat = () => {
+interface ChatProps {
+    chatMessages: ChatMessage[];
+    recipientName: string;
+    onBack: () => void;
+}
+
+const Chat = ({ chatMessages, recipientName, onBack }: ChatProps) => {
     return (
         <div className="flex flex-col h-full border-l">
-            <header className="p-4 border-b flex items-center">
-                <h2 className="font-semibold text-lg">John Doe</h2>
+            <header className="p-4 border-b flex items-center gap-2">
+                <Button onClick={onBack} className="md:hidden p-2 hover:bg-gray-100 rounded-full">
+                    <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <h2 className="font-semibold text-lg">{recipientName}</h2>
             </header>
-            {/* Chat Messages */}
+            {/* Chat Message */}
             <main className="flex-1 p-4 overflow-y-auto bg-gray-100">
                 <div className="space-y-4">
-                    {/* Placeholder for incoming message */}
-                    <div className="flex items-end space-x-2">
-                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-300 border-2" />
-                        <div className="bg-white rounded-lg p-3 max-w-xs border-2">
-                            <p>Hey, how's it going?</p>
-                        </div>
-                    </div>
+                    {chatMessages.map((msg) => {
+                        const isOutgoing = msg.senderRole === "brand";
 
-                    {/* Placeholder for outgoing message */}
-                    <div className="flex items-end space-x-2 justify-end">
-                        <div className="bg-black text-white rounded-lg p-3 max-w-xs">
-                            <p>All good here! What about you?</p>
-                        </div>
-                    </div>
+                        return (
+                            <div
+                                key={msg.id}
+                                className={`flex items-end space-x-2 ${isOutgoing ? "justify-end" : ""}`}
+                            >
+                                <div
+                                    className={`rounded-lg p-3 max-w-xs ${
+                                    isOutgoing ? "bg-black text-white" : "bg-white border-2"
+                                    }`}
+                                >
+                                    {msg.text && 
+                                        <p className="text-sm">
+                                            {msg.text}
+                                        </p>
+                                    }
+                                    {msg.image && 
+                                        (
+                                            <Image
+                                                src={msg.image}
+                                                alt="Attachment"
+                                                className="rounded border-2 bg-black"
+                                                width={150}
+                                                height={150}
+                                                priority
+                                            />
+                                        )
+                                    }
+
+                                    <div
+                                        className={`text-xs mt-1 flex items-center justify-${
+                                            isOutgoing ? "end" : "start"
+                                        } text-gray-400 space-x-1`}
+                                    >
+                                        <span>{msg.timestamp}</span>
+                                        {isOutgoing && msg.status === "sent" && 
+                                            <Check className="h-4 w-4" />
+                                        }
+                                        {isOutgoing && msg.status === "delivered" && (
+                                            <CheckCheck className="h-4 w-4 text-gray-400" />
+                                        )}
+                                        {isOutgoing && msg.status === "seen" && (
+                                            <CheckCheck className="h-4 w-4 text-blue-500" />
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </main>
+
+            
 
             {/* Footer */}
             <footer className="p-4 border-t bg-white">
