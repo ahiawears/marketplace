@@ -12,6 +12,9 @@ interface MessageListProps{
     id: string;
 }
 
+interface ConversationsListProps{
+    
+}
 
 const Messages = () => {
     const messagesItems: MessageListProps[] = [
@@ -92,15 +95,17 @@ const Messages = () => {
             recipient_name: "Mike Jackson",
             recipient_id: "user432",
             last_message: "Did you see the game last night?",
-            unread: true,
+            unread: false,
             timestamp: "2022-07-24T10:23:00",
             id: "message9",
         },
     ]
+
+
     return (
-        <div className="container mx-auto p-4 border-2 h-full">
+        <div className="container mx-auto border-2 p-0 h-full">
             <div className="w-full flex flex-row h-full">
-                <div className="md:basis-2/5 border overflow-y-auto">
+                <div className="md:basis-2/5 overflow-y-auto">
                     <MessageList
                         messagesList={messagesItems}
                     />

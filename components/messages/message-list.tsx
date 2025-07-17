@@ -1,5 +1,8 @@
 import Image from "next/image";
 import { useMemo, useState, useEffect } from "react";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Search } from "lucide-react";
 
 interface MessageListProps{
     messagesList: MessageListItem[];
@@ -34,8 +37,18 @@ const MessageList = ({messagesList}: MessageListProps) => {
 
     return (
         <div>
+            <header className="p-3 border-b flex items-center sticky space-x-3 top-0 bg-white">
+                    <Input
+                        type="text"
+                        placeholder="Type a message..."
+                        className="flex-1 border-2 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <Button className=" text-white p-2 flex items-center justify-center w-10 h-10 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black">
+                        <Search className="h-5 w-5" />
+                    </Button>
+            </header>
             {sortedMessages.map((message) => (
-                <div key={message.id} className={`flex items-start space-x-3 border-b shadow-md hover:bg-gray-100 p-3 ${message.unread ? 'bg-gray-200' : 'bg-white'}`}>
+                <div key={message.id} className={`flex items-start space-x-3 border-b shadow-lg hover:bg-gray-100 p-3 ${message.unread ? 'bg-gray-200' : 'bg-white'}`}>
                     <Image 
                         src={message.image_url} 
                         alt={message.recipient_name} 
