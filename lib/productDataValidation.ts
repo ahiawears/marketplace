@@ -174,38 +174,41 @@ export const validateProductVariant = (variant: ProductVariantType, categoryName
         isValid = false;
     }
 
-    // Enhanced Measurement Validation
-    if (categoryName && variant.measurements && Object.keys(variant.measurements).length > 0) {
-        const categoryDetails = categoriesList.find(cat => cat.name === categoryName);
-        if (categoryDetails && categoryDetails.measurements && categoryDetails.measurements.length > 0) {
-            const expectedMeasurementTypes = categoryDetails.measurements; // e.g., ["Chest", "Waist", "Length"]
+    const categoryDetails = categoriesList.find(cat => cat.name === categoryName);
+
+    if (categoryDetails && categoryDetails.measurements.length > 0) {
+        // If measurements are required, at least one size must be selected.
+        if (!variant.measurements || Object.keys(variant.measurements).length === 0) {
+            errors.measurements = "At least one size must be selected and its measurements provided for this category.";
+            isValid = false;
+        } else {
+            const expectedMeasurementTypes = categoryDetails.measurements;
 
             for (const sizeKey in variant.measurements) {
-                // Check only if the sizeKey is an own property and is selected (i.e., present in variant.measurements)
                 if (Object.prototype.hasOwnProperty.call(variant.measurements, sizeKey)) {
                     const sizeMeasurements = variant.measurements[sizeKey];
 
-                    // Check quantity
-                    if (sizeMeasurements.quantity === undefined || sizeMeasurements.quantity === null || sizeMeasurements.quantity <= 0) {
-                        isValid = false;
+                     // Check quantity: must be a positive number.
+                    if (sizeMeasurements.quantity === undefined || sizeMeasurements.quantity === null || isNaN(sizeMeasurements.quantity) || sizeMeasurements.quantity <= 0) {
                         errors.measurements = `Quantity for size '${sizeKey}' must be a positive number.`;
-                        break; 
+                        isValid = false;
+                        break;
                     }
 
-                    // Check each expected measurement type
                     for (const measurementType of expectedMeasurementTypes) {
                         const measurementValue = sizeMeasurements[measurementType];
-                        if (measurementValue === undefined || measurementValue === null || measurementValue <= 0) {
-                            isValid = false;
+
+                        if (measurementValue === undefined || measurementValue === null || isNaN(measurementValue) || measurementValue <= 0) {
                             errors.measurements = `Measurement '${measurementType}' for size '${sizeKey}' must be a positive number.`;
-                            break; 
+                            isValid = false;
+                            break;
                         }
                     }
                     if (!isValid) break; // Stop checking other sizes if an error is found for the current one
                 }
             }
-        }
-    } // else if category expects measurements but none are provided, this could be another check if needed.
+        }   
+    }
 
     
     if (variant.availableDate && !isValidDateString(variant.availableDate)) {

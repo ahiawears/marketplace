@@ -56,81 +56,99 @@ export const uploadGeneralDetails = async (
     } 
 }
 
-export const uploadProductVariants = async (
-    productVariants: ProductVariantType[],
-    generalDetailsProductId: string,
-    currency: string,
-    accessToken: string,
-) : Promise<PublishProductResponse> => {
-    try {
-        const formData = new FormData();
-        formData.append('generalDetailsProductId', generalDetailsProductId);
-        formData.append('operation', 'ProductVariantData');
-        formData.append('currency', currency);
 
-        for (const [variantIndex, variant] of productVariants.entries()) {
-            formData.append(`variants[${variantIndex}][variantName]`, variant.variantName);
-            formData.append(`variants[${variantIndex}][sku]`, variant.sku);
-            formData.append(`variants[${variantIndex}][price]`, variant.price.toString());
-            formData.append(`variants[${variantIndex}][colorName]`, variant.colorName);
-            formData.append(`variants[${variantIndex}][mainColor]`, variant.mainColor);
-            formData.append(`variants[${variantIndex}][productCode]`, variant.productCode);
-            formData.append(`variants[${variantIndex}][measurementUnit]`, variant.measurementUnit);
-            formData.append(`variants[${variantIndex}][measurements]`, JSON.stringify(variant.measurements));
-            formData.append(`variants[${variantIndex}][colorDescription]`, variant.colorDescription || "");
-            formData.append(`variants[${variantIndex}][imagesDescription]`, variant.imagesDescription || "");
-            formData.append(`variants[${variantIndex}][availableDate]`, variant.availableDate || "");
-            formData.append(`variants[${variantIndex}][colorHexes]`, JSON.stringify(variant.colorHexes || []));
+export const uploadProductVariant = async ( // Renamed function for clarity
+  productVariant: ProductVariantType, // Expecting a single ProductVariantType
+  generalDetailsProductId: string,
+  currency: string,
+  accessToken: string
+): Promise<PublishProductResponse> => {
+  try {
+    const formData = new FormData();
+    formData.append("generalDetailsProductId", generalDetailsProductId);
+    formData.append("operation", "ProductSingleVariantData");
+    formData.append("currency", currency);
 
-            for (const [index, blobUrl] of variant.images.filter(img => img && img.startsWith('blob:')).entries()) {
-                const response = await fetch(blobUrl);
-                const blob = await response.blob();
-                const filename = `variant_${variantIndex}_image_${index + 1}.jpg`;
-                formData.append(`variants[${variantIndex}][images]`, blob, filename);
-            }
-            for (const imageUrl of variant.images.filter(img => img && !img.startsWith('blob:'))) {
-                formData.append(`variants[${variantIndex}][images]`, imageUrl);
-            }
-        }
+    // Directly append properties of the single productVariant
+    formData.append("variantName", productVariant.variantName);
+    formData.append("sku", productVariant.sku);
+    formData.append("price", productVariant.price.toString());
+    formData.append("colorName", productVariant.colorName);
+    formData.append("mainColor", productVariant.mainColor);
+    formData.append("productCode", productVariant.productCode);
+    formData.append("measurementUnit", productVariant.measurementUnit);
+    formData.append(
+      "measurements",
+      JSON.stringify(productVariant.measurements)
+    );
+    formData.append("colorDescription", productVariant.colorDescription || "");
+    formData.append(
+      "imagesDescription",
+      productVariant.imagesDescription || ""
+    );
+    formData.append("availableDate", productVariant.availableDate || "");
+    formData.append(
+      "colorHexes",
+      JSON.stringify(productVariant.colorHexes || [])
+    );
 
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`, 
-            {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`,
-                },
-                body: formData,
-            }
-        )
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Server Error Details:", errorData);
-            throw new Error(`Failed to upload products variant details. Response error: ${response.status} - ${response.statusText}`);
-        }
-
-        const data = await response.json();
-
-        if (data.success) {
-            console.log("Product uploaded successfully:", data);
-            return {
-                success: true,
-                message: "Product Variants Details Uploaded Successfully",
-                data: `${data.product_id}`,
-                loading: false
-            }
-        } else {
-            throw new Error(data.message || "Product Variants Details upload failed");
-        }
-    } catch (error) {
-        return {
-            success: false,
-            message: error instanceof Error ? error.message : "An unexpected error occurred.",
-            data: null,
-            loading: false
-        }
+    // Handle images for the single variant
+    for (const [index, blobUrl] of productVariant.images
+      .filter((img) => img && img.startsWith("blob:"))
+      .entries()) {
+      const response = await fetch(blobUrl);
+      const blob = await response.blob();
+      const filename = `variant_image_${index + 1}.jpg`; // Simplified filename
+      formData.append("images", blob, filename); // Append to 'images' directly
     }
-}
+    for (const imageUrl of productVariant.images.filter(
+      (img) => img && !img.startsWith("blob:")
+    )) {
+      formData.append("images", imageUrl); // Append to 'images' directly
+    }
+
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: formData,
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Server Error Details:", errorData);
+      throw new Error(
+        `Failed to upload product variant details. Response error: ${response.status} - ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("Product variant uploaded successfully:", data);
+      return {
+        success: true,
+        message: "Product Variant Details Uploaded Successfully",
+        data: `${data.product_id}`,
+        loading: false,
+      };
+    } else {
+      throw new Error(data.message || "Product Variant Details upload failed");
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        error instanceof Error ? error.message : "An unexpected error occurred.",
+      data: null,
+      loading: false,
+    };
+  }
+};
 
 export const uploadProductShippingDetails = async (
     productShippingConfig: ProductShippingDeliveryType,

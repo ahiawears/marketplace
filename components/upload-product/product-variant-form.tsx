@@ -43,7 +43,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
 
     const [variantErrors, setVariantErrors] = useState<ProductVariantErrors[]>([]);
 
-
     const addProductVariant = () => {
         const newVariant: ProductVariantType = {
             variantName: "",

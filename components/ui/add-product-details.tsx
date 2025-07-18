@@ -9,7 +9,7 @@ import Accordion from "./Accordion";
 import React from "react";
 import ProductShippingDetails from "../upload-product/product-shipping-details";
 import CareInstructions from "../upload-product/care-instructions";
-import { uploadGeneralDetails, uploadProductCareInstruction, uploadProductShippingDetails, uploadProductVariants } from "@/actions/add-product/publish-product-action";
+import { uploadGeneralDetails, uploadProductCareInstruction, uploadProductShippingDetails, uploadProductVariant } from "@/actions/add-product/publish-product-action";
 import LoadContent from "@/app/load-content/page";
 import { toast } from "sonner";
 import { useProductForm } from "@/app/contexts/product-form-context";
@@ -94,8 +94,6 @@ const AddProductDetails: React.FC = () => {
                     ? detailsInput(productData.generalDetails) 
                     : detailsInput;
 
-            console.log("The generalDetails are: ", resolvedDetails);
-
             const result = await uploadGeneralDetails(resolvedDetails, accessToken);
 
             if (result.success) {
@@ -132,68 +130,37 @@ const AddProductDetails: React.FC = () => {
         }));
     };
 
-    // This function handles the API call to save all variants
-    const saveProductVariants = async (variantIndex?: number) => {
+    // This below function is used to save a single variant or all variants
+    const saveSingleVariant = async (variantIndex: number) => {
         if (!productId) {
-            toast.error("Cannot save variants. Product ID is missing. Please complete the general details step first.");
+            toast.error("Cannot save variant. Product ID is missing. Please complete the general details step first.");
             return;
         }
 
-        let variantsToSave: ProductVariantType[];
-
-        if (typeof variantIndex === 'number') {
-            // Logic to save a single variant
-            const variant = productData.productVariants[variantIndex];
-            if (!variant) {
-                toast.error(`Variant at index ${variantIndex} not found.`);
-                return;
-            }
-            variantsToSave = [variant];
-        } else {
-            // Logic to save all variants (e.g., for a "Save and Continue" button)
-            if (productData.productVariants.length === 0) {
-                toast.warning("Please add at least one variant to save.");
-                return;
-            }
-            variantsToSave = productData.productVariants;
+        const variant = productData.productVariants[variantIndex];
+        if (!variant) {
+            toast.error(`Variant at index ${variantIndex} not found.`);
+            return;
         }
 
-        console.log("Uploading variants:", variantsToSave);
-
-        // Use per-variant loading state if saving a single variant
-        if (typeof variantIndex === 'number') {
-            setSavingVariantIndex(variantIndex);
-        } else {
-            setLoading(true); // Use global loading for "save all"
-        }
-
+        setSavingVariantIndex(variantIndex);
         try {
-            const result = await uploadProductVariants(variantsToSave, productId, userCurrency, accessToken);
+            const result = await uploadProductVariant(variant, productId, userCurrency, accessToken);
             if (result.success) {
-                toast.success("Product variants saved successfully!");
-                if (typeof variantIndex === 'number') {
-                    onVariantSaved(variantIndex, true); // Notify that a specific variant is saved
-                } else {
-                    setSaveStatus(prev => ({ ...prev, variants: true }));
-                    setActiveIndex(2); // Move to next accordion on "save all"                
-                }    
+                toast.success("Variant saved successfully!");
+                onVariantSaved(variantIndex, true); // Notify that a specific variant is saved
             } else {
-                toast.error(`Failed to save variants: ${result.message}`);
-                if (typeof variantIndex === 'number') {
-                    onVariantSaved(variantIndex, false);
-                }
+                toast.error(`Failed to save variant: ${result.message}`);
+                onVariantSaved(variantIndex, false);
             }
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "An unexpected error occurred while saving variants.");
+            toast.error(error instanceof Error ? error.message : "An unexpected error occurred while saving the variant.");
         } finally {
-            // Reset the correct loading state
-            if (typeof variantIndex === 'number') {
-                setSavingVariantIndex(null);
-            } else {
-                setLoading(false);
-            }
+            setSavingVariantIndex(null);
         }
-    };
+    }
+    // This above function is used to save a single variant or all variants
+
 
     const setProductShippingConfiguration = async (productShippingDetails: ProductShippingDeliveryType | ((prev: ProductShippingDeliveryType) => ProductShippingDeliveryType)) => {
         const resolvedDetails: ProductShippingDeliveryType = 
@@ -280,7 +247,7 @@ const AddProductDetails: React.FC = () => {
                         category={productData.generalDetails.category}
                         onVariantSaved={onVariantSaved}
                         savedStatus={savedStatus}
-                        saveVariant={saveProductVariants}
+                        saveVariant={saveSingleVariant}
                         savingVariantIndex={savingVariantIndex}
 
                     />,

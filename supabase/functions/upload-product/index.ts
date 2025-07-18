@@ -169,156 +169,144 @@ Deno.serve(async (req: Request) => {
                 );
                 break;
 
+            case 'ProductSingleVariantData': // New case for handling a single variant
+                {
+                    const mainProductIdRaw = formData.get('generalDetailsProductId');
+                    const brandCurrency = formData.get('currency');
 
-            case 'ProductVariantData':
-                const mainProductIdRaw = formData.get('generalDetailsProductId');
-                const brandCurrency = formData.get('currency');
-                if (!mainProductIdRaw || typeof mainProductIdRaw !== 'string') {
-                    return new Response(
-                        JSON.stringify({
-                            success: false,
-                            message: "Missing or invalid Main Product ID"
-                        }), { 
-                            status: 400, 
-                            headers: corsHeaders 
-                        }
-                    );
-                }
-
-                if (!brandCurrency || typeof brandCurrency !== 'string') {
-                    return new Response(
-                        JSON.stringify({
-                            success: false,
-                            message: "Missing or invalid brand currency"
-                        }), { 
-                            status: 400, 
-                            headers: corsHeaders 
-                        }
-                    );
-                }
-
-                const mainProductId = mainProductIdRaw as string;
-                const tempVariants: { [key: number]: Partial<ParsedEdgeVariant> } = {};
-                const variantImagesMap: Record<number, File[]> = {};
-
-                // Collect all variant fields
-                for (const [key, value] of formData.entries()) {
-                    if (key.startsWith('variants[')) {
-                        const match = key.match(/variants\[(\d+)\]\[([^\]]+)\]/);
-                        if (match) {
-                            const index = parseInt(match[1], 10);
-                            const field = match[2];
-
-                            if (!tempVariants[index]) {
-                                tempVariants[index] = {};
+                    if (!mainProductIdRaw || typeof mainProductIdRaw !== 'string') {
+                        return new Response(
+                            JSON.stringify({
+                                success: false,
+                                message: "Missing or invalid Main Product ID"
+                            }), {
+                                status: 400,
+                                headers: corsHeaders
                             }
+                        );
+                    }
 
-                            if (field === 'images') {
-                                if (value instanceof File) {
-                                    if (!variantImagesMap[index]) {
-                                        variantImagesMap[index] = [];
-                                    }
-                                    variantImagesMap[index].push(value);
-                                } else if (typeof value === 'string') {
-                                    // This is an existing image URL. For a "create" operation,
-                                    // these might be ignored if `createImages` only handles new File uploads.
-                                    // If you need to store these, add them to tempVariants[index].
-                                    console.log(`Received string image URL: ${value} for variant ${index}. This may be ignored by createImages if it expects File objects.`);
-                                    // Example:
-                                    // if (!tempVariants[index].existingImageUrls) { (tempVariants[index] as any).existingImageUrls = []; }
-                                    // (tempVariants[index] as any).existingImageUrls.push(value);
-                                }
-                            } else if(typeof value === 'string') {
-                                if (field === 'measurements' || field === 'colorHexes') {
-                                    try {
-                                        (tempVariants[index] as any)[field] = JSON.parse(value);
-                                    } catch (error) {
-                                        console.error(`Failed to parse JSON for field ${field} at index ${index}:`, error);
-                                        return new Response(JSON.stringify({ 
-                                            success: false, 
-                                            message: `Invalid JSON for ${field} for variant ${index + 1}` 
-                                        }), { 
-                                            status: 400, 
-                                            headers: corsHeaders 
-                                        });
-                                    }
-                                } else {
-                                    (tempVariants[index] as any)[field] = value;
-                                }
+                    if (!brandCurrency || typeof brandCurrency !== 'string') {
+                        return new Response(
+                            JSON.stringify({
+                                success: false,
+                                message: "Missing or invalid brand currency"
+                            }), {
+                                status: 400,
+                                headers: corsHeaders
                             }
+                        );
+                    }
+
+                    const mainProductId = mainProductIdRaw as string;
+
+                    // Directly extract fields for the single variant
+                    const variantName = formData.get('variantName') as string;
+                    const sku = formData.get('sku') as string;
+                    const priceRaw = formData.get('price') as string; // Price is a string from FormData
+                    const colorName = formData.get('colorName') as string;
+                    const mainColor = formData.get('mainColor') as string;
+                    const productCode = formData.get('productCode') as string;
+                    const measurementUnit = formData.get('measurementUnit') as string;
+                    const measurementsRaw = formData.get('measurements') as string; // JSON string
+                    const colorDescription = formData.get('colorDescription') as string | null;
+                    const imagesDescription = formData.get('imagesDescription') as string | null;
+                    const availableDate = formData.get('availableDate') as string | null;
+                    const colorHexesRaw = formData.get('colorHexes') as string | null; // JSON string
+
+                    // Collect images. FormData.getAll() is useful here for multiple files with the same name.
+                    const imagesToUpload: File[] = [];
+                    for (const [key, value] of formData.entries()) {
+                        if (key === 'images' && value instanceof File) {
+                            imagesToUpload.push(value);
                         }
                     }
-                }
 
-                console.log(`The tempVariants are ${JSON.stringify(tempVariants)}`);
-                console.log(`The brand currency is ${brandCurrency}`);
-                const baseCurrencyRate = await GetExchangeRates(supabase, "USD", brandCurrency);
+                    let measurements: any = {};
+                    if (measurementsRaw) {
+                        try {
+                            measurements = JSON.parse(measurementsRaw);
+                        } catch (error) {
+                            console.error(`Failed to parse JSON for measurements:`, error);
+                            return new Response(JSON.stringify({
+                                success: false,
+                                message: `Invalid JSON for measurements`
+                            }), {
+                                status: 400,
+                                headers: corsHeaders
+                            });
+                        }
+                    }
 
-                const processedVariants: ParsedEdgeVariant[] = Object.keys(tempVariants)
-                    .map(key => Number(key))
-                    .sort((a, b) => a - b)
-                    .map(index => {
-                        // Perform validation or ensure all required fields are present
-                        // For example, you might want to use a Zod schema here
-                        return tempVariants[index] as ParsedEdgeVariant;
-                    });
+                    let colorHexes: string[] = [];
+                    if (colorHexesRaw) {
+                        try {
+                            colorHexes = JSON.parse(colorHexesRaw);
+                        } catch (error) {
+                            console.error(`Failed to parse JSON for colorHexes:`, error);
+                            return new Response(JSON.stringify({
+                                success: false,
+                                message: `Invalid JSON for colorHexes`
+                            }), {
+                                status: 400,
+                                headers: corsHeaders
+                            });
+                        }
+                    }
 
-                if (processedVariants.length === 0) {
-                    return new Response(
-                        JSON.stringify({ success: false, message: "No variant data received or variants are empty." }),
-                        { status: 400, headers: corsHeaders }
-                    );
-                };
+                    // Basic validation for required fields
+                    if (!variantName || !sku || !priceRaw || !colorName || !mainColor || !productCode || !measurementUnit) {
+                        return new Response(
+                            JSON.stringify({ success: false, message: "Missing required product variant fields." }),
+                            { status: 400, headers: corsHeaders }
+                        );
+                    }
 
-                const uploadedVariantIds = [];
-                for (let i = 0; i < processedVariants.length; i++) {
-                    const variant = processedVariants[i];
-                    const imagesToUpload = variantImagesMap[i] || [];
-
-                    // Add more robust validation for each variant object here if needed
-
-                    const priceNum = parseFloat(variant.price.replace(/,/g, '')!);
+                    const priceNum = parseFloat(priceRaw.replace(/,/g, ''));
                     if (isNaN(priceNum)) {
-                        return new Response(JSON.stringify({ success: false, message: `Invalid price for variant ${variant.variantName}` }), { status: 400, headers: corsHeaders });
+                        return new Response(JSON.stringify({ success: false, message: `Invalid price for variant` }), {
+                            status: 400,
+                            headers: corsHeaders
+                        });
                     }
-                    
-                    // calculate base currency price
-                    const baseCurrencyPrice = priceNum / baseCurrencyRate; 
 
-                    const colorId = await createColor(supabase, variant.colorName!, variant.mainColor!);
+                    const baseCurrencyRate = await GetExchangeRates(supabase, "USD", brandCurrency);
+                    const baseCurrencyPrice = priceNum / baseCurrencyRate;
+
+                    const colorId = await createColor(supabase, colorName, mainColor); // Assuming these are required
 
                     const variantId = await createVariant(
                         supabase,
-                        variant.variantName!,
-                        variant.sku!,
+                        variantName,
+                        sku,
                         priceNum,
                         baseCurrencyPrice,
                         colorId,
-                        variant.colorDescription!,
-                        variant.productCode!,
-                        variant.availableDate!,
-                        variant.imagesDescription!,
+                        colorDescription || '', // Provide default empty string if null
+                        productCode,
+                        availableDate || '', // Provide default empty string if null
+                        imagesDescription || '', // Provide default empty string if null
                         mainProductId,
                     );
-                    if (variant.measurementUnit && variant.measurements && Object.keys(variant.measurements).length > 0) {
-                        await createSizes(supabase, variantId, { measurements: variant.measurements }, variant.measurementUnit);
+
+                    if (measurementUnit && measurements && Object.keys(measurements).length > 0) {
+                        await createSizes(supabase, variantId, { measurements: measurements }, measurementUnit);
                     }
-                    
+
                     await Promise.all(imagesToUpload.map((imageFile, imgIndex) =>
                         createImages(supabase, variantId, imageFile, imgIndex)
                     ));
-                    uploadedVariantIds.push(variantId);
-                } 
-                return new Response(
-                    JSON.stringify({
-                        success: true,
-                        message: "Product Variants Uploaded Successfully",
-                        variant_ids: uploadedVariantIds,
-                        main_product_id: mainProductId
-                    }),
-                    { status: 200, headers: corsHeaders }
-                );
-                break;
+
+                    return new Response(
+                        JSON.stringify({
+                            success: true,
+                            message: "Product Variant Uploaded Successfully",
+                            variant_id: variantId, // Return single variant ID
+                            main_product_id: mainProductId
+                        }),
+                        { status: 200, headers: corsHeaders }
+                    );
+                }
 
             case 'ProductShippingData':
                 const productShippingConfigRaw = formData.get('productShippingConfig');
