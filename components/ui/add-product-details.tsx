@@ -63,7 +63,7 @@ const AddProductDetails: React.FC = () => {
                 const brand_country = legalDetails?.country_of_registration
                 const brandCurrency = currency.find((c) => c.country_alpha === brand_country);
                 if (brandCurrency) {
-                        setProductData(prev => ({
+                    setProductData(prev => ({
                         ...prev,
                         generalDetails: { ...prev.generalDetails, currency: brandCurrency.code }
                     }));
@@ -74,7 +74,6 @@ const AddProductDetails: React.FC = () => {
                     toast.error(`Could not load brand settings: ${error.message}`);
                 } else {
                     toast.error("An unexpected error occurred while fetching brand settings.");
-
                 }
             }
         }
@@ -94,6 +93,8 @@ const AddProductDetails: React.FC = () => {
                 typeof detailsInput === 'function' 
                     ? detailsInput(productData.generalDetails) 
                     : detailsInput;
+
+            console.log("The generalDetails are: ", resolvedDetails);
 
             const result = await uploadGeneralDetails(resolvedDetails, accessToken);
 

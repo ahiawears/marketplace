@@ -161,6 +161,13 @@ const GeneralProductDetails: React.FC<GeneralProductDetailsProps> = ({ generalDe
     },[localDetails.currency]);
 
     useEffect(() => {
+        // Sync currency from props to local state when it changes.
+        if (generalDetails.currency && generalDetails.currency !== localDetails.currency) {
+            setLocalDetails(prev => ({ ...prev, currency: generalDetails.currency }));
+        }
+    }, [generalDetails.currency, localDetails.currency]);
+
+    useEffect(() => {
         const getDetails = () => {
             if (localDetails.category) {
                 const categoryName = localDetails.category;
