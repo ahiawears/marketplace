@@ -241,70 +241,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                         <p className="text-red-500 text-xs mt-1">{variantErrors[index].variantName}</p>
                                     )}
                                 </div>
-                            
-                                <div className="mx-auto flex flex-col lg:flex-row md:space-x-4 lg:space-x-4 my-2">
-                                    {/* Product SKU */}
-                                    <div className="lg:basis-1/2 ">
-                                        <div className="mt-3">
-                                            <label htmlFor={`variantSku-${index}`} className="block text-sm font-bold text-gray-900 my-2">
-                                                Product Variant SKU:*
-                                            </label>
-                                            <Input
-                                                id={`variantSku-${index}`}
-                                                className="border-2"
-                                                type="text"
-                                                value={variant.sku}
-                                                onChange={(e) => updateVariant(index, "sku", e.target.value)}
-                                                placeholder="Stock Keeping Unit. Unique code for this variant. Generate one or enter your own."
-                                            />
-                                            {variantErrors[index]?.sku && (
-                                                <p className="text-red-500 text-xs mt-1">{variantErrors[index].sku}</p>
-                                            )}
-                                            <Button 
-                                                className="my-2 h-[30px] text-sm/6"
-                                                onClick={() =>
-                                                    {
-                                                        const mainColor = findNearestColor(variant.colorHexes[0]);
-                                                        const sku = generateSKU(originalProductName, mainColor);
-                                                        updateVariant(index, "sku", sku);
-                                                    }
-                                                }    
-                                            >
-                                                Generate
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    {/* Product Code */}
-                                    <div className="lg:basis-1/2 ">
-                                        <div className="mt-3">
-                                            <label htmlFor={`productCode-${index}`} className="block text-sm font-bold text-gray-900 my-2">
-                                                Product Variant Code:*
-                                            </label>
-                                            <Input
-                                                id={`productCode-${index}`}
-                                                className="border-2"
-                                                type="text"
-                                                value={variant.productCode}
-                                                onChange={(e) => updateVariant(index, "productCode", e.target.value)}
-                                                placeholder="Internal product code, if different from SKU. Generate one or enter your own."
-                                            />
-                                            {variantErrors[index]?.productCode && (
-                                                <p className="text-red-500 text-xs mt-1">{variantErrors[index].productCode}</p>
-                                            )}
-                                            <Button 
-                                                className="my-2 h-[30px] text-sm/6"
-                                                onClick={() => 
-                                                    {
-                                                        const productCode = generateProductCode(originalProductName);
-                                                        updateVariant(index, "productCode", productCode);
-                                                    }
-                                                }    
-                                            >
-                                                Generate
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
 
                             {/* Add Product Images and Information */}
@@ -501,6 +437,73 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
                                         {variantErrors[index]?.availableDate && (
                                             <p className="text-red-500 text-xs mt-1">{variantErrors[index].availableDate}</p>
                                         )}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Variant SKU and Product Code */} 
+                            <div className="my-4">
+                                <div className="mx-auto flex flex-col lg:flex-row md:space-x-4 lg:space-x-4 my-2">
+                                    {/* Product SKU */}
+                                    <div className="lg:basis-1/2 ">
+                                        <div className="mt-3">
+                                            <label htmlFor={`variantSku-${index}`} className="block text-sm font-bold text-gray-900 my-2">
+                                                Product Variant SKU:*
+                                            </label>
+                                            <Input
+                                                id={`variantSku-${index}`}
+                                                className="border-2"
+                                                type="text"
+                                                value={variant.sku}
+                                                onChange={(e) => updateVariant(index, "sku", e.target.value)}
+                                                placeholder="Stock Keeping Unit. Unique code for this variant. Generate one or enter your own."
+                                            />
+                                            {variantErrors[index]?.sku && (
+                                                <p className="text-red-500 text-xs mt-1">{variantErrors[index].sku}</p>
+                                            )}
+                                            <Button 
+                                                className="my-2 h-[30px] text-sm/6"
+                                                onClick={() =>
+                                                    {
+                                                        const mainColor = findNearestColor(variant.colorHexes[0]);
+                                                        const sku = generateSKU(originalProductName, mainColor);
+                                                        updateVariant(index, "sku", sku);
+                                                    }
+                                                }    
+                                            >
+                                                Generate
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    {/* Product Code */}
+                                    <div className="lg:basis-1/2 ">
+                                        <div className="mt-3">
+                                            <label htmlFor={`productCode-${index}`} className="block text-sm font-bold text-gray-900 my-2">
+                                                Product Variant Code:*
+                                            </label>
+                                            <Input
+                                                id={`productCode-${index}`}
+                                                className="border-2"
+                                                type="text"
+                                                value={variant.productCode}
+                                                onChange={(e) => updateVariant(index, "productCode", e.target.value)}
+                                                placeholder="Internal product code, if different from SKU. Generate one or enter your own."
+                                            />
+                                            {variantErrors[index]?.productCode && (
+                                                <p className="text-red-500 text-xs mt-1">{variantErrors[index].productCode}</p>
+                                            )}
+                                            <Button 
+                                                className="my-2 h-[30px] text-sm/6"
+                                                onClick={() => 
+                                                    {
+                                                        const productCode = generateProductCode(originalProductName);
+                                                        updateVariant(index, "productCode", productCode);
+                                                    }
+                                                }    
+                                            >
+                                                Generate
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

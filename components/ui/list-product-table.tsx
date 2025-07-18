@@ -28,10 +28,10 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
         setExpandedRows(newSet);
     };
     return (
-        <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border-2 rounded-lg shadow-md">
+        <div className="overflow-x-auto border-2">
+            <table className="min-w-full bg-white rounded-lg shadow-md">
                 <thead>
-                    <tr className="bg-gray-100 text-left border-2">
+                    <tr className="bg-gray-100 text-left ">
                         <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Product Name</th>
                         <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Category</th>
                         <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Sub-Category</th>
@@ -47,26 +47,26 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
                                 onClick={() => toggleRow(product.id)}
                             >
                                 {/* Product Name */}
-                                <td className="px-6 py-4 text-sm text-gray-600 border-2">
+                                <td className="px-6 py-4 text-sm text-gray-600 ">
                                     {product.name}
                                 </td>
 
                                 {/* Category */}
-                                <td className="px-6 py-4 text-sm text-gray-600 border-2">
+                                <td className="px-6 py-4 text-sm text-gray-600 ">
                                     {product.category_name}
                                 </td>
 
                                 {/* SubCategory */}
-                                <td className="px-6 py-4 text-sm text-gray-600 border-2">
+                                <td className="px-6 py-4 text-sm text-gray-600">
                                     {product.subCategory}
                                 </td>
 
                                 {/* Season */}
-                                <td className="px-6 py-4 text-sm text-gray-600 border-2">
+                                <td className="px-6 py-4 text-sm text-gray-600">
                                     {product.season}
                                 </td>
                                 {/* Action Icons */} 
-                                <td className="px-2 py-4 border-2">
+                                <td className="px-2 py-4">
                                     <div className="flex space-x-4 text-gray-500">
                                         <Button onClick={() => onHideProduct(product.id)} title="Hide Product" className="bg-transparent hover:bg-gray-100">
                                             <EyeOff className="w-5 h-5 hover:text-gray-700" color="#000000"/>
@@ -86,7 +86,7 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
 
                             {expandedRows.has(product.id) && (
                                 <tr className="bg-gray-50">
-                                    <td colSpan={5} className="px-6 py-4 text-sm text-gray-600 border-2">
+                                    <td colSpan={5} className="px-6 py-4 text-sm text-gray-600 border-y-2">
                                         {/* product variants  can go here */}
                                         <div>
                                             <p><strong>Product ID:</strong> {product.id}</p>

@@ -25,16 +25,6 @@ interface ShippingMethodItem {
     feeValue: number;
 }
 
-interface ShippingZoneItem {
-    display: string;
-    dbKey: keyof ShippingDetails['shippingZones'];
-    timeKey: keyof ShippingDetails['estimatedDeliveryTimes'];
-    deliveryTime: { from: string; to: string };
-}
-
-interface ProductShippingSettings {
-
-}
 
 const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId, accessToken, currencySymbol, productId, onSaveShippingDetails }) => {
     const { config: shippingConfig, loading: configLoading, error: configError, refetch } = useShippingConfig(userId, accessToken);
@@ -42,7 +32,6 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
     const [ methodFees, setMethodFees ] = useState<ProductShippingDeliveryType["methods"]>({});
     const [ productWeight, setProductWeight ] = useState<ProductShippingDeliveryType["weight"]>(0);
     const [ productDimensions, setProductDimensions ] = useState<ProductShippingDeliveryType["dimensions"]>({ length: 0, width: 0, height: 0 })
-    const [ availableShippingZones, setAvailableShippingZones ] = useState<ShippingZoneItem[]>([]);
     const { shippingMethods, shippingZones } = shippingConfig;
     const [ errorMessage, setErrorMessage ] = useState("");
     const [ isSaveButtonDisabled, setIsSaveButtonDisabled ] = useState<boolean>(true);
@@ -193,6 +182,20 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                     <CardTitle className="text-lg font-semibold">Package Physical Attributes</CardTitle>
                 </CardHeader>
                 <CardContent>
+                    <div>
+                        <label className="block text-sm font-medium mb-1">
+                            Weight <span className="font-bold">(kg)</span>
+                        </label>
+                        <Input
+                            type="number"
+                            value={productWeight === 0 ? '' : productWeight}
+                            onChange={(e) => setProductWeight(parseFloat(e.target.value) || 0)}
+                            className="w-full p-2 border-2 rounded"
+                            min="0.1"
+                            step="0.1"
+                            placeholder="0.00"
+                        />
+                    </div>
                     <div className="my-2">
                         <div>
                             <label htmlFor="measurementUnit" className="block text-sm font-bold text-gray-900"> Select the measurement unit</label>
@@ -241,21 +244,7 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                             </div>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Weight <span className="font-bold">(kg)</span>
-                            </label>
-                            <Input
-                                type="number"
-                                value={productWeight === 0 ? '' : productWeight}
-                                onChange={(e) => setProductWeight(parseFloat(e.target.value) || 0)}
-                                className="w-full p-2 border-2 rounded"
-                                min="0.1"
-                                step="0.1"
-                                placeholder="0.00"
-                            />
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {['length', 'width', 'height'].map((dim) => (
                             <div key={dim}>
                                 <label className="block text-sm font-medium mb-1">

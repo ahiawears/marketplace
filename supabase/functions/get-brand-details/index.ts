@@ -3,8 +3,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from "../../server-deno.ts";
 
-
-Deno.serve(async (req) => {
+Deno.serve(async (req) => { 
  	if (req.method === "OPTIONS") {
 		// Handle CORS preflight request
 		return new Response('ok', { headers: corsHeaders});  
@@ -13,7 +12,7 @@ Deno.serve(async (req) => {
 	try {
 		const url = new URL(req.url);
 		const dataName = url.searchParams.get("data_name");
-		const userId = url.searchParams.get("userId");
+		const brandId = url.searchParams.get("brandId");
 		const authHeader = req.headers.get("Authorization");
 
 		console.log("The dataName gotten is ", dataName);
@@ -30,8 +29,8 @@ Deno.serve(async (req) => {
 
 		const supabase = createClient(accessToken);
 		
-		if (!userId) {
-			return new Response(JSON.stringify({ success: false, message: "User ID is required." }), {
+		if (!brandId) {
+			return new Response(JSON.stringify({ success: false, message: "Brand ID is required." }), {
 				status: 400,
 				headers: { ...corsHeaders, "Content-Type": "application/json" },
 			});
@@ -42,7 +41,7 @@ Deno.serve(async (req) => {
 				const { data: legalData, error: legalError } = await supabase
 					.from('brand_legal_details')
 					.select('*')
-					.eq('id', userId)
+					.eq('id', brandId)
 					.single();
 
 				if (legalError) {

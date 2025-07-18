@@ -21,8 +21,9 @@ const ProductsPage = () => {
 	};
 	
 	const handleEditProduct = (id: string) => {
-		router.push(`./edit-product/${id}`);
 		console.log(`Edit product with id: ${id}`);
+		router.push(`./edit-product/${id}`);
+		
 	};
 	
 	const handleDeleteProduct = (id: string) => {
@@ -43,10 +44,10 @@ const ProductsPage = () => {
 		return <LoadContent />; 
 	}
 	return (
-		<div className=" mx-auto">
+		<div className="mx-auto">
 			{products.length > 0 ? (
 				<div className="">
-					<div className="p-4">
+					<div className="p-0">
 						<ProductTable
 							products={products}
 							onHideProduct={handleHideProduct}

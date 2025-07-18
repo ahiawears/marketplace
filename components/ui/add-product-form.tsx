@@ -165,7 +165,7 @@ const AddProductForm = () => {
 
     return (
         <ProductFormProvider value={contextValue}>
-            <div className="container overflow-auto mx-auto p-4 mt-4">
+            <div className="container overflow-auto mx-auto px-0">
                 <Toaster position="top-right" richColors />
                 <div className="flex flex-col md:flex-row gap-8 h-full">
                     <div className="w-full md:w-3/4">

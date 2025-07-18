@@ -7,12 +7,6 @@ export interface ProductTableType {
   season: string;
 }
 
-// export interface OrderTableType {
-//   order_id: string;
-//   customer_id: string;
-//   status: string;
-// }
-
 export type Customer = {
   name: string;
   email: string;
@@ -615,5 +609,14 @@ export const DEFAULT_BRAND_NOTIFICATION_SETTINGS: BrandNotificationSettingCheckb
   },
 }));
 
-
 // Notification Settings Types
+
+// Brand Legal Details Return Type
+
+ export interface BrandLegalDetails {
+  business_registration_name: string;
+  business_registration_number: string;
+  country_of_registration: string;
+ }
+// Brand Legal Details Return Type
+

@@ -23,9 +23,9 @@ const Accordion: React.FC<AccordionProps> = ({ items, activeIndex, setActiveInde
   };
 
 	return (
-		<div className="space-y-2">
+		<div className="">
 			{items.map((item, index) => (
-				<div key={index} className="rounded-lg shadow border-2">
+				<div key={index} className="shadow border-b-2 border-r-2">
 					<Button
 						onClick={() => handleToggle(index)}
 						disabled={item.disabled}

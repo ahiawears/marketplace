@@ -13,6 +13,8 @@ import { uploadGeneralDetails, uploadProductCareInstruction, uploadProductShippi
 import LoadContent from "@/app/load-content/page";
 import { toast } from "sonner";
 import { useProductForm } from "@/app/contexts/product-form-context";
+import { useBrandGetDetails } from "@/hooks/useBrandGetDetails"
+
 
 interface SaveStatus {
     general: boolean;
@@ -22,7 +24,24 @@ interface SaveStatus {
 }
     
 const AddProductDetails: React.FC = () => {
-    const { productData, setProductData, handleVariantSaved: onVariantSaved, variantSavedStatus: savedStatus, userId, accessToken, productId, setProductId, setIsAllDetailsSaved } = useProductForm();
+    const { 
+        productData, 
+        setProductData, 
+        handleVariantSaved: onVariantSaved, 
+        variantSavedStatus: savedStatus, 
+        userId, 
+        accessToken, 
+        productId, 
+        setProductId, 
+        setIsAllDetailsSaved 
+    } = useProductForm();
+
+    const { 
+        error: legalDetailsError, 
+        loading: legalDetailsLoading, 
+        resetError: resetLegalDetailsError, 
+        brandData: legalDetails 
+    } = useBrandGetDetails(userId!, "legal-details", accessToken!);
 
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
     const [loading, setLoading] = useState<boolean>(false);
@@ -39,52 +58,31 @@ const AddProductDetails: React.FC = () => {
     };
 
     useEffect(() => {
-        if (userId && accessToken) {
-            const getBrandDetails = async () => {
-                const dataName = "legal-details";
-                try {
-                    const response = await fetch (`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-details?data_name=${dataName}&userId=${userId}`,
-                        {
-                            headers: {
-                                Authorization: `Bearer ${accessToken}`,
-                                'Content-Type': 'application/json',
-                            }
-                        }
-                    )
-    
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || "Couldn't create a connection with the server");
-                    }
-    
-                    const data = await response.json();
-    
-                    if (!data.data) {
-                        throw new Error("No data found for the user, please try again");
-                    }
+        const getBrandDetails = async () => {
+            try {
+                const brand_country = legalDetails?.country_of_registration
+                const brandCurrency = currency.find((c) => c.country_alpha === brand_country);
+                if (brandCurrency) {
+                        setProductData(prev => ({
+                        ...prev,
+                        generalDetails: { ...prev.generalDetails, currency: brandCurrency.code }
+                    }));
+                    setUserCurrency(brandCurrency.code);
+                }   
+            } catch (error) {
+                if (error instanceof Error) {
+                    toast.error(`Could not load brand settings: ${error.message}`);
+                } else {
+                    toast.error("An unexpected error occurred while fetching brand settings.");
 
-                    const brand_country = data.data.country_of_registration;
-                    const brandCurrency = currency.find((c) => c.country_alpha === brand_country);
-                    if (brandCurrency) {
-                         setProductData(prev => ({
-                            ...prev,
-                            generalDetails: { ...prev.generalDetails, currency: brandCurrency.code }
-                        }));
-                        setUserCurrency(brandCurrency.code);
-                    }    
-                } catch (error) {
-                    //set error here
-                    if (error instanceof Error) {
-                        toast.error(`Could not load brand settings: ${error.message}`);
-                    } else {
-                        toast.error("An unexpected error occurred while fetching brand settings.");
-
-                    }
                 }
             }
+        }
+        if(legalDetails !== null){
             getBrandDetails();
         }
-    }, [userId, accessToken]);
+        
+    }, [legalDetails]);
 
     const productCurrencySymbol = getCurrencySymbol(productData.generalDetails.currency);
 
@@ -285,7 +283,8 @@ const AddProductDetails: React.FC = () => {
                         savingVariantIndex={savingVariantIndex}
 
                     />,
-            disabled: !saveStatus.general,
+            // disabled: !saveStatus.general,
+            disabled: false,
         },
         {
             title: "Product Shipping Details",
@@ -296,7 +295,8 @@ const AddProductDetails: React.FC = () => {
                         productId={productId}
                         onSaveShippingDetails={setProductShippingConfiguration}
                     />,
-            disabled: !saveStatus.general || !saveStatus.variants,
+            // disabled: !saveStatus.general || !saveStatus.variants,
+            disabled: false,
         },
         {
             title: "Care Instructions",
@@ -311,12 +311,15 @@ const AddProductDetails: React.FC = () => {
         }
     ];
 
-    if (loading) {
+    if (loading || legalDetailsLoading) {
         return <LoadContent />
     }
 
+    if(legalDetailsError) {
+        toast.error(`Error getting the brand details: ${legalDetailsError.message}`)
+    }
     return (
-        <div className="rounded-lg shadow-sm mx-auto">
+        <div className="rounded-lg shadow-sm ">
             <Accordion 
                 items={accordionItems} 
                 activeIndex={activeIndex} 

@@ -5,7 +5,7 @@ const AddProduct = () => {
     return (
         <div>
             <div className="mx-auto shadow-2xl">
-                <div className="mx-auto max-w-7xl px-6 lg:px-8 border-2">
+                <div className="mx-auto max-w-7xl border-2">
                     <AddProductForm />  
                 </div>
             </div>
