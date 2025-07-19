@@ -251,8 +251,7 @@ const AddProductDetails: React.FC = () => {
                         savingVariantIndex={savingVariantIndex}
 
                     />,
-            // disabled: !saveStatus.general,
-            disabled: false,
+            disabled: !saveStatus.general,
         },
         {
             title: "Product Shipping Details",
@@ -263,8 +262,7 @@ const AddProductDetails: React.FC = () => {
                         productId={productId}
                         onSaveShippingDetails={setProductShippingConfiguration}
                     />,
-            // disabled: !saveStatus.general || !saveStatus.variants,
-            disabled: false,
+            disabled: !saveStatus.general || !saveStatus.variants,
         },
         {
             title: "Care Instructions",

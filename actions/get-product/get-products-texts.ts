@@ -21,7 +21,7 @@ export async function getProductsTexts(supabase: any, variantId: string) {
 
         if (variantImagesError) {
             throw new Error(variantImagesError.message);
-        }
+        } 
         console.log("The images data", variantImages)
 
         const productId = variantTexts.main_product_id.id;

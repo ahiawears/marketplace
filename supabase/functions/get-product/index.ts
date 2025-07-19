@@ -3,59 +3,102 @@
 // This enables autocomplete, go to definition, etc.
 
 // Setup type definitions for built-in Supabase Runtime APIs
-import { serve } from "https://deno.land/std@0.114.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from "../../server-deno.ts";
-import { getProductsTexts } from "@actions/get-products-texts.ts"
+import { getProductForEdit } from "@actions/get-product.ts";
 
-
-serve(async (req: Request) => {
+Deno.serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
-		// Handle CORS preflight request
 		return new Response('ok', { headers: corsHeaders});
     }
-
-	try {
+	try { 
+		console.log("Request received for get-product function");
+		console.log("Request URL: ", req.url);
 		const url = new URL(req.url);
-        const variantId = url.searchParams.get("variantId");
+        const productId = url.searchParams.get("productId");
+		const getProductType = url.searchParams.get("getProductType");
 		const authHeader = req.headers.get("Authorization");
 
-		console.log("The variant id from the index is ", variantId);
+		console.log("The Authorization header is: ", authHeader);
+		console.log("The product type is: ", getProductType);
 
-		if (!authHeader) {
-			console.error("Missing Authorization header!");
-			return new Response("Unauthorized header", { status: 401 });
+
+		if (!authHeader) { 
+			return new Response(
+				JSON.stringify({ success: false, message: "Missing Authorization header" }),
+				{ status: 401, headers: corsHeaders }
+			);
 		}
 
 		const accessToken = authHeader.split("Bearer ")[1];
 
 		if (!accessToken) {
-			console.error("Malformed Authorization header!");
-			return new Response("Unauthorized accessToken", { status: 401 });
-		}
+            return new Response(
+                JSON.stringify({ success: false, message: "Malformed Authorization header" }),
+                { status: 401, headers: corsHeaders }
+            );
+        }
 
 		const supabase = createClient(accessToken);
 
-		if (!variantId) {
-            return new Response(JSON.stringify({ success: false, message: "Variant ID is required." }), {
+		if (!productId) {
+            return new Response(JSON.stringify({ success: false, message: "Product ID is required." }), {
                 status: 400,
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
             });
         }
-		const productTextsData = await getProductsTexts(supabase, variantId);
-		console.log(productTextsData);
 
-		return new Response(
-			JSON.stringify({ 
-				success: true, 
-				message: "Product Gotten successfully", 
-				data: productTextsData,
-			}), 
-			{
-            	headers: { ...corsHeaders, 'Content-Type': 'application/json'}
+		if (!getProductType) {
+			return new Response(JSON.stringify({ success: false, message: "Product fetch type is required." }), {
+				status: 400,
+				headers: { ...corsHeaders, "Content-Type": "application/json" },
+			});
+		}
+		console.log("The. productId is: ", productId);
+		console.log("The getProductType is: ", getProductType);
 
-        	}
-		);
+		switch (getProductType) {
+			case "getProductForEdit": {
+				console.log("Fetching product for edit with ID:", productId);
+				const productForEditData = await getProductForEdit(supabase, productId);
+				 
+				console.log("Product for edit data:", productForEditData);
+				if (!productForEditData) {
+					return new Response(JSON.stringify({ 
+						success: false, message: "Product not found." 
+					}), {
+						status: 404,
+						headers: { ...corsHeaders, "Content-Type": "application/json" },
+					});
+				}
+
+				return new Response(
+					JSON.stringify({ 
+						success: true, 
+						message: "Product Gotten successfully", 
+						data: productForEditData,
+					}), 
+					{
+						headers: { ...corsHeaders, 'Content-Type': 'application/json'}
+
+					}
+				);
+
+			}
+
+			default:
+				return new Response(
+					JSON.stringify({ 
+						success: false, 
+						message: `Unknown getProductType: ${getProductType}` 
+					}), 
+					{
+						status: 400,
+						headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+					}
+				);
+		}
+		
 		
 	} catch (error) {
 		return new Response(

@@ -1,7 +1,7 @@
 {
 	"imports": {
 		"importMap": "./import_map.json",
-		"@actions/": "../../../actions/get-product/",
+		"@actions/": "../../../actions/",
 		"@supabase/": "../../../supabase"
 	}
 }

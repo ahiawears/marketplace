@@ -8,3 +8,4 @@ export const useGetProductDetails = (id: string) => {
     queryFn: () => axios.get<Product>(`/api/product/${id}`),
   }); 
 };
+ 
