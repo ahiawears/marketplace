@@ -29,7 +29,6 @@ export const useGetProductDetails = (id: string, getProductType: string, accessT
         }
 
         const fetchProductDetails = async() => {
-
             setLoading(true);
             setError(null);
             switch (getProductType) {

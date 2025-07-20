@@ -50,17 +50,12 @@ export async function getProductForEdit (supabase: any, id: string){
 				throw new Error(careInstructionsError.message);
 			}
 
-			if (!careInstructionsData) {
-				throw new Error("Care instructions not found for this product.");
-			}
-
-
 
 			// Fetch Product Shipping Delivery Data
 			// First we fetch the product physical attributes
 			const { data: physicalAttributesData, error: physicalAttributesError } = await supabase
 				.from('product_shipping_details')
-				.select('weight, height, width, length')
+				.select('id, weight, height, width, length')
 				.eq('product_id', id)
 				.single();
 
@@ -68,14 +63,91 @@ export async function getProductForEdit (supabase: any, id: string){
 				throw new Error(physicalAttributesError.message);
 			}
 
-			if (!physicalAttributesData) {
-				throw new Error("Physical attributes not found for this product.");
+			// Now we get the shipping configurations data
+			const { data: shippingConfigData, error: shippingConfigError } = await supabase
+				.from('product_shipping_fees')
+				.select('available, fee, zone_type, method_type')
+				.eq('product_shipping_id', physicalAttributesData.id);
+
+			if (shippingConfigError) {
+				throw new Error(shippingConfigError.message);
 			}
 
-			// Now we get the shipping configurations
-			// const { data: shippingConfigData, error: shippingConfigError } = await supabase
-			// 	.from('product_shipping_fees')
-			// 	.select('')
+
+			//Fetch the product variants data
+			const { data: productVariantsData, error: productVariantsError } = await supabase
+				.from('product_variants')
+				.select('id, name, images_description, price, sku, product_code, color_id(name, hex_code), base_currency_price, color_description, available_date')
+				.eq('main_product_id', id);
+
+			if (productVariantsError) {
+				throw new Error(productVariantsError.message);
+			}
+
+			 // Initialize an array to hold variants with their images, sizes, and measurements
+            const variantsWithDetails: any[] = [];
+
+            // Iterate through each product variant to fetch its images, sizes, and measurements
+            for (const variant of productVariantsData) {
+                // Fetch the variant images
+                const { data: variantImages, error: variantImagesError } = await supabase
+                    .from('product_images')
+                    .select('id, image_url, is_main')
+                    .eq('product_variant_id', variant.id); // Assuming product_variant_id links images to variants
+
+                if (variantImagesError) {
+                    throw new Error(variantImagesError.message);
+                }
+
+                const imagesForVariant = variantImages || [];
+
+                // Get the product size ids for the current variant
+                const { data: productSizesForVariant, error: productSizeIdsError } = await supabase
+                    .from('product_sizes')
+                    .select('id, size_id(name), quantity')
+                    .eq('product_id', variant.id);
+
+                if (productSizeIdsError) {
+                    throw new Error(productSizeIdsError.message);
+                }
+
+                const sizesStructured: { [key: string]: { quantity: number, measurements: any[] } } = {};
+
+                if (productSizesForVariant && productSizesForVariant.length > 0) {
+                    // For each size, fetch its measurements
+                    for (const size of productSizesForVariant) {
+                        const { data: productMeasurements, error: productMeasurementsError } = await supabase
+                            .from('product_measurements')
+                            .select('measurement_type_id(name), value, measurement_unit')
+                            .eq('product_size_id', size.id);
+
+                        if (productMeasurementsError) {
+                            throw new Error(productMeasurementsError.message);
+                        }
+
+                        // Restructure measurements for the desired output
+                        const measurementsArray = (productMeasurements || []).map((m: any) => ({
+                            type: m.measurement_type_id.name,
+                            value: m.value,
+                            unit: m.measurement_unit,
+                        }));
+
+                        // Populate the sizes object with nested structure
+                        sizesStructured[size.size_id.name.toLowerCase()] = {
+                            quantity: size.quantity,
+                            measurements: measurementsArray,
+                        };
+                    }
+                }
+
+                variantsWithDetails.push({
+                    ...variant, // Spread all existing variant properties
+                    images: imagesForVariant, // Add the images array to the variant
+                    sizes: sizesStructured, // Add the restructured sizes and measurements
+                });
+            }
+
+
 
 			return {
 				success: true,
@@ -105,7 +177,11 @@ export async function getProductForEdit (supabase: any, id: string){
 							width: physicalAttributesData.width,
 							height: physicalAttributesData.height,
 						},
-					}
+						shippingMethods: shippingConfigData,
+					},
+					variants: {
+						variants: variantsWithDetails,
+					},
 				}
 			}
 

@@ -51,7 +51,7 @@ interface RequestGeneralDetails {
     currency: string;
     material: string;
     season: string;
-    gender: string;
+    gender: string; 
 }
 
 Deno.serve(async (req: Request) => {
@@ -331,14 +331,26 @@ Deno.serve(async (req: Request) => {
 
                 // Call the action to create/update shipping details and method fees
                 const productShippingDetailsId = await createProductShippingDetails(supabase, productShippingConfig); 
-                return new Response(
-                    JSON.stringify({
-                        success: true,
-                        message: "Product Shipping Details Uploaded Successfully",
-                        product_shipping_details_id: productShippingDetailsId,
-                    }),
-                    { status: 200, headers: corsHeaders }
-                );
+                if (!productShippingDetailsId) {
+                    return new Response(
+                        JSON.stringify({ 
+                            success: false, 
+                            message: "Failed to create product shipping details." 
+                        }), {
+                            status: 500,
+                            headers: corsHeaders
+                        }
+                    );
+                }else{
+                    return new Response(
+                        JSON.stringify({
+                            success: true,
+                            message: "Product Shipping Details Uploaded Successfully",
+                            product_shipping_details_id: productShippingDetailsId,
+                        }),
+                        { status: 200, headers: corsHeaders }
+                    );
+                }
                 break;
             case 'ProductCareInstruction':
                 const careInstructionsRaw = formData.get('productCareInstruction');
