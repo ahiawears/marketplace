@@ -255,7 +255,8 @@ const AddProductDetails: React.FC = () => {
                         savingVariantIndex={savingVariantIndex}
 
                     />,
-            disabled: !saveStatus.general,
+            // disabled: !saveStatus.general,
+            disabled: false,
         },
         {
             title: "Product Shipping Details",
@@ -264,9 +265,11 @@ const AddProductDetails: React.FC = () => {
                         accessToken={accessToken}
                         currencySymbol={productCurrencySymbol}
                         productId={productId}
+                        editProductShippingDetails={productData.shippingDelivery}
                         onSaveShippingDetails={setProductShippingConfiguration}
                     />,
-            disabled: !saveStatus.general || !saveStatus.variants,
+            // disabled: !saveStatus.general || !saveStatus.variants,
+            disabled: false,
         },
         {
             title: "Care Instructions",
@@ -277,7 +280,8 @@ const AddProductDetails: React.FC = () => {
                         userId={userId!}
                         accessToken={accessToken}
                     />,
-            disabled: !saveStatus.general || !saveStatus.variants || !saveStatus.shipping,
+            // disabled: !saveStatus.general || !saveStatus.variants || !saveStatus.shipping,
+            disabled: false,
         }
     ];
 

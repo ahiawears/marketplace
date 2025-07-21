@@ -15,6 +15,7 @@ interface ProductShippingDetailsProps {
     accessToken: string;
     currencySymbol: string;
     productId: string;
+    editProductShippingDetails: ProductShippingDeliveryType;
     onSaveShippingDetails: (details: ProductShippingDeliveryType) => void;
 }
 
@@ -26,17 +27,45 @@ interface ShippingMethodItem {
 }
 
 
-const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId, accessToken, currencySymbol, productId, onSaveShippingDetails }) => {
+const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId, accessToken, currencySymbol, productId, onSaveShippingDetails, editProductShippingDetails }) => {
     const { config: shippingConfig, loading: configLoading, error: configError, refetch } = useShippingConfig(userId, accessToken);
     const [ selectedShippingMethods, setSelectedShippingMethods ] = useState<string[]>([]);
-    const [ methodFees, setMethodFees ] = useState<ProductShippingDeliveryType["methods"]>({});
-    const [ productWeight, setProductWeight ] = useState<ProductShippingDeliveryType["weight"]>(0);
-    const [ productDimensions, setProductDimensions ] = useState<ProductShippingDeliveryType["dimensions"]>({ length: 0, width: 0, height: 0 })
+    const [ methodFees, setMethodFees ] = useState<ProductShippingDeliveryType["methods"]>(editProductShippingDetails.methods || {});
+    const [ productWeight, setProductWeight ] = useState<ProductShippingDeliveryType["weight"]>(editProductShippingDetails.weight || 0);
+    const [ productDimensions, setProductDimensions ] = useState<ProductShippingDeliveryType["dimensions"]>(editProductShippingDetails.dimensions || { length: 0, width: 0, height: 0 })
     const { shippingMethods, shippingZones } = shippingConfig;
     const [ errorMessage, setErrorMessage ] = useState("");
     const [ isSaveButtonDisabled, setIsSaveButtonDisabled ] = useState<boolean>(true);
     const [ measurementUnit, setMeasurementUnit ] = useState<"Inch" | "Centimeter">("Inch");
 
+    useEffect(() => {
+        // This effect syncs the component's internal state with the props from the parent form.
+        // This is crucial for displaying the fetched product data when editing.
+        if (editProductShippingDetails) {
+            setMethodFees(editProductShippingDetails.methods || {});
+            setProductWeight(editProductShippingDetails.weight || 0);
+            setProductDimensions(editProductShippingDetails.dimensions || { length: 0, width: 0, height: 0 });
+
+            // Determine which shipping methods are active based on the fetched data
+            // and check the corresponding checkboxes.
+            const activeMethods: string[] = [];
+            const methods = editProductShippingDetails.methods;
+
+            // Check if sameDay is available
+            if (methods?.sameDay?.available) {
+                activeMethods.push('sameDayDelivery');
+            }
+            // Check if any zone in 'standard' is available
+            if (methods?.standard && Object.values(methods.standard).some(zone => zone.available)) {
+                activeMethods.push('standardShipping');
+            }
+            // Check if any zone in 'express' is available
+            if (methods?.express && Object.values(methods.express).some(zone => zone.available)) {
+                activeMethods.push('expressShipping');
+            }
+            setSelectedShippingMethods(activeMethods);
+        }
+    }, [editProductShippingDetails]);
 
     useEffect(() => {
         if (shippingConfig && !configLoading && shippingConfig.shippingMethods && shippingConfig.shippingZones && productId !== "" && productId !== null) {

@@ -51,8 +51,16 @@ const AddProductForm = () => {
                     available: false,
                     fee: 0,
                 },
-                standard: {}, // This might need more precise initialization based on your form
-                express: {}   // This might need more precise initialization based on your form
+                standard: {
+                    domestic: { available: false, fee: 0 },
+                    regional: { available: false, fee: 0 },
+                    sub_regional: { available: false, fee: 0 },
+                },
+                express: {
+                    domestic: { available: false, fee: 0 },
+                    regional: { available: false, fee: 0 },
+                    sub_regional: { available: false, fee: 0 },
+                }
             },
             weight: 0,
             dimensions: {
@@ -154,6 +162,18 @@ const AddProductForm = () => {
         if (editProductId && productDetails && productDetails.success) {
             const fetchedData = productDetails.data;
 
+            // Helper to find and format a specific shipping method from the fetched array
+            const getShippingMethod = (methodType: string, zoneType: string) => {
+                const method = fetchedData.shippingDelivery?.shippingMethods?.find(
+                    (m: any) => m.method_type === methodType && m.zone_type === zoneType
+                );
+                // If found, return a clean object with only the properties we need.
+                if (method) {
+                    return { available: method.available, fee: method.fee };
+                }
+                return { available: false, fee: 0 }; // Default if not found
+            };
+
             // Ensure fetchedData.variants is an array, or default to an empty array
             const variantsToMap = Array.isArray(fetchedData.variants) ? fetchedData.variants : [];
 
@@ -203,16 +223,16 @@ const AddProductForm = () => {
                         height: fetchedData.shippingDelivery?.dimensions?.height || 0,
                     },
                     methods: {
-                        sameDay: fetchedData.shippingDelivery?.shippingMethods?.find((m: any) => m.method_type === 'same_day' && m.zone_type === 'domestic') || { available: false, fee: 0 },
+                        sameDay: getShippingMethod('same_day', 'domestic'),
                         standard: {
-                            domestic: fetchedData.shippingDelivery?.shippingMethods?.find((m: any) => m.method_type === 'standard' && m.zone_type === 'domestic') || { available: false, fee: 0 },
-                            regional: fetchedData.shippingDelivery?.shippingMethods?.find((m: any) => m.method_type === 'standard' && m.zone_type === 'regional') || { available: false, fee: 0 },
-                            sub_regional: fetchedData.shippingDelivery?.shippingMethods?.find((m: any) => m.method_type === 'standard' && m.zone_type === 'sub_regional') || { available: false, fee: 0 },
+                            domestic: getShippingMethod('standard', 'domestic'),
+                            regional: getShippingMethod('standard', 'regional'),
+                            sub_regional: getShippingMethod('standard', 'sub_regional'),
                         },
                         express: {
-                            domestic: fetchedData.shippingDelivery?.shippingMethods?.find((m: any) => m.method_type === 'express' && m.zone_type === 'domestic') || { available: false, fee: 0 },
-                            regional: fetchedData.shippingDelivery?.shippingMethods?.find((m: any) => m.method_type === 'express' && m.zone_type === 'regional') || { available: false, fee: 0 },
-                            sub_regional: fetchedData.shippingDelivery?.shippingMethods?.find((m: any) => m.method_type === 'express' && m.zone_type === 'sub_regional') || { available: false, fee: 0 },
+                            domestic: getShippingMethod('express', 'domestic'),
+                            regional: getShippingMethod('express', 'regional'),
+                            sub_regional: getShippingMethod('express', 'sub_regional'),
                         },
                     },
                 },
@@ -247,6 +267,7 @@ const AddProductForm = () => {
                 setVariantSavedStatus([]); // No variants, no saved status
             }
             setIsAllDetailsSaved(true);
+
         } else if (editProductId && productDetails && !productDetails.success) {
             console.error("Failed to load product details:", productDetails.message);
         }
