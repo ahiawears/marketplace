@@ -10,12 +10,17 @@ export interface PublishProductResponse {
 export const uploadGeneralDetails = async (
     generalData: GeneralProductDetailsType,
     accessToken: string,
+    productId?: string
 ) : Promise<PublishProductResponse> => {
     try {
         console.log(`The product general data is ${generalData}`)
         const formData = new FormData();
         formData.append('generalDetails', JSON.stringify(generalData));
         formData.append('operation', 'ProductGeneralData');
+        if (productId) {
+            formData.append('productId', productId);
+        }
+
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/upload-product`,
             {

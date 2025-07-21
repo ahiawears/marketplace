@@ -100,6 +100,8 @@ Deno.serve(async (req: Request) => {
         // Parse form data
         const formData = await req.formData();
         const operation = formData.get('operation');
+        const editProductId = formData.get('productId') as string | null; 
+
 
         switch (operation) {
             // Process general details
@@ -152,6 +154,7 @@ Deno.serve(async (req: Request) => {
                     genderId, 
                     seasonId,
                     user.id,
+                    editProductId ? editProductId : ""
                 )
 
                 await createTags(supabase, generalDetails.tags, productUploadId);

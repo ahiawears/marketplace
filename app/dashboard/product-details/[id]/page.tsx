@@ -9,6 +9,7 @@ import { ProductDataDetailsEdit } from "@/components/brand-product-preview/produ
 import { useGetProductDetails } from "@/hooks/useGetProductDetails";
 import { useAuth } from "@/hooks/useAuth";
 import LoadContent from "@/app/load-content/page";
+import AddProductForm from "@/components/ui/add-product-form";
 
 const BrandProductDetail: React.FC = () => {
     const params = useParams();
@@ -16,34 +17,14 @@ const BrandProductDetail: React.FC = () => {
     if (Array.isArray(productId)) {
         productId = productId[0];
     }
-    const { userId, userSession, loading: authLoading, error: authError, resetError: authResetError } = useAuth();
-    const { loading: productLoading, error: productError, productDetails } = useGetProductDetails(productId, "getProductForEdit", userSession?.access_token!);
-
-    if(authLoading) {
-        return <LoadContent />;
-    }
-
-    if (authError) {
-        return <p>Error in authentication: {authError.message}</p>;
-    }
-
-    if (productLoading) {
-        return <LoadContent />;
-    }
-
-    if (productError) {
-        return <p>Error loading product details: {productError.message}</p>;
-    }
-
-    if (!productDetails) {
-        return <p>No product details found.</p>;
-    }
-
 
     return (
-        <div>
-        
-            
+         <div>
+            <div className="mx-auto shadow-2xl">
+                <div className="mx-auto max-w-7xl border-2">
+                    <AddProductForm />  
+                </div>
+            </div>
         </div> 
     )
 }

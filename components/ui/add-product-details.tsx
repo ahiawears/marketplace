@@ -14,6 +14,7 @@ import LoadContent from "@/app/load-content/page";
 import { toast } from "sonner";
 import { useProductForm } from "@/app/contexts/product-form-context";
 import { useBrandGetDetails } from "@/hooks/useBrandGetDetails"
+import { useParams, useSearchParams } from "next/navigation";
 
 
 interface SaveStatus {
@@ -24,6 +25,9 @@ interface SaveStatus {
 }
     
 const AddProductDetails: React.FC = () => {
+    const params = useParams();
+    const searchParams = useSearchParams();
+    const editProductId = (params.id as string) || (searchParams.get('id') as string || "");
     const { 
         productData, 
         setProductData, 
@@ -94,7 +98,7 @@ const AddProductDetails: React.FC = () => {
                     ? detailsInput(productData.generalDetails) 
                     : detailsInput;
 
-            const result = await uploadGeneralDetails(resolvedDetails, accessToken);
+            const result = await uploadGeneralDetails(resolvedDetails, accessToken, editProductId);
 
             if (result.success) {
                 toast.success("General details saved successfully!");
