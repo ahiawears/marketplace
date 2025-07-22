@@ -212,7 +212,6 @@ const ProductVariantForm: React.FC<ProductVariantProps> = ({variants, setVariant
 
     return (
         <div className="my-6">
-            
             {/* Product Variants Container */}
             <div className="mt-5 space-y-8">
                 {variants.map((variant, index) => (

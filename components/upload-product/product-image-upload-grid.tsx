@@ -88,6 +88,7 @@ const ProductImageUploadGrid: React.FC<ProductImageUploadGridProps> = ({
                   className="w-full h-full object-cover border-2 rounded-lg"
                   width={510}
                   height={650}
+                  priority
                 />
                 <Button
                   onClick={() => handleRemoveImage(index)}

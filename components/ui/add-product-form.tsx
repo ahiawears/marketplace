@@ -18,7 +18,7 @@ import { useGetProductDetails } from "@/hooks/useGetProductDetails"; // Your cus
 const AddProductForm = () => {
     const params = useParams();
     const searchParams = useSearchParams();
-    const editProductId = (params.id as string) || (searchParams.get('id') as string);
+    const editProductId = (params?.id as string) || (searchParams?.get('id') as string);
 
     const { userId, userSession, loading: authLoading, error: authError } = useAuth();
 
@@ -159,8 +159,10 @@ const AddProductForm = () => {
 
     // Populate form fields when productDetails from the hook becomes available
     useEffect(() => {
-        if (editProductId && productDetails && productDetails.success) {
+        if (editProductId !== "" && productDetails && productDetails.success) {
             const fetchedData = productDetails.data;
+
+            console.log("Fetched Data Variants:", fetchedData.variants);
 
             // Helper to find and format a specific shipping method from the fetched array
             const getShippingMethod = (methodType: string, zoneType: string) => {
@@ -175,7 +177,7 @@ const AddProductForm = () => {
             };
 
             // Ensure fetchedData.variants is an array, or default to an empty array
-            const variantsToMap = Array.isArray(fetchedData.variants) ? fetchedData.variants : [];
+            const variantsToMap = Array.isArray(fetchedData.variants?.variants) ? fetchedData.variants.variants : [];
 
             const transformedProductData: ProductUploadData = {
                 generalDetails: {
@@ -189,31 +191,64 @@ const AddProductForm = () => {
                     gender: fetchedData.generalDetails?.gender || "",
                     season: fetchedData.generalDetails?.season || "",
                 },
-                productVariants: variantsToMap.map((variant: any) => ({ // Use variantsToMap
-                    id: variant.id,
-                    name: variant.name,
-                    images_description: variant.images_description,
-                    price: variant.price,
-                    sku: variant.sku,
-                    product_code: variant.product_code,
-                    color_id: variant.color_id?.id || "",
-                    color_name: variant.color_id?.name || "",
-                    color_hex_code: variant.color_id?.hex_code || "",
-                    base_currency_price: variant.base_currency_price,
-                    color_description: variant.color_description,
-                    available_date: variant.available_date,
-                    images: Array.isArray(variant.images) ? variant.images.map((img: any) => ({
-                        id: img.id,
-                        image_url: img.image_url,
-                        is_main: img.is_main,
-                    })) : [], // Ensure images is array
-                    sizes: variant.sizes ? Object.entries(variant.sizes).map(([sizeName, sizeDetails]: [string, any]) => ({
-                        name: sizeName,
-                        quantity: sizeDetails.quantity,
-                        measurements: sizeDetails.measurements,
-                    })) : [], // Ensure sizes is object before entries, or default to empty array
-                })),
-                // ... rest of your productData transformation
+                productVariants: variantsToMap.map((variant: any): ProductVariantType => { // Explicitly type the return here
+                    // 1. Determine main_image_url
+                    const mainImage = Array.isArray(variant.images)
+                        ? variant.images.find((img: any) => img.is_main === true)
+                        : undefined;
+                    const mainImageUrl = mainImage ? mainImage.image_url : '';
+
+                    // 2. Transform the 'sizes' object into the 'measurements' object format
+                    const measurements: ProductVariantType['measurements'] = {};
+                    if (variant.sizes && typeof variant.sizes === 'object') {
+                        for (const sizeName in variant.sizes) {
+                            if (Object.prototype.hasOwnProperty.call(variant.sizes, sizeName)) {
+                                const sizeData = variant.sizes[sizeName];
+                                const sizeMeasurements: { [measurement: string]: number | undefined } = {};
+
+                                if (Array.isArray(sizeData.measurements)) {
+                                    sizeData.measurements.forEach((m: any) => {
+                                        if (m.type && m.value !== undefined) {
+                                            sizeMeasurements[m.type] = typeof m.value === 'string' ? parseFloat(m.value) : m.value;
+                                        }
+                                    });
+                                }
+
+                                measurements[sizeName] = {
+                                    quantity: sizeData.quantity,
+                                    ...sizeMeasurements,
+                                };
+                            }
+                        }
+                    }
+
+                    // 3. Extract simple image URLs
+                    const imageUrls: string[] = Array.isArray(variant.images)
+                        ? variant.images.map((img: any) => img.image_url)
+                        : [];
+
+                    // Return the fully mapped ProductVariantType object
+                    return {
+                        main_image_url: mainImageUrl,
+                        productId: variant.id,
+                        variantName: variant.name,
+                        images: imageUrls,
+                        imagesDescription: variant.images_description,
+                        colorName: variant.color_id?.name || "",
+                        price: variant.price,
+                        colorHex: variant.color_id?.hex_code || "",
+                        sku: variant.sku,
+                        measurementUnit: variant.sizes && Object.keys(variant.sizes).length > 0 && variant.sizes[Object.keys(variant.sizes)[0]].measurements.length > 0
+                            ? variant.sizes[Object.keys(variant.sizes)[0]].measurements[0].unit
+                            : "N/A",
+                        measurements: measurements,
+                        productCode: variant.product_code,
+                        colorDescription: variant.color_description,
+                        colorHexes: variant.color_id?.hex_code ? [variant.color_id.hex_code] : [],
+                        mainColor: variant.color_id?.name || "",
+                        availableDate: variant.available_date,
+                    };
+                }), // This closing parenthesis was the issue
                 shippingDelivery: {
                     productId: editProductId,
                     weight: fetchedData.shippingDelivery?.weight || 0,
@@ -267,10 +302,13 @@ const AddProductForm = () => {
                 setVariantSavedStatus([]); // No variants, no saved status
             }
             setIsAllDetailsSaved(true);
+            console.log("The returned product variant is: ", transformedProductData)
+
 
         } else if (editProductId && productDetails && !productDetails.success) {
             console.error("Failed to load product details:", productDetails.message);
         }
+
     }, [productDetails, editProductId]);
 
     // Consolidate loading states

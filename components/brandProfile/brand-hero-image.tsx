@@ -1,5 +1,4 @@
-export const BrandHeroImageSection = () => {
-
+export const BrandHeroImageSection = (heroImageUrl: string) => {
     return(
         <div>
             <div 

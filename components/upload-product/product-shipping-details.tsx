@@ -41,7 +41,7 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
     useEffect(() => {
         // This effect syncs the component's internal state with the props from the parent form.
         // This is crucial for displaying the fetched product data when editing.
-        if (editProductShippingDetails) {
+        if (editProductShippingDetails && editProductShippingDetails.productId) {
             setMethodFees(editProductShippingDetails.methods || {});
             setProductWeight(editProductShippingDetails.weight || 0);
             setProductDimensions(editProductShippingDetails.dimensions || { length: 0, width: 0, height: 0 });
@@ -64,11 +64,7 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                 activeMethods.push('expressShipping');
             }
             setSelectedShippingMethods(activeMethods);
-        }
-    }, [editProductShippingDetails]);
-
-    useEffect(() => {
-        if (shippingConfig && !configLoading && shippingConfig.shippingMethods && shippingConfig.shippingZones && productId !== "" && productId !== null) {
+        } else if (shippingConfig && !configLoading && shippingConfig.shippingMethods && shippingConfig.shippingZones && productId !== "" && productId !== null) {
             const initialFees: ProductShippingDeliveryType["methods"] = {};
 
             // Same Day Delivery
@@ -109,7 +105,8 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
             }
             setMethodFees(initialFees);
         }
-    }, [shippingConfig, configLoading, productId]);
+    }, [editProductShippingDetails, shippingConfig, configLoading, productId]);
+
 
 
     const handleMethodSelect = (method: string) => {

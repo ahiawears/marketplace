@@ -152,7 +152,7 @@ function ProductsListContent() {
             {/* Modal outside the map */}
             {selectedProductId && (
                 <>
-                    <ModalBackdrop disableInteraction={true} />
+                    <ModalBackdrop  />
                     <AddToCartModal productId={selectedProductId} onCancel={handleModalCancel} />
                 </>
             )}

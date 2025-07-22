@@ -67,7 +67,7 @@ const PlaceOrder = () => {
                 <meta name="robots" content="noindex" />
             </Head>
             <h1 className="text-3xl font-bold mb-6">Place Order</h1>
-            <Accordion items={accordionItems} />
+            {/* <Accordion items={accordionItems} /> */}
         </div>
     </>
     
