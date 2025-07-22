@@ -1,26 +1,61 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import staticBrands from '@/lib/staticBrands';
-import React, { useState } from 'react'; // No need for useEffect here now
+import { useGetAllBrands } from '@/hooks/useGetAllBrands';
+import React, { useState, useMemo } from 'react'; // Added useMemo for optimization
+import LoadContent from '../load-content/page';
 
-interface BrandsData {
-    [key: string]: string[];
+// Define an interface for your fetched brand data structure
+interface Brand {
+    id: string;
+    name: string;
+    description: string;
+    logo: string;
+    banner: string;
+    legal_details: {
+        business_registration_name: string;
+        business_registration_number: string;
+        country_of_registration: string;
+    } | null; // It can be null if no legal details are found
 }
 
 const Brands: React.FC = () => {
-    // State to keep track of the currently selected letter
+    const { loading: brandsListLoading, error: brandsListError, brands: brandsListData } = useGetAllBrands();
     const [selectedLetter, setSelectedLetter] = useState<string>('A');
 
-    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''); // Array of A, B, C...
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
-    // Directly use the imported static data
-    const brandsForSelectedLetter = staticBrands[selectedLetter] || [];
+    // Memoize the filtered and sorted brands for performance
+    const filteredBrands = useMemo(() => {
+        if (!brandsListData || brandsListData.length === 0) {
+            return [];
+        }
+
+        // 1. Filter brands based on the selected letter (case-insensitive)
+        const filtered = brandsListData.filter((brand: Brand) =>
+            brand.name.toLowerCase().startsWith(selectedLetter.toLowerCase())
+        );
+
+        // 2. Sort the filtered brands alphabetically by name
+        const sorted = filtered.sort((a: Brand, b: Brand) =>
+            a.name.localeCompare(b.name)
+        );
+
+        return sorted;
+    }, [brandsListData, selectedLetter]); 
+
+    if (brandsListLoading) {
+        return <LoadContent />;
+    }
+
+    if (brandsListError) {
+        console.error(brandsListError); 
+        return <div>Error: {brandsListError.message}</div>;
+    }
 
     return (
-        <div className="flex flex-1 flex-col ">
-
+        <div className="flex flex-1 flex-col">
             {/* A-Z Horizontal Menu */}
-            <nav className="sticky md:top-[106px] top-[106px] z-10 w-full bg-white shadow-md dark:bg-gray-900 py-4 px-6">
+            <nav className="sticky md:top-[106px] top-[106px] z-10 w-full bg-white shadow-md dark:bg-gray-900 py-4 px-6 border-b-2">
                 <div className="mx-auto max-w-7xl flex items-center overflow-x-auto pb-2">
                     <ul className="flex flex-nowrap gap-x-4 text-sm font-medium">
                         {alphabet.map(letter => (
@@ -45,21 +80,31 @@ const Brands: React.FC = () => {
 
             {/* Main content area */}
             <div className="flex-1 p-6 mx-auto max-w-7xl w-full">
-                {/* No loading state needed now, data is always available */}
                 {selectedLetter && (
                     <div className="mb-8">
                         <h2 className="text-3xl font-bold mb-6 text-center">
                             Brands Starting with "{selectedLetter}"
                         </h2>
-                        {brandsForSelectedLetter.length > 0 ? (
+                        {filteredBrands.length > 0 ? (
                             <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {brandsForSelectedLetter.map((brand, index) => (
-                                    <li key={`${selectedLetter}-${index}`}
-                                        className="bg-white dark:bg-gray-700 p-4 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 flex items-center justify-center text-lg font-semibold text-gray-800 dark:text-gray-200 border-2"
+                                {filteredBrands.map((brand: Brand) => (
+                                    <li key={brand.id}
+                                        className="relative bg-cover bg-center h-48 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border-2"
+                                        style={{ backgroundImage: `url(${brand.logo})` }}
                                     >
-                                        <a href={`/brands/${brand.toLowerCase().replace(/\s/g, '-')}`} className="block w-full text-center">
-                                            {brand}
-                                        </a>
+                                        <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center p-4">
+                                            <a
+                                                href={`/brands/${brand.name.toLowerCase().replace(/\s/g, '-')}`}
+                                                className="block w-full text-center text-white text-xl font-bold truncate"
+                                                title={brand.name} // Add title for full name on hover
+                                            >
+                                                {brand.name}
+                                            </a>
+                                            {/* Optionally display description or other details */}
+                                            <p className="text-gray-200 text-sm mt-1 text-center line-clamp-2">
+                                                {brand.description}
+                                            </p>
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
@@ -71,7 +116,7 @@ const Brands: React.FC = () => {
                     </div>
                 )}
                 {!selectedLetter && (
-                     <p className="text-center text-gray-600 dark:text-gray-400 text-lg">
+                    <p className="text-center text-gray-600 dark:text-gray-400 text-lg">
                         Please select a letter to view brands.
                     </p>
                 )}

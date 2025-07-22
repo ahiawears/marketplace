@@ -36,6 +36,47 @@ Deno.serve(async (req) => {
 			});
 		}
 
+		switch (dataName) {
+			case "legal-details":
+				try {
+					const { data: legalData, error: legalError } = await supabase
+						.from('brand_legal_details')
+						.select('*')
+						.eq('id', brandId)
+						.single();
+
+					if (legalError) {
+						console.log(legalError);
+						throw new Error(`Error getting legal details: ${legalError}`);
+					}
+
+					return new Response(JSON.stringify({
+						success: true,
+						message: "Legal details fetched successfully",
+						data: legalData,
+					}),
+					{
+						headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+					})
+				} catch (error) {
+					return new Response(
+						JSON.stringify({ 
+							success: false, 
+							message: error
+						}), 
+						{
+							status: 500,
+							headers: {...corsHeaders, 'Content-Type': 'application/json'},
+						}
+					);
+				}
+
+				
+		
+			default:
+				break;
+		}
+
 		if (dataName === "legal-details") {
 			try {
 				const { data: legalData, error: legalError } = await supabase
