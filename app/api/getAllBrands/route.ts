@@ -4,8 +4,6 @@ import { NextResponse } from "next/server";
 export async function GET() {
     try {
         const brands = await getAllBrands();
-        console.log("Fetched brands:", brands);
-
 
         // Return a JSON response
         return NextResponse.json({

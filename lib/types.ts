@@ -620,3 +620,39 @@ export const DEFAULT_BRAND_NOTIFICATION_SETTINGS: BrandNotificationSettingCheckb
  }
 // Brand Legal Details Return Type
 
+
+
+
+
+// Filters options for cases begins
+// Base interface for a generic filter option
+export interface FilterOption {
+    label: string; 
+    key: string; 
+    options: { label: string; value: string }[];
+}
+
+// Specific filter types for different contexts
+export interface BrandProductFilterQueries {
+    category: FilterOption;
+    productType: FilterOption;
+    color: FilterOption;
+    // priceRange: FilterOption;
+    material: FilterOption;
+    // sizeRange: FilterOption;
+}
+
+export interface AllProductsFilterQueries {
+    category: FilterOption;
+    brand: FilterOption; // When filtering all products, you might filter by brand
+    priceRange: FilterOption;
+    rating: FilterOption;
+    // ... other general product filters
+}
+
+// You can add more as needed:
+// export interface UserOrderFilterQueries {
+//     status: FilterOption;
+//     dateRange: FilterOption;
+// }
+// Filters options for cases ends

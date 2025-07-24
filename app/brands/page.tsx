@@ -94,7 +94,7 @@ const Brands: React.FC = () => {
                                     >
                                         <div className="absolute inset-0 bg-black bg-opacity-50 flex flex-col items-center justify-center p-4">
                                             <a
-                                                href={`/brands/${brand.name.toLowerCase().replace(/\s/g, '-')}`}
+                                                href={`/brands/${brand.id}`}
                                                 className="block w-full text-center text-white text-xl font-bold truncate"
                                                 title={brand.name} // Add title for full name on hover
                                             >
