@@ -1,54 +1,69 @@
-import { userGetProductItems } from "@/actions/user-get-product-lists";
-import { createClient } from "@/supabase/server";
+import { getProductList } from "@/actions/user-actions/product-and-data/get-product-list";
 import { NextRequest, NextResponse } from "next/server";
 
+interface ProductFilterQueryParams {
+    brandId?: string;
+    category?: string;
+    productType?: string;
+    color?: string;
+    material?: string;
+    limit?: number;
+    offset?: number;
+    // Add any other filter keys that your frontend might send
+}
+
+//Use this route for all customer facing getProducts call
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
-    const query = searchParams.get("query");
+
+    // Initialize an object to hold the filters
+    const filters: ProductFilterQueryParams = {};
+
+    // Extract the brandId
+    const brandId = searchParams.get("brandId");
+    if (brandId) {
+        filters.brandId = brandId;
+    }
+
+    // Extract other filter parameters dynamically
+    // You should explicitly list the filter keys you expect to avoid
+    // processing unexpected query parameters.
+    const allowedFilterKeys = ['category', 'productType', 'color', 'material'];
+
+    allowedFilterKeys.forEach(key => {
+        const value = searchParams.get(key);
+        if (value) {
+            // Use a type assertion to assign to the correct property of filters
+            (filters as any)[key] = value;
+        }
+    });
 
     try {
-        const supabase = await createClient();
-        const { data, error } = await supabase.auth.getUser();
+        const products = await getProductList(filters);
 
-        if (error) {
-            console.error("Error fetching brand:", error);
+        console.log("Fetched products:", products);
+
+        if(!products) {
             return NextResponse.json(
-                { error: "User not authenticated" },
-                { status: 401 }
+                { 
+                    success: false,
+                    message: "No products found",
+                    data: null
+                },{ status: 404 }
             );
         }
 
-        const userId = data.user?.id;
-
-        if (!userId) {
-            return NextResponse.json(
-                { error: "User ID required" },
-                { status: 400 }
-            );
-        }
-
-        if (!query) {
-            return NextResponse.json(
-                { error: "Query parameter is required" },
-                { status: 400 }
-            );
-        }
-
-        const productsItem = await userGetProductItems(query);
-
-        if (!productsItem) {
-            return NextResponse.json(
-                { error: "No products items found" },
-                { status: 404 }
-            );
-        }
-
-        return NextResponse.json({ data: productsItem });
+        return NextResponse.json({
+            success: true,
+            message: "Products fetched successfully",
+            data: products
+        }, { status: 200 })
     } catch (error) {
         console.error("Failed to fetch products items:", error);
-        return NextResponse.json(
-            { error: "Failed to fetch products items" },
-            { status: 500 }
-        );
+        return NextResponse.json({ 
+                success: false, 
+                message: error instanceof Error ? error.message : "An unexpected error occurred",
+                data: null
+        },{ status: 500 });
     }
 }

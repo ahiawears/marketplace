@@ -554,6 +554,23 @@ export type BrandContactDetails = {
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// This should hold the important/updated types begin
+
 // Notification Settings Types
 
 export type BrandNotificationType =
@@ -623,8 +640,58 @@ export const DEFAULT_BRAND_NOTIFICATION_SETTINGS: BrandNotificationSettingCheckb
 
 
 
+//PRODUCT LIST ITEM DATA BEGINS
+export interface tags {
+    id: string;
+    name: string;
+}
 
-// Filters options for cases begins
+export interface NestedRelationalField {
+    id: string;
+    name: string;
+}
+
+export interface ColorField extends NestedRelationalField {
+    hex_code: string;
+}
+
+export interface ProductImage {
+    id: string;
+    image_url: string;
+    is_main: boolean;
+}
+
+// Corrected ProductListItemsDataType
+export interface ProductListItemsDataType {
+    id: string;
+    brand_id: string;
+    category_id: NestedRelationalField; // Matches category_id:category_id in select
+    name: string;
+    product_description: string;
+    subcategory: NestedRelationalField; // Matches subcategory_id:subcategory_id
+    material: NestedRelationalField;  // Changed from material_id
+    currency: NestedRelationalField;  // Changed from currency_id
+    season: NestedRelationalField;    // Changed from season_id
+    gender: NestedRelationalField;    // Changed from gender_id
+    product_tags: tags[];
+    is_published: boolean;
+    product_variants: {
+        id: string;
+        name: string;
+        color_id: ColorField; // Matches color_id:color_id
+        sku: string;
+        price: number;
+        base_currency_price: number;
+        product_code: string;
+        color_description: string;
+        product_images: ProductImage[];
+        images_description: string;
+    }[];
+}
+//PRODUCT LIST ITEM DATA BEGINS
+
+
+// FILTER OPTION CASES BEGINS
 // Base interface for a generic filter option
 export interface FilterOption {
     label: string; 
@@ -634,11 +701,11 @@ export interface FilterOption {
 
 // Specific filter types for different contexts
 export interface BrandProductFilterQueries {
-    category: FilterOption;
-    productType: FilterOption;
-    color: FilterOption;
+    category?: FilterOption;
+    productType?: FilterOption;
+    color?: FilterOption;
     // priceRange: FilterOption;
-    material: FilterOption;
+    material?: FilterOption;
     // sizeRange: FilterOption;
 }
 
@@ -655,4 +722,14 @@ export interface AllProductsFilterQueries {
 //     status: FilterOption;
 //     dateRange: FilterOption;
 // }
-// Filters options for cases ends
+
+// FILTER OPTION CASES ENDS
+
+
+
+
+
+
+
+
+// This should hold the important/updated types begin

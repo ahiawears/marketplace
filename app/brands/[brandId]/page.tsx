@@ -1,94 +1,48 @@
 'use client'; 
 
 import { FilterSortProducts } from "@/components/customer-facing-components/brand-profile-component/filtersortproducts";
+import { ProductCard } from "@/components/product-card";
+import { ProductGrid } from "@/components/product-grid";
 import { useGetBrandDetails } from "@/hooks/useGetBrandDetails";
-import { BrandProductFilterQueries, FilterOption } from "@/lib/types";
+import { useGetProducts } from "@/hooks/useGetProduct";
+import { BrandProductFilterQueries, ProductListItemsDataType } from "@/lib/types";
+import { generateFilterOptions } from "@/lib/utils/product-filters";
 import { Facebook, Globe, Instagram, Twitter } from "lucide-react";
-import React, { use, useState } from "react"; 
+import React, { use, useEffect, useMemo, useState } from "react"; 
 import { FaTiktok } from "react-icons/fa";
 
-export default function BrandProfilePage({params,}: {params: Promise<{ brandId: string }>; }) {    
-    const { brandId } = use(params);
+
+// Main component that handles the async params
+export default function BrandProfilePage({ params }: { params: Promise<{ brandId: string }> }) {
+    const [resolvedParams, setResolvedParams] = useState<{ brandId: string } | null>(null);
+
+    useEffect(() => {
+        params.then(setResolvedParams);
+    }, [params]);
+
+    if (!resolvedParams) {
+        return <div className="flex flex-1 items-center justify-center h-screen text-xl">Loading...</div>;
+    }
+
+    return <BrandProfileContent brandId={resolvedParams.brandId} />;
+}
+
+
+// Wrapper component
+function BrandProfileContent({ brandId }: { brandId: string }) {
     const [currentFilters, setCurrentFilters] = useState<Partial<Record<keyof BrandProductFilterQueries, string>>>({});
 
-    if (!brandId) {
-        return <div className="flex flex-1 items-center justify-center h-screen text-xl">Error: Brand ID is missing.</div>;
-    }
-
     const { loading, error, brandDetails } = useGetBrandDetails(brandId);
+    const { 
+        loading: productsLoading, 
+        error: productsError, 
+        products, 
+        totalProducts 
+    } = useGetProducts(currentFilters, brandId);
 
-    if (loading) {
-        return <div className="flex flex-1 items-center justify-center h-screen text-xl">Loading brand details...</div>;
-    }
-
-    if (error) {
-        return <div className="flex flex-1 items-center justify-center h-screen text-xl text-red-500">{error.message}</div>;
-    }
-
-    if (!brandDetails || brandDetails === null) {
-        return <div className="flex flex-1 items-center justify-center h-screen text-xl">Brand not found.</div>;
-    }
-
-    const brandProductFilterOptions: Record<string, FilterOption> = {
-        category: {
-            label: "Category",
-            key: "category",
-            options: [
-                { label: "Electronics", value: "electronics" },
-                { label: "Apparel", value: "apparel" },
-                { label: "Home Goods", value: "home-goods" },
-                // ... more categories
-            ],
-        },
-        productType: {
-            label: "Product Type",
-            key: "productType",
-            options: [
-                { label: "Smartphones", value: "smartphones" },
-                { label: "T-Shirts", value: "t-shirts" },
-                { label: "Lamps", value: "lamps" },
-                // ... more product types
-            ],
-        },
-        color: {
-            label: "Color",
-            key: "color",
-            options: [
-                { label: "Red", value: "red" },
-                { label: "Blue", value: "blue" },
-                { label: "Green", value: "green" },
-                // ... more colors
-            ],
-        },
-        // priceRange: {
-        //     label: "Price Range",
-        //     key: "priceRange",
-        //     options: [
-        //         { label: "Under $50", value: "under-50" },
-        //     ]
-        // },
-        material: {
-            label: "Material",
-            key: "material",
-            options: [
-                { label: "Leather", value: "leather" },
-                { label: "Plastic", value: "plastic" },
-                { label: "Metal", value: "metal" },
-                // ... more materials
-            ]
-        },
-        // sizeRange: {
-        //     label: "Size Range",
-        //     key: "sizeRange",
-        //     options: [
-        //         { label: "XS", value: "xs" },
-        //         { label: "S", value: "s" },
-        //         { label: "M", value: "m"}
-        //     ]
-        // }
-        // Add other brand-specific product filters here
-    };
-
+    const brandProductFilterOptions = React.useMemo(() => {
+        return generateFilterOptions(products || []);
+    }, [products]);
     // Handler for when a filter value changes
     const handleBrandProductFilterChange = (filters: Partial<Record<keyof BrandProductFilterQueries, string>>) => {
         setCurrentFilters(prevFilters => ({ ...prevFilters, ...filters }));
@@ -96,6 +50,41 @@ export default function BrandProfilePage({params,}: {params: Promise<{ brandId: 
         // Here you would typically re-fetch brand-specific products based on these filters
         // or update a product display component.
     };
+
+    // Flatten all product variants into a single array
+    const allVariants = useMemo(() => {
+        if (!products) return [];
+            return products.flatMap(product => 
+                product.product_variants.map(variant => ({
+                    variant,
+                    product
+                })
+            )
+        );
+    }, [products]);
+
+
+    if (loading || productsLoading) {
+        return <div className="flex flex-1 items-center justify-center h-screen text-xl">Loading brand details...</div>;
+    }
+
+    if (error) {
+        return <div className="flex flex-1 items-center justify-center h-screen text-xl text-red-500">{error.message}</div>;
+    }
+    
+    if (productsError) {
+        return <div className="flex flex-1 items-center justify-center h-screen text-xl text-red-500">{productsError.message}</div>;
+    }
+
+    if (!brandDetails || brandDetails === null) {
+        return <div className="flex flex-1 items-center justify-center h-screen text-xl">Brand not found.</div>;
+    }
+
+    if(products) {
+        console.log("The fetched products are ", products, " and the totalProducts are ", totalProducts);
+        // setProductList(products['product_variants']);
+    }
+    
 
     return (
         <div className="flex flex-1 flex-col">
@@ -123,13 +112,29 @@ export default function BrandProfilePage({params,}: {params: Promise<{ brandId: 
             />
 
             {/* Placeholder for where brand products would be displayed based on filters */}
-            <div className="container mx-auto my-8 p-4 h-64 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Products by {brandDetails.name}</h2>
-                <p className="text-gray-700 dark:text-gray-300">
-                    Display products here based on filters: {JSON.stringify(currentFilters)}
-                </p>
+            <div className="container mx-auto my-8 py-4 h-auto bg-white dark:bg-gray-800 shadow-md border-2">
+                <div className="px-4">
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 text-center">Products by {brandDetails.name}</h2>
+                    {!productsLoading && (
+                        <p className="text-gray-700 dark:text-gray-300 mb-4 text-center">
+                            {totalProducts > 0
+                                ? `${totalProducts} products found.`
+                                : 'No products found.'}
+                        </p>
+                    )}
+                </div>
                 {/* You would fetch and display the actual products here,
                     likely using another hook or API call that consumes `currentFilters` */}
+                {/* {products && products.length > 0 && <ProductGrid />} */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 py-4">
+                        {allVariants.map(({ variant, product }) => (
+                            <ProductCard 
+                                key={`${product.id}-${variant.id}`}
+                                variant={variant}
+                                product={product}
+                            />
+                        ))}
+                    </div>
             </div>
 
             {/* Brand Social Media Links */}
