@@ -9,7 +9,7 @@ interface ProductDetailsType {
     productDetails: any;
 }
 
-export const useGetProductDetails = (id: string, getProductType: string, accessToken: string): ProductDetailsType => {
+export const useGetProductDetails = (id: string, getProductType: string, accessToken?: string): ProductDetailsType => {
     const [ loading, setLoading ] = useState<boolean>(true);
     const [ error, setError ] = useState<Error | null>(null);
     const [ productData, setProductData ] = useState<any>(null);
@@ -18,10 +18,7 @@ export const useGetProductDetails = (id: string, getProductType: string, accessT
         setError(null);
     }
     useEffect(() => {
-        if (!accessToken || !id || !getProductType) {
-            // If essential data is missing, stop and update state.
-            
-            if (accessToken === "") setError(new Error("User not authenticated."));
+        if (!id || !getProductType) {
             if (!id) setError(new Error("Product ID is missing."));
             if (!getProductType) setError(new Error("Product fetch type is missing."));
             //setLoading(false);
@@ -33,6 +30,8 @@ export const useGetProductDetails = (id: string, getProductType: string, accessT
             setError(null);
             switch (getProductType) {
                 case "getProductForEdit":
+                    if (accessToken === "") setError(new Error("User not authenticated."));
+
                     try {
                         const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-product?productId=${id}&getProductType=${getProductType}`,
                             {
@@ -57,6 +56,24 @@ export const useGetProductDetails = (id: string, getProductType: string, accessT
                     } catch (fetchError) {
                         console.error("Error fetching product details for edit:", fetchError);
                         setError(fetchError instanceof Error ? fetchError : new Error("An unknown error occurred"));
+                    } finally {
+                        setLoading(false);
+                    }
+                    break;
+
+                case "getProductDetails":
+                    try {
+                        const response = await fetch(`/api/getProductById?id=${id}`);
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);                        
+                        }
+                        const data = await response.json();
+                        if (data.success) {
+                            setProductData(data);
+                        }
+                    } catch (error) {
+                        setError(error instanceof Error ? error : new Error("An unknown error occurred"));  
                     } finally {
                         setLoading(false);
                     }

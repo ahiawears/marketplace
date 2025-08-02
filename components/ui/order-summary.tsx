@@ -10,7 +10,7 @@ interface OrderSummaryProps {
 const OrderSummary: React.FC<OrderSummaryProps> = ({ totalPrice, onCheckOut }) => {  
 
     return (
-        <div className="p-6 bg-white border rounded-lg shadow-sm">
+        <div className="p-6 bg-white border-2 shadow-lg">
             <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
             <div className="flex justify-between mb-4">
                 <span>Total Price:</span>

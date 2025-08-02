@@ -3,25 +3,30 @@ import { AiOutlineDelete } from "react-icons/ai";
 import { Select } from "./select";
 import { Button } from "./button";
 import { updateCartItemQuantity } from "@/actions/updateCartItem";
+import Image from "next/image";
 
 
-interface CartItemProps {
-  item: {
-    id: number;
-    product_id: string;
-    main_image_url: string;
-    products_list: { name: string | null } | { name: any }[];
-    color: string;
+interface CartItemData {
+    id: string;
+    product_id: {
+        id: string;
+        name: string;
+    }; 
     product_name: string;
-    size_name: string;
-    sizes?: { size_name: string };
-    size_id: string;
+    main_image_url: string;
+    variant_color: {
+        name: string;
+        hex: string;
+    };
+    size_id: {
+        name: string;
+    };
     quantity: number;
     price: number;
-    cart_item_id: string;
-    cumPrice: number;
-    cart_id: string;
-  };
+}
+
+interface CartItemProps {
+  item: CartItemData;
   onDelete: () => void;
   onQuantityChange: (qty: number, mainCartId: string, cartItemId: string) => void;
 }
@@ -35,18 +40,29 @@ const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange })
         setShowConfirmation(true);
     };
 
-    const handleUpdate = () => {
-        onQuantityChange(selectedQuantity, item.cart_id, item.cart_item_id);
-        setShowConfirmation(false);
-    };
+    // const handleUpdate = () => {
+    //     onQuantityChange(selectedQuantity, item.cart_id, item.cart_item_id);
+    //     setShowConfirmation(false);
+    // };
 
     return (
         <div className="flex items-center space-x-4 p-4 border-b">
-            <img src={item.main_image_url} alt={item.product_name} width={150} height={150} className="rounded" />
+
+            <Image 
+                src={item.main_image_url} 
+                alt={item.product_name} 
+                width={150} 
+                height={150} 
+                priority
+                unoptimized={true}
+                sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                style={{ objectFit: "contain" }}
+                className="border-2" 
+            />
             <div className="flex-1">
                 <p className="font-semibold">{item.product_name}</p>
-                <p className="text-sm text-gray-500">Color: {item.color}</p>
-                <p className="text-sm text-gray-500">Size: {item.size_name}</p>
+                {/* <p className="text-sm text-gray-500">Color: {item.color}</p>
+                <p className="text-sm text-gray-500">Size: {item.size_name}</p> */}
                 <div className="flex items-center space-x-2 mt-2">
                     <label htmlFor={`quantity-${item.id}`} className="text-sm">
                         Qty:
@@ -71,7 +87,10 @@ const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange })
             </button>
             {showConfirmation && (
                 <div className="flex items-center space-x-2 mt-2">
-                    <Button onClick={handleUpdate} className="px-4 py-2 text-white rounded">
+                    <Button 
+                        //onClick={handleUpdate} 
+                        className="px-4 py-2 text-white rounded"
+                    >
                         Update
                     </Button>
                     <Button onClick={() => setShowConfirmation(false)} className="px-4 py-2 bg-gray-300 rounded">

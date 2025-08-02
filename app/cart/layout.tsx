@@ -5,7 +5,7 @@ export default function LandingLayout ({ children }: { children: React.ReactNode
   return (
     <>
       <ServerHeader />
-      <main className="md:pt-32 pt-44 md:pb-32 pb-44">{children}</main>
+      <main className="md:py-4 py-4">{children}</main>
       <Footer />
     </>
   );

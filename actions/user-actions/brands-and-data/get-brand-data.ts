@@ -12,7 +12,7 @@ export const getBrandData = async (brandId: string) => {
     if (brandDataError) {
         if (brandDataError.code === 'PGRST116') {
             return null; 
-        }else {
+        } else {
             throw new Error(`${brandDataError.message}`);
         }
     }

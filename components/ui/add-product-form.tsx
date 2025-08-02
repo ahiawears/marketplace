@@ -13,7 +13,7 @@ import ReviewAndPublishModal from "../modals/review-publish-product-modal";
 import { publishProduct } from "@/actions/add-product/publish-product-action";
 import { Toaster } from "sonner";
 import { ProductFormProvider } from "@/app/contexts/product-form-context";
-import { useGetProductDetails } from "@/hooks/useGetProductDetails"; // Your custom hook
+import { useGetProductDetails } from "@/hooks/useGetProductDetails";
 
 const AddProductForm = () => {
     const params = useParams();

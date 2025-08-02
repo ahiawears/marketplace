@@ -34,7 +34,7 @@ const AddToCartModal: React.FC<AddToCartModalProps> = ({ productId, onCancel }) 
 
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center pointer-events-none bg-black bg-opacity-50">
-            <ModalBackdrop disableInteraction={false} />
+            <ModalBackdrop  />
             <div className="pointer-events-auto bg-white p-6 rounded-lg shadow-lg w-3/4 overflow-y-scroll">
                 {/* Modal Content */}
                 <div>

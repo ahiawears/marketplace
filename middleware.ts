@@ -1,20 +1,22 @@
-import { type NextRequest } from "next/server";
-import { updateSession } from "@/supabase/middleware";
+// middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getServerAnonymousId } from './lib/anon_user/server';
 
 export async function middleware(request: NextRequest) {
-  return await updateSession(request);
-}
- 
-export const config = {
+  const response = NextResponse.next();
   
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
-     */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
-};
+  // Set anonymous ID if missing
+  if (!request.cookies.has('anon_id')) {
+    const anonId = await getServerAnonymousId();
+    response.cookies.set('anon_id', anonId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: 'lax',
+      path: '/'
+    });
+  }
+
+  return response;
+}

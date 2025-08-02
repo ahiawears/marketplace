@@ -30,7 +30,6 @@ export const useGetAllBrands = () => {
             setLoading(true);
             setError(null);
             try {
-                // Call your API Route here
                 const response = await fetch("/api/getAllBrands"); 
 
                 if (!response.ok) {

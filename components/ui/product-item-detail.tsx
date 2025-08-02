@@ -1,114 +1,276 @@
 import React, { useState } from 'react';
 import SizeSelect from "./size-select";
-import addItemToUserCart from "../../actions/add-item-to-user-cart";
 import Image from 'next/image';
+import { Button } from './button';
+import { HeartIcon } from 'lucide-react';
+import { AiFillHeart, AiOutlineHeart } from 'react-icons/ai';
+import SizeGuideModal from '../modals/size-guide';
+import { useAuth } from '@/hooks/useAuth'
+import { getClientAnonymousId } from "@/lib/anon_user/client";
+
+
+interface Color {
+  id: string;
+  name: string;
+  hex_code: string;
+}
+
+interface ProductImage {
+  id: string;
+  image_url: string;
+  is_main: boolean;
+}
+
+interface SizeDetails {
+  quantity: number;
+  measurements: {
+    type: string;
+    value: number;
+    unit: string;
+  }[];
+}
+
+interface Tag {
+  tag_id: {
+    name: string;
+  };
+}
+
+interface VariantData {
+  id: string;
+  main_product_id: string;
+  name: string;
+  color_id: Color;
+  sku: string;
+  price: number;
+  base_currency_price: number;
+  product_code: string;
+  color_description: string;
+  images_description: string;
+  product_images: ProductImage[];
+  relatedVariantIds: string[];
+  sizes: Record<string, SizeDetails>;
+  tags: Tag[];
+}
 
 interface ProductItemProps {
-    productId: string;
-    productName: string;
-    productPrice: number;
-    mainImage: string;
-    thumbnails: string[];
-    description: string;
-    
+  variantData: VariantData;
 }
 
-interface Size {
-    size_id: string;
-    quantity: number;
-    name: string;
-}
+const ProductItem: React.FC<ProductItemProps> = ({ variantData }) => {
+    const { userId } = useAuth();
+    const mainImage = variantData.product_images.find(img => img.is_main) || variantData.product_images[0];
+    const [selectedImage, setSelectedImage] = useState(mainImage?.image_url);
+    const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
-const ProductItem: React.FC<ProductItemProps> = ({ productId, productName, productPrice, mainImage, thumbnails, description }) => {
-    const productImages = [
-        mainImage,
-        ...thumbnails
-    ];
+    const [ likeClicked, setLikeClicked ] = useState<boolean>(false);
+    const [ isSizeGuideOpen, setIsSizeGuideOpen ] = useState<boolean>(false);
 
-    const [selectedImage, setSelectedImage] = useState(mainImage);
-    const [selectedSize, setSelectedSize] = useState<Size | null>(null);
+    const availableSizes = Object.keys(variantData.sizes || {}).map(sizeName => ({
+        size_id: sizeName,
+        name: sizeName,
+        quantity: variantData.sizes[sizeName].quantity
+    }));
+
+    // Prepare size data for the modal
+    const sizeGuideData = Object.entries(variantData.sizes || {}).reduce((acc, [sizeName, sizeDetails]) => {
+        acc[sizeName] = {
+            measurements: sizeDetails.measurements.map(m => ({
+                type: m.type,
+                value: m.value.toString(), 
+                unit: m.unit
+            }))
+        };
+        return acc;
+    }, {} as Record<string, { measurements: Array<{ type: string; value: string; unit: string }> }>);
+
+    const handleLikeClicked = () => {
+        setLikeClicked(!likeClicked)
+    }
+
+    const handleShowSizeGuide = () => {
+        setIsSizeGuideOpen(!isSizeGuideOpen);
+    }
 
     const handleAddToCart = async () => {
-        if (!selectedSize) {
-            alert("Please select a size first.");
-            return;
-        }
-    
-        const item = {
-            productId,
-            sizeId: selectedSize.size_id,
-            quantity: 1,
-            price: productPrice,
-        };
-    
-        try {
-            await addItemToUserCart(item);
-            alert("Item added to cart!");
-        } catch (error) {
-            console.error("Error adding item to cart:", error);
-            alert("Failed to add item to cart. Please try again.");
-        }
-    };
+        console.log("Handle to cart clicked");
+        const userIdentifier = userId || getClientAnonymousId();
+        const isAnonymous = !userId;
 
+        console.log("isAnonymous? ", isAnonymous, " userIdentifier", userIdentifier);
+
+        const variant = variantData.id;
+        const choosenSize = selectedSize;
+
+        console.log("The variant added is ", variant, " and the size selected is ", choosenSize);
+
+        const response = await fetch(`/api/addToCart?${userId ? `userType=user&Id=${userIdentifier}` : `userType=anonymous&Id=${userIdentifier}`}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                variantId: variantData.id,
+                size: selectedSize,
+                quantity: 1
+            })
+        });
+
+        const result = await response.json();
+
+
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to add to cart');
+        }
+
+        console.log(result);
+    }
     return (
-        <div>
-            <div className="container mx-auto py-10 flex flex-col lg:flex-row">
-                <div className="lg:basis-3/5 p-4">
-                    <div className="flex justify-center mb-4 h-[700px] w-[600px]">
-                        <Image
-                            src={selectedImage}
-                            alt="Main Product"
-                            height={700}
-                            width={600}
-                            priority
-                            style={{objectFit:"contain"}}
-                            //className="w-full max-w-xl object-cover rounded-lg"
-                        />
-                    </div>
-                    {/* Thumbnails */}
-                    <div className="flex justify-center gap-4">
-                        {productImages.map((image, index) => (
+        <div className="container mx-auto py-10">
+            {/* Image Gallery and Product Info Container */}
+            <div className="flex flex-col lg:flex-row gap-8">
+                {/* Image Gallery - Reordered for mobile first */}
+                <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-3/5">
+                    {/* Thumbnails - Vertical on desktop, horizontal on mobile */}
+                    <div className="flex flex-row mx-auto lg:flex-col gap-2 order-1 lg:order-1 overflow-x-auto lg:overflow-x-visible pb-2 lg:pb-0">
+                        {variantData.product_images.map((image) => (
                             <div
-                                key={index}
-                                className="cursor-pointer border-2 border-transparent hover:border-gray-400 rounded-md overflow-hidden relative h-[80px] w-[80px]"
-                                onClick={() => setSelectedImage(image)}
+                                key={image.id}
+                                className={`flex-shrink-0 cursor-pointer border-2 rounded-md overflow-hidden relative h-[80px] w-[80px] ${
+                                selectedImage === image.image_url 
+                                    ? 'border-2' 
+                                    : 'border-transparent hover:border-gray-400'
+                                }`}
+                                onClick={() => setSelectedImage(image.image_url)}
                             >
                                 <Image
-                                    src={image}
-                                    alt={`Thumbnail ${index + 1}`}
+                                    src={image.image_url}
+                                    alt={`Thumbnail ${image.id}`}
                                     height={80}
                                     width={80}
-                                    style={{objectFit:"contain"}}
-                                    //className="w-20 h-20 object-cover"
+                                    style={{ objectFit: "contain" }}
+                                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                    priority
+                                    unoptimized={true}
                                 />
                             </div>
                         ))}
                     </div>
-                </div>
-                <div className="lg:basis-2/5 p-4">
-                    <div className="px-6 bg-white rounded-lg shadow-lg py-4">
-                        <div className="flex justify-between mb-4">
-                            <span>{productName}</span>
-                        </div>
-                        <div className="flex justify-between mb-4">
-                            <span>${productPrice}</span>
-                        </div>
-                        <div className="flex justify-between mb-4">
-                            <span>{description}</span>
-                        </div>
-                        {/* sizes select menu goes here */}
-                        <SizeSelect productId={productId} onSelectSize={setSelectedSize}/>
-                        <div className="text-sm">
-                            <button
-                                onClick={handleAddToCart}
-                                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                            >
-                                Add to Cart
-                            </button>
-                        </div>
+
+                    {/* Main Image */}
+                    <div className="flex-1 order-2 lg:order-2">
+                        {selectedImage ? (
+                            <div className="relative aspect-square w-full max-w-[600px] mx-auto">
+                                <Image
+                                    src={selectedImage}
+                                    alt={variantData.name}
+                                    height={550}
+                                    width={500}
+                                    priority
+                                    style={{ objectFit: "contain" }}
+                                    className="rounded-lg border-2"
+                                    sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                                    unoptimized={true}
+                                />
+                            </div>
+                        ) : (
+                            <div className="w-full aspect-square flex items-center justify-center bg-gray-100 rounded-lg">
+                                <span>No image available</span>
+                            </div>
+                        )}
                     </div>
                 </div>
-            </div> 
+
+                {/* Product Info */}
+                <div className="w-full lg:w-2/5">
+                    <div className="px-6 bg-white rounded-lg shadow-lg py-4 border-2">
+                        <h1 className="text-2xl font-bold mb-4">{variantData.name}</h1>
+                        
+                        <div className="mb-4">
+                            <span className="text-2xl font-semibold">${variantData.price.toFixed(2)}</span>
+                            {variantData.base_currency_price && (
+                                <span className="text-sm text-gray-500 ml-2">
+                                    (≈ ${variantData.base_currency_price.toFixed(2)})
+                                </span>
+                            )}
+                        </div>
+
+                        {variantData.color_id && (
+                            <div className="mb-4 flex items-center">
+                                <span className="mr-2">Color:</span>
+                                <div 
+                                    className="w-6 h-6 border-2"
+                                    style={{ backgroundColor: variantData.color_id.hex_code }}
+                                    title={variantData.color_id.name}
+                                />
+                                <span className="ml-2">{variantData.color_id.name}</span>
+                            </div>
+                        )}
+
+
+                        {/* Size Selector */}
+                        {availableSizes.length > 0 && (
+                            <>
+                                <div className="my-2">
+                                    <SizeSelect 
+                                        sizes={availableSizes} 
+                                        onSelectSize={(size) => setSelectedSize(size.size_id)}
+                                    />
+                                    
+                                </div>
+                                <div className="my-2">
+                                    <span
+                                        onClick={handleShowSizeGuide}
+                                        className="hover:cursor-pointer text-black hover:text-gray-500"
+                                    >
+                                        Show size guide
+                                    </span>
+                                </div>
+                            </>
+                        )}
+
+                        <div className="flex flex-row gap-2">
+                            <div className="w-full">
+                                <Button
+                                    onClick={()=> handleAddToCart()}
+                                    className="w-full py-3 bg-black text-white transition-colors disabled:bg-gray-400"
+                                    disabled={!selectedSize}
+                                >
+                                    Add to Cart
+                                </Button>
+                            </div>
+                            <button 
+                                onClick={() => handleLikeClicked()}
+                                className="w-[28px] flex justify-center py-2 hover:cursor-pointer transition-colors duration-300 ease-in-out rounded-full" 
+                            >
+                                {likeClicked ? (
+                                    <AiFillHeart size={26} className="text-black outline-2 hover:opacity-100"/>
+                                ) : (   
+                                    <AiOutlineHeart size={26} className="text-black outline-2 hover:opacity-100"/>
+                                )}
+                            </button>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            {isSizeGuideOpen && (
+                <SizeGuideModal
+                    onCancel={handleShowSizeGuide}
+                    sizeData={Object.entries(variantData.sizes || {}).reduce((acc, [sizeName, sizeDetails]) => ({
+                        ...acc,
+                        [sizeName]: {
+                        measurements: sizeDetails.measurements.map(m => ({
+                            type: m.type,
+                            value: m.value.toString(),
+                            unit: m.unit
+                        }))
+                        }
+                    }), {})}
+                />
+            )}
         </div>
     );
 };
