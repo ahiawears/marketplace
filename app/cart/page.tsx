@@ -44,10 +44,13 @@ const CartPage = () => {
     const router = useRouter();
     const [cartItem, setCartItem] = useState<CartItemData[]>([]);
 
-    // --- CORRECTED: Use a state variable for totalPrice, but initialize it to 0 ---
     const [totalPrice, setTotalPrice] = useState(0); 
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Add these new state variables to your CartPage component
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [itemToDeleteId, setItemToDeleteId] = useState<string | null>(null);
 
     // Use a useEffect to set the initial data from the hook
     useEffect(() => {
@@ -66,17 +69,12 @@ const CartPage = () => {
         setLoading(true);
         setError(null);
         try {
-             // Optimistically update the UI first
             setCartItem(prevItems =>
                 prevItems.map(item =>
                     item.id === cartItemId ? { ...item, quantity: qty } : item
                 )
             );
-            console.log("The quantity is: ", qty, " and the itemId is: ", cartItemId, "  and the varint id is: ", variantId);
             const userIdentifier = userId || getClientAnonymousId();
-            const isAnonymous = !userId;
-
-            console.log("isAnonymous? ", isAnonymous, " userIdentifier", userIdentifier);
 
             const response = await fetch(`/api/updateCart?updateType=quantityChange&${userId ? `userType=user&Id=${userIdentifier}` : `userType=anonymous&Id=${userIdentifier}`}`, {
                 method: 'POST',
@@ -102,13 +100,10 @@ const CartPage = () => {
             }
 
         } catch (error) {
-            console.error("Error updating quantity:", error);
             setError(error instanceof Error ? error.message : "An unexpected error occurred");
         } finally {
             setLoading(false);
         }
-
-        //fetchCartItems();
     };
 
     if ( cartLoading || loading) {
@@ -124,19 +119,68 @@ const CartPage = () => {
         console.log("Checkout clicked!!!");
     }
 
-    // const handleDelete = (mainCartId: string, cartItemId: string) => {
-    //     if (confirm("Are you sure you want to delete this item?")) {
-    //         try {
-    //             deleteCartItem(mainCartId, cartItemId);
-    //             setCartItems((prevItems) =>
-    //                 prevItems.filter((item) => item.cart_item_id !== cartItemId)
-    //             );
-    //         } catch (error) {
-    //             console.error("Error deleting item:", error);
-    //         }
-    //         fetchCartItems();
-    //     }
-    // };
+    const handleDelete = (id: string) => {
+        // Set the item ID and open the modal
+        setItemToDeleteId(id);
+        setIsModalOpen(true);
+    };
+    const handleConfirmDelete = async () => {
+        if (!itemToDeleteId) return;
+        setLoading(true);
+        setError(null);
+
+        // Here you'll put your actual deletion logic
+        try{
+            const userIdentifier = userId || getClientAnonymousId();
+
+            const response = await fetch(`/api/updateCart?updateType=itemDeletion&${userId ? `userType=user&Id=${userIdentifier}` : `userType=anonymous&Id=${userIdentifier}`}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    cartId: itemToDeleteId
+                })
+            })
+            const result = await response.json();
+
+            if(!response.ok) {
+                throw new Error(result.error instanceof Error ? result.error.message : "Failed to delete cart item");
+            }
+
+            if (result.success) {
+                setTotalPrice(result.data.newTotal);
+            }
+
+            setCartItem(prevItems => prevItems.filter(item => item.id !== itemToDeleteId));
+        } catch ( error ) {
+            console.error("Error deleting item:", error);
+            setError(error instanceof Error ? error.message : "An unexpected error occurred");
+        } finally {
+            setIsModalOpen(false);
+            setItemToDeleteId(null);
+            setLoading(false);
+        }
+
+        // Call your server action to delete the item
+        // You'll need to pass the user ID and cart item ID here
+        // For now, let's just use console.log as a placeholder
+        // try {
+        //     await deleteCartItem(cartId, itemToDeleteId);
+        //     // Optimistically remove the item from the local state
+        //     setCartItem(prevItems => prevItems.filter(item => item.id !== itemToDeleteId));
+        // } catch (error) {
+        //     console.error("Failed to delete item:", error);
+        //     // Handle error, e.g., show a toast notification
+        // }
+
+    };
+
+    const handleCancelDelete = () => {
+        // Simply close the modal without deleting anything
+        setIsModalOpen(false);
+        setItemToDeleteId(null);
+    };
    
     return (
         <div className="container mx-auto">
@@ -153,7 +197,7 @@ const CartPage = () => {
                             <CartItem
                                 key={item.id}
                                 item={item}
-                                onDelete={() => console.log("Delete clicked")}
+                                onDelete={ handleDelete }
                                 onQuantityChange={handleQuantityChange}
                                 // onDelete={() => handleDelete(item.cart_id, item.id)}
                             />
@@ -185,6 +229,25 @@ const CartPage = () => {
                     </div>
                 </div>
             )}  
+            {/* Deletion Confirmation Modal */}
+            {isModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white p-6 border-2 shadow-xl max-w-sm w-full">
+                        <h3 className="text-lg font-semibold mb-4">Confirm Deletion</h3>
+                        <p className="text-sm text-gray-700 mb-6">
+                            Are you sure you want to remove this item from your cart?
+                        </p>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="secondary" className="border-2 hover:bg-opacity-25" onClick={handleCancelDelete}>
+                                Cancel
+                            </Button>
+                            <Button onClick={handleConfirmDelete}>
+                                Remove Item
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

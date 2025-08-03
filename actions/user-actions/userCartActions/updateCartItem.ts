@@ -81,69 +81,88 @@ export const updateCartItemQuantity = async (
 };
 
 
-export const deleteCartItem = async (cartId: string, id: string) => {
+export const deleteCartItem = async ( id: string, userId: string, isAnonymous: boolean ) => {
     const supabase = await createClient();
-
     try {
-        // Step 1: Get the item details (quantity and price) before deletion
-        const { data: item, error: fetchError } = await supabase
+        //fetch the price, quantity and the cart id of the cart item
+        const { data: itemData, error: itemDataError } = await supabase
             .from('cart_items')
-            .select('quantity, price')
+            .select('quantity, price, cart_id')
             .eq('id', id)
             .single();
 
-        if (fetchError || !item) {
-            console.error("Error fetching item details:", fetchError);
-            return;
+        if(itemDataError) {
+            console.log(itemDataError instanceof Error ? itemDataError.message : "Failed to get the item details");
+            throw new Error(itemDataError instanceof Error ? itemDataError.message : "Failed to get the item details");
         }
 
-        const { quantity, price } = item;
+        if(!itemData) {
+            console.log("No item data found");
+            throw new Error("No item data found");
+        }
 
-        // Step 2: Delete the item
+        const { quantity, price, cart_id} = itemData;
+        //get the cart total price
+        const {data: cartTotalPrice, error: cartTotalPriceError} = await supabase
+            .from('carts')
+            .select('total_price')
+            .eq('id', cart_id)
+            .eq(isAnonymous ? 'anonymous_id' : 'user_id', userId)
+            .single();
+
+        if(cartTotalPriceError) {
+            console.log(cartTotalPriceError instanceof Error ? cartTotalPriceError.message : "Failed to get the cart total price");
+            throw new Error(cartTotalPriceError instanceof Error ? cartTotalPriceError.message : "Failed to get the ccart total price");
+        }
+
+        if (!cartTotalPrice) {
+            console.log("Failed to get the cart total price");
+            throw new Error("Failed to get the ccart total price");
+        }
+
+        const totalPrice = cartTotalPrice.total_price;
+
+        //calculate how much the item cost in the main cart
+        const itemTotalCost = price * quantity;
+
+        //delete the item from cart_items
         const { error: deleteError } = await supabase
             .from('cart_items')
             .delete()
-            .eq('id', id)
-            .eq('cart_id', cartId);
+            .eq('id', id);
 
-        if (deleteError) {
-            console.error("Error deleting item:", deleteError);
-            return;
+        if(deleteError) {
+            console.log(deleteError instanceof Error ? deleteError.message : "Failed to ddelete item details");
+            throw new Error(deleteError instanceof Error ? deleteError.message : "Failed to delete item details");
         }
 
-        // Step 3: Fetch the current total price from the carts table
-        const { data: cart, error: cartError } = await supabase
+        //subtract the itemTotalCost from the totalPrice
+        const newTotal = totalPrice - itemTotalCost;
+
+        //update the total price
+         const { error: cartUpdateError } = await supabase
             .from('carts')
-            .select('total_price')
-            .eq('id', cartId)
-            .single();
+            .update({
+                total_price: newTotal,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', cart_id)
+            .eq(isAnonymous ? 'anonymous_id' : 'user_id', userId);
 
-        if (cartError || !cart) {
-            console.error("Error fetching cart details:", cartError);
-            return;
+        if (cartUpdateError) throw cartUpdateError;
+
+        return {
+            success: true,
+            newTotal: newTotal,
+            deletedId: id
         }
-
-        const currentTotalPrice = cart.total_price;
-
-        // Step 4: Calculate the updated total price
-        const adjustment = quantity * price;
-        const updatedTotalPrice = currentTotalPrice - adjustment;
-
-        // Step 5: Update the total_price in the carts table
-        const { error: updateError } = await supabase
-            .from('carts')
-            .update({ total_price: updatedTotalPrice })
-            .eq('id', cartId);
-
-        if (updateError) {
-            console.error("Error updating total price:", updateError);
-            return;
-        }
-
-        console.log("Item deleted and total price updated successfully.");
-
-    } catch (err) {
-        console.error("Unexpected error:", err);
-    }
+    } catch (error) {
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Update failed',
+            newQuantity: 0,
+            newTotal: 0
+        };
+    } 
 };
 

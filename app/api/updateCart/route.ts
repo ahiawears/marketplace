@@ -1,6 +1,6 @@
 import { checkVariantStock } from '@/actions/user-actions/userCartActions/checkVariantStock';
 import { NextRequest, NextResponse } from 'next/server';
-import { updateCartItemQuantity } from '@/actions/user-actions/userCartActions/updateCartItem';
+import { updateCartItemQuantity, deleteCartItem } from '@/actions/user-actions/userCartActions/updateCartItem';
 
 export async function POST(req: NextRequest) {
     try {
@@ -54,10 +54,29 @@ export async function POST(req: NextRequest) {
                     data: {
                         newQuantity: updateResult.newQuantity,
                         newTotal: updateResult.newTotal,
-                        // Include any other data needed for UI updates
                     }
                 }, { status: 200 });
 
+            case "itemDeletion": 
+                const { cartId } = await req.json();
+
+                const deleteItem = await deleteCartItem( cartId, userId, isAnonymous ) 
+                
+                if (!deleteItem.success) {
+                    return NextResponse.json({
+                        success: false,
+                        message: deleteItem.error || 'Failed to delete cart item',
+                        data: null
+                    }, { status: 500 });
+                }
+                return NextResponse.json({
+                    success: true,
+                    message: 'Cart updated successfully',
+                    data: {
+                        newTotal: deleteItem.newTotal,
+                        deletedId: deleteItem.deletedId
+                    }
+                }, { status: 200 });
             default:
                 return NextResponse.json({
                     success: false,

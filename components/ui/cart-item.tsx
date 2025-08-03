@@ -26,7 +26,7 @@ interface CartItemData {
 
 interface CartItemProps {
   item: CartItemData;
-  onDelete: () => void;
+  onDelete: (id: string) => void;
   onQuantityChange: (qty: number, cartItemId: string, variantId: string, size: string) => void;
 }
 
@@ -39,13 +39,25 @@ const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange })
         setIsUpdating(true);
         setError(null);
         try {
-            await onQuantityChange(qty, item.id, item.product_id.id, item.size_id.name);
+            onQuantityChange(qty, item.id, item.product_id.id, item.size_id.name);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Failed to update quantity");
         } finally {
             setIsUpdating(false);
         }
     };
+
+    const handleItemDelete = async (id: string) => {
+        setIsUpdating(true);
+        setError(null);
+        try{
+            onDelete(id);
+        } catch(error) {
+            setError(error instanceof Error ? error.message : "Failed to delete cart item");
+        } finally {
+            setIsUpdating(false)
+        }
+    }
 
     return (
         <div 
@@ -113,7 +125,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange })
                 <div className="flex flex-col items-end justify-between">
                     <p className="text-lg font-semibold">${item.price.toFixed(2)}</p>
                     <button 
-                        onClick={onDelete} 
+                        onClick={() => onDelete(item.id)} 
                         className={`text-gray-500 hover:text-black hover:shadow-lg transition-colors ${isHovering ? 'opacity-150' : 'opacity-0 sm:opacity-100'} bg-transparent`}
                         aria-label="Remove item"
                     >
