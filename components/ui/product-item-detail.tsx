@@ -93,7 +93,6 @@ const ProductItem: React.FC<ProductItemProps> = ({ variantData }) => {
     }
 
     const handleAddToCart = async () => {
-        console.log("Handle to cart clicked");
         const userIdentifier = userId || getClientAnonymousId();
         const isAnonymous = !userId;
 
@@ -124,6 +123,7 @@ const ProductItem: React.FC<ProductItemProps> = ({ variantData }) => {
         }
 
         console.log(result);
+        //show confirmation
     }
     return (
         <div className="container mx-auto py-10">
