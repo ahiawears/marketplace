@@ -5,8 +5,10 @@ import Image from 'next/image';
 import { Button } from './button';
 import { AiFillHeart, AiOutlineHeart } from 'react-icons/ai';
 import SizeGuideModal from '../modals/size-guide';
-import { useAuth } from '@/hooks/useAuth'
-import { getClientAnonymousId } from "@/lib/anon_user/client";
+// The useAuth hook is no longer needed here as user info is passed via props
+// import { useAuth } from '@/hooks/useAuth'
+// getClientAnonymousId is no longer needed here
+// import { getClientAnonymousId } from "@/lib/anon_user/client";
 import { saveProduct } from '@/actions/user-actions/userSavedProductActions/save-product'
 import { checkVariantStock } from '@/actions/user-actions/userCartActions/checkVariantStock';
 import { upsertCart } from '@/actions/user-actions/userCartActions/upsertCart';
@@ -59,6 +61,8 @@ interface VariantData {
 interface ProductItemProps {
     variantData: VariantData;
     initialIsSaved: boolean;
+    serverUserIdentifier: string;
+    isAnonymous: boolean;
 }
 
 function deserializeVariantData(data: VariantData): VariantData {
@@ -84,8 +88,12 @@ function deserializeVariantData(data: VariantData): VariantData {
     };
 }
 
-const ProductItem: React.FC<ProductItemProps> = ({ variantData, initialIsSaved }) => {
-    const { userId } = useAuth();
+const ProductItem: React.FC<ProductItemProps> = ({ 
+    variantData, 
+    initialIsSaved,
+    serverUserIdentifier,
+    isAnonymous
+}) => {
     
     // Deserialize the data on the client side
     const processedVariantData = useMemo(() => deserializeVariantData(variantData), [variantData]);
@@ -93,10 +101,13 @@ const ProductItem: React.FC<ProductItemProps> = ({ variantData, initialIsSaved }
     const mainImage = processedVariantData.product_images.find(img => img.is_main) || processedVariantData.product_images[0];
     const [selectedImage, setSelectedImage] = useState(mainImage?.image_url);
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
-    const [likeClicked, setLikeClicked] = useState<boolean>(false);
     const [isSizeGuideOpen, setIsSizeGuideOpen] = useState<boolean>(false);
     const [isSaved, setIsSaved] = useState<boolean>(initialIsSaved);
-    const [isPending, startTransition] = useTransition();
+    
+    const [isCartPending, startCartTransition] = useTransition();
+    const [isLikePending, startLikeTransition] = useTransition();
+
+    const [hasBeenAdded, setHasBeenAdded] = useState(false);
 
     const availableSizes = Object.keys(processedVariantData.sizes || {}).map(sizeName => ({
         size_id: sizeName,
@@ -116,21 +127,45 @@ const ProductItem: React.FC<ProductItemProps> = ({ variantData, initialIsSaved }
     }, {} as Record<string, { measurements: Array<{ type: string; value: string; unit: string }> }>);
 
     const handleLikeClicked = () => {
-        const userIdentifier = userId || getClientAnonymousId();
-        const isAnonymous = !userId;
+        console.log("handleLikeClicked called");
 
-        setIsSaved(!isSaved);
+        let size;
+        if (!selectedSize) {
+            size = "";
+        } else {
+            size = selectedSize;
+        }
 
-        startTransition(async () => {
-            const result = await saveProduct({
-                variantId: processedVariantData.id,
-                size: selectedSize || '',
-                isAnonymous,
-                userId: userIdentifier,
-                path: 'productsPage'
-            });
+        // Check for required data before making the server call
+        if (!processedVariantData.id) {
+            console.error("Cannot save product: Missing variant ID.");
+            return;
+        }
+        
+        console.log("The user identifier is: ", serverUserIdentifier, " and isAnonymous: ", isAnonymous);
+        console.log("The size is ", size);
+        
+        // Optimistic UI update: Flip the saved state immediately
+        setIsSaved(prevIsSaved => !prevIsSaved);
 
-            if (!result.success) {
+        startLikeTransition(async () => {
+            try {
+                const result = await saveProduct({
+                    variantId: processedVariantData.id,
+                    size: size,
+                    isAnonymous,
+                    userId: serverUserIdentifier,
+                    path: 'productsPage'
+                });
+
+                // If the server action failed, revert the UI state
+                if (!result.success) {
+                    setIsSaved(initialIsSaved);
+                    console.error("Failed to save product:", result.error);
+                }
+            } catch (error) {
+                // Catch any unexpected errors from the server action
+                console.error("Unexpected error in saveProduct:", error);
                 setIsSaved(initialIsSaved);
             }
         });
@@ -139,52 +174,49 @@ const ProductItem: React.FC<ProductItemProps> = ({ variantData, initialIsSaved }
     const handleShowSizeGuide = () => {
         setIsSizeGuideOpen(!isSizeGuideOpen);
     }
+    
     const handleAddToCart = async () => {
-        const userIdentifier = userId || getClientAnonymousId();
-        const isAnonymous = !userId;
         const quantity = 1;
 
         if (!processedVariantData.id || !selectedSize) return;
 
-        startTransition(async () => {
+        startCartTransition(async () => {
             try {
-                // 1. Verify all inputs are serializable
                 const verifiedInput = strictSerialize({
                     variantId: processedVariantData.id,
                     size: selectedSize,
                     quantity
                 });
 
-                // 2. Call stock check with verified input
                 const stockResult = await checkVariantStock(
                     verifiedInput.variantId,
                     verifiedInput.size,
                     verifiedInput.quantity
                 );
 
-                // 3. Verify stock result
                 const verifiedStock = strictSerialize(stockResult);
                 if (!verifiedStock.success) throw new Error(verifiedStock.error);
 
                 if (verifiedStock.sizeId === null) {
                     throw new Error("Size ID was not returned from stock check.");
                 }
-                // 4. Prepare cart data
+                
                 const cartData = strictSerialize({
                     variantId: processedVariantData.id,
                     sizeId: verifiedStock.sizeId,
                     quantity,
                     isAnonymous,
-                    userId: userIdentifier
+                    userId: serverUserIdentifier
                 });
 
-                // 5. Final upsert
                 const cartResult = await upsertCart(cartData);
                 const verifiedCart = strictSerialize(cartResult);
                 
                 if (!verifiedCart.success) throw new Error(verifiedCart.error);
                 
                 console.log("Success! Cart updated");
+                setHasBeenAdded(true);
+                setTimeout(() => setHasBeenAdded(false), 3000); 
                 } catch (error) {
                 console.error("Nuclear error handling:", {
                     message: error instanceof Error ? error.message : String(error),
@@ -194,6 +226,13 @@ const ProductItem: React.FC<ProductItemProps> = ({ variantData, initialIsSaved }
             }
         });
     };
+
+    const getCartButtonText = () => {
+        if (isCartPending) return "Adding...";
+        if (hasBeenAdded) return "Added to Cart!";
+        return "Add to Cart";
+    };
+
     return (
         <div className="container mx-auto py-10">
             <div className="flex flex-col lg:flex-row gap-8">
@@ -293,21 +332,22 @@ const ProductItem: React.FC<ProductItemProps> = ({ variantData, initialIsSaved }
                         <div className="flex flex-row gap-2">
                             <div className="w-full">
                                 <Button
-                                    onClick={() => {handleAddToCart()}}
-                                    className="w-full py-3 bg-black text-white transition-colors disabled:bg-gray-400"
-                                    disabled={!selectedSize}
+                                    onClick={handleAddToCart}
+                                    className={`w-full py-3 text-white transition-colors disabled:bg-gray-400 ${hasBeenAdded ? 'bg-green-500' : 'bg-black'}`}
+                                    disabled={!selectedSize || isCartPending || hasBeenAdded}
                                 >
-                                    Add to Cart
+                                    {getCartButtonText()}
                                 </Button>
                             </div>
                             <button 
-                                onClick={() =>{handleLikeClicked()}}
+                                onClick={handleLikeClicked}
+                                disabled={isLikePending}
                                 className="w-[28px] flex justify-center py-2 hover:cursor-pointer transition-colors duration-300 ease-in-out rounded-full" 
                             >
-                                {likeClicked ? (
+                                {isSaved ? (
                                     <AiFillHeart size={26} className="text-black outline-2 hover:opacity-100"/>
                                 ) : (   
-                                    <AiOutlineHeart size={26} className="text-black outline-2 hover:opacity-100"/>
+                                    <AiOutlineHeart size={26} className="text-gray-500 outline-2 hover:opacity-100"/>
                                 )}
                             </button>
                         </div>
