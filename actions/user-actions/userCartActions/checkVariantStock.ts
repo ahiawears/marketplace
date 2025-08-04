@@ -1,55 +1,62 @@
-import { createClient } from "@/supabase/server"
+// actions/user-actions/userCartActions/checkVariantStock.ts
+"use server";
 
-export const checkVariantStock = async (variantId: string, size: string, sQuantity: number) => {
+import { createClient } from "@/supabase/server";
+
+interface StockCheckResult {
+  success: boolean;
+  sizeId: string | null;
+  error?: string;
+}
+
+export const checkVariantStock = async (
+  variantId: string,
+  size: string,
+  quantity: number
+): Promise<StockCheckResult> => {
+  try {
     const supabase = await createClient();
 
-    console.log("VariantId: ", variantId, " size: ", size, " quantity: ", sQuantity);
+    // Get size ID
+    const { data: sizeData, error: sizeError } = await supabase
+      .from('sizes')
+      .select('id')
+      .eq('name', size)
+      .single();
 
-    try {
-        let size_id;
-        //Get the size id
-        const { data: sizeId, error: sizeIdError } = await supabase
-            .from('sizes')
-            .select('id')
-            .eq('name', size)
-            .maybeSingle();
-
-        if (sizeIdError) {
-            throw new Error(sizeIdError.message);
-        }
-
-        if (!sizeId) {
-            throw new Error('Size not found');
-        }
-
-        size_id = sizeId.id;
-
-        //Check if the variant exists 
-        const { data: variantData, error: variantError } = await supabase
-            .from('product_sizes')
-            .select('quantity')
-            .eq('product_id', variantId)
-            .eq('size_id', size_id);
-
-        if (variantError) {
-            throw new Error(variantError.message);
-        }
-
-        if (!variantData) {
-            throw new Error('Variant not found');
-        }
-
-        const quantity = variantData[0].quantity;
-
-        if ( quantity === 0 || quantity < sQuantity) {
-            throw new Error('Variant out of stock');
-        }
-
-        return {success: true, sizeId: size_id};
-    } catch (error) {
-        if (error instanceof Error) {
-            throw new Error(error.message);
-        }
-        throw new Error('An unexpected error occurred');
+    if (sizeError) {
+      console.error("Supabase Error (size fetch):", sizeError.message);
+      return { success: false, sizeId: null, error: "Error fetching size data." };
     }
-}
+    if (!sizeData) {
+      return { success: false, sizeId: null, error: "Size not found." };
+    }
+
+    // Check stock
+    const { data: variantData, error: variantError } = await supabase
+      .from('product_sizes')
+      .select('quantity')
+      .eq('product_id', variantId)
+      .eq('size_id', sizeData.id)
+      .single();
+
+    if (variantError) {
+      console.error("Supabase Error (stock fetch):", variantError.message);
+      return { success: false, sizeId: null, error: "Error checking stock." };
+    }
+    
+    if (!variantData || variantData.quantity < quantity) {
+      return { success: false, sizeId: null, error: "Insufficient stock." };
+    }
+
+    return { success: true, sizeId: sizeData.id };
+    
+  } catch (error) {
+    console.error("Internal server error in checkVariantStock:", error);
+    return {
+      success: false,
+      sizeId: null,
+      error: error instanceof Error ? error.message : 'Unknown error occurred.'
+    };
+  }
+};

@@ -32,7 +32,6 @@ export async function POST(req: NextRequest) {
         // Check if the variant exists and has the selected size in stock
         const { success: variantAvailable, sizeId } = await checkVariantStock(variantId, size, quantity);
 
-
         if (!variantAvailable) {
             console.log("Variant out of stock");
             return NextResponse.json({

@@ -9,7 +9,23 @@ import { FaRegTrashAlt } from "react-icons/fa";
 import { Button } from "./button";
 import FavsListSVG from "../svg/fav-lists-svg";
 
-const FavsList = () => {
+interface SavedItemData {
+    id: string;
+    product_id: {
+        id: string;
+        name: string;
+    }; 
+    product_name: string;
+    main_image_url: string;
+    variant_color: {
+        name: string;
+        hex: string;
+    };
+    price: number;
+    
+}
+
+const SavedList = () => {
 
     const router = useRouter();
     const [savedProductsData, setSavedProductsData] = useState<ProductsListType[]>([]);
@@ -121,4 +137,4 @@ const FavsList = () => {
     )
 }
 
-export default FavsList
+export default SavedList
