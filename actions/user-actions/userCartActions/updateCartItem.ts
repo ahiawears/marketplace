@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from "@/supabase/server";
+import { revalidatePath } from "next/cache";
+
 
 export const updateCartItemQuantity = async (
   qty: number, 
@@ -62,6 +64,8 @@ export const updateCartItemQuantity = async (
             .eq('id', cart.id);
 
         if (cartUpdateError) throw cartUpdateError;
+
+        revalidatePath('/cart');
 
         return {
             success: true,
@@ -150,6 +154,8 @@ export const deleteCartItem = async ( id: string, userId: string, isAnonymous: b
             .eq(isAnonymous ? 'anonymous_id' : 'user_id', userId);
 
         if (cartUpdateError) throw cartUpdateError;
+
+        revalidatePath('/cart');
 
         return {
             success: true,

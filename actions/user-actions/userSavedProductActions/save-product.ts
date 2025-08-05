@@ -103,6 +103,9 @@ export const saveProduct = async ({
             case "productsPage":
                 revalidatePath(`/products/${variantId}`);
                 break;
+            case "savedPage":
+                revalidatePath(`/saved-list`)
+                break;
 
             default:
                 break;

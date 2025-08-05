@@ -6,6 +6,7 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const userType = searchParams.get('userType');
         const userId = searchParams.get('Id');
+        const isAnonymous = userType === 'anonymous';
         
         if (!userType || !userId) {
             return NextResponse.json({
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
             }, { status:  400 });
         }
 
-        const cartItems = await getCartItems(userType, userId);
+        const cartItems = await getCartItems(isAnonymous, userId);
         return NextResponse.json({
             success: true,
             message: "Cart items fetched successfully",

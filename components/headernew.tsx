@@ -34,7 +34,7 @@ export const HeaderNew = ({ user }: { user: any }) => {
     };
 
     const goToFavorited = () => {
-        router.push(`/fav-lists`);
+        router.push(`/saved-lists`);
     }
 
     const goToCart = () => {

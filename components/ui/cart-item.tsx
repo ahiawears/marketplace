@@ -1,9 +1,13 @@
-import React, { useState } from "react";
+'use client';
+
+import React, { useState, useTransition } from "react";
 import { AiOutlineDelete } from "react-icons/ai";
 import { Select } from "./select";
 import { Button } from "./button";
 import Image from "next/image";
 import LoadContent from '@/app/load-content/page';
+import { deleteCartItem, updateCartItemQuantity } from "@/actions/user-actions/userCartActions/updateCartItem";
+import { checkVariantStock } from "@/actions/user-actions/userCartActions/checkVariantStock";
 
 interface CartItemData {
     id: string;
@@ -25,38 +29,56 @@ interface CartItemData {
 }
 
 interface CartItemProps {
-  item: CartItemData;
-  onDelete: (id: string) => void;
-  onQuantityChange: (qty: number, cartItemId: string, variantId: string, size: string) => void;
+    item: CartItemData;
+    serverUserIdentifier: string;
+    isAnonymous: boolean;
 }
 
-const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange }) => {
+const CartItem: React.FC<CartItemProps> = ({ item, serverUserIdentifier, isAnonymous }) => {
     const [isHovering, setIsHovering] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [ isDeletePending, startDeleteTransition ] = useTransition();
+    const [ isQuantityPending, startQuantityTransition ] = useTransition();
 
     const handleQuantityChange = async (qty: number) => {
-        setIsUpdating(true);
-        setError(null);
-        try {
-            onQuantityChange(qty, item.id, item.product_id.id, item.size_id.name);
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to update quantity");
-        } finally {
-            setIsUpdating(false);
+
+        if (!qty) {
+            return;
         }
+        startQuantityTransition(async () => {
+            try {
+                const stockCheck = await checkVariantStock(item.product_id.id, item.size_id.name, qty);
+                if (!stockCheck.success) {
+                    console.error("Failed to check variant stock:", stockCheck.error);
+                }
+                const updateResult = await updateCartItemQuantity(qty, item.id, serverUserIdentifier, isAnonymous);
+                if (!updateResult.success) {
+                    console.error("Failed to update cart item quantity:", updateResult.error);
+                }
+            } catch (error) {
+                console.error("Unexpected error in handleQuantityChange:", error);
+            }
+        })
     };
 
     const handleItemDelete = async (id: string) => {
-        setIsUpdating(true);
-        setError(null);
-        try{
-            onDelete(id);
-        } catch(error) {
-            setError(error instanceof Error ? error.message : "Failed to delete cart item");
-        } finally {
-            setIsUpdating(false)
+        if (!id) {
+            return;
         }
+        console.log("handle item delete clicked");
+        startDeleteTransition(async () => {
+            try {
+                const deleteItem = await deleteCartItem(id, serverUserIdentifier, isAnonymous);
+                if (!deleteItem.success) {
+                    console.error("Failed to save product:", deleteItem.error);
+                }
+
+            } catch (error) {
+                console.error("Unexpected error in saveProduct:", error);
+                // setIsSaved(initialIsSaved);
+            }
+        })
     }
 
     return (
@@ -125,7 +147,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, onDelete, onQuantityChange })
                 <div className="flex flex-col items-end justify-between">
                     <p className="text-lg font-semibold">${item.price.toFixed(2)}</p>
                     <button 
-                        onClick={() => onDelete(item.id)} 
+                        onClick={() => handleItemDelete(item.id)} 
                         className={`text-gray-500 hover:text-black hover:shadow-lg transition-colors ${isHovering ? 'opacity-150' : 'opacity-0 sm:opacity-100'} bg-transparent`}
                         aria-label="Remove item"
                     >

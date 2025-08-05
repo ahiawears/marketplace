@@ -4,135 +4,186 @@ import removeFavedItem from "@/actions/remove-faved-item";
 import { ProductsListType } from "@/lib/types"
 import { revalidatePath } from "next/cache";   
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { FaRegTrashAlt } from "react-icons/fa";
 import { Button } from "./button";
 import FavsListSVG from "../svg/fav-lists-svg";
+import Image from "next/image";
+import { AiOutlineDelete } from "react-icons/ai";
+import { strictSerialize } from "@/lib/serialization";
+import { checkVariantStock } from "@/actions/user-actions/userCartActions/checkVariantStock";
+import { upsertCart } from "@/actions/user-actions/userCartActions/upsertCart";
+import { saveProduct } from "@/actions/user-actions/userSavedProductActions/save-product";
 
 interface SavedItemData {
     id: string;
-    product_id: {
+    variant_id: {
         id: string;
         name: string;
+        base_currency_price: number;
     }; 
-    product_name: string;
-    main_image_url: string;
-    variant_color: {
+    image: string;
+    color: {
         name: string;
         hex: string;
     };
-    price: number;
-    
+    size: string;
 }
 
-const SavedList = () => {
+interface SavedListProps {
+    item: SavedItemData;
+    serverUserIdentifier: string;
+    isAnonymous: boolean;
+}
+
+const SavedList: React.FC<SavedListProps> = ({item, serverUserIdentifier, isAnonymous}) => {
 
     const router = useRouter();
     const [savedProductsData, setSavedProductsData] = useState<ProductsListType[]>([]);
+    const [hasBeenAdded, setHasBeenAdded] = useState(false);
+    const [selectedSize, setSelectedSize] = useState<string | null>(null);
+    const [isCartPending, startCartTransition] = useTransition();
+    const [isDeletePending, startDeleteTransition] = useTransition();
 
-    const fetchUserLikedItemList = async () => {
-        try {
-            const response = await fetch("/api/userFavList");
-            const { data: products } = await response.json();
-
-            if (!response.ok) throw new Error("Failed to fetch products");
-
-            const favoritesItems = products.map((product: ProductsListType) => ({
-                ...product,
-            }));
-            setSavedProductsData(favoritesItems);
-        } catch (error) {
-            console.error("Error fetching saved items", error);
+    const handleDeleteSavedItem = () => {
+        let size;
+        if (!selectedSize) {
+            size = "";
+        } else {
+            size = selectedSize;
         }
-    };
 
-    const removeFavItem = async (id: string) => {
-        try {
-            console.log("Removing saved product:", id);
-            await removeFavedItem(id);
-            setSavedProductsData((prev) =>
-                prev.filter((product) => product.id !== id)
-            );
-            router.refresh();
-        } catch (error) {
-            console.error("Error removing item", error);
+        if(!item.variant_id.id) {
+            return;
         }
-    };
 
-    // useEffect(() => {
-    //     fetchUserLikedItemList();
-    // }, []);
+        startDeleteTransition(async () => {
+            try {
+                const result = await saveProduct({
+                    variantId: item.variant_id.id,
+                    size: size,
+                    isAnonymous,
+                    userId: serverUserIdentifier,
+                    path: 'savedPage'
+                })
+                // If the server action failed, revert the UI state
+                if (!result.success) {
+                    console.error("Failed to save product:", result.error);
+                }
+            } catch (error) {
+                console.error("Unexpected error in saveProduct:", error);
+            }
+        })
+    }
+
+    const handleAddToCart = async () => {
+        const quantity = 1;
+        if (!item.variant_id.id || !selectedSize) return;
+
+        startCartTransition(async () => {
+            try {
+                const verifiedInput = strictSerialize({
+                    variantId: item.variant_id.id,
+                    size: selectedSize,
+                    quantity
+                });
+
+                const stockResult = await checkVariantStock(
+                    verifiedInput.variantId,
+                    verifiedInput.size,
+                    verifiedInput.quantity
+                );
+
+                const verifiedStock = strictSerialize(stockResult);
+                if (!verifiedStock.success) throw new Error(verifiedStock.error);
+
+                if (verifiedStock.sizeId === null) {
+                    throw new Error("Size ID was not returned from stock check.");
+                }
+
+                const cartData = strictSerialize({
+                    variantId: item.variant_id.id,
+                    sizeId: verifiedStock.sizeId,
+                    quantity,
+                    isAnonymous,
+                    userId: serverUserIdentifier
+                });
+
+                const cartResult = await upsertCart(cartData);
+                const verifiedCart = strictSerialize(cartResult);
+
+                if (!verifiedCart.success) throw new Error(verifiedCart.error);
+                setHasBeenAdded(true);
+                setTimeout(() => setHasBeenAdded(false), 3000); 
+
+            } catch (error) {
+                console.error("Nuclear error handling:", {
+                    message: error instanceof Error ? error.message : String(error),
+                    input: { variantId: item.variant_id.id, size: selectedSize },
+                })
+            }
+        })
+    }
+
 
     return (
-        <div className="container mx-auto">
+        <div className="overflow-hidden hover:shadow-lg transition-shadow hover:cursor-pointer">
+            <div className="group relative bg-gray-100 group-hover:opacity-75 overflow-hidden">
+                {item.image ? (
+                    <>
+                        <Image
+                            src={item.image}
+                            alt={item.variant_id.name}
+                            width={400}
+                            height={400}
+                            unoptimized={true}
+                            className="object-cover"
+                            quality={85}
+                            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
+							loading="lazy"
+                        />
 
-            {savedProductsData.length > 0 ? (
-                <div>
-
-                </div>
-            ) : (
-                <div className="mx-auto max-w-2xl lg:max-w-7xl w-full">
-                    <div className="w-full p-8 text-center transform transition-all relative"> {/* Added relative positioning */}
-                        <div className="mx-auto ">
-                            <FavsListSVG className="w-64 h-64 mx-auto" width={256} height={256} />
-                            <p className="font-bold my-4">You have no favorited items yet</p>
-                            <Button>
-                                
-                            </Button>
-                        </div>
+                        <button
+                            onClick={handleDeleteSavedItem}
+                            className="absolute top-2 right-2 p-2 rounded-full cursor-pointer z-200 text-black group-hover:opacity-100 opacity-0 transition-opacity duration-300 ease-in-out hover:shadow-lg"
+                        >
+                            <AiOutlineDelete size={20} className="outline-2" />
+                        </button>
+                    </>
+                ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                        <span className="text-gray-500">No image available</span>
                     </div>
+                )}
+            </div>
+
+            <div className="border-b-2 p-2">
+                <p className="text-gray-600 font-semibold line-clamp-1 border-b-2 border-gray-200">{item.variant_id.name}</p>
+                <div className="my-2 flex items-center gap-2 border-b-2 border-gray-200">
+                    {item.color && (
+                        <span 
+                            className="w-4 h-4 border-2"
+                            style={{ backgroundColor: item.color.hex }}
+                            title={item.color.name}
+                        />
+                    )}
+                    <span className="text-sm text-gray-500">
+                        {item.color?.name}
+                    </span>
                 </div>
-            )}
-
-
-            {/* <div className="bg-white">
-                <div className="mx-auto px-4 sm:px-6 lg:w-full lg:px-8">
-                    <div className="mt-6 grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-3">
-                        {savedProductsData.map((product) => (
-                            <div key={product.id} className="group relative">
-                                <div className="relative w-full h-[410px] rounded-md overflow-hidden bg-gray-200 group-hover:opacity-75">
-                                    <img 
-                                        src={product.main_image_url} 
-                                        alt={product.name}
-                                        className="h-full w-full object-cover object-center hover:cursor-pointer"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            router.push(`/product-detail/${product.id}`);
-                                        }}
-                                    />
-                                    <Button
-                                        onClick={() => removeFavItem(product.id)}
-                                        className="absolute top-2 right-2 p-2 cursor-pointer z-10 text-white group-hover:opacity-100 opacity-0 transition-opacity duration-300 ease-in-out bg-transparent hover:bg-transparent"
-                                    >
-                                        <FaRegTrashAlt className="text-black" size={24} />
-                                    </Button>
-
-                                    <Button
-                                        className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center justify-center bg-black bg-opacity-50 text-white font-medium opacity-0 group-hover:opacity-100 duration-300 ease-in-out z-10 h-[40px] w-[200px] rounded-full"
-                                    >
-                                        Add to Cart
-                                    </Button>
-
-                                </div>
-                                <div className="mt-4 flex justify-between">
-                                    <div>
-                                        <h3 className="text-sm text-gray-700">
-                                            <a 
-                                                href={`product-detail/${product.id}`}
-                                                className="relative"
-                                            >
-                                                <span aria-hidden="true" className="absolute inset-0" />
-                                                {product?.name}
-                                            </a>
-                                        </h3>
-                                        <p className="mt-1 text-sm text-gray-500">{product?.price}</p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+					
+                <div className="mt-4 flex justify-between items-center border-b-2 border-gray-200">
+                    <span className="font-bold">${item.variant_id.base_currency_price.toFixed(2)}</span>
                 </div>
-            </div> */}
+                <Button
+                    className={`w-full py-3 text-white transition-colors disabled:bg-gray-400 border-2 border-black ${hasBeenAdded ? 'bg-green-500' : 'bg-black'}`}
+                    onClick={handleAddToCart}
+                    disabled={!selectedSize || isCartPending || hasBeenAdded}
+
+                >
+                    Add to cart
+                </Button>
+            </div>
         </div>
     )
 }

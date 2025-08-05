@@ -1,9 +1,8 @@
 import { createClient } from "@/supabase/server";
 
-export const getCartItems = async (userType: string, userId: string) => {
+export const getCartItems = async (isAnonymous: boolean, userId: string) => {
     const supabase = await createClient();
 
-    const isAnonymous = userType === "anonymous";
     let totalPrice;
 
     try {
@@ -39,7 +38,6 @@ export const getCartItems = async (userType: string, userId: string) => {
 
         if (cartItemsError) {
             if (cartItemsError.code === 'PGRST116') {
-                console.log("No cart items found for user:", userId, " from type:", userType);
                 return { productsWithImages: [], totalPrice: totalPrice };
             }
             console.error("Error fetching cart items:", cartItemsError);
@@ -48,7 +46,6 @@ export const getCartItems = async (userType: string, userId: string) => {
 
         // If no cart items are found, the query returns an empty array.
         if (!cartItems || cartItems.length === 0) {
-            console.log("No cart items found for the user: ", userId, " with usertype: ", userType);
             return { productsWithImages: [], totalPrice: totalPrice };
         }
 
@@ -59,7 +56,7 @@ export const getCartItems = async (userType: string, userId: string) => {
         const { data: variantColors, error: variantColorsError } = await supabase
             .from('product_variants')
             .select('id, color_id(name, hex_code)')
-            .in('id', variantIds); // <-- CORRECTED: Use `.in()` for array of IDs
+            .in('id', variantIds);
 
         if (variantColorsError) {
             throw new Error(variantColorsError.message || "Failed to fetch variant colors");

@@ -127,7 +127,6 @@ const ProductItem: React.FC<ProductItemProps> = ({
     }, {} as Record<string, { measurements: Array<{ type: string; value: string; unit: string }> }>);
 
     const handleLikeClicked = () => {
-        console.log("handleLikeClicked called");
 
         let size;
         if (!selectedSize) {
@@ -136,9 +135,7 @@ const ProductItem: React.FC<ProductItemProps> = ({
             size = selectedSize;
         }
 
-        // Check for required data before making the server call
         if (!processedVariantData.id) {
-            console.error("Cannot save product: Missing variant ID.");
             return;
         }
         
@@ -217,11 +214,10 @@ const ProductItem: React.FC<ProductItemProps> = ({
                 console.log("Success! Cart updated");
                 setHasBeenAdded(true);
                 setTimeout(() => setHasBeenAdded(false), 3000); 
-                } catch (error) {
+            } catch (error) {
                 console.error("Nuclear error handling:", {
                     message: error instanceof Error ? error.message : String(error),
                     input: { variantId: processedVariantData.id, size: selectedSize },
-                    timestamp: new Date().toISOString()
                 });
             }
         });

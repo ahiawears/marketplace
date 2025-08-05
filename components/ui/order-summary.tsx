@@ -1,13 +1,18 @@
-import React from 'react';
+'use client';
+
+import React, { useTransition } from 'react';
 import { Button } from './button';
+
 
 interface OrderSummaryProps {
     totalPrice: number;
-    onCheckOut: () => void;
 }
 
-const OrderSummary: React.FC<OrderSummaryProps> = ({ totalPrice, onCheckOut }) => {  
-
+const OrderSummary: React.FC<OrderSummaryProps> = ({ totalPrice }) => {  
+    const [ checkoutPending, startCheckoutTransition ] = useTransition();
+    const onCheckout = async() => {
+        console.log("On checkout clicked")
+    }
     return (
         <div className="p-6 bg-white border-2 shadow-lg">
             <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
@@ -16,8 +21,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ totalPrice, onCheckOut }) =
                 <span>${totalPrice.toFixed(2)}</span>
             </div>
             <Button
-                onClick={onCheckOut}
-                
+                onClick={onCheckout}
                 className="w-full text-white font-semibold py-2 rounded my-5"
             >
                 Checkout
