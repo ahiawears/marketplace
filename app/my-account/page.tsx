@@ -1,58 +1,41 @@
-"use client";
+'use server'
+import MyAccountClient from "@/components/customer-facing-components/user-account-settings/user-account-client";
+import { createClient } from "@/supabase/server";
+import { redirect } from "next/navigation";
+import { getUserDetails } from "@/actions/user-auth/get-user-details"
 
-import AddressBook from "@/components/my-account/address-book";
-import ChangePassword from "@/components/my-account/change-password";
-import MyOrders from "@/components/my-account/my-orders";
-import Userdetails from "@/components/my-account/userdetails";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
+interface UserDetails {
+	firstName: string;
+	lastName: string;
+	email: string;
+	email_verified: boolean;
+}
 
-type MenuItem = "details" | "changePassword" | "myOrders" | "addressBook";
+export default async function MyAccount() {
+	const supabase = await createClient();
+	const { data: user } = await supabase.auth.getUser();
+	if (!user.user) {
+		redirect('/log-in');
+	}
+	const userId = user.user.id;
 
-const MyAccount = () => {
-	const [activeComponent, setActiveComponent] = useState<MenuItem | null>(null);
+	const userDetailsData = await getUserDetails();
+	if (!userDetailsData) {
+		redirect('/log-in');
+	}
 
-	// Component mapping with the correct types  
-	const componentMap: Record<MenuItem, JSX.Element> = {
-		details: <Userdetails />,
-		changePassword: <ChangePassword />,
-		myOrders: <MyOrders />,
-		addressBook: <AddressBook />,
+	const userDetails: UserDetails = {
+		firstName: userDetailsData.firstName,
+		lastName: userDetailsData.lastName,
+		email: userDetailsData.email,
+		email_verified: userDetailsData.email_verified,
 	};
 
-	const renderComponent = activeComponent ? componentMap[activeComponent] : null;
-
 	return (
-		<div>
-			<div className="container flex h-[calc(100%-7.5rem)] space-x-4">
-				<aside className={`cursor-pointer bg-gray-100 p-4 space-y-4 w-full h-fit lg:w-64 mx-auto ${activeComponent && "hidden md:block"} border-2`}>
-					<ul className="space-y-4 text-lg">
-						<li onClick={() => setActiveComponent("details")}>My Details</li>
-						<li onClick={() => setActiveComponent("changePassword")}>Change Password</li>
-						<li onClick={() => setActiveComponent("myOrders")}>My Orders</li>
-						<li onClick={() => setActiveComponent("addressBook")}>Address Book</li>
-					</ul>
-				</aside>
-				{/* Main Content */}
-				<main className="flex-1 border-2 bg-gray-100 ">
-					{/* Show selected component or fallback */}
-					{activeComponent ? (
-						<div className="my-5">
-							<Button
-								onClick={() => setActiveComponent(null)}
-								className="mb-4 text-black md:hidden bg-transparent focus:bg-transparent"
-							>
-								← Back
-							</Button>
-							<div>{renderComponent}</div>
-						</div>
-					) : (
-						<div className="hidden md:block lg:block bg-[url('/images/ahiaproto3.jpg')] h-[600px] bg-cover text-center text-gray-500 "></div>
-					)}
-				</main>
-			</div>
-		</div>
+		<MyAccountClient 
+			userDetailsData={userDetails}
+
+		/>
 	)
 };
 
-export default MyAccount;

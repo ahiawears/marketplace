@@ -1,10 +1,8 @@
 'use server';
 
-email: z.string().email('Invalid email address'),
-	password: z.string().min(8, 'Password must be at least 8 characters long'),
-	redirectPath: z.string().optional(),
-	isAnonymous: z.boolean().default(false),import { redirect } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { z } from 'zod'; 
+import { createClient } from '@/supabase/server';
 
 // Define a schema for form data validation
 const loginSchema = z.object({
@@ -19,6 +17,8 @@ export async function loginUser(formData: FormData) {
 	const email = formData.get('email');
 	const password = formData.get('password');
 	const redirectPath = formData.get('redirectPath');
+
+	console.log("The login has started");
 
 	// Gotten from the hidden input
 	const serverUserIdentifier = formData.get('serverUserIdentifier');
@@ -36,7 +36,7 @@ export async function loginUser(formData: FormData) {
 	if (!validation.success) {
 		const errors = validation.error.formErrors.fieldErrors;
 		console.error('Validation errors:', errors);
-		return { success: false, error: 'Validation failed.' };
+		return { success: false, error: errors };
 	}
 
 	// If validation passes, destructure the validated data

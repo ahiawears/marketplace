@@ -10,9 +10,6 @@ import { FormEvent, useState } from "react";
 import validator from 'validator';  
 import { signUpUser } from "@/actions/user-auth/user-signup";
 
-// The Server Action you'll call on success
-// import { signupUser } from '@/app/actions/userAuthActions'; 
-// import { experimental_useFormStatus as useFormStatus } from 'react-dom';
 
 interface UserSignupProps {
     serverUserIdentifier: string;
@@ -38,9 +35,6 @@ const UserSignup: React.FC<UserSignupProps>=({ serverUserIdentifier, isAnonymous
     } else {
         path = redirectPath;
     }
-
-    console.log("The redirect string is: ", path);
-    console.log("The userId: ", serverUserIdentifier, " and isAnonymous: ", isAnonymous, " and redirectPath: ", path);
 
     const [errors, setErrors] = useState<Errors>({});
     const [passwordStrength, setPasswordStrength] = useState('');

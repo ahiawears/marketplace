@@ -49,20 +49,6 @@ export async function signUpUser(formData: FormData) {
         emailRedirectTo.searchParams.set('anonId', uid);
     }
 
-    // let next;
-
-    // switch (path) {
-    //     case "checkout":
-    //         next = 'place-order'
-    //         break;
-    
-    //     default:
-    //         next = '/'
-    //         break;
-    // }
-
-    //console.log(`Should redirect to ${baseUrl}/confirm?next=${next}`);
-
     // Call Supabase with the validated data.
     const { error } = await supabase.auth.signUp({
         email: data.email,

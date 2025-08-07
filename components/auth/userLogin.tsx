@@ -8,6 +8,9 @@ import { Button } from "../ui/button";
 import { FaApple } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { useSearchParams } from 'next/navigation';
+import { FormEvent, useState } from "react";
+import validator from 'validator';
+import { loginUser } from '@/actions/user-auth/login'
 import { useFormStatus } from "react-dom";
 
 interface UserLoginProps {
@@ -15,21 +18,12 @@ interface UserLoginProps {
     isAnonymous: boolean;
 }
 
+interface Errors {
+    email?: string;
+    password?: string;
+}
+
 const UserLogin: React.FC<UserLoginProps>=({ serverUserIdentifier, isAnonymous }) => {
-
-    function SubmitButton() {
-        const { pending } = useFormStatus();
-        return (
-            <Button
-                type="submit"
-                className="flex w-full justify-center px-3 py-1 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline"
-                disabled={pending}
-            >
-                {pending ? "Signing In..." : "Sign in"}
-            </Button>
-        );
-    }
-
     let path;
     const searchParams = useSearchParams();
     const redirectPath = searchParams.get('redirect');
@@ -40,15 +34,40 @@ const UserLogin: React.FC<UserLoginProps>=({ serverUserIdentifier, isAnonymous }
         path = redirectPath;
     }
 
-    console.log("The redirect string is: ", redirectPath)
-    console.log("The userId: ", serverUserIdentifier, " and isAnonymous: ", isAnonymous, " and redirectPath: ", redirectPath);
+    const [errors, setErrors] = useState<Errors>({});
+
+    const handleFormSubmit = async(e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const form = e.currentTarget;
+        const formData = new FormData(form);
+
+        const email = formData.get('email') as string;
+        const password = formData.get('password') as string;
+
+        const newErrors: Errors = {};
+
+        if (!validator.isEmail(email)) {
+            newErrors.email = "Please enter a valid email address";
+        }
+        if (!password) {
+            newErrors.password = "Please enter a valid password";
+        }
+
+        setErrors(newErrors);
+
+        if (Object.keys(newErrors).length === 0) {
+            console.log("Form is valid. Submitting data...");
+            loginUser(formData);
+                 
+        } 
+    }
     return (
         <div>
             <div className="text-center">
                 <Logo />
             </div>
 
-            <form className="space-y-6">
+            <form className="space-y-6" onSubmit={handleFormSubmit}>
                 <div>
                     <label
                         htmlFor="email"
@@ -61,10 +80,14 @@ const UserLogin: React.FC<UserLoginProps>=({ serverUserIdentifier, isAnonymous }
                             id="email"
                             name="email"
                             type="email"
-                            required
                             autoComplete="email"
                             className="block w-full border-2 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 "
                         />
+                        {errors.email && (
+                            <p className="py-1 text-red-500 text-sm/6">
+                                {errors.email}
+                            </p>
+                        )}
                     </div>
                 </div>
             
@@ -89,10 +112,15 @@ const UserLogin: React.FC<UserLoginProps>=({ serverUserIdentifier, isAnonymous }
                         <PasswordInput
                             id="password"
                             name="password"
-                            required      
                             autoComplete="current-password"
                             className="block w-full border-2 rounded-md py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm"
                         />
+
+                        {errors.password && (
+                            <p className="py-1 text-red-500 text-sm/6">
+                                {errors.password}
+                            </p>
+                        )}
                     </div>
                 </div>
 
@@ -114,16 +142,21 @@ const UserLogin: React.FC<UserLoginProps>=({ serverUserIdentifier, isAnonymous }
                         here
                     </p>
                     <div className="text-sm">
-                        <SubmitButton />
+                        <Button
+                            type="submit"
+                            className="flex w-full justify-center px-3 py-1.5 font-semibold text-white shadow-sm"
+                        >
+                            Sign In
+                        </Button>
                     </div>
                 </div>
             </form>
             <div className="flex flex-col gap-3 my-10">
-                <Button className="flex items-center justify-center w-full py-2 px-4 bg-white text-gray-700 border-2 rounded-md shadow-sm hover:bg-gray-100">
+                <Button className="flex items-center justify-center w-full py-2 px-4 bg-white text-gray-700 border-2">
                     <FcGoogle className="text-xl mr-2" />
                     Sign in with Google
                 </Button>
-                <Button className="flex items-center justify-center w-full py-2 px-4 bg-black text-white border-2 rounded-md shadow-sm hover:bg-gray-800">
+                <Button className="flex items-center justify-center w-full py-2 px-4 bg-black text-white border-2 ">
                     <FaApple className="text-xl mr-2" />
                     Sign in with Apple
                 </Button>

@@ -1,7 +1,7 @@
 import React from 'react'
-import { Input } from '../ui/input'
+import { Input } from '../../../ui/input'
 import { UpdatePassword } from '@/actions/update-password'
-import { Button } from '../ui/button'
+import { Button } from '../../../ui/button'
 
 const ChangePassword = () => {
     return (

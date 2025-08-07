@@ -9,10 +9,6 @@ export default async function AuthCallbackPage({
 }) {
     const redirectTo = searchParams.redirect as string | undefined;
     const anonId = searchParams.anonId as string | undefined;
-
-    console.log("The redirectTo is", redirectTo);
-    console.log("The anonId is", anonId);
-
     const supabase = await createClient();
     
     // Check for user and handle authentication failure first
@@ -20,8 +16,6 @@ export default async function AuthCallbackPage({
     if (!user) {
         return redirect('/log-in?error=authentication_failed');
     }
-
-    console.log("The user has been gotten", user.id);
 
     try {
         // Upsert user data to prevent conflicts
@@ -33,14 +27,11 @@ export default async function AuthCallbackPage({
             }, { onConflict: 'id' }); 
 
         if (userInsertError) {
-            console.error("User upsert error:", userInsertError);
             throw userInsertError;
         }
 
         // Migrate anonymous data if anonId exists
-        if (anonId) {
-            console.log("Starting migration with anonId:", anonId);
-        
+        if (anonId) {        
             // Call the database function to migrate the data
             const { error: migrationError } = await supabase.rpc('migrate_user_data', {
                 anon_id: anonId,
@@ -51,10 +42,8 @@ export default async function AuthCallbackPage({
                 console.error("Migration error:", migrationError);
                 throw migrationError;
             }
-            console.log("Data migration successful.");
         }
     } catch (error) {
-        console.error('Error during auth callback:', error);
         return redirect('/log-in?error=auth_callback_failed');
     }
     const redirectUrl = new URL(

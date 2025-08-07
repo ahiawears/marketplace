@@ -1,4 +1,4 @@
-import { getUserDetails } from "@/actions/user-details";
+import { getUserDetails } from "@/actions/user-auth/get-user-details";
 import { createClient } from "@/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 

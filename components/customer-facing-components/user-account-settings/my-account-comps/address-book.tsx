@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Input } from "../ui/input";
-import { Select } from "../ui/select";
+import { Input } from "../../../ui/input";
+import { Select } from "../../../ui/select";
 import { countries } from "@/lib/countries";
-import { Button } from "../ui/button";
+import { Button } from "../../../ui/button";
 import { addUserAddress } from "@/actions/add-user-address";
 import { UserAddressType } from "@/lib/types";
 import { useRouter } from "next/navigation";
