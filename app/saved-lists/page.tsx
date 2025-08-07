@@ -20,7 +20,7 @@ export default async function SavedListPage () {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 gap-y-6 py-4">
                     {savedItems.productsWithImages.map((item)=>(
                         <SavedList 
-                            key={item.iid}
+                            key={item.id}
                             item={item}
                             serverUserIdentifier={userIdentifier}
                             isAnonymous={isAnonymous}

@@ -15,8 +15,6 @@ import { createClient } from '@/supabase/server';
 import { getServerAnonymousId } from '@/lib/anon_user/server';
 import { getCartItems } from "@/actions/user-actions/userCartActions/getCartItems";
 
-
-
 interface CartItemData {
     id: string;
     product_id: {
@@ -74,6 +72,8 @@ export default async function CartPage() {
                         <div className="w-full md:w-1/3">
                             <OrderSummary 
                                 totalPrice={cartItems.totalPrice}
+                                serverUserIdentifier={userIdentifier}
+                                isAnonymous={isAnonymous}
                             />
                         </div>
                     </div>
@@ -84,14 +84,6 @@ export default async function CartPage() {
                         <div className="mx-auto">
                             <CartListsSvg className="w-64 h-64 mx-auto" width={256} height={256}/>
                             <p className="font-bold my-4">You have no items in your cart</p>
-
-                            {/* <div className="flex w-full flex-col md:flex-row mx-auto">
-                                 <div className="mx-auto">
-                                    <Button>
-                                        Go to favorited items
-                                    </Button>
-                                </div>        
-                            </div> */}
                         </div>
                     </div>
                 </div>

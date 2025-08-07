@@ -27,7 +27,12 @@ interface SavedItemData {
         name: string;
         hex: string;
     };
-    size: string;
+    sizes: {
+        [key: string]: {
+            id: string;
+        };
+    };
+
 }
 
 interface SavedListProps {
@@ -44,6 +49,10 @@ const SavedList: React.FC<SavedListProps> = ({item, serverUserIdentifier, isAnon
     const [selectedSize, setSelectedSize] = useState<string | null>(null);
     const [isCartPending, startCartTransition] = useTransition();
     const [isDeletePending, startDeleteTransition] = useTransition();
+
+    const availableSizes = item.sizes ? Object.keys(item.sizes) : [];
+
+    console.log('the availble sizes are', availableSizes, 'product name: ', item.variant_id.name);
 
     const handleDeleteSavedItem = () => {
         let size;
@@ -125,6 +134,11 @@ const SavedList: React.FC<SavedListProps> = ({item, serverUserIdentifier, isAnon
         })
     }
 
+    const getCartButtonText = () => {
+        if (isCartPending) return "Adding...";
+        if (hasBeenAdded) return "Added to Cart!";
+        return "Add to Cart";
+    };
 
     return (
         <div className="overflow-hidden hover:shadow-lg transition-shadow hover:cursor-pointer">
@@ -158,8 +172,8 @@ const SavedList: React.FC<SavedListProps> = ({item, serverUserIdentifier, isAnon
             </div>
 
             <div className="border-b-2 p-2">
-                <p className="text-gray-600 font-semibold line-clamp-1 border-b-2 border-gray-200">{item.variant_id.name}</p>
-                <div className="my-2 flex items-center gap-2 border-b-2 border-gray-200">
+                <p className="text-gray-600 py-1 font-semibold line-clamp-1 border-b-2 border-gray-200">{item.variant_id.name}</p>
+                <div className="py-1 flex items-center gap-2 border-b-2 border-gray-200">
                     {item.color && (
                         <span 
                             className="w-4 h-4 border-2"
@@ -172,16 +186,36 @@ const SavedList: React.FC<SavedListProps> = ({item, serverUserIdentifier, isAnon
                     </span>
                 </div>
 					
-                <div className="mt-4 flex justify-between items-center border-b-2 border-gray-200">
-                    <span className="font-bold">${item.variant_id.base_currency_price.toFixed(2)}</span>
+                <div className="flex my-1 w-full ">
+                    <span className="font-bold py-1 border-b-2 w-full border-gray-200">${item.variant_id.base_currency_price.toFixed(2)}</span>
                 </div>
+
+                {/* New dropdown for sizes */}
+                {availableSizes.length > 0 && (
+                    <div className="my-2">
+                        <label htmlFor={`size-select-${item.id}`} className="sr-only">Select a size</label>
+                        <select 
+                            id={`size-select-${item.id}`}
+                            value={selectedSize || ""}
+                            onChange={(e) => setSelectedSize(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+                        >
+                            <option value="" disabled>Select a size</option>
+                            {availableSizes.map((sizeName) => (
+                                <option key={sizeName} value={sizeName}>
+                                    {sizeName}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                )}
+
                 <Button
                     className={`w-full py-3 text-white transition-colors disabled:bg-gray-400 border-2 border-black ${hasBeenAdded ? 'bg-green-500' : 'bg-black'}`}
                     onClick={handleAddToCart}
                     disabled={!selectedSize || isCartPending || hasBeenAdded}
-
                 >
-                    Add to cart
+                    {getCartButtonText()}
                 </Button>
             </div>
         </div>

@@ -5,10 +5,6 @@ import Image from 'next/image';
 import { Button } from './button';
 import { AiFillHeart, AiOutlineHeart } from 'react-icons/ai';
 import SizeGuideModal from '../modals/size-guide';
-// The useAuth hook is no longer needed here as user info is passed via props
-// import { useAuth } from '@/hooks/useAuth'
-// getClientAnonymousId is no longer needed here
-// import { getClientAnonymousId } from "@/lib/anon_user/client";
 import { saveProduct } from '@/actions/user-actions/userSavedProductActions/save-product'
 import { checkVariantStock } from '@/actions/user-actions/userCartActions/checkVariantStock';
 import { upsertCart } from '@/actions/user-actions/userCartActions/upsertCart';

@@ -13,6 +13,7 @@ export default async function ProductDetail({ params }: Props) {
     const supabase = await createClient();
     const { data: user } = await supabase.auth.getUser();
     const userId = user.user?.id;
+    console.log("The userId is ", userId);
     const userIdentifier = userId || await getServerAnonymousId();
     const isAnonymous = !userId;
 

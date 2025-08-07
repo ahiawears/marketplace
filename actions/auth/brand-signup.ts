@@ -4,7 +4,7 @@ type SignupProps = {
     supabase: any,
     email: string, 
     password: string,
-}
+} 
 
 export async function SignUpbrand({ supabase, email, password, }: SignupProps) {
 

@@ -128,9 +128,9 @@ export const getVariantById = async (variantId: string): Promise<VariantResponse
 				size_id(name), 
 				quantity,
 				product_measurements(
-				measurement_type_id(name), 
-				value, 
-				measurement_unit
+					measurement_type_id(name), 
+					value, 
+					measurement_unit
 				)
 			`)
 			.eq('product_id', variantId);
