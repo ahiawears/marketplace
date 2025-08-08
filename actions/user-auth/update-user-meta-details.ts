@@ -44,8 +44,8 @@ export const updateUserMetaDetails = async (formData: FormData): Promise<MetaDat
 
     const { error } = await supabase.auth.updateUser({
         data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
+            firstName: data.firstName,
+            lastName: data.lastName,
         }
     });
 
