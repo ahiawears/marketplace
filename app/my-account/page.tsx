@@ -3,6 +3,7 @@ import MyAccountClient from "@/components/customer-facing-components/user-accoun
 import { createClient } from "@/supabase/server";
 import { redirect } from "next/navigation";
 import { getUserDetails } from "@/actions/user-auth/get-user-details"
+import { getUserAddress } from "@/actions/get-user-address";
 
 interface UserDetails {
 	firstName: string;
@@ -17,12 +18,13 @@ export default async function MyAccount() {
 	if (!user.user) {
 		redirect('/log-in');
 	}
-	const userId = user.user.id;
 
 	const userDetailsData = await getUserDetails();
 	if (!userDetailsData) {
 		redirect('/log-in');
 	}
+	const userAddressData = await getUserAddress();
+
 
 	const userDetails: UserDetails = {
 		firstName: userDetailsData.firstName,
@@ -34,7 +36,7 @@ export default async function MyAccount() {
 	return (
 		<MyAccountClient 
 			userDetailsData={userDetails}
-
+			userAddressData={userAddressData}
 		/>
 	)
 };

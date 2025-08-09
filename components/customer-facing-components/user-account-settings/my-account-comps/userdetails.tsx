@@ -24,15 +24,12 @@ const Userdetails: React.FC<{ userDetails: UserDetailsProps }> = ({ userDetails 
     const [statusMessage, setStatusMessage] = useState('');
     const [errors, setErrors] = useState<Errors>({});
 
-    // Use a useEffect to keep local state in sync with props
     useEffect(() => {
         setFormData(userDetails);
-        // Reset dirty state when props change
         setIsDirty(false);
         setStatusMessage('');
     }, [userDetails]);
 
-    // Function to handle changes in form inputs
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prevData => ({
@@ -40,20 +37,14 @@ const Userdetails: React.FC<{ userDetails: UserDetailsProps }> = ({ userDetails 
             [name]: value,
         }));
 
-        // Check if the form data has changed from the initial props
         const hasChanged = value !== userDetails[name as keyof UserDetailsProps];
         setIsDirty(hasChanged);
 
-        // Clear errors for the field being edited
         setErrors(prevErrors => ({ ...prevErrors, [name]: undefined }));
     };
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-
-		// const form = new FormData();
-		// form.append('firstName', formData.firstName);
-		// form.append('lastName', formData.lastName);
 		const newErrors: Errors = {};
         if (!formData.firstName) {
             newErrors.firstName = "First name is required";
@@ -70,7 +61,6 @@ const Userdetails: React.FC<{ userDetails: UserDetailsProps }> = ({ userDetails 
 		setIsSubmitting(true);
 		setStatusMessage('Updating...');
 
-		// Create a new FormData object to pass to the server action
         const dataToSend = new FormData();
         dataToSend.append('firstName', formData.firstName);
         dataToSend.append('lastName', formData.lastName);
@@ -78,7 +68,6 @@ const Userdetails: React.FC<{ userDetails: UserDetailsProps }> = ({ userDetails 
 		try {
 			const result = await updateUserMetaDetails(dataToSend);
 			
-			// Ensure we're working with plain objects
 			const plainResult = JSON.parse(JSON.stringify(result));
 			
 			if (plainResult.success) {
@@ -140,7 +129,7 @@ const Userdetails: React.FC<{ userDetails: UserDetailsProps }> = ({ userDetails 
                             value={formData.firstName}
                             onChange={handleChange}
                             required
-                            className="block w-full border-2 p-2 text-gray-900 bg-transparent md:w-1/2"
+                            className="block w-full border-2 p-2 text-gray-900 bg-transparent"
                         />
 						{errors.firstName && (
                             <p className="py-1 text-red-500 text-sm/6">
@@ -165,7 +154,7 @@ const Userdetails: React.FC<{ userDetails: UserDetailsProps }> = ({ userDetails 
                             value={formData.lastName}
                             onChange={handleChange}
                             required
-                            className="block w-full border-2 p-2 text-gray-900 bg-transparent md:w-1/2"
+                            className="block w-full border-2 p-2 text-gray-900 bg-transparent"
                         />
 						{errors.lastName && (
                             <p className="py-1 text-red-500 text-sm/6">
@@ -189,7 +178,7 @@ const Userdetails: React.FC<{ userDetails: UserDetailsProps }> = ({ userDetails 
                             type="email"
                             value={formData.email}
                             readOnly
-                            className="block w-full border-2 p-2 text-gray-900 bg-transparent md:w-1/2"
+                            className="block w-full border-2 p-2 text-gray-900 bg-transparent "
                         />
                     </div>
                 </div>

@@ -25,7 +25,7 @@ const deleteUserAddress = async (id: string) => {
         }
 
         console.log(`Removed address id: `, id);
-        return { success: true }; // Indicate success
+        return { success: true }; 
     } catch (error) {
         return { success: false, error: error || "Unknown error occurred" };
     }

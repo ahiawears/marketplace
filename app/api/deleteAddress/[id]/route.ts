@@ -1,4 +1,4 @@
-import deleteUserAddress from "@/actions/user-delete-address";
+import deleteUserAddress from "@/actions/user-actions/my-account/delete-user-address";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(req: NextRequest, context: { params: { id: string } }) {

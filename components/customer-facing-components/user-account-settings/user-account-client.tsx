@@ -11,6 +11,7 @@ type MenuItem = "details" | "changePassword" | "myOrders" | "addressBook";
 
 interface MyAccountClientProps {
     userDetailsData: UserDetailsProps;
+    userAddressData: UserAddressDetails[];
 }
 
 interface UserDetailsProps {
@@ -19,9 +20,24 @@ interface UserDetailsProps {
     email: string;
     email_verified: boolean;
 }
+interface UserAddressDetails {
+    id: string;
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    address: string;
+    city: string;
+    county: string;
+    region: string;
+    country: string;
+    post_code: string;
+    country_code: string;
+    mobile: string;
+    created_at: string;
+    is_default: boolean;
+}
 
-
-const MyAccountClient: React.FC<MyAccountClientProps> = ({ userDetailsData }) => {
+const MyAccountClient: React.FC<MyAccountClientProps> = ({ userDetailsData, userAddressData }) => {
     const [activeComponent, setActiveComponent] = useState<MenuItem | null>(null);
 
     const componentMap: Record<MenuItem, JSX.Element> = useMemo(() => {
@@ -31,7 +47,9 @@ const MyAccountClient: React.FC<MyAccountClientProps> = ({ userDetailsData }) =>
                     />,
             changePassword: <ChangePassword />,
             myOrders: <MyOrders />,
-            addressBook: <AddressBook />,
+            addressBook: <AddressBook 
+                        userAddressData={userAddressData}
+                    />,
         };
     }, [userDetailsData]);
 

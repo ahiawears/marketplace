@@ -6,7 +6,11 @@ export type Country = {
 };
 
 export const countries: Country[] = [ 
+    { name: "Afghanistan", code: "+93", alpha2: "AF", flag: "🇦🇫"},
+    { name: "Albania", code: "+335", alpha2: "AL", flag: "🇦🇱"},
     { name: "Algeria", code: "+213", alpha2: "DZ", flag: "🇩🇿" },
+    { name: "Andorra", code: "+376", alpha2: "AD", flag: "🇦🇩"},
+    { name: "Angola", code: "+244", alpha2: "AO", flag: "🇦🇴"},
     { name: "Argentina", code: "+54", alpha2: "AR", flag: "🇦🇷" },
     { name: "Australia", code: "+61", alpha2: "AU", flag: "🇦🇺" },
     { name: "Austria", code: "+43", alpha2: "AT", flag: "🇦🇹" },
@@ -22,7 +26,7 @@ export const countries: Country[] = [
     { name: "Egypt", code: "+20", alpha2: "EG", flag: "🇪🇬" },
     { name: "Ethiopia", code: "+251", alpha2: "ET", flag: "🇪🇹" },
     { name: "Finland", code: "+358", alpha2: "FI", flag: "🇫🇮" },
-    { name: "France", code: "+33", alpha2: "FR", flag: "🇫🇷" },
+    { name: "France", code: "+33", alpha2: "FR", flag: "🇫🇷" },  
     { name: "Germany", code: "+49", alpha2: "DE", flag: "🇩🇪" },
     { name: "Ghana", code: "+233", alpha2: "GH", flag: "🇬🇭" },
     { name: "Greece", code: "+30", alpha2: "GR", flag: "🇬🇷" },
@@ -30,9 +34,9 @@ export const countries: Country[] = [
     { name: "India", code: "+91", alpha2: "IN", flag: "🇮🇳" },
     { name: "Indonesia", code: "+62", alpha2: "ID", flag: "🇮🇩" },
     { name: "Ireland", code: "+353", alpha2: "IE", flag: "🇮🇪" },
-    { name: "Israel", code: "+972", alpha2: "IL", flag: "🇮🇱" },
     { name: "Italy", code: "+39", alpha2: "IT", flag: "🇮🇹" },
     { name: "Japan", code: "+81", alpha2: "JP", flag: "🇯🇵" },
+    { name: "Kazakhstan", code: "+7", alpha2: "KZ", flag: "🇰🇿"},
     { name: "Kenya", code: "+254", alpha2: "KE", flag: "🇰🇪" },
     { name: "Mexico", code: "+52", alpha2: "MX", flag: "🇲🇽" },
     { name: "Morocco", code: "+212", alpha2: "MA", flag: "🇲🇦" },
