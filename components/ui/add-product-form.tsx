@@ -185,7 +185,7 @@ const AddProductForm = () => {
                     productDescription: fetchedData.generalDetails?.description || "",
                     category: fetchedData.generalDetails?.category || "",
                     subCategory: fetchedData.generalDetails?.subcategory || "",
-                    tags: fetchedData.generalDetails?.tags?.map((tag: any) => tag.tag_id.name) || [], // Ensure tags is an array before map
+                    tags: fetchedData.generalDetails?.tags?.map((tag: any) => tag.tag_id.name) || [], 
                     currency: "",
                     material: fetchedData.generalDetails?.material || "",
                     gender: fetchedData.generalDetails?.gender || "",

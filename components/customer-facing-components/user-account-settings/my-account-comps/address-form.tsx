@@ -233,7 +233,7 @@ const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddress
                         value={formData.firstName}
                         onChange={handleInputChange}
                         type="text"
-                        className="block w-full rounded-md border-2 p-2 text-gray-900 bg-transparent"
+                        className="block w-full border-2 p-2 text-gray-900 bg-transparent"
                     />
                     {errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
                 </div>
@@ -249,7 +249,7 @@ const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddress
                         value={formData.lastName}
                         onChange={handleInputChange}
                         type="text"
-                        className="block w-full rounded-md border-2 p-2 text-gray-900 bg-transparent "
+                        className="block w-full border-2 p-2 text-gray-900 bg-transparent "
                     />
                     {errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
                 </div>
@@ -338,7 +338,7 @@ const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddress
                         type="text"
                         value={formData.postCode}
                         onChange={handleInputChange}
-                        className="block w-full rounded-md border-2 p-2 text-gray-900 bg-transparent"
+                        className="block w-full border-2 p-2 text-gray-900 bg-transparent"
                     />
                     {errors.postCode && <p className="text-red-500 text-sm mt-1">{errors.postCode}</p>}
                 </div>
@@ -354,7 +354,7 @@ const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddress
                         type="text"
                         value={formData.county}
                         onChange={handleInputChange}
-                        className="block w-full rounded-md border-2 p-2 text-gray-900 bg-transparent"
+                        className="block w-full border-2 p-2 text-gray-900 bg-transparent"
                     />
                     {errors.county && <p className="text-red-500 text-sm mt-1">{errors.county}</p>}
                 </div>
@@ -370,7 +370,7 @@ const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddress
                         type="text"
                         value={formData.city}
                         onChange={handleInputChange}
-                        className="block w-full rounded-md border-2 p-2 text-gray-900 bg-transparent "
+                        className="block w-full border-2 p-2 text-gray-900 bg-transparent "
                     />
                     {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
                 </div>
@@ -386,7 +386,7 @@ const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddress
                         type="text"
                         value={formData.address}
                         onChange={handleInputChange}
-                        className="block w-full rounded-md border-2 p-2 text-gray-900 bg-transparent"
+                        className="block w-full border-2 p-2 text-gray-900 bg-transparent"
                     />
                     {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                 </div>

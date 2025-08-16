@@ -67,7 +67,7 @@ export const getUserAddress = async (): Promise<UserAddress[]> => {
         
         // Handle different error types
         if (error instanceof Error) {
-        throw new Error(error.message);
+            throw new Error(error.message);
         }
         
         throw new Error("An unexpected error occurred while fetching addresses.");

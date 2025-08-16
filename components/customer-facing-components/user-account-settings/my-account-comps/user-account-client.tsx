@@ -6,12 +6,14 @@ import MyOrders from "@/components/customer-facing-components/user-account-setti
 import Userdetails from "@/components/customer-facing-components/user-account-settings/my-account-comps/userdetails";
 import { Button } from "@/components/ui/button";
 import { useMemo, useState } from "react";
+import PaymentMethods from "./payment-methods";
 
 type MenuItem = "details" | "changePassword" | "myOrders" | "addressBook" | "paymentMethods";
 
 interface MyAccountClientProps {
     userDetailsData: UserDetailsProps;
     userAddressData: UserAddressDetails[];
+    dbPaymentMethods: DbPaymentDetails[];
 }
 
 interface UserDetailsProps {
@@ -37,7 +39,18 @@ interface UserAddressDetails {
     is_default: boolean;
 }
 
-const MyAccountClient: React.FC<MyAccountClientProps> = ({ userDetailsData, userAddressData }) => {
+interface DbPaymentDetails {
+	id: string;
+	expiry_month: number;
+	expiry_year: number;
+	card_brand: string;
+	last_four: string;
+	flutterwave_id: string;
+	is_default: boolean;
+    card_holder: string;
+}
+
+const MyAccountClient: React.FC<MyAccountClientProps> = ({ userDetailsData, userAddressData, dbPaymentMethods }) => {
     const [activeComponent, setActiveComponent] = useState<MenuItem | null>(null);
 
     const componentMap: Record<MenuItem, JSX.Element> = useMemo(() => {
@@ -50,7 +63,9 @@ const MyAccountClient: React.FC<MyAccountClientProps> = ({ userDetailsData, user
             addressBook: <AddressBook 
                         userAddressData={userAddressData}
                     />,
-            paymentMethods: <
+            paymentMethods: <PaymentMethods 
+                        dbPaymentMethod={dbPaymentMethods}
+                    />
         };
     }, [userDetailsData]);
 
@@ -58,7 +73,7 @@ const MyAccountClient: React.FC<MyAccountClientProps> = ({ userDetailsData, user
 
     return (
         <div>
-            <div className="container flex h-[calc(100%-7.5rem)] space-x-4">
+            <div className="container flex h-[calc(100%-7.5rem)] space-x-4 justify-center">
                 <aside
                     className={`cursor-pointer bg-gray-100 p-4 space-y-4 w-full h-fit lg:w-64 mx-auto ${
                         activeComponent && "hidden md:block"
@@ -76,6 +91,9 @@ const MyAccountClient: React.FC<MyAccountClientProps> = ({ userDetailsData, user
                         </li>
                         <li onClick={() => setActiveComponent("addressBook")} className={`border-2 hover:bg-gray-100 hover:shadow-xl`}>
                             Address Book
+                        </li>
+                        <li onClick={() => setActiveComponent("paymentMethods")} className={`border-2 hover:bg-gray-100 hover:shadow-xl`}>
+                            Payment Methods
                         </li>
                     </ul>
                 </aside>

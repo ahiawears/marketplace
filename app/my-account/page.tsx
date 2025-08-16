@@ -1,15 +1,27 @@
 'use server'
-import MyAccountClient from "@/components/customer-facing-components/user-account-settings/user-account-client";
+import MyAccountClient from "@/components/customer-facing-components/user-account-settings/my-account-comps/user-account-client";
 import { createClient } from "@/supabase/server";
 import { redirect } from "next/navigation";
 import { getUserDetails } from "@/actions/user-auth/get-user-details"
-import { getUserAddress } from "@/actions/get-user-address";
+import { getUserAddress } from "@/actions/user-actions/my-account/get-user-address";
+import { getDbPaymentDetails } from "@/actions/user-actions/my-account/getDbPaymentDetails";
 
 interface UserDetails {
 	firstName: string;
 	lastName: string;
 	email: string;
 	email_verified: boolean;
+}
+
+interface DbPaymentDetails {
+	id: string;
+	expiry_month: number;
+	expiry_year: number;
+	card_brand: string;
+	last_four: string;
+	flutterwave_id: string;
+	is_default: boolean;
+	card_holder: string;
 }
 
 export default async function MyAccount() {
@@ -33,10 +45,14 @@ export default async function MyAccount() {
 		email_verified: userDetailsData.email_verified,
 	};
 
+	const dbPaymentDetails = await getDbPaymentDetails();
+
+	const partialPaymentDetails = dbPaymentDetails.map((ppD: DbPaymentDetails) => ppD);
 	return (
 		<MyAccountClient 
 			userDetailsData={userDetails}
 			userAddressData={userAddressData}
+			dbPaymentMethods={partialPaymentDetails}
 		/>
 	)
 };

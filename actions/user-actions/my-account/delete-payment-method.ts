@@ -1,6 +1,6 @@
-import { createClient } from "@/supabase/server";
+import { createClient } from "@/supabase/server"
 
-const deleteUserAddress = async (id: string) => {
+const deletePaymentMethod = async (id: string) => {
     const supabase = await createClient();
 
     const { data: authData, error: authError } = await supabase.auth.getUser();
@@ -15,23 +15,22 @@ const deleteUserAddress = async (id: string) => {
 
     try {
         const { error: deleteError } = await supabase
-            .from("user_address")
+            .from("payment_methods")
             .delete()
             .eq("id", id)
             .eq("user_id", userId);
 
         if (deleteError) {
             throw deleteError;
+        } else  {
+            return { success: true };
         }
-
-        console.log(`Removed address id: `, id);
-        return { success: true }; 
     } catch (error) {
-        return { 
-            success: false, 
-            error: error instanceof Error ? error.message : "Unknown error occurred"
-        };
+        return {
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error occurred",
+        }
     }
-};
+}
 
-export default deleteUserAddress;
+export default deletePaymentMethod;

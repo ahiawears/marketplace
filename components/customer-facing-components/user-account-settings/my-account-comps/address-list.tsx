@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useState } from 'react';
-import DeleteAddressModal from "@/components/modals/delete-address-modal";
+import DeleteModal from "@/components/modals/delete-modal";
 
 interface UserAddressDetails {
     id: string;
@@ -68,7 +68,6 @@ const AddressList = ({ addresses, onAddAddress, onAddressDeleted }: AddressListP
                 </Button>
             </div>
 
-            {/* Address List */}
             <div className="space-y-4">
                 {addresses.length === 0 ? (
                     <div className="border p-4 rounded shadow-md text-center">
@@ -102,7 +101,6 @@ const AddressList = ({ addresses, onAddAddress, onAddressDeleted }: AddressListP
                                 </p>
                             </div>
 
-                            {/* Right-aligned action buttons */}
                             <div className="flex space-x-2 self-end md:self-center">
                                 <Button
                                     className="border-2"
@@ -117,7 +115,9 @@ const AddressList = ({ addresses, onAddAddress, onAddressDeleted }: AddressListP
             </div>
 
             {isModalOpen && (
-                <DeleteAddressModal 
+                <DeleteModal 
+                    title="Delete Address"
+                    message="Are you sure you want to delete this address?"
                     onDelete={handleDelete} 
                     onCancel={handleCancel} 
                 />
