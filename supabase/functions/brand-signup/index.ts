@@ -5,7 +5,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import { serve } from "https://deno.land/std@0.114.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
-import { SignUpbrand } from '@actions/brand-signup.ts';
+import { SignUpbrand } from '../../../actions/brand-auth/brand-signup.ts';
 import { createClient } from "../../server-deno.ts";
 
 

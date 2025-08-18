@@ -72,9 +72,9 @@ const DashboardPage = () => {
 
 				{/* Top Selling Products */}
 				{/* This should show a card carousel of best products */}
-				<div className="my-5">
+				{/* <div className="my-5">
 					<TopProductsCarousel title="Best Selling Products" />
-				</div>
+				</div> */}
 				
 			</div>
 		</div>

@@ -1,7 +1,0 @@
-{
-  "imports": {
-    "importMap": "./import_map.json",
-    "@actions/": "../../../actions/notification-settings/",
-    "@supabase/": "../../../supabase"
-  }
-}

@@ -617,14 +617,32 @@ export interface BrandNotificationSettingCheckboxTable {
 }
 
 // Default settings: all channels set to false for each notification type
-export const DEFAULT_BRAND_NOTIFICATION_SETTINGS: BrandNotificationSettingCheckboxTable[] = BRAND_NOTIFICATION_TYPES.map(type => ({
-  type,
-  channels: {
-    email: false,
-    sms: false,
-    in_app: false,
-  },
-}));
+export const DEFAULT_BRAND_NOTIFICATION_SETTINGS: BrandNotificationSettingCheckboxTable[] = [
+    {
+        type: "new_order",
+        channels: { email: true, sms: false, in_app: true },
+    },
+    {
+        type: "order_status_update",
+        channels: { email: true, sms: false, in_app: true },
+    },
+    {
+        type: "review",
+        channels: { email: true, sms: false, in_app: true },
+    },
+    {
+        type: "payout",
+        channels: { email: true, sms: false, in_app: true },
+    },
+    {
+        type: "support",
+        channels: { email: true, sms: false, in_app: true },
+    },
+    {
+        type: "general",
+        channels: { email: true, sms: false, in_app: true },
+    },
+];
 
 // Notification Settings Types
 

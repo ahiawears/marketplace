@@ -1,4 +1,5 @@
 import { brandLogin } from "@/actions/brand-login";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/ui/logo";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -40,7 +41,7 @@ const BrandLoginForm = () => (
                         type="email"
                         required
                         autoComplete="email"
-                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
+                        className="block w-full border-2 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
                     />
                 </div>
             </div>
@@ -55,7 +56,7 @@ const BrandLoginForm = () => (
                     <div className="text-sm">
                         <a
                             href="#"
-                            className="font-semibold text-indigo-600 hover:text-indigo-500"
+                            className="font-semibold text-black hover:text-gray-500"
                         >
                             Forgot Password?
                         </a>
@@ -66,7 +67,7 @@ const BrandLoginForm = () => (
                         name="brandPassword"
                         required
                         autoComplete="current-password"
-                        className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
+                        className="block w-full border-2 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm/6"
                     />
                 </div>
             </div>
@@ -75,19 +76,19 @@ const BrandLoginForm = () => (
                     Don&apos;t have an account?{" "}
                     <a
                         href="#"
-                        className="font-semibold text-indigo-600 hover:text-indigo-500"
+                        className="font-semibold text-black hover:text-gray-500"
                     >
                         Sign Up
                     </a>{" "}
                          your Brand here
                 </p>
                 <div className="text-sm">
-                    <button
+                    <Button
                         formAction={brandLogin}
-                        className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                        className="flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 "
                     >
                         Sign in
-                    </button>
+                    </Button>
                 </div>
             </div>
         </form>

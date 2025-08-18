@@ -1,6 +1,11 @@
 import React from "react";
 import AddProductForm from "../../../components/ui/add-product-form"
 
+export const metadata = {
+    title: "Add Product",
+    description: "Carefully fill the form to add a new product"
+}
+
 const AddProduct = () => {
     return (
         <div>

@@ -86,7 +86,7 @@ const UserLogin: React.FC<UserLoginProps>=({ serverUserIdentifier, isAnonymous }
                         {errors.email && (
                             <p className="py-1 text-red-500 text-sm/6">
                                 {errors.email}
-                            </p>
+                            </p> 
                         )}
                     </div>
                 </div>

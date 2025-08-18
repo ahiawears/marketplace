@@ -21,9 +21,6 @@ export async function signUpUser(formData: FormData) {
     const validation = signUpSchema.safeParse(Object.fromEntries(formData.entries()));
 
     if (!validation.success) {
-        // Log the errors for debugging on the server.
-        console.error('Validation failed:', validation.error.formErrors.fieldErrors);
-        // You can return the errors or throw a new Error.
         return { success: false, errors: validation.error.formErrors.fieldErrors };
     }
 
@@ -37,8 +34,6 @@ export async function signUpUser(formData: FormData) {
     if (!baseUrl) {
         throw new Error('NEXT_PUBLIC_SITE_URL is not set');
     }
-
-    console.log("The baseUrl is ", baseUrl);
 
     //Use environment variables for production and development URLs.
     const emailRedirectTo = new URL('/callback', baseUrl);
@@ -64,8 +59,6 @@ export async function signUpUser(formData: FormData) {
     });
 
     if (error) {
-        console.error('SignUp Error:', error);
-        // Return a structured error object.
         return { success: false, message: error.message };
     }    
     

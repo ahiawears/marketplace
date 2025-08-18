@@ -13,7 +13,7 @@ export const useFetchNotificationSettings = (userId: string, role: string, acces
     const [ error, setError ] = useState<Error | null>(null);
     const resetError = () => {
         setError(null);
-    };
+    }; 
     const [brandNotificationSettings, setBrandNotificationSettings] = useState<BrandNotificationSettingCheckboxTable[]>(DEFAULT_BRAND_NOTIFICATION_SETTINGS);
 
     useEffect(() => {

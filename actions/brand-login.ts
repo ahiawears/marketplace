@@ -73,5 +73,4 @@ export async function brandLogin(formData: FormData) {
         redirect("/brand-onboarding");
     }
 
-    revalidatePath("/", "layout");
 }

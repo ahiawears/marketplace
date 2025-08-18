@@ -105,7 +105,6 @@ const PaymentMethodsList = ({ paymentMethods, onAddPaymentMethod, onPaymentMetho
                             className="border-2 p-4 shadow-xl flex flex-col md:flex-row justify-between gap-4"
                         >
                             <div className="flex-1 space-y-1 text-left">
-                                {/* Display payment method details here */}
                                 {networkLogoMap[method.card_brand] && (
                                     <div className="w-10 h-8 relative">
                                         <Image
@@ -122,15 +121,13 @@ const PaymentMethodsList = ({ paymentMethods, onAddPaymentMethod, onPaymentMetho
                                 <p>{method.card_holder}</p>
                                 <p>{method.expiry_month}/{method.expiry_year}</p>
                             </div>
-                            <div>
-                                <div className="flex space-x-2 self-end md:self-center">
-                                    <Button
-                                        className="border-2"
-                                        onClick={() => handleDeleteClick(method.id)}
-                                    >
-                                        Delete
-                                    </Button>
-                                </div>
+                            <div className="flex space-x-2 self-end md:self-center">
+                                <Button
+                                    className="border-2"
+                                    onClick={() => handleDeleteClick(method.id)}
+                                >
+                                    Delete
+                                </Button>
                             </div>
                         </div>
                     ))

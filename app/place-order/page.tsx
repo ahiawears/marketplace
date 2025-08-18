@@ -30,6 +30,7 @@ interface CartItemData {
 
 // Export the metadata object
 export const metadata: Metadata = {
+    title: "Place Order", 
     robots: {
         index: false,
         follow: false,

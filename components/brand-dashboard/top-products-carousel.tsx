@@ -21,7 +21,7 @@ export const TopProductsCarousel = (props: Props) => {
 
                         <Carousel>
                             <CarouselContent>
-                                <CarouselItem className="basis-[90%] md:basis-[45%] lg:basis-[30%]">
+                                {/* <CarouselItem className="basis-[90%] md:basis-[45%] lg:basis-[30%]">
                                 <ProductCard />
                                 </CarouselItem>
                                 <CarouselItem className="basis-[90%] md:basis-[45%] lg:basis-[30%]">
@@ -32,7 +32,7 @@ export const TopProductsCarousel = (props: Props) => {
                                 </CarouselItem>
                                 <CarouselItem className="basis-[90%] md:basis-[45%] lg:basis-[30%]">
                                 <ProductCard />
-                                </CarouselItem>
+                                </CarouselItem> */}
                             </CarouselContent>
                             <CarouselPrevious />
                             <CarouselNext />
