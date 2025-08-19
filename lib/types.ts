@@ -194,50 +194,167 @@ export interface ShippingConfigType {
   };
 }
 
+export type DeliveryZone = 'domestic' | 'sub_regional' | 'regional' | 'global';
+
+
 export interface ShippingDetails {
-  shippingMethods: {
-      sameDayDelivery: boolean;
-      standardShipping: boolean;
-      expressShipping: boolean;
-      internationalShipping: boolean;
-  };
-  shippingZones: {
-      domestic: boolean;
-      regional: boolean;
-      international: boolean;
-  };
-  handlingTime: {
-    from: number;
-    to: number;
-  };
-  shippingFees: {
-      sameDayFee: number;
-      standardFee: number;
-      expressFee: number;
-      internationalFee: number;
-  };
-  defaultPackage: {
-      weight: number;
-      dimensions: {
-          dimensionsUnit: "Inch" | "Centimeter"
-          length: number;
-          width: number;
-          height: number;
-      };
-  };
-  ifSameDay:{
-      cutOffTime: string,
-      timeZone: string,
-      cutOffDays: string[]
-  },
-  freeShippingThreshold?: number;
-  freeShippingMethod?: string;
-  estimatedDeliveryTimes: {
-      domestic: { from: string; to: string };
-      regional: { from: string; to: string };
-      international: { from: string; to: string };
-  };
+    handlingTime: {
+        from: number;
+        to: number;
+    }
+    shippingMethods: {
+        sameDayDelivery: {
+            available: boolean;
+            fee: number;
+            estimatedDelivery?: {  // Only for same-day
+                cutOffTime: string;  // e.g., "14:00" (2PM UTC+1)
+                timeZone: string;  
+            };
+            conditions?: {
+                applicableCities?: string[]; // e.g., ["Lagos", "Abuja"]
+                excludePublicHolidays: boolean;
+            };
+        };
+        standardShipping: {
+            available: boolean;
+            estimatedDelivery: { 
+                domestic: { from: number; to: number; fee: number; }; 
+                regional: { from: number; to: number; fee: number;  }; 
+                sub_regional: { from: number; to: number; fee: number;  };
+                global: { from: number; to: number; fee: number;  }; 
+            };
+        };
+        expressShipping: {
+            available: boolean;
+            estimatedDelivery: {
+                domestic: { from: number; to: number; fee: number; };
+                regional: { from: number; to: number; fee: number; };
+                sub_regional: { from: number; to: number; fee: number; };
+                global: { from: number; to: number; fee: number; };
+            };
+        };
+    };
+    shippingZones: {
+        domestic: {
+            available: boolean;
+            excludedCities: string[];
+        };
+        regional: {
+            available: boolean;
+            excludedCountries: string[];
+        };
+        sub_regional: {
+            available: boolean;
+            excludedCountries: string[];
+        }
+        global: {
+            available: boolean;
+            excludedCountries: string[];
+        };
+    }
+    freeShipping?: {
+        available: boolean;
+        threshold: number; 
+        applicableMethods: ("standard" | "express")[];
+        excludedCountries?: string[];
+    }
+} 
+
+export const DEFAULT_SHIPPING_CONFIG: ShippingDetails = {
+	handlingTime: {
+		from: 0,
+		to: 1
+	},
+	shippingMethods: {
+		sameDayDelivery: {
+			available: false,
+			fee: 0,
+			estimatedDelivery: {
+				cutOffTime: "12:00",
+				timeZone: ""
+			},
+			conditions: {
+				applicableCities: [],
+				excludePublicHolidays: false
+			}
+		},
+		standardShipping: {
+			available: false,
+			estimatedDelivery: {
+				domestic: {
+					from: 2,
+					to: 5,
+					fee: 0
+				},
+				regional: {
+					from: 4,
+					to: 8,
+					fee: 0
+				},
+				sub_regional: {
+					from: 5,
+					to: 7,
+					fee: 0
+				},
+				global: {
+					from: 8,
+					to: 14,
+					fee: 0
+				}
+			}
+		},
+		expressShipping: {
+			available: false,
+			estimatedDelivery: {
+				domestic: {
+					from: 1,
+					to: 3,
+					fee: 0
+				},
+				regional: {
+					from: 2,
+					to: 5,
+					fee: 0
+				},
+				sub_regional: {
+					from: 5,
+					to: 7,
+					fee: 0
+				},
+				global: {
+					from: 5,
+					to: 10,
+					fee: 0
+				}
+			},
+		},
+	},
+	shippingZones: {
+		domestic: {
+			available: false,
+			excludedCities: []
+		},
+		regional: {
+			available: false,
+			excludedCountries: []
+		},
+		sub_regional: {
+			available: false,
+			excludedCountries: []
+		},
+		global: {
+			available: false,
+			excludedCountries: []
+		}
+	},
+	freeShipping: {
+		available: false,
+		threshold: 0,
+		applicableMethods: [],
+		excludedCountries: [],
+	}
 }
+
 
 export interface ShippingConfigDataProps {
   handlingTime: {

@@ -1,6 +1,6 @@
-// hooks/useShippingConfig.ts
-import { useState, useEffect, useCallback } from 'react';
-import { DEFAULT_SHIPPING_CONFIG, DeliveryZone, ShippingDetails, type ShippingConfigDataProps } from '@/lib/types';
+import { DEFAULT_SHIPPING_CONFIG, DeliveryZone, ShippingConfigDataProps, ShippingDetails } from "@/lib/types";
+import { createClient } from "@/supabase/server";
+
 
 // --- Raw API Data Interfaces ---
 interface RawShippingConfigurations {
@@ -76,7 +76,7 @@ interface RawApiData {
     free_shipping_rules: RawFreeShippingRule[] | null;
 }
 
-// --- Transformation Function ---
+
 const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfigDataProps => {
     const newConfig = JSON.parse(JSON.stringify(DEFAULT_SHIPPING_CONFIG)) as ShippingDetails;
 
@@ -209,59 +209,50 @@ const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfig
     return newConfig;
 };
 
-// --- Custom Hook ---
-export const useShippingConfig = (userId?: string, accessToken?: string) => {
-    const [config, setConfig] = useState<ShippingConfigDataProps>(DEFAULT_SHIPPING_CONFIG);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+export async function FetchBrandShippingConfig(brandId: string) {
+    try {
+        const supabase = await createClient();
 
-    const fetchConfig = useCallback(async () => {
-        if (!userId || !accessToken) {
-            setLoading(false);
-            // Optionally set an error or just return if critical info is missing
-            // setError("User ID or access token is missing."); 
-            return;
+        const { data: configData, error: configError } = await supabase
+            .from('shipping_configurations')
+            .select('*')
+            .eq('brand_id', brandId)
+            .single();
+
+        if (configError) {
+            if (configError.code === "PGRST116") {
+                return { success: false, message: "No shipping configuration found for this brand." };
+            }
+            throw configError;
         }
 
-        setLoading(true);
-        setError(null);
-        try {
-            // Ensure this endpoint is correct
-            const response = await fetch(
-                `${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/get-brand-shipping-config?userId=${userId}`,
-                {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        'Content-Type': 'application/json',
-                    },
-                }
-            );
+        const [{ data: methodsData }, { data: deliveryData }, { data: zonesData }, { data: exclusionsData }, { data: freeShippingData }, { data: sameDayCitiesData }] = await Promise.all([
+            supabase.from('shipping_methods').select('*').eq('config_id', configData.id),
+            supabase.from('shipping_method_delivery').select('*').eq('config_id', configData.id),
+            supabase.from('shipping_zones').select('*').eq('config_id', configData.id),
+            supabase.from('zone_exclusions').select('*').eq('config_id', configData.id),
+            supabase.from('free_shipping_rules').select('*').eq('config_id', configData.id),
+            supabase.from('same_day_applicable_cities').select('city_name').eq('config_id', configData.id),
+        ]);
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: "Failed to parse error response" }));
-                throw new Error(errorData.message || `Error fetching shipping config: ${response.statusText}`);
-            }
+        const data = {
+            shipping_configurations: configData,
+            shipping_methods: methodsData,
+            shipping_method_delivery: deliveryData,
+            shipping_zones: zonesData,
+            zone_exclusions: exclusionsData,
+            free_shipping_rules: freeShippingData,
+            same_day_applicable_cities: sameDayCitiesData,
+        };
 
-            const apiResponse = await response.json();
-            
-            // The API response has a `data` field which contains the actual shipping data object
-            if (apiResponse.data) {
-                const transformedConfig = transformApiDataToShippingDetails(apiResponse.data as RawApiData);
-                setConfig(transformedConfig);
-            } else {
-                setConfig(DEFAULT_SHIPPING_CONFIG); // Fallback to default if data key is missing or null
-            }
-        } catch (error: any) {
-            setError(error.message || "An unexpected error occurred.");
-            setConfig(DEFAULT_SHIPPING_CONFIG); // Fallback to default on any error
-        } finally {
-            setLoading(false);
-        }
-    }, [userId, accessToken]);
+        const transformedConfig = transformApiDataToShippingDetails(data);
+        return { success: true, data: transformedConfig };
 
-    useEffect(() => {
-        fetchConfig();
-    }, [fetchConfig]);
-
-    return { config, loading, error, refetch: fetchConfig };
-};
+    } catch (error) {
+        console.error("Error fetching shipping configuration:", error);
+        return {
+            success: false,
+            message: `Failed to fetch shipping configuration: ${error instanceof Error ? error.message : "An unexpected error occurred."}`
+        };
+    }
+}

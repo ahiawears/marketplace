@@ -19,12 +19,6 @@ interface ProductShippingDetailsProps {
     onSaveShippingDetails: (details: ProductShippingDeliveryType) => void;
 }
 
-interface ShippingMethodItem {
-    display: string;
-    feeKey: keyof ShippingDetails['shippingFees'] | undefined;
-    dbKey?: keyof ShippingDetails['shippingMethods'];
-    feeValue: number;
-}
 
 
 const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId, accessToken, currencySymbol, productId, onSaveShippingDetails, editProductShippingDetails }) => {

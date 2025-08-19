@@ -13,7 +13,7 @@ const Notifications = async () => {
     const supabase = await createClient();
     const { data: user, error } = await supabase.auth.getUser();
     if (error || !user.user) {
-        redirect("/log-in");
+        redirect("/login-brand");
     }
 
     const userId = user?.user?.id;
@@ -21,11 +21,11 @@ const Notifications = async () => {
     const notificationSettings = await FetchNotificationSettings(userId, "brand");
 
     return (
-        <div className="container mx-auto p-4">
-            <h1 className="text-2xl font-bold mb-4">Notifications Settings</h1>
+        <div className="container mx-auto p-4 border-2">
+            <h1 className="text-2xl font-bold my-4">Notifications Settings</h1>
 
             <BrandNotificationSettingsTable
-                userId={userId!}
+                userId={userId}
                 settings={notificationSettings}
             />
             

@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
 		// 2. Fetch related data in parallel
 		console.log("Running parallel queries...");
 
-		const [ { data: methodsData },{ data: deliveryData },{ data: zonesData },{ data: exclusionsData },{ data: freeShippingData }, { data: sameDayCitiesData}] = await Promise.all([
+		const [ { data: methodsData },{ data: deliveryData },{ data: zonesData },{ data: exclusionsData },{ data: freeShippingData }, { data: sameDayCitiesData } ] = await Promise.all([
 			supabase
 				.from('shipping_methods')
 				.select('*')
@@ -87,7 +87,6 @@ Deno.serve(async (req) => {
 				.from('same_day_applicable_cities')
 				.select('city_name')
 				.eq('config_id', configData.id),
-
 		])
        
 		console.log("The configuration data is: ", configData, methodsData, deliveryData, zonesData, exclusionsData, freeShippingData);
