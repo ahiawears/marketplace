@@ -6,7 +6,7 @@ import { SearchableSelect } from "../ui/searchable-select";
 import { useEffect, useState } from "react";
 import { CountryData } from "@/lib/country-data";
 import { CountryState } from "@/lib/country-states";
-import { DeliveryZone } from "@/app/dashboard/shipping-configuration/page"; // Import the type
+import { DeliveryZone } from "@/lib/types";
 
 // Define the structure for estimated delivery including fee per zone
 interface EstimatedDeliveryWithFees {
@@ -148,19 +148,17 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
                     <label className="block text-sm font-medium text-gray-700 mb-1">Time Zone: </label>
                     <SearchableSelect
                         options={countryTimezones}
-                        getOptionLabel={(timeZoneName: string) => timeZoneName} // Display the name directly
+                        getOptionLabel={(timeZoneName: string) => timeZoneName} 
                         onSelect={handleTimezoneSelect}
-                        // Pass the currently selected *object* to SearchableSelect if it supports a 'value' prop
-                        // Or handle initial selection via useEffect as done above
-                        placeholder={selectedTimezoneName || "Select Timezone"} // Show selected name or placeholder
-                        className="w-full" // Ensure SearchableSelect takes full width
+                        placeholder={selectedTimezoneName || "Select Timezone"}
+                        className="w-full" 
                     />
                     {/* Display the stored value for confirmation */}
                     {timeZoneValue && 
                         // <p className="text-xs text-gray-500 mt-1">Selected: {timeZoneValue}</p>
                         <div className="my-2 flex">
                             <span
-                                className="flex items-center bg-black text-white ring-offset-1 ring-black px-2 py-1"
+                                className="flex items-center bg-black ring-2 text-white ring-offset-1 ring-black px-2 py-1"
                             >
                                 {timeZoneValue}
                             </span>
@@ -184,7 +182,7 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
                                 {selectedCities.map(city => (
                                     <span 
                                         key={city} 
-                                        className="flex items-center bg-black text-white ring-offset-1 ring-black px-2 py-1"
+                                        className="flex items-center bg-black text-white ring-offset-1 ring-black ring-2 px-2 py-1"
                                     >
                                         {city}
                                         <button
@@ -223,7 +221,7 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
                                 value={timeData.from === 0 ? 0 : timeData.from}
                                 onChange={(e) => onDeliveryTimeChange(zone, 'from', Number(e.target.value))}
                                 className="w-full border-2"
-                                min="0" // Allow 0 for domestic potentially
+                                min="0" 
                                 placeholder="0"
                             />
                             <label className="block text-xs font-medium text-gray-500 mt-1 text-center">From</label>
@@ -246,9 +244,9 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
                             Fee:
                         </span>
                         <MoneyInput
-                            numericValue={timeData.fee} // Use the fee from the zone data
+                            numericValue={timeData.fee}
                             className="w-full border-2"
-                            onNumericChange={(value) => onZoneFeeChange(zone, value)} // Use the zone fee handler
+                            onNumericChange={(value) => onZoneFeeChange(zone, value)} 
                             placeholder="0.00"
                         />
                         <span className="text-sm text-gray-600">{currency}</span>

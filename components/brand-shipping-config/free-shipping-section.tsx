@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Input } from "../ui/input";
 import { MoneyInput } from "../ui/money-input";
+import React from 'react';
 
 interface FreeShippingSectionProps {
     label: string;
@@ -17,15 +18,16 @@ interface FreeShippingSectionProps {
 
 const FreeShippingSection: React.FC<FreeShippingSectionProps> = ({label, checked, onToggle, threshold, onThresholdChange, availableMethods, selectedMethods, onSelectedMethodsChange, excludedCountries, currency }) => {
     const handleMethodClick = (method: "standard" | "express") => {
+        // Check if the clicked method is already the single selected method
         const currentlySelected = selectedMethods.includes(method);
         let newSelectedMethods: ("standard" | "express")[];
 
         if (currentlySelected) {
-            // Remove the method
-            newSelectedMethods = selectedMethods.filter(m => m !== method);
+            // If it's already selected, deselect it by making the array empty
+            newSelectedMethods = [];
         } else {
-            // Add the method
-            newSelectedMethods = [...selectedMethods, method];
+            // If it's not selected, make it the only selected method
+            newSelectedMethods = [method];
         }
         onSelectedMethodsChange(newSelectedMethods);
     };
@@ -75,7 +77,7 @@ const FreeShippingSection: React.FC<FreeShippingSectionProps> = ({label, checked
                                     <span
                                         key={method}
                                         onClick={() => handleMethodClick(method)}
-                                        className={`px-3 py-1 text-sm cursor-pointer transition-colors duration-150 ease-in-out rounded
+                                        className={`px-3 py-1 text-sm cursor-pointer transition-colors duration-150 ease-in-out border-2
                                             ${selectedMethods.includes(method)
                                                 ? "bg-black text-white ring-2 ring-offset-1 ring-black"
                                                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"}

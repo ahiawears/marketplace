@@ -1,8 +1,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { corsHeaders } from '../_shared/cors.ts';
-import { createClient } from "../../server-deno.ts";
-import { GetBrandBasicInfo } from "@actions/get-brand-basic-info.ts";
+import { GetBrandProfile } from "@actions/get-brand-basic-info.ts";
 
 Deno.serve(async (req: Request) => {
   	if (req.method === "OPTIONS") {
@@ -25,7 +24,6 @@ Deno.serve(async (req: Request) => {
 			console.error("Malformed Authorization header!");
 			return new Response("Unauthorized accessToken", { status: 401 });
 		}
-		const supabase = createClient(accessToken);
 
 		if (!userId) {
 			return new Response(JSON.stringify({ success: false, message: "User ID is required." }), {
@@ -34,7 +32,7 @@ Deno.serve(async (req: Request) => {
 			});
 		}
 
-		const brandBasicData = await GetBrandBasicInfo(supabase, userId);
+		const brandBasicData = await GetBrandProfile(userId);
 
 		if (!brandBasicData) {
 			return new Response(JSON.stringify({ success: true, message: "No Data found for the user.", data: null }), {

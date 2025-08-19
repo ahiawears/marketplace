@@ -1,16 +1,57 @@
-export async function GetBrandBasicInfo(supabase: any, userId: string) {
+import { createClient } from "@/supabase/server";
+
+export async function GetBrandProfile(brandId: string) {
+    const supabase = await createClient();
+
     try {
-        const { data, error } = await supabase
+        const { data: basicData, error } = await supabase
             .from('brands_list')
             .select('name, description')
-            .eq('id', userId)
+            .eq('id', brandId)
             .single();
+
         if (error) {
-            console.error("Error getting brand basic info: ", error);
-            throw new Error(`Error getting brand basic info: ${error}`);
+            throw error;
         }
-        return data;
+
+        const {data: bannerUrl, error: bannerUrlError} = await supabase
+            .from('brand_banner')
+            .select('banner_url')
+            .eq('id', brandId)
+            .single();
+
+        if (bannerUrlError) {
+            throw bannerUrlError;
+        }
+
+         const {data: logoURL, error: logoURLError} = await supabase
+            .from('brand_logo')
+            .select('logo_url')
+            .eq('id', brandId)
+            .single();
+
+        if (logoURLError) {
+            throw logoURLError;
+        }
+
+        const dataToReturn  = {
+            name: basicData.name,
+            description: basicData.description,
+            banner: bannerUrl.banner_url,
+            logo: logoURL.logo_url
+        }
+
+        return {
+            success: true,
+            message: "Brand Details fetched successfully",
+            data: dataToReturn
+        }
+
     } catch (error) {
-        throw new Error(`Error getting brand Details: ${error}`)
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : "An unknown error occurred",
+            data: null
+        }
     }
 }

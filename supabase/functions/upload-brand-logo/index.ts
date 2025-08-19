@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
                 status: 400,
             });
         }
-		const logoURL = await UploadBrandLogo(supabase, userId, logoBlob);
+		const logoURL = await UploadBrandLogo(userId, logoBlob);
 		return new Response(
 			JSON.stringify({ 
 				success: true, 

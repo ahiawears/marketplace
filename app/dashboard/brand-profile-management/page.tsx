@@ -1,74 +1,30 @@
-"use client";
-
-import NavTab from "@/components/navtab";
-import { useState } from "react";
-import { BrandAccountSettings } from "../brand-account-settings/page";
-import { BrandProfilePage} from "../brand-profile-page/page";
-import { BrandSocialLinks } from "../brand-socials-links/page";
-import LoadContent from "@/app/load-content/page";
-import { useAuth } from "@/hooks/useAuth";
+import { createClient } from "@/supabase/server";
+import { Metadata } from "next";
 import { redirect } from "next/navigation";
-import ErrorModal from "@/components/modals/error-modal";
+import { GetBrandProfile } from "@/actions/get-brand-details/get-brand-basic-info";
+import BrandProfileClient from "@/components/brand-dashboard/brand-profile-client";
 
-const BrandProfileManagemennt = () => {
-    const [errorMessage, setErrorMessage] = useState("");
+export const metadata: Metadata = {
+    title: "Brand Profile Management",
+}
 
-    const [selectedTab, setSelectedTab] = useState('Profile');
-    
-    const tabs = [
-        { label: 'Profile', value: 'Profile' },
-        { label: 'Account Settings', value: 'Account Settings' },
-        { label: 'Contact Details', value: 'Contact Details'}
-    ];
+const BrandProfileManagemennt = async () => {
+    const supabase = await createClient();
+    const { data: user, error } = await supabase.auth.getUser();
 
-    const handleTabChange = (value: string) => {
-        setSelectedTab(value);
-    };
-
-    const { userId, userSession, loading, error, resetError } = useAuth();
-    
-    if (loading) {
-        return <LoadContent />
+    if (error || !user.user) {
+        redirect("/login-brand");
     }
 
-    if (error) {
-        console.log(error);
-        setErrorMessage(error.message || "Something went wrong, please try again.");
-    }
+    const userId = user?.user?.id;
+    const brandProfileData = await GetBrandProfile(userId);
 
-    if (!userId) {
+    if (!brandProfileData.success || brandProfileData.data === null) {
         redirect("/login-brand");
     }
 
     return (
-        <>
-            {errorMessage && (
-                <>
-                    <ErrorModal
-                        message={errorMessage}
-                        onClose={() => {
-                            setErrorMessage("");
-                        }}
-                    />
-                </>
-            )}
-            <div className="container mx-auto p-4">
-                <NavTab tabs={tabs} onTabChange={handleTabChange} initialTab="Profile" />
-
-                <div className="mt-4">
-                    {selectedTab === "Profile" &&
-                        <BrandProfilePage userId={userId} accessToken={userSession.access_token}/>
-                    }
-                    {selectedTab === "Account Settings" &&
-                        <BrandAccountSettings userId={userId} accessToken={userSession.access_token}/>
-                    }
-                    {selectedTab === "Contact Details" && 
-                        <BrandSocialLinks userId={userId} accessToken={userSession.access_token}/>
-                    }
-                </div>
-            </div>
-        </>
-       
+        <BrandProfileClient userId={userId} brandData={brandProfileData.data} />
     );
 }
 

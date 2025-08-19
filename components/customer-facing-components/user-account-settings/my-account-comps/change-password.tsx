@@ -11,7 +11,7 @@ import { PasswordInput } from '../../../ui/password-input'
 interface Errors {
   currentPassword?: string;
   newPassword?: string;
-  confirmPassword?: string;
+  confirmPassword?: string; 
 }
 
 

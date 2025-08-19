@@ -22,17 +22,17 @@ const NavTab: React.FC<NavTabsProps> = ({ tabs, onTabChange, initialTab }) => {
     };
     return (
         <>
-            <div className="border-b border-gray-200 w-full"> {/* Optional border */}
-                <div className="mx-auto w-full overflow-x-auto sm:w-full md:w-fit lg:w-fit">
+            <div className="border-2 w-full">
+                <div className="mx-auto px-4 py-2 w-full overflow-x-auto sm:w-full md:w-fit lg:w-fit">
                     <nav className="flex space-x-4">
                         {tabs.map((tab) => (
                             <Button
                                 key={tab.value}
                                 onClick={() => handleTabClick(tab.value)}
-                                className={`px-4 py-2 rounded-md font-medium text-sm transition-colors duration-300
+                                className={`px-4 py-2 font-medium text-sm transition-colors duration-300
                                 ${activeTab === tab.value
-                                    ? 'bg-black text-white hover:bg-gray-100 hover:text-gray-900' // Active styles
-                                    : 'text-white hover:bg-gray-100 hover:text-gray-900 opacity-60' // Inactive styles
+                                    ? 'bg-black border-2 ring-2 ring-offset-2 ring-black text-white hover:bg-gray-300 hover:text-gray-900' 
+                                    : 'text-black hover:bg-gray-300 hover:text-gray-900 border-2 border-gray-200 bg-gray-300'
                                 }`}
                             >
                                 {tab.label}

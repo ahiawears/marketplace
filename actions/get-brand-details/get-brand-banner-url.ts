@@ -1,10 +1,10 @@
 export async function GetBrandBannerUrl(supabase: any, userId: string) {
     try {
         const {data: bannerUrl, error: bannerUrlError} = await supabase
-        .from('brand_banner')
-        .select('banner_url')
-        .eq('id', userId)
-        .single();
+            .from('brand_banner')
+            .select('banner_url')
+            .eq('id', userId)
+            .single();
 
         if (bannerUrlError) {
             console.error("Error getting brand logo URL: ", bannerUrlError);

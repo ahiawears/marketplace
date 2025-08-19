@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import LoadContent from "@/app/load-content/page";
 
-
+ 
 interface BrandProfilePageProps {
     userId: string;
     accessToken: string;
@@ -78,12 +78,12 @@ export const BrandProfilePage: React.FC<BrandProfilePageProps> = ({ userId, acce
             {/* <BrandDescriptionField /> */}
 
            {/* Brand Profile Hero */}
-           <div className="relative w-full mb-16">
+           {/* <div className="relative w-full mb-16">
                 <EditBrandProfileHero userId={userId} accessToken={accessToken}/>
                 <div className="absolute bottom-4 left-4">
                     <EditBrandLogo userId={userId} accessToken={accessToken}/>
                 </div>
-            </div>
+            </div> */}
 
             <div className="my-4 relative">
                 <div className="space-y-2 my-4">

@@ -1,22 +1,25 @@
-export async function UploadBrandLogo(supabase: any, userId: string, blob: Blob) {
+"use server"
+
+import { createClient } from "@/supabase/server";
+
+interface UploadResponse {
+    success: boolean;
+    data?: { publicUrl: string };
+    message?: string;
+}
+
+/**
+ * Uploads a brand logo to Supabase Storage and saves its URL to the database.
+ * @param userId The unique ID of the brand.
+ * @param blob The Blob object of the image file.
+ * @returns An object indicating success, with the public URL if successful.
+ */
+export async function UploadBrandLogo(userId: string, blob: Blob): Promise<UploadResponse> {
+    const supabase = await createClient();
     try {
         const bucketName = "brand-logo";
+        const uniqueFileName = `${userId}/logo.png`;
 
-        console.log("The brand logo is: ", blob);
-        const uniqueFileName = `${userId}/logo.png`; // Use a consistent file extension
-
-        // Delete the old file (if it exists)
-        const { error: deleteError } = await supabase.storage
-            .from(bucketName)
-            .remove([uniqueFileName]);
-
-        if (deleteError && deleteError.message !== "File not found") {
-            console.error("Error deleting old file:", deleteError);
-            throw new Error(`Error deleting old file: ${deleteError.message}`);
-        }
-
-        // Upload the new file
-        console.log("Uploading file to storage:", uniqueFileName);
         const { data: uploadData, error: uploadError } = await supabase.storage
             .from(bucketName)
             .upload(uniqueFileName, blob, {
@@ -25,37 +28,26 @@ export async function UploadBrandLogo(supabase: any, userId: string, blob: Blob)
             });
 
         if (uploadError) {
-            console.error("Upload error:", uploadError);
-            throw new Error(`Error uploading logo: ${uploadError.message}`);
+            return { success: false, message: `${uploadError.message}` };
         }
 
-        console.log("File uploaded successfully:", uploadData);
 
-        // Get public URL of the uploaded file
-        const { data: publicUrlData, error: publicUrlError } = await supabase.storage
+        const { data: publicUrlData } = supabase.storage
             .from(bucketName)
             .getPublicUrl(uniqueFileName);
 
-        if (publicUrlError) {
-            throw new Error(`Error getting public URL: ${publicUrlError.message}`);
-        }
+        const publicUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
 
-        const publicUrl = publicUrlData.publicUrl;
-
-        // Upsert into the database
-        console.log("Upserting data:", { brand_id: userId, logo_url: publicUrl });
         const { error: logoInsertionError } = await supabase
             .from("brand_logo")
             .upsert({ id: userId, logo_url: publicUrl }, { onConflict: 'id' });
 
         if (logoInsertionError) {
-            throw new Error(`Error inserting logo URL into database: ${logoInsertionError.message}`);
+            return { success: false, message: `${logoInsertionError.message}`};
         }
 
-        console.log("Logo uploaded and URL saved successfully.");
-        return publicUrl;
+        return { success: true, data: { publicUrl } };
     } catch (error) {
-        console.error("Error uploading logo:", error);
-        throw error;
+        return { success: false, message: "An unexpected error occurred during the logo upload process." };
     }
 }

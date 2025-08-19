@@ -161,8 +161,6 @@ const ZoneToggle: React.FC<ZoneToggleProps> = ({
                                     onSelect={handleAddCity} // Add selected city
                                     placeholder="Select cities for Same Day Delivery"
                                     getOptionLabel={(option: string) => option}
-                                    // Note: SearchableSelect might need a way to clear its input after selection.
-                                    // For now, selecting just adds the city to the list below.
                                 />
                                 {/* Display selected cities */}
                                 {selectedCities.length > 0 && (
@@ -172,7 +170,7 @@ const ZoneToggle: React.FC<ZoneToggleProps> = ({
                                             {selectedCities.map(city => (
                                                 <span 
                                                     key={city} 
-                                                    className="flex items-center bg-black text-white ring-offset-1 ring-black px-2 py-1"
+                                                    className="flex items-center bg-black text-white ring-offset-1 ring-black ring-2 px-2 py-1"
                                                     >
                                                     {city}
                                                     <button
@@ -212,7 +210,7 @@ const ZoneToggle: React.FC<ZoneToggleProps> = ({
                                             {excludedCountries.map(countryName => (
                                                 <span 
                                                     key={countryName} 
-                                                    className="flex items-center bg-black text-white ring-offset-1 ring-black px-2 py-1"
+                                                    className="flex items-center bg-black text-white ring-offset-1 ring-black ring-2 px-2 py-1"
                                                 >
                                                     {countryName}
                                                     <button
@@ -249,12 +247,12 @@ const ZoneToggle: React.FC<ZoneToggleProps> = ({
                                             {excludedCountries.map(countryName => (
                                                 <span 
                                                     key={countryName} 
-                                                    className="flex items-center bg-black text-white ring-offset-1 ring-black px-2 py-1"
+                                                    className="flex items-center bg-black text-white ring-offset-1 ring-black ring-2 px-2 py-1"
                                                 >
                                                     {countryName}
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleRemoveExcludedCountry(countryName)} // Use country handler
+                                                        onClick={() => handleRemoveExcludedCountry(countryName)}
                                                         className="ml-1 text-white hover:text-white focus:outline-none"
                                                         aria-label={`Remove ${countryName}`}
                                                     >
