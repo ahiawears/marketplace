@@ -2,7 +2,7 @@
 import MyAccountClient from "@/components/customer-facing-components/user-account-settings/my-account-comps/user-account-client";
 import { createClient } from "@/supabase/server";
 import { redirect } from "next/navigation";
-import { getUserDetails } from "@/actions/user-auth/get-user-details"
+import { getUserDetails } from "@/actions/auth/user-auth/get-user-details"
 import { getUserAddress } from "@/actions/user-actions/my-account/get-user-address";
 import { getDbPaymentDetails } from "@/actions/user-actions/my-account/getDbPaymentDetails";
 

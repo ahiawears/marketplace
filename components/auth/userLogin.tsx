@@ -10,7 +10,7 @@ import { FcGoogle } from "react-icons/fc";
 import { useSearchParams } from 'next/navigation';
 import { FormEvent, useState } from "react";
 import validator from 'validator';
-import { loginUser } from '@/actions/user-auth/login'
+import { loginUser } from '@/actions/auth/user-auth/login'
 import { useFormStatus } from "react-dom";
 
 interface UserLoginProps {

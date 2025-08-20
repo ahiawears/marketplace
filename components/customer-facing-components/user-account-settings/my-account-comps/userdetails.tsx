@@ -1,6 +1,6 @@
 "use client";
 
-import { updateUserMetaDetails } from '@/actions/user-auth/update-user-meta-details';
+import { updateUserMetaDetails } from '@/actions/auth/user-auth/update-user-meta-details';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import React, { FormEvent, useEffect, useState } from 'react';

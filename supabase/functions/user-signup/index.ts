@@ -6,7 +6,7 @@
 import { serve } from "https://deno.land/std@0.114.0/http/server.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { createClient } from "../../server-deno.ts";
-import { SignUpuser } from "../../../actions/user-auth/user-signup.ts"
+import { SignUpuser } from "../../../actions/auth/user-auth/user-signup.ts"
 
 serve(async (req: Request) => {
     if (req.method === "OPTIONS") {

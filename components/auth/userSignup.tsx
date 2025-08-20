@@ -8,7 +8,7 @@ import { PasswordInput } from "../ui/password-input";
 import { Button } from "../ui/button";
 import { FormEvent, useState } from "react";
 import validator from 'validator';  
-import { signUpUser } from "@/actions/user-auth/user-signup";
+import { signUpUser } from "@/actions/auth/user-auth/user-signup";
 
 
 interface UserSignupProps {

@@ -3,7 +3,7 @@ import { PasswordInput } from "../ui/password-input";
 import validator from 'validator';
 import { FormEvent, useState } from "react";
 import { toast } from "sonner";
-import { UpdatePassword } from "@/actions/user-auth/update-password";
+import { UpdatePassword } from "@/actions/auth/update-password";
 
 interface Errors {
     currentPassword?: string;

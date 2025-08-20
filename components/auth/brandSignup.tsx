@@ -7,7 +7,7 @@ import { PasswordInput } from "../ui/password-input";
 import validator from 'validator';
 import { Button } from "../ui/button";
 import Link from "next/link";
-import { SignUpbrand } from "@/actions/brand-auth/brand-signup";
+import { SignUpbrand } from "@/actions/auth/brand-auth/brand-signup";
 import { toast } from "sonner";
 
 interface Errors {

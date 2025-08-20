@@ -1,7 +1,7 @@
 //THIS DOES IT JOB ALREADY, ADD SUCCESS/ERROR MESSAGES
 
 import React from 'react'
-import { UpdatePassword } from '@/actions/user-auth/update-password'
+import { UpdatePassword } from '@/actions/auth/update-password'
 import { Button } from '../../../ui/button'
 import { FormEvent, useState } from 'react';
 import validator from 'validator';

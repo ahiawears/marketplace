@@ -9,16 +9,8 @@ const passwordSchema = z.object({
     newPassword: z.string().min(8, "Password must be at least 8 characters long.")
 });
 
-interface UpdatePasswordResults {
-    success: boolean;
-    messaage?: string;
-    errors: string[];
-}
-
-
 export async function UpdatePassword(formData: FormData, role?: string){
     const supabase = await createClient();
-    
     
     try {
         const validation = passwordSchema.safeParse(Object.fromEntries(formData.entries()));

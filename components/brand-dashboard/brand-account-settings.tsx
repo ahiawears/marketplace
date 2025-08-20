@@ -1,6 +1,7 @@
 "use client"
 
 import ChangeBrandPassword from "@/components/brand-dashboard/change-brand-password";
+import ChangeAuthEmail from "./change-brand-email";
 
 
 type BrandPasswordAuthDetails = {
@@ -24,7 +25,11 @@ export const BrandAccountSettings: React.FC<BrandSccountSettingsProps> = ({userI
         <div>
             {/* <BrandBasicDetails /> */}
             <>
-                <ChangeBrandPassword/>
+                <div className="my-2 space-y-6">
+                    <ChangeBrandPassword/>
+                    <ChangeAuthEmail />
+
+                </div>
             </>
         </div>
     );
