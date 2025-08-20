@@ -1,4 +1,3 @@
-import { BrandLegalDetails } from "@/lib/types";
 import { createClient } from "@/supabase/server";
 
 interface BrandLegalDetailsResponse {

@@ -13,7 +13,7 @@ import validator from 'validator';
 
 type BrandContactDetails = {
     brand_contact_details: {
-        brand_email: string;
+        brand_email: string; 
         phone_number: string;
     }
     facebook: string;

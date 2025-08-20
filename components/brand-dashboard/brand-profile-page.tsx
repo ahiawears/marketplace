@@ -9,6 +9,8 @@ import { Button } from "../ui/button";
 import { UploadBrandBanner } from "@/actions/edit-brand-details/upload-brand-banner";
 import { UploadBrandLogo } from "@/actions/edit-brand-details/upload-brand-logo";
 import { toast } from "sonner";
+import { UpdateBrandDescription } from "@/actions/edit-brand-details/update-brand-description";
+import validator from 'validator';
 
 interface BrandProfileData {
     name: string;
@@ -31,9 +33,12 @@ const dataURLtoBlob = async (dataUrl: string): Promise<Blob> => {
 const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
     const [bannerImage, setBannerImage] = useState(data.banner);
     const [logoImage, setLogoImage] = useState(data.logo);
+    const [description, setDescription] = useState(data.description);
     const [isBannerChanged, setIsBannerChanged] = useState<boolean>(false);
     const [isLogoChanged, setIsLogoChanged] = useState<boolean>(false);
+    const [isDescriptionChanged, setIsDescriptionChanged] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState(false);
+
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -48,6 +53,11 @@ const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
             if (isLogoChanged) {
                 const logoBlob = await dataURLtoBlob(logoImage);
                 promises.push(UploadBrandLogo(userId, logoBlob));
+            }
+
+            if (isDescriptionChanged) {
+                const updatedDescription = validator.trim(description);
+                promises.push(UpdateBrandDescription(userId, updatedDescription));
             }
 
             const results = await Promise.all(promises);
@@ -65,10 +75,12 @@ const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
                 // Reset states on success
                 setIsBannerChanged(false);
                 setIsLogoChanged(false);
+                setIsDescriptionChanged(false);
             } else {
                 // Revert to original state on failure
                 setBannerImage(data.banner);
                 setLogoImage(data.logo);
+                setDescription(data.description);
                 setIsBannerChanged(false);
                 setIsLogoChanged(false);
             }
@@ -82,6 +94,7 @@ const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
             // Revert to original state on unexpected error
             setBannerImage(data.banner);
             setLogoImage(data.logo);
+            setDescription(data.description);
             setIsBannerChanged(false);
             setIsLogoChanged(false);
         } finally {
@@ -92,8 +105,10 @@ const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
     const handleCancel = () => {
         setBannerImage(data.banner);
         setLogoImage(data.logo);
+        setDescription(data.description);
         setIsBannerChanged(false);
         setIsLogoChanged(false);
+        setIsDescriptionChanged(false);
     };
 
     return (
@@ -141,24 +156,29 @@ const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
                         name="brand_description"
                         placeholder="Describe your brand's story, mission and unique offerings"
                         className="border-2 min-h-[100px]"
-                        value={data.description}
-                        readOnly
+                        value={description}
+                        onChange={(e) => 
+                            {   
+                                setIsDescriptionChanged(true);
+                                setDescription(e.target.value);
+                            }
+                        }
                     />
                 </div>
             </div>
 
             {/* Centralized Save/Cancel Buttons */}
-            {(isBannerChanged || isLogoChanged) && (
+            {(isBannerChanged || isLogoChanged || isDescriptionChanged) && (
                 <div className="my-4 flex flex-col space-y-2 lg:flex-row lg:space-x-4 lg:space-y-0 items-center justify-end">
                     <Button
-                        className="w-full lg:w-auto bg-red-500 hover:bg-red-600 text-white"
+                        className="w-full lg:w-auto border-2 text-black bg-gray-200 hover:bg-gray-300"
                         onClick={handleCancel}
                         disabled={isSaving}
                     >
                         Cancel
                     </Button>
                     <Button
-                        className="w-full lg:w-auto bg-black hover:bg-gray-800 text-white"
+                        className="w-full lg:w-auto bg-black text-white"
                         onClick={handleSave}
                         disabled={isSaving}
                     >

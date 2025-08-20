@@ -16,7 +16,7 @@ interface UpdatePasswordResults {
 }
 
 
-export async function UpdatePassword(formData: FormData){
+export async function UpdatePassword(formData: FormData, role?: string){
     const supabase = await createClient();
     
     
@@ -58,8 +58,13 @@ export async function UpdatePassword(formData: FormData){
         }
 
         // Revalidate the path to ensure the session is updated
-        revalidatePath("/my-account");
-        return { success: true, message: "Password updated successfully!" };
+        if (role === "brand") {
+            revalidatePath("/dashboard/brand-profile-management")
+            return { success: true, message: "Password updated successfully!" };
+        } else {
+            revalidatePath("/my-account");
+            return { success: true, message: "Password updated successfully!" };
+        }
     } catch (error) {
         console.error("An unexpected error occurred:", error);
         return { success: false, message: "An unexpected error occurred." };

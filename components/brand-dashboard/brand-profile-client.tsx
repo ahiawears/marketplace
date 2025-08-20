@@ -4,6 +4,8 @@ import NavTab from "@/components/navtab";
 import { useState } from "react";
 import ErrorModal from "@/components/modals/error-modal";
 import BrandProfile from "@/components/brand-dashboard/brand-profile-page";
+import { BrandAccountSettings } from "./brand-account-settings";
+import BrandSocialLinks from "./brand-social-links";
 
 interface BrandProfileClientProps {
     userId: string;
@@ -13,11 +15,21 @@ interface BrandProfileClientProps {
         banner: string;
         logo: string;
     }
+    socialLinks: {
+        brand_contact_details: {
+            brand_email: string;
+            phone_number: string;
+        }
+        facebook: string;
+        instagram: string;
+        twitter: string;
+        tiktok: string;
+        website: string;
+    }
 }
 
-const BrandProfileClient = ({ userId, brandData }: BrandProfileClientProps) => {
+const BrandProfileClient = ({ userId, brandData, socialLinks }: BrandProfileClientProps) => {
     const [selectedTab, setSelectedTab] = useState('Profile');
-    const [errorMessage, setErrorMessage] = useState("");
 
     const tabs = [
         { label: 'Profile', value: 'Profile' },
@@ -39,16 +51,11 @@ const BrandProfileClient = ({ userId, brandData }: BrandProfileClientProps) => {
                             <BrandProfile userId={userId} data={brandData}/>
                         }
                         {selectedTab === "Account Settings" &&
-                            <>
-                                hahshshh
-                            </>
-                            // <BrandAccountSettings userId={userId} />
+
+                            <BrandAccountSettings userId={userId} />
                         }
                         {selectedTab === "Contact Details" && 
-                            <>
-                                brrrrrrrrr
-                            </>
-                            // <BrandSocialLinks userId={userId} />
+                            <BrandSocialLinks userId={userId} data={socialLinks}/>
                         }
                     </div>
                     

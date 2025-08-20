@@ -6,6 +6,7 @@ import { Button } from '../../../ui/button'
 import { FormEvent, useState } from 'react';
 import validator from 'validator';
 import { PasswordInput } from '../../../ui/password-input'
+import { toast } from 'sonner';
 
 
 interface Errors {
@@ -61,16 +62,18 @@ const ChangePassword = () => {
             const result = await UpdatePassword(formData);
 
             if (result.success) {
+                toast.success("Password has been updated");
                 setStatusMessage(result.message || "Password has been updated");
                 // Reset fields on success
                 setCurrentPassword("");
                 setNewPassword("");
                 setConfirmPassword("");
             } else {
+                toast.error(result.message || "An error occurred.");
                 setStatusMessage(result.message || "An error occurred.");
             }
         } catch (error) {
-            console.error('Failed to change password:', error);
+            toast.error("Failed to change password. Please try again.");
             setStatusMessage("Failed to change password. Please try again.");
         } finally {
             setIsSubmitting(false);

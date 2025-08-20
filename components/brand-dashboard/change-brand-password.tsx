@@ -1,10 +1,82 @@
 import { Button } from "../ui/button";
-import { Input } from "../ui/input";
 import { PasswordInput } from "../ui/password-input";
+import validator from 'validator';
+import { FormEvent, useState } from "react";
+import { toast } from "sonner";
+import { UpdatePassword } from "@/actions/user-auth/update-password";
+
+interface Errors {
+    currentPassword?: string;
+    newPassword?: string;
+    confirmPassword?: string; 
+}
 
 const ChangeBrandPassword = () => {
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [passwordStrength, setPasswordStrength] = useState('');
+    
+    const [statusMessage, setStatusMessage] = useState("");
+    const [errors, setErrors] = useState<Errors>({});
+
+    const validatePasswordStrength = (password: string): string => {
+        if (!password) return '';
+        if (password.length < 8) return 'Too short';
+        if (validator.isStrongPassword(password, { minSymbols: 1, minLowercase: 1, minUppercase: 1, minNumbers: 1 })) {
+            return 'Strong';
+        }
+        return 'Weak';
+    }
+
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setStatusMessage("Updating password...");
+        setErrors({});
+
+        const form = e.currentTarget;
+        const formData = new FormData(form);
+        //get the values fromm form data
+        const currentPassword = formData.get('currentPassword') as string;
+        const newPassword = formData.get('newPassword') as string;
+        const confirmPassword = formData.get('confirmPassword') as string;
+        const newErrors: Errors = {};
+
+
+        if (!newPassword || validatePasswordStrength(newPassword) !== 'Strong') {
+            newErrors.newPassword = "Password must be at least 8 characters and include uppercase, lowercase, numbers, and symbols.";
+        }
+
+        if (newPassword !== confirmPassword) {
+            newErrors.confirmPassword = "Passwords do not match.";
+        }
+
+        setErrors(newErrors);
+        try {
+            const result = await UpdatePassword(formData, "brand");
+
+            if (result.success) {
+                toast.success("Password has been updated");
+                setStatusMessage(result.message || "Password has been updated");
+                // Reset fields on success
+                setCurrentPassword("");
+                setNewPassword("");
+                setConfirmPassword("");
+            } else {
+                toast.error(result.message || "An error occurred.");
+                setStatusMessage(result.message || "An error occurred.");
+            }
+        } catch (error) {
+            toast.error("Failed to change password. Please try again.");
+            setStatusMessage("Failed to change password. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
     return (
-        <div className="mx-auto py-10 sm:py-10 shadow-2xl">
+        <div className="mx-auto py-10 sm:py-10 shadow-2xl border-2">
             <div className="mx-auto max-7xl px-6 lg:px-8">
                 <div className="text-center">
                     {/* SVG Icon */}
@@ -26,7 +98,7 @@ const ChangeBrandPassword = () => {
                     {/* Title */}
                     <p className="mt-4 text-lg font-semibold">Change Password</p>
                 </div>
-                <form className="space-y-6">
+                <form className="space-y-6" onSubmit={handleSubmit}>
                     <div>
                         <label
                             htmlFor="currentPassword"
@@ -34,12 +106,18 @@ const ChangeBrandPassword = () => {
                         >
                             Current Password:*
                         </label>
-                        <div>
+                        <div className="my-1">
                             <PasswordInput
                                 id="currentPassword"
                                 name="currentPassword"
-                                required
-                                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm"                            />
+                                autoComplete="off"
+                                value={currentPassword}
+                                onChange={(e) => { 
+                                    setCurrentPassword(e.target.value);
+                                }}
+                                className="block w-full border-2 py-1.5 ring-1 ring-inset ring-gray-300 sm:text-sm/6 "
+                            />
+                            {errors.currentPassword && <p className="text-red-500 text-sm mt-1">{errors.currentPassword[0]}</p>}
                         </div>
                     </div>
 
@@ -50,13 +128,29 @@ const ChangeBrandPassword = () => {
                         >
                             New Password:* 
                         </label>
-                        <div>
+                        <div className="my-1">
                             <PasswordInput
                                 id="newPassword"
                                 name="newPassword"
-                                required
-                                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm"
+                                autoComplete="off"
+                                value={newPassword}
+                                onChange={(e) => { 
+                                    setNewPassword(e.target.value);
+                                    setPasswordStrength(validatePasswordStrength(e.target.value));
+                                }}
+                                className="block w-full border-2 py-1.5 ring-1 ring-inset ring-gray-300 sm:text-sm/6 "
                             />
+                            <p className="text-sm text-gray-600 my-1 font-bold">
+                                *Password must include uppercase, lowercase, numbers, and symbols*
+                            </p>
+                                <p className="text-sm text-gray-600 my-1">
+                                Strength: <span className={
+                                    passwordStrength === 'Strong' ? 'text-green-500 font-bold' :
+                                    passwordStrength === 'Weak' ? 'text-yellow-500 font-bold' :
+                                    'text-gray-600'
+                                }>{passwordStrength}</span>
+                            </p>
+                            {errors.newPassword && <p className="text-red-500 text-sm mt-1">{errors.newPassword[0]}</p>}
                         </div>
                     </div>
 
@@ -71,18 +165,22 @@ const ChangeBrandPassword = () => {
                             <PasswordInput
                                 id="confirmPassword"
                                 name="confirmPassword"
-                                required
-                                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 sm:text-sm"                            />
-                        </div> 
+                                autoComplete="off"
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                className="block w-full border-2 py-1.5 ring-1 ring-inset ring-gray-300 sm:text-sm/6 "
+                            />
+                            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword[0]}</p>}
+                        </div>
                     </div>
 
                     <div className="text-sm">
                         <Button
-                            // formAction={UpdatePassword}
-                            type='submit'
-                            className="flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-smfocus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                            type="submit"
+                            disabled={isSubmitting || !currentPassword || !newPassword || !confirmPassword}
+                            className="flex w-full justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                         >
-                            Change Password
+                            {isSubmitting ? 'Changing Password...' : 'Change Password'}
                         </Button>
                     </div>
 

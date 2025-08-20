@@ -1,6 +1,10 @@
+"use server"
+import { createClient } from '@/supabase/server';
 import type {BrandOnboarding} from '../../lib/types';
+import { revalidatePath } from 'next/cache';
 
-export const updateBrandContactDetails = async (supabase: any, data: BrandOnboarding["contactInformation"], userId: string) => {
+export const updateBrandContactDetails = async (data: BrandOnboarding["contactInformation"], userId: string, path?: string) => {
+    const supabase = await createClient();
     try {
         const {data: basicContactData, error: basicContactDataError} = await supabase
             .from("brands_contact_details")
@@ -13,8 +17,11 @@ export const updateBrandContactDetails = async (supabase: any, data: BrandOnboar
             }).select();
         
         if (basicContactDataError) {
-            console.error(`The basic contact details error is: ${JSON.stringify(basicContactDataError)}`);
-            throw basicContactDataError;
+            return {
+                success: false,
+                message: basicContactDataError.message,
+                data: null
+            }
         }
 
         const {data: brandSocialLinks, error: brandSocialLinksError} = await supabase
@@ -32,24 +39,27 @@ export const updateBrandContactDetails = async (supabase: any, data: BrandOnboar
             .select();
         
         if(brandSocialLinksError) {
-            console.error(`The brand social links error is: ${JSON.stringify(brandSocialLinksError)}`);
-            throw brandSocialLinksError;
-        }
-
-        if (basicContactData && brandSocialLinks) {
-            return {
-                success: true,
-                basicContactData,
-                brandSocialLinks,
-            };
-        } else {
             return {
                 success: false,
-                message: "No data returned from Supabase.",
+                message:  brandSocialLinksError.message,
+                data: null
             }
         }
+
+        if (path === "brandSocialLinks") {
+            revalidatePath('/dashboard/brand-profile-management')
+        }
+        return {
+            success: true,
+            message: "Brand contact details and social links updated successfully.",
+            data: null,
+        };
+        
     } catch (error) {
-        console.error(`The upload contact error is: ${JSON.stringify(error)}`);
-        throw error;
+        return {
+            success: false,
+            message: error instanceof Error ? error.message : "An unknown error occurred.",
+            data: null
+        }
     }
 }

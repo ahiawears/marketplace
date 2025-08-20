@@ -50,7 +50,7 @@ serve(async (req: Request) => {
 		const userId = user.id;
 		let result;
 		try {
-			result = await updateBrandContactDetails(supabase, data, userId);
+			result = await updateBrandContactDetails(data, userId);
 		} catch (error) {
 			console.error(`Error updating contact data`, error);
 			return new Response(JSON.stringify({ success: false, message: `Error updating contact data` }), {
