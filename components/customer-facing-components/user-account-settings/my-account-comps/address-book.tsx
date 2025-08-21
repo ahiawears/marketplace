@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { UserAddressType } from "@/lib/types";
 import AddressForm from "./address-form";
 import AddressList from "./address-list";
+import { toast } from "sonner";
 
 type ComponentItems = "addressList" | "addAddress";
 
@@ -42,6 +43,7 @@ const AddressBook: React.FC<AddressesProps> = ({ userAddressData }) => {
 			}
 		} catch (error) {
 			console.error("Failed to fetch addresses:", error);
+            toast.error("Failed to fetch addresses. Please refresh the page.");
 		}
 	};
 	const renderComponent = () => {

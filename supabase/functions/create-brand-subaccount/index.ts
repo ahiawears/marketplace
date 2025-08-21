@@ -58,7 +58,7 @@ serve(async (req) => {
                 errors: responseData.errors || null,
             }), {
                 status: response.status,
-                headers: { ...corsHeaders, "Content-Type": "application/json" },
+                headers: { ...corsHeaders, "Content-Type": "application/json" }, 
             });
         }
 

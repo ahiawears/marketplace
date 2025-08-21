@@ -103,13 +103,13 @@ const ConfirmAuthEmailPage = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl shadow-xl border border-gray-200 max-w-md w-full p-8">
+            <div className="bg-white shadow-xl border-2 max-w-md w-full p-8">
                 
                 <div className="text-center space-y-6">
                     {isComplete ? (
-                        <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
+                        <CheckCircle className="h-16 w-1 mx-auto" />
                     ) : (
-                        <Mail className="h-16 w-16 text-blue-600 mx-auto" />
+                        <Mail className="h-16 w-16  mx-auto" />
                     )}
                     
                     <div>
@@ -137,7 +137,7 @@ const ConfirmAuthEmailPage = () => {
                         </div>
                     ) : (
                         <>
-                            <div className="space-y-3 bg-gray-50 p-4 rounded-lg">
+                            <div className="space-y-3 p-4 border-2">
                                 <div className="text-left">
                                     <p className="text-sm font-medium text-gray-700">Current email:</p>
                                     <p className="text-sm text-blue-600 break-all">{user?.email}</p>
@@ -148,12 +148,12 @@ const ConfirmAuthEmailPage = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                            <div className="bg-yellow-50 border-2 p-4">
                                 <div className="flex items-start space-x-2">
-                                    <Clock className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                    <Clock className="h-5 w-5 mt-0.5 flex-shrink-0" />
                                     <div className="text-left">
-                                        <p className="text-sm font-medium text-yellow-800">Action Required:</p>
-                                        <ul className="text-sm text-yellow-700 mt-1 space-y-1">
+                                        <p className="text-sm font-medium ">Action Required:</p>
+                                        <ul className="text-sm mt-1 space-y-1">
                                             <li>• Check both email inboxes</li>
                                             <li>• Click the verification links in both emails</li>
                                             <li>• The change completes automatically when both are clicked</li>
@@ -197,7 +197,7 @@ const ConfirmAuthEmailPage = () => {
 
                 {/* Debug info */}
                 {process.env.NODE_ENV === 'development' && (
-                    <div className="mt-6 p-3 bg-gray-100 rounded-lg">
+                    <div className="mt-6 p-3 bg-gray-100 border-2">
                         <p className="text-xs font-mono text-gray-600">
                             Status: {isComplete ? 'COMPLETE' : 'PENDING'}<br />
                             Current: {user?.email}<br />

@@ -19,9 +19,15 @@ export async function GetBrandLegalDetails(brandId: string): Promise<BrandLegalD
 
         if (error) {
             if (error.code === "PGRST116") {
-                throw new Error("Brand not found");
+                return {
+                    success: false,
+                    message: "Brand not found",
+                }
             }
-            throw error;
+            return {
+                success: false,
+                message: error.message,
+            }
         }
         
         return {

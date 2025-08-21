@@ -21,7 +21,7 @@ serve(async (req: Request) => {
 		if (!FLUTTERWAVE_SECRET_KEY) {
 			return new Response(JSON.stringify({ success: false, message: "FLUTTERWAVE_SECRET_KEY is not set." }), {
 				status: 500,
-				headers: { 
+				headers: {   
                     'Access-Control-Allow-Origin': '*', // Or your frontend's domain
                     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
                     'Access-Control-Allow-Headers': 'Content-Type, Authorization',

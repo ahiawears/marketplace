@@ -1,205 +1,162 @@
-import { brandCountries } from "@/lib/countries";
+"use client"
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { SearchableSelect } from "../ui/searchable-select";
-import { Select } from "../ui/select";
-import { BrandSubAccounts } from '@/lib/types';
+import { FormEvent, useState } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
+import { Label } from "../ui/label";
+import { toast } from "sonner";
+import validator from 'validator';
 
 interface AddBankFormProps {
     onBack: () => void;
-    userLocation: string | null;
-    selectedCountry: string;
-    handleCountryChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-    bankFormData: BrandSubAccounts;
-    handleBankFormChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
-    handleSubmit: (e: React.FormEvent<HTMLFormElement>) => Promise<void>;
-    bankList: { name: string; code: string }[];
+    currency: string;
+    bankList: { name: string; code: string, id: number }[];
 }
 
-const AddBankForm = ({ onBack, userLocation, selectedCountry, handleCountryChange, bankFormData, handleBankFormChange, handleSubmit, bankList }: AddBankFormProps) => {
-    return (
-        <div>
-            <Button
-                onClick={onBack}
-                className="px-4 py-2 mb-4 text-white rounded float-left"			
-            >
-                Back
-            </Button>
+interface BeneficiaryAccountType {
+    account_bank: string;
+    account_number: string;
+    beneficiary_name: string;
+    currency: string;
+    bank_name: string;
+}
 
-            <div>
-                <form className='space-y-4' onSubmit={handleSubmit}>
-                    <div>
-                        <div className='flex lg:flex-row md:flex-row flex-col w-full lg:space-x-4 md:space-x-4 space-y-4 lg:space-y-0 md:space-y-0 my-4'>
-                            <div className='basis-1/2'>
-                                <label 
-                                    htmlFor="country"
-                                    className="block text-sm font-bold text-gray-900 mb-1"
-                                >
-                                    Country: *
-                                </label>
-                                <Select
-                                    id="country"
-                                    name="country"
-                                    value={bankFormData.country || selectedCountry}
-                                    onChange={handleCountryChange}
-                                    className="text-muted-foreground block bg-transparent"
-                                >
-                                    <option value="" disabled>
-                                        Select
-                                    </option>
-                                    {brandCountries.map((country) => (
-                                        <option key={`${country.code}-${country.name}`} value={country.alpha2}>
-                                            {`${country.flag + " " + country.name + " " + country.code}`}
-                                        </option>
-                                    ))}
-                                </Select>
-                            </div>
-                            <div className='basis-1/2'> 
-                                <label 
-                                    htmlFor="account_bank"
-                                    className="block text-sm font-bold text-gray-900 mb-1"
-                                >
-                                    Select Bank: *
-                                </label>
+const AddBankForm = ({ onBack, currency, bankList }: AddBankFormProps) => {
+    const initialBankFormData: BeneficiaryAccountType = {
+        account_bank: "",
+        account_number: "",
+        beneficiary_name: "",
+        currency: currency,
+        bank_name: "",
+    };
+    const [bankFormData, setBankFormData] = useState<BeneficiaryAccountType>(initialBankFormData);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const handleBankFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setBankFormData({
+            ...bankFormData,
+            [e.target.name]: e.target.value,
+        });
+    };
+
+    const isFormValid = () => {
+        return (
+            validator.isNumeric(bankFormData.account_number) &&
+            validator.trim(bankFormData.beneficiary_name).length > 0 &&
+            validator.trim(bankFormData.account_bank).length > 0 &&
+            validator.trim(bankFormData.bank_name).length > 0
+        )
+    }
+
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!isFormValid()) {
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const response = await fetch('/api/create-beneficiary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(bankFormData),
+            });
+            const result = await response.json();
+            if (result.success) {
+                toast.success(result.message);
+                onBack();
+            } else {
+                toast.error(result.message);
+            }
+        } catch (error) {
+            toast.error("An unexpected Error occured. Please try again.")
+        } finally {
+            setIsSubmitting(false);
+        }
+
+    }
+
+    return (
+        <Card className="mx-auto p-4 sm:p-6 lg:p-8 border-2 shadow-lg rounded-none">
+            <CardHeader className="flex items-center justify-between">
+                <div>
+                    <CardTitle className="text-3xl my-4 font-bold text-gray-900 text-center">Add Payment Account</CardTitle>
+                    <CardDescription className="text-md text-gray-600">
+                        Please provide your business and bank details to receive payments.
+                    </CardDescription>
+                </div>
+                <Button
+                    onClick={onBack}
+                    className="flex-shrink-0"
+                >
+                    Back
+                </Button>
+            </CardHeader>
+
+            <CardContent className="py-4">
+                <form className='space-y-6' onSubmit={handleSubmit}>
+                    {/* Bank Details Section */}
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-semibold text-gray-800 border-b-2 pb-2">Bank Details</h3>
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            <div> 
+                                <Label htmlFor="account_bank">Select Bank: *</Label>
                                 <SearchableSelect
                                     options={bankList}
                                     getOptionLabel={(bank) => bank.name}
-                                    onSelect={(selectedBank) =>
-                                        handleBankFormChange({
-                                            target: { name: "account_bank", value: selectedBank.code }
-                                        } as any)
-                                    }
-                                />
+                                    onSelect={(selectedBank) => {
+                                        setBankFormData(prev => ({
+                                            ...prev,
+                                            account_bank: selectedBank.code,
+                                            bank_name: selectedBank.name,
+                                        }));
+                                    }}
+                                />                                
                             </div>
-                        </div>
-
-                        <div className='flex lg:flex-row md:flex-row flex-col w-full lg:space-x-4 md:space-x-4 space-y-4 lg:space-y-0 md:space-y-0 my-4'>
-                            <div className='basis-1/2'>
-                                <label htmlFor="account_number" className="block text-sm font-bold text-gray-900 mb-1">
-                                    Account Number: *
-                                </label>
+                            <div>
+                                <Label htmlFor="account_number">Account Number: *</Label>
                                 <Input
                                     id='account_number'
                                     name='account_number'
                                     value={bankFormData.account_number}
                                     onChange={handleBankFormChange}
                                     required
-                                    type='string'
-                                />
-                            </div>
-                            <div className='basis-1/2'>
-                                <label htmlFor="business_name" className="block text-sm font-bold text-gray-900 mb-1">
-                                    Brand Name: *
-                                </label>
-                                <Input
-                                    id='business_name'
-                                    name='business_name'
-                                    value={bankFormData.business_name}
-                                    onChange={handleBankFormChange}
-                                    required
-                                    type='string'
+                                    type='text'
+                                    className="border-2"
                                 />
                             </div>
                         </div>
+                    </div>
 
-                        <div className='flex lg:flex-row md:flex-row flex-col w-full lg:space-x-4 md:space-x-4 space-y-4 lg:space-y-0 md:space-y-0 my-4'>
-                            <div className='basis-1/2'>
-                                <label htmlFor="business_email" className="block text-sm font-bold text-gray-900 mb-1">
-                                    Business Email: *
-                                </label>
+                    {/* Business Details Section */}
+                    <div className="space-y-4">
+                        <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                            <div>
+                                <Label htmlFor="beneficiary_name">Beneficiary Name: *</Label>
                                 <Input
-                                    id='business_email'
-                                    name='business_email'
-                                    value={bankFormData.business_email}
+                                    id='beneficiary_name'
+                                    name='beneficiary_name'
+                                    value={bankFormData.beneficiary_name}
                                     onChange={handleBankFormChange}
-                                    type='email'
                                     required
-                                />
-                            </div>
-                            <div className='basis-1/2'>
-                                <label htmlFor="business_mobile" className="block text-sm font-bold text-gray-900 mb-1">
-                                    Business Mobile: *
-                                </label>
-                                <Input
-                                    id='business_mobile'
-                                    name='business_mobile'
-                                    value={bankFormData.business_mobile}
-                                    onChange={handleBankFormChange}
-                                    type='tel'
-                                    required
+                                    type='text'
+                                    className="border-2"
                                 />
                             </div>
                         </div>
+                    </div>
 
-                        {/* Business Contact Person */}
-                        <div className='flex lg:flex-row md:flex-row flex-col w-full lg:space-x-4 md:space-x-4 space-y-4 lg:space-y-0 md:space-y-0 my-4'>
-                            <div className='basis-1/2'>
-                                <label htmlFor="business_contact" className="block text-sm font-bold text-gray-900 mb-1">
-                                    Business Contact Person: *
-                                </label>
-                                <Input
-                                    id='business_contact'
-                                    name='business_contact'
-                                    value={bankFormData.business_contact}
-                                    onChange={handleBankFormChange}
-                                    required
-                                />
-                            </div>
-                            <div className='basis-1/2'>
-                                <label htmlFor="business_contact_mobile" className="block text-sm font-bold text-gray-900 mb-1">
-                                    Contact Mobile: *
-                                </label>
-                                <Input
-                                    id='business_contact_mobile'
-                                    name='business_contact_mobile'
-                                    value={bankFormData.business_contact_mobile}
-                                    onChange={handleBankFormChange}
-                                    type='tel'
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        {/* Split Type & Value */}
-                        {/* <div className='flex lg:flex-row md:flex-row flex-col w-full lg:space-x-4 md:space-x-4 space-y-4 lg:space-y-0 md:space-y-0 my-4'>
-                            <div className='basis-1/2'>
-                                <label htmlFor="split_type" className="block text-sm font-bold text-gray-900 mb-1">
-                                    Split Type: *
-                                </label>
-                                <Select
-                                    id='split_type'
-                                    name='split_type'
-                                    value={bankFormData.split_type}
-                                    onChange={handleBankFormChange}
-                                    required
-                                >
-                                    <option value="">Select</option>
-                                    <option value="percentage">Percentage</option>
-                                    <option value="flat">Flat</option>
-                                </Select>
-                            </div>
-                            <div className='basis-1/2'>
-                                <label htmlFor="split_value" className="block text-sm font-bold text-gray-900 mb-1">
-                                    Split Value: *
-                                </label>
-                                <Input
-                                    id='split_value'
-                                    name='split_value'
-                                    value={bankFormData.split_value}
-                                    onChange={handleBankFormChange}
-                                    type='number'
-                                    required
-                                />
-                            </div>
-                        </div>	 */}
-                    </div>	
                     {/* Submit Button */}
-                    <Button type='submit' className="w-full mt-4">
-                        Submit
-                    </Button>		
+                    <Button 
+                        type='submit' 
+                        className="w-full mt-6"
+                        disabled={isSubmitting || !isFormValid()}
+                    >
+                        {isSubmitting ? "Saving..." : "Submit"}
+                    </Button>       
                 </form>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     )
 }
+
 export default AddBankForm;
