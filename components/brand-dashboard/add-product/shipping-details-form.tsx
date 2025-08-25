@@ -35,19 +35,19 @@ interface ProductShippingDeliveryType {
 const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippingConfig }) => {
     if (shippingConfig === null) {
         return (
-            <Card className="my-4 border-2 rounded-none align-middle">   
+            <Card className="my-4 border-2 rounded-none align-middle justify-center">   
                 <CardHeader className="px-0">
-                    <CardTitle className="text-lg font-semibold px-2">Shipping Configuration not set yet.</CardTitle>
+                    <CardTitle className="text-lg font-semibold px-2 text-center">Shipping Configuration not set yet.</CardTitle>
                 </CardHeader>
-                <CardDescription className="text-sm text-gray-600 px-2 font-bold">
+                <CardDescription className="text-sm text-gray-600 px-2 font-bold text-center">
                     Please Fill in your Shipping Configuration Form to continue
                 </CardDescription>
                 <Link
                     href={"/dashboard/shipping-configuration"}
-                    className="justify-center my-4"
+                    className="flex justify-center w-full my-4"
                 >
                     <Button
-                        className="border-2 my-2 mx-auto"
+                        className="border-2 my-2 mx-auto rounded-none"
                     >
                         Go To Shipping Configuration
                     </Button>

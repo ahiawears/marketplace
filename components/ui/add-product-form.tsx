@@ -65,7 +65,7 @@ const AddProductForm = () => {
             dimensions: {
                 length: 0,
                 width: 0,
-                height: 0
+                height: 0 
             },
         },
         returnRefundPolicy: {

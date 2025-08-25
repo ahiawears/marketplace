@@ -109,16 +109,26 @@ interface ShippingConfigurationProps {
 
 const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, data, brandCountry, brandCurrency }) => {
     const [config, setConfig] = useState<ShippingDetails>(DEFAULT_SHIPPING_CONFIG);
+    const [isFormValid, setIsFormValid] = useState(false);
+    const [isButtonDisabled, setIsButtonDisabled] = useState(false);
+
+
     useEffect(() => {
         if (data === null) {
-            setConfig(DEFAULT_SHIPPING_CONFIG)
+            setConfig(DEFAULT_SHIPPING_CONFIG);
         } else {
             setConfig(data);
         }
 
-    }, [data])
+    }, [data, DEFAULT_SHIPPING_CONFIG]);
+
     const [errorMessage, setErrorMessage] = useState("");
     const [isSaving, setIsSaving] = useState(false);
+
+    const validateConfigAndUpdateButton = () => {
+        const validationErrors = ValidateShippingConfig(config);
+        setIsButtonDisabled(validationErrors.length > 0);
+    };
 
     const hasChanges = !areShippingConfigsEqual(config, data);
 
@@ -129,6 +139,11 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
         zones.global?.excludedCountries?.forEach(c => combined.add(c));
         return Array.from(combined);
     };
+
+    useEffect(() => {
+        const validationErrors: string[] = ValidateShippingConfig(config);
+        setIsFormValid(validationErrors.length === 0);
+    }, [config]);
 
     const handleMethodToggle = (method: keyof ShippingDetails['shippingMethods'], checked: boolean) => {
         const methodDbKeyMap: { [key in keyof ShippingDetails['shippingMethods']]?: string } = {
@@ -295,12 +310,12 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
     const handleSave = async () => {
         setErrorMessage("");
 
-        const validationErrors: string[] = ValidateShippingConfig(config);
-
+        const validationErrors = ValidateShippingConfig(config);
+    
         if (validationErrors.length > 0) {
             setErrorMessage(validationErrors.join('\n'));
             setIsSaving(false);
-            return; 
+            return;
         }
 
         try {
@@ -624,7 +639,7 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
             <div className="flex justify-end">
                 <Button
                     onClick={handleSave}
-                    disabled={isSaving || !hasChanges}
+                    disabled={isButtonDisabled || isSaving}
                     className="px-6 py-2"
                 >
                     {isSaving ? "Saving..." : "Save Configuration"}

@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import VariantDetailsForm from "./variants-details-form";
 import ShippingDetailsForm from "./shipping-details-form";
 import { ShippingDetails } from '@/lib/types';
+import CareDetailsForm from "./care-details-form";
+import ReturnPolicyDetailsForm from "./return-policy-details-form";
 
 type ProductMode = "single" | "multi-variant";
 
@@ -26,7 +28,7 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, shippingConfig }) => 
             disabled: false
         },
         {
-            title: "Variants Details",
+            title: "Variants Details", 
             content: <VariantDetailsForm 
                 currencyCode={currencyCode}
             />,
@@ -39,6 +41,18 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, shippingConfig }) => 
                 currencySymbol={currencyCode}
             />,
             disabled: false
+        },
+        {
+            title: "Care Instructions",
+            content: <CareDetailsForm />,
+            disabled: false,
+        },
+        {
+            title: "Refund Policy",
+            content: <ReturnPolicyDetailsForm 
+                currencySymbol={currencyCode}
+            />,
+            disabled: false,
         }
     ]
 

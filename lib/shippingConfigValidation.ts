@@ -12,10 +12,10 @@ const zoneDisplayNames: Record<DeliveryZone, string> = {
     domestic: "Domestic",
     sub_regional: "Sub-Regional",
     regional: "Regional",
-    global: "International" // Assuming 'global' maps to 'International' based on previous context
+    global: "International"
 };
 
-export const ValidateShippingConfig = ( config: ShippingConfigDataProps): string[] => {
+export const ValidateShippingConfig = (config: ShippingConfigDataProps): string[] => {
     const errors: string[] = [];
 
     // --- 1. Handling Time Validation ---
@@ -30,10 +30,6 @@ export const ValidateShippingConfig = ( config: ShippingConfigDataProps): string
         if (handlingTo < handlingFrom) {
             errors.push("Handling Time 'To' cannot be less than 'From'.");
         }
-        // Allow 0-0 or 0-X, but not X-0 where X > 0? The UI allows 0-1. Let's ensure 'To' is valid.
-        // If From is 0, To must be >= 0. If From > 0, To must be >= From. This is covered by To < From check.
-        // Maybe add a check that if From is 0, To must be > 0? The UI implies 0-1 is okay.
-        // Let's stick to To >= From and both >= 0.
     }
 
     // 2. Shipping Methods Validation
@@ -64,15 +60,21 @@ export const ValidateShippingConfig = ( config: ShippingConfigDataProps): string
     methodsToCheck.forEach(({ method, name }) => {
         if (method.available) {
             const zones: DeliveryZone[] = ['domestic', 'sub_regional', 'regional', 'global'];
+            let hasEnabledZones = false;
+            let hasValidFees = true;
+            
             zones.forEach(zone => {
-                const zoneNameForError = zoneDisplayNames[zone]; // Get the display name
+                const zoneNameForError = zoneDisplayNames[zone];
 
                 // Check only if the corresponding *shipping zone* is also enabled
                 if (config.shippingZones[zone]?.available) {
+                    hasEnabledZones = true;
                     const deliveryInfo = method.estimatedDelivery[zone];
+                    
                     if (!deliveryInfo) {
                         errors.push(`${name}: Missing delivery details for the enabled ${zoneNameForError} zone.`);
-                        return; 
+                        hasValidFees = false;
+                        return;
                     }
 
                     const { from, to, fee } = deliveryInfo;
@@ -89,17 +91,26 @@ export const ValidateShippingConfig = ( config: ShippingConfigDataProps): string
                     }
 
                     // Fee Validation (Allow 0 for free shipping per zone)
-                    if (fee === undefined || fee === null || isNaN(fee)|| fee <= 0) {
-                        errors.push(`${name} (${zoneNameForError}): Fee must be greater than 0.`);
+                    if (fee === undefined || fee === null || isNaN(fee) || fee < 0) {
+                        errors.push(`${name} (${zoneNameForError}): Fee must be a non-negative number.`);
+                        hasValidFees = false;
                     }
                 }
             });
+            
+            // NEW VALIDATION: Check if method is enabled but has no enabled zones with valid fees
+            if (hasEnabledZones && !hasValidFees) {
+                errors.push(`${name} is enabled but doesn't have valid fees set for any of its enabled zones.`);
+            }
+            
+            // NEW VALIDATION: Check if method is enabled but has no enabled zones at all
+            if (method.available && !hasEnabledZones) {
+                errors.push(`${name} is enabled but no shipping zones are enabled for this method.`);
+            }
         }
     });
 
     // --- 3. Shipping Zones Validation ---
-    // Basic checks are implicitly covered by checking methods above.
-    // We just need to ensure the structure is correct if a zone is available.
     if (config.shippingZones.domestic.available) {
         if (!Array.isArray(config.shippingZones.domestic.excludedCities)) {
             errors.push("Domestic zone 'excludedCities' must be an array.");
@@ -146,7 +157,11 @@ export const ValidateShippingConfig = ( config: ShippingConfigDataProps): string
     }
 
     // --- Final Check: At least one shipping zone enabled if standard/express is enabled? ---
-    const anyZoneEnabled = config.shippingZones.domestic.available || config.shippingZones.sub_regional.available || config.shippingZones.regional.available || config.shippingZones.global.available;
+    const anyZoneEnabled = config.shippingZones.domestic.available || 
+                           config.shippingZones.sub_regional.available || 
+                           config.shippingZones.regional.available || 
+                           config.shippingZones.global.available;
+    
     if ((standardShipping.available || expressShipping.available) && !anyZoneEnabled) {
         errors.push("If Standard or Express shipping is enabled, at least one Shipping Zone (Domestic, Sub-Regional, etc.) must also be enabled.");
     }
