@@ -1,7 +1,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 export type SearchableSelectProps<T> = {
     options: T[];
@@ -75,7 +75,21 @@ export function SearchableSelect<T>({
                     onFocus={handleFocus}
                     className="pr-10 border-2"
                 />
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" size={18} />
+                {isOpen ?
+                    (
+                        <ChevronUp
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer" 
+                            size={18}
+                            onClick={() => {isOpen ? setIsOpen(false) : setIsOpen(true)}}
+                        />
+                    ) : (
+                        <ChevronDown 
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground cursor-pointer" 
+                            size={18}
+                            onClick={() => {isOpen ? setIsOpen(false) : setIsOpen(true)}}
+                        />
+                    )
+                }
             </div>
             {isOpen && (
                 <div className="absolute z-10 mt-1 w-full border-2 bg-background shadow-md max-h-52 overflow-y-auto">

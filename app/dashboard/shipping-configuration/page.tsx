@@ -38,7 +38,8 @@ const ShippingConfiguration = async () => {
     if (!brandConfig.success) {
         // Return a notFound or error page if the config is not found or fails
         // You could also render a message on the page instead
-        return notFound();
+        // return notFound();
+        console.log(brandConfig.message);
     }
 
     if (!brandLegal.success) {

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import PublishProduct from "./publish-product";
 import AddProductDetails from "./add-product-details";
-// Removed unused imports ProductPreviewModal, ProductPreview
 import { ProductReleaseDetails, ProductUploadData, ProductVariantType } from "../../lib/types";
 import { redirect, useParams, useSearchParams } from "next/navigation";
 import React from "react";

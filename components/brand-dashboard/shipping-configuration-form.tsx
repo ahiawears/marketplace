@@ -1,8 +1,8 @@
 "use client";
 
 import { ValidateShippingConfig } from "@/lib/shippingConfigValidation";
-import { ShippingDetails, DeliveryZone } from "@/lib/types";
-import { FC, useState } from "react";
+import { ShippingDetails, DeliveryZone, DEFAULT_SHIPPING_CONFIG } from "@/lib/types";
+import { FC, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Input } from "../ui/input";
 import ZoneToggle from "../brand-shipping-config/zone-toggle";
@@ -108,7 +108,15 @@ interface ShippingConfigurationProps {
 }
 
 const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, data, brandCountry, brandCurrency }) => {
-    const [config, setConfig] = useState<ShippingDetails>(data);
+    const [config, setConfig] = useState<ShippingDetails>(DEFAULT_SHIPPING_CONFIG);
+    useEffect(() => {
+        if (data === null) {
+            setConfig(DEFAULT_SHIPPING_CONFIG)
+        } else {
+            setConfig(data);
+        }
+
+    }, [data])
     const [errorMessage, setErrorMessage] = useState("");
     const [isSaving, setIsSaving] = useState(false);
 

@@ -1,131 +1,126 @@
-import { ShippingDetails, ProductShippingDeliveryType, DeliveryZoneKey } from "@/lib/types"
-import { useEffect, useState } from "react";
-import { Input } from "../ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { MoneyInput } from "@/components/ui/money-input";
+import { DeliveryZoneKey, ProductMethodZoneConfig, ShippingConfigDataProps } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { Select } from "../ui/select";
-import { useShippingConfig } from "@/hooks/get-brand-config";
-import LoadContent from "@/app/load-content/page";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { MoneyInput } from "../ui/money-input";
-import { Button } from "../ui/button";
+import { ChangeEvent, FC, FormEvent, useState, useEffect } from "react";
 import { validateProductShippingDetails } from "@/lib/productDataValidation";
+import Link from "next/link";
 
-interface ProductShippingDetailsProps {
-    userId: string;
-    accessToken: string;
+interface ShippingDetailsPropss {
     currencySymbol: string;
-    productId: string;
-    editProductShippingDetails: ProductShippingDeliveryType;
-    onSaveShippingDetails: (details: ProductShippingDeliveryType) => void;
+    shippingConfig: ShippingConfigDataProps | null;
+}
+interface ProductDimensions {
+    length: number;
+    width: number;
+    height: number;
 }
 
+interface ProductShippingDeliveryType {
+    methods?: {
+        standard?: Partial<Record<DeliveryZoneKey, ProductMethodZoneConfig>>;
+        express?: Partial<Record<DeliveryZoneKey, ProductMethodZoneConfig>>;
+        sameDay?: {
+            available?: boolean;
+            fee?: number;
+        };
+    }
+    weight: number;
+    dimensions: ProductDimensions;
+    measurementUnit: "Inch" | "Centimeter";
+}
 
-const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId, accessToken, currencySymbol, productId, onSaveShippingDetails, editProductShippingDetails }) => {
-    const { config: shippingConfig, loading: configLoading, error: configError, refetch } = useShippingConfig(userId, accessToken);
-    const [ selectedShippingMethods, setSelectedShippingMethods ] = useState<string[]>([]);
-    const [ methodFees, setMethodFees ] = useState<ProductShippingDeliveryType["methods"]>(editProductShippingDetails.methods || {});
-    const [ productWeight, setProductWeight ] = useState<ProductShippingDeliveryType["weight"]>(editProductShippingDetails.weight || 0);
-    const [ productDimensions, setProductDimensions ] = useState<ProductShippingDeliveryType["dimensions"]>(editProductShippingDetails.dimensions || { length: 0, width: 0, height: 0 })
+const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippingConfig }) => {
+    if (shippingConfig === null) {
+        return (
+            <Card className="my-4 border-2 rounded-none align-middle">   
+                <CardHeader className="px-0">
+                    <CardTitle className="text-lg font-semibold px-2">Shipping Configuration not set yet.</CardTitle>
+                </CardHeader>
+                <CardDescription className="text-sm text-gray-600 px-2 font-bold">
+                    Please Fill in your Shipping Configuration Form to continue
+                </CardDescription>
+                <Link
+                    href={"/dashboard/shipping-configuration"}
+                    className="justify-center my-4"
+                >
+                    <Button
+                        className="border-2 my-2 mx-auto"
+                    >
+                        Go To Shipping Configuration
+                    </Button>
+                </Link>
+            </Card>
+        )  
+    }
+
     const { shippingMethods, shippingZones } = shippingConfig;
-    const [ errorMessage, setErrorMessage ] = useState("");
-    const [ isSaveButtonDisabled, setIsSaveButtonDisabled ] = useState<boolean>(true);
-    const [ measurementUnit, setMeasurementUnit ] = useState<"Inch" | "Centimeter">("Inch");
+    const [isSaveButtonDisabled, setIsSaveButtonDisabled] = useState<boolean>(true);
+    const [selectedShippingMethods, setSelectedShippingMethods] = useState<string[]>([]);
+    
+    // State to hold the fees the user enters for each method/zone
+    const [methodFees, setMethodFees] = useState<ProductShippingDeliveryType["methods"]>({});
 
+    const [shippingDetailsData, setShippingDetailsData] = useState<Omit<ProductShippingDeliveryType, 'methods'>>({
+        weight: 0,
+        dimensions: {
+            length: 0,
+            width: 0,
+            height: 0
+        },
+        measurementUnit: "Inch"
+    });
+
+    // Use a useEffect hook to validate the form whenever relevant state changes
     useEffect(() => {
-        if (editProductShippingDetails && editProductShippingDetails.productId) {
-            setMethodFees(editProductShippingDetails.methods || {});
-            setProductWeight(editProductShippingDetails.weight || 0);
-            setProductDimensions(editProductShippingDetails.dimensions || { length: 0, width: 0, height: 0 });
+        const { isValid } = validateProductShippingDetails(selectedShippingMethods, methodFees, shippingConfig);
+        setIsSaveButtonDisabled(!isValid);
+    }, [selectedShippingMethods, methodFees, shippingConfig]);
 
-            // Determine which shipping methods are active based on the fetched data
-            // and check the corresponding checkboxes.
-            const activeMethods: string[] = [];
-            const methods = editProductShippingDetails.methods;
-
-            // Check if sameDay is available
-            if (methods?.sameDay?.available) {
-                activeMethods.push('sameDayDelivery');
-            }
-            // Check if any zone in 'standard' is available
-            if (methods?.standard && Object.values(methods.standard).some(zone => zone.available)) {
-                activeMethods.push('standardShipping');
-            }
-            // Check if any zone in 'express' is available
-            if (methods?.express && Object.values(methods.express).some(zone => zone.available)) {
-                activeMethods.push('expressShipping');
-            }
-            setSelectedShippingMethods(activeMethods);
-        } else if (shippingConfig && !configLoading && shippingConfig.shippingMethods && shippingConfig.shippingZones && productId !== "" && productId !== null) {
-            const initialFees: ProductShippingDeliveryType["methods"] = {};
-
-            // Same Day Delivery
-            const sameDayConfig = shippingConfig.shippingMethods.sameDayDelivery;
-            if (sameDayConfig?.available) {
-                initialFees.sameDay = {
-                    available: true,
-                    fee: sameDayConfig.fee,
-                };
-            }
-
-            // Standard Shipping
-            const standardConfig = shippingConfig.shippingMethods.standardShipping;
-            if (standardConfig?.available && standardConfig.estimatedDelivery) {
-                initialFees.standard = {};
-                (Object.keys(standardConfig.estimatedDelivery) as DeliveryZoneKey[]).forEach(zoneKey => {
-                    if (shippingConfig.shippingZones[zoneKey]?.available) {
-                        initialFees.standard![zoneKey] = {
-                            available: true, // Product initially offers for this zone if brand does
-                            fee: standardConfig.estimatedDelivery[zoneKey]!.fee,
-                        };
-                    }
-                });
-            }
-
-            // Express Shipping
-            const expressConfig = shippingConfig.shippingMethods.expressShipping;
-            if (expressConfig?.available && expressConfig.estimatedDelivery) {
-                initialFees.express = {};
-                (Object.keys(expressConfig.estimatedDelivery) as DeliveryZoneKey[]).forEach(zoneKey => {
-                     if (shippingConfig.shippingZones[zoneKey]?.available) {
-                        initialFees.express![zoneKey] = {
-                            available: true, // Product initially offers for this zone if brand does
-                            fee: expressConfig.estimatedDelivery[zoneKey]!.fee,
-                        };
-                    }
-                });
-            }
-            setMethodFees(initialFees);
-        }
-    }, [editProductShippingDetails, shippingConfig, configLoading, productId]);
-
-
-
-    const handleMethodSelect = (method: string) => {
-        setSelectedShippingMethods(prev => 
-            prev.includes(method) 
-                ? prev.filter(m => m !== method)
-                : [...prev, method]
-        );
+    const handleWeightChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const value = parseFloat(e.target.value);
+        setShippingDetailsData({
+            ...shippingDetailsData,
+            weight: isNaN(value) ? 0 : value,
+        });
     };
 
-    const handleMeasurementUnitChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setMeasurementUnit(event.target.value as "Inch" | "Centimeter");
+    const handleDimensionsChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        const numericValue = parseFloat(value);
+
+        setShippingDetailsData(prevData => ({
+            ...prevData,
+            dimensions: {
+                ...prevData.dimensions,
+                [name]: isNaN(numericValue) ? 0 : numericValue,
+            }
+        }));
+    };
+
+    const handleMeasurementUnitChange = (e: ChangeEvent<HTMLInputElement>) => {
+        setShippingDetailsData({
+            ...shippingDetailsData,
+            measurementUnit: e.target.value as "Inch" | "Centimeter",
+        });
     };
 
     const handleFeeChange = (
         productMethodKey: 'sameDay' | 'standard' | 'express',
-        zoneKey: DeliveryZoneKey | undefined, // Undefined for sameDayDelivery
+        zoneKey: DeliveryZoneKey | undefined,
         value: number
     ) => {
         setMethodFees(prev => {
-            const newFees = JSON.parse(JSON.stringify(prev || {})); // Deep copy to ensure nested updates
+            const newFees = JSON.parse(JSON.stringify(prev || {}));
 
+            // Handle Same Day Delivery
             if (productMethodKey === 'sameDay') {
                 if (!newFees.sameDay) {
-                    // Initialize from shippingConfig if not present, respecting brand's availability
                     newFees.sameDay = { available: shippingConfig?.shippingMethods.sameDayDelivery.available };
                 }
-                newFees.sameDay.fee = value;
+                newFees.sameDay.fee = value;            
             } else if (zoneKey && (productMethodKey === 'standard' || productMethodKey === 'express')) {
                 if (!newFees[productMethodKey]) {
                     newFees[productMethodKey] = {};
@@ -139,75 +134,90 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                 }
                 newFees[productMethodKey]![zoneKey]!.fee = value;
             }
+
             return newFees;
         });
     };
 
-    useEffect(() => {
-        if (configLoading) {
-            setIsSaveButtonDisabled(true);
-            return;
-        }
-        const { isValid, error } = validateProductShippingDetails(selectedShippingMethods, methodFees, shippingConfig);
-        setIsSaveButtonDisabled(!isValid);
-        setErrorMessage(error || "");
-    }, [productWeight, productDimensions, selectedShippingMethods, methodFees, shippingConfig, configLoading]);
-
-    if (configLoading) {
-        return <LoadContent />
-    }
-
-    function handleSave(){
-        const { isValid, error } = validateProductShippingDetails(selectedShippingMethods, methodFees, shippingConfig);
-        if (!isValid) {
-            setErrorMessage(error || "An unknown validation error occurred.");
-            return;
-        }
-        const selectedMethodsAndFees: ProductShippingDeliveryType["methods"] = {};
-
-        selectedShippingMethods.forEach(methodKeyString => {
-            if (methodKeyString === 'sameDayDelivery' && methodFees?.sameDay) {
-                if (!selectedMethodsAndFees.sameDay) selectedMethodsAndFees.sameDay = {};
-                selectedMethodsAndFees.sameDay = { ...methodFees.sameDay };
-            } else if (methodKeyString === 'standardShipping' && methodFees?.standard) {
-                if (!selectedMethodsAndFees.standard) {
-                    selectedMethodsAndFees.standard = {};
-                }
-                selectedMethodsAndFees.standard = { ...methodFees.standard };
-            } else if (methodKeyString === 'expressShipping' && methodFees?.express) {
-                if (!selectedMethodsAndFees.express) selectedMethodsAndFees.express = {};
-                selectedMethodsAndFees.express = { ...methodFees.express };
+    const handleMethodSelect = (method: string) => {
+        setSelectedShippingMethods(prev => {
+            // If the method is already selected, unselect it and remove from fees
+            if (prev.includes(method)) {
+                setMethodFees(prevFees => {
+                    const newFees = { ...prevFees };
+                    if (method === 'sameDayDelivery') {
+                        delete newFees.sameDay;
+                    } else if (method === 'standardShipping') {
+                        delete newFees.standard;
+                    } else if (method === 'expressShipping') {
+                        delete newFees.express;
+                    }
+                    return newFees;
+                });
+                return prev.filter(m => m !== method);
+            }
+            // If the method is not selected, select it and add default fees
+            else {
+                setMethodFees(prevFees => {
+                    const newFees = { ...prevFees };
+                    if (method === 'sameDayDelivery' && shippingMethods.sameDayDelivery.available) {
+                        newFees.sameDay = {
+                            available: true,
+                            fee: shippingMethods.sameDayDelivery.fee
+                        };
+                    } else if (method === 'standardShipping' && shippingMethods.standardShipping.available) {
+                        newFees.standard = {};
+                        Object.entries(shippingZones).forEach(([zoneKey, zoneDetails]) => {
+                            if (zoneDetails.available) {
+                                newFees.standard![zoneKey as DeliveryZoneKey] = {
+                                    fee: shippingMethods.standardShipping.estimatedDelivery?.[zoneKey as DeliveryZoneKey]?.fee,
+                                    available: true,
+                                };
+                            }
+                        });
+                    } else if (method === 'expressShipping' && shippingMethods.expressShipping.available) {
+                        newFees.express = {};
+                        Object.entries(shippingZones).forEach(([zoneKey, zoneDetails]) => {
+                            if (zoneDetails.available) {
+                                newFees.express![zoneKey as DeliveryZoneKey] = {
+                                    fee: shippingMethods.expressShipping.estimatedDelivery?.[zoneKey as DeliveryZoneKey]?.fee,
+                                    available: true,
+                                };
+                            }
+                        });
+                    }
+                    return newFees;
+                });
+                return [...prev, method];
             }
         });
-
-        const shippingDetailsToSave: ProductShippingDeliveryType = {
-            productId: productId,
-            methods: selectedMethodsAndFees,
-            weight: productWeight,
-            dimensions: productDimensions,
-            
-        };
-        onSaveShippingDetails(shippingDetailsToSave);
-        console.log("Saved Product Shipping Details:", shippingDetailsToSave);    
+    }
+    const handleSave = async (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        console.log({
+            ...shippingDetailsData,
+            methods: methodFees
+        });
     }
 
     return (
-        <div>
+        <form onSubmit={handleSave}>
             {/* --- Package Physical Attributes --- */}
-            <Card className="mb-4 border-2">
+            <Card className="my-4 border-2 rounded-none">
                 <CardHeader>
                     <CardTitle className="text-lg font-semibold">Package Physical Attributes</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div>
-                        <label className="block text-sm font-medium mb-1">
+                        <label className="block text-sm font-medium mb-1" htmlFor="weight">
                             Weight <span className="font-bold">(kg)</span>
                         </label>
                         <Input
+                            name="weight"
                             type="number"
-                            value={productWeight === 0 ? '' : productWeight}
-                            onChange={(e) => setProductWeight(parseFloat(e.target.value) || 0)}
-                            className="w-full p-2 border-2 rounded"
+                            value={shippingDetailsData.weight === 0 ? '' : shippingDetailsData.weight}
+                            onChange={handleWeightChange}
+                            className="w-full p-2 border-2"
                             min="0.1"
                             step="0.1"
                             placeholder="0.00"
@@ -215,49 +225,40 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                     </div>
                     <div className="my-2">
                         <div>
-                            <label htmlFor="measurementUnit" className="block text-sm font-bold text-gray-900"> Select the measurement unit</label>
-                            
+                            <label htmlFor="measurementUnit" className="block text-sm font-bold text-gray-900">Select the measurement unit</label>
                             <div className="flex gap-4 mt-2">
                                 <div className="flex items-center">
-                                    <Input 
+                                    <Input
                                         type="radio"
                                         id="measurementUnitInch"
                                         name="measurementUnit"
                                         value="Inch"
-                                        checked={measurementUnit === "Inch"}
-                                        onChange={(e) => {
-                                            handleMeasurementUnitChange(e);
-                                        }}
+                                        checked={shippingDetailsData.measurementUnit === "Inch"}
+                                        onChange={handleMeasurementUnitChange}
                                         className={cn(
-                                            "h-4 w-4 border-2 p-2 text-black focus:ring-0 focus:ring-offset-0",
+                                            "h-4 w-4 border-2 cursor-pointer",
                                             "peer appearance-none",
-                                            "checked:bg-black checked:border-transparent",
-                                            "hover:border-gray-500 cursor-pointer"
+                                            "checked:bg-black checked:border-transparent"
                                         )}
                                     />
                                     <label htmlFor="measurementUnitInch" className="ml-2 text-sm peer-checked:text-black">Inch</label>
                                 </div>
-        
                                 <div className="flex items-center">
                                     <Input
                                         type="radio"
                                         id="measurementUnitCentimeter"
                                         name="measurementUnit"
                                         value="Centimeter"
-                                        checked={measurementUnit === "Centimeter"}
-                                        onChange={(e) => {
-                                            handleMeasurementUnitChange(e);
-                                        }}
+                                        checked={shippingDetailsData.measurementUnit === "Centimeter"}
+                                        onChange={handleMeasurementUnitChange}
                                         className={cn(
-                                            "h-4 w-4 border-2 p-2 text-black focus:ring-0 focus:ring-offset-0",
+                                            "h-4 w-4 border-2 cursor-pointer",
                                             "peer appearance-none",
-                                            "checked:bg-black checked:border-transparent",
-                                            "hover:border-gray-500 cursor-pointer"
+                                            "checked:bg-black checked:border-transparent"
                                         )}
                                     />
                                     <label htmlFor="measurementUnitCentimeter" className="ml-2 text-sm peer-checked:text-black">Centimeter</label>
                                 </div>
-                                    
                             </div>
                         </div>
                     </div>
@@ -265,17 +266,15 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                         {['length', 'width', 'height'].map((dim) => (
                             <div key={dim}>
                                 <label className="block text-sm font-medium mb-1">
-                                    {dim.charAt(0).toUpperCase() + dim.slice(1)} <span className="font-bold">({measurementUnit === "Inch" ? "in" : "cm"})</span>
+                                    {dim.charAt(0).toUpperCase() + dim.slice(1)} <span className="font-bold">({shippingDetailsData.measurementUnit === "Inch" ? "in" : "cm"})</span>
                                 </label>
                                 <Input
+                                    name={dim}
                                     type="number"
                                     placeholder="0.00"
-                                    value={productDimensions[dim as keyof typeof productDimensions] === 0 ? '' : productDimensions[dim as keyof typeof productDimensions]}
-                                    onChange={(e) => setProductDimensions({
-                                        ...productDimensions,
-                                        [dim]: parseFloat(e.target.value) || 0
-                                    })}
-                                    className="w-full p-2 border-2 rounded"
+                                    value={shippingDetailsData.dimensions[dim as keyof ProductDimensions] === 0 ? '' : shippingDetailsData.dimensions[dim as keyof ProductDimensions]}
+                                    onChange={handleDimensionsChange}
+                                    className="w-full p-2 border-2"
                                     min="1"
                                 />
                             </div>
@@ -283,18 +282,15 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                     </div>
                 </CardContent>
             </Card>
-
-            <Card className="my-4 border-2">
+            <Card className="my-4 border-2 rounded-none">
                 <CardHeader>
                     <CardTitle className="text-lg font-semibold">Shipping Methods</CardTitle>
                     <CardDescription className="text-sm text-gray-600">
                         Please select at least one Shipping Method available for this product and configure their fees.
                     </CardDescription>
-
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {/* Same day Shipping */}
                         {shippingMethods.sameDayDelivery.available && (
                             <div className="flex items-center space-x-4">
                                 <div className="flex items-center">
@@ -316,9 +312,6 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                                 </div>
                             </div>
                         )}
-                        {/* Same day shipping */}
-
-                        {/* Standard Shipping */}
                         {shippingMethods.standardShipping.available && (
                             <div className="flex items-center space-x-4">
                                 <div className="flex items-center">
@@ -340,9 +333,6 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                                 </div>
                             </div>
                         )}
-                        {/* Standard Shipping */}
-
-                        {/* Express Shipping */}
                         {shippingMethods.expressShipping.available && (
                             <div className="flex items-center space-x-4">
                                 <div className="flex items-center">
@@ -364,27 +354,24 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                                 </div>
                             </div>
                         )}
-                        {/* Express Shipping */}
                     </div>
                 </CardContent>
             </Card>
-
             {/* --- Shipping Zones and Fees --- */}
             {selectedShippingMethods.length > 0 && (
-                <Card className="mb-4 border-2">
+                <Card className="mb-4 border-2 rounded-none">
                     <CardHeader>
                         <CardTitle className="text-lg font-semibold">Zone-Specific Settings</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-6">
+                            {/* Same Day Delivery Fee Input */}
                             {selectedShippingMethods.includes('sameDayDelivery') && shippingMethods?.sameDayDelivery.available && (
                                 <div>
                                     <h3 className="text-md font-semibold mb-2">
                                         Same Day Delivery
                                     </h3>
-
-                                    <div className="flex items-center rounded-md">
-
+                                    <div className="flex items-center">
                                         <Input
                                             name="currencySymbol"
                                             type="text"
@@ -395,18 +382,15 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                                             disabled
                                             className="text-center block border-none p-2 text-gray-900 bg-transparent w-1/5"
                                         />
-
-                                        <MoneyInput 
+                                        <MoneyInput
                                             numericValue={methodFees?.sameDay?.fee ?? shippingMethods.sameDayDelivery.fee}
                                             className="w-1/2 border-2"
                                             placeholder="0.00"
                                             onNumericChange={(value) => {
-                                                handleFeeChange('sameDay', "domestic", value);
+                                                handleFeeChange('sameDay', undefined, value);
                                             }}
                                         />
-
                                     </div>
-                                    
                                     <p className="text-xs text-gray-500 my-1">
                                         Cut-off: {shippingMethods.sameDayDelivery.estimatedDelivery?.cutOffTime} ({shippingMethods.sameDayDelivery.estimatedDelivery?.timeZone})
                                     </p>
@@ -415,21 +399,28 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                                     </p>
                                 </div>
                             )}
+
+                            {/* Standard and Express Fees by Zone */}
                             {(selectedShippingMethods.includes('standardShipping') || selectedShippingMethods.includes('expressShipping')) && Object.entries(shippingZones).map(([zoneKeyStr, zoneDetails]) => {
                                 const zoneKey = zoneKeyStr as DeliveryZoneKey;
                                 if (!zoneDetails.available) return null;
 
+                                // Get the excluded cities/countries list for this zone
+                                const exclusions = (zoneKey === 'domestic')
+                                    ? shippingZones.domestic.excludedCities
+                                    : (shippingZones[zoneKey] as { excludedCountries: string[] }).excludedCountries;
+                                
                                 return (
-                                    <div key={zoneKey} className="border-b last:border-b">
-                                         <h3 className="text-md font-semibold mb-2">
-                                            {zoneKey.charAt(0).toUpperCase() + zoneKey.slice(1).replace('_', ' ')} Zone
+                                    <div key={zoneKey} className="border-b last:border-b-0 py-2">
+                                        <h3 className="text-md font-semibold mb-2">
+                                            {zoneKey.charAt(0).toUpperCase() + zoneKey.slice(1).replace(/_/g, ' ')} Zone
                                         </h3>
+
                                         {/* Standard Shipping Fee for this zone */}
-                                        {selectedShippingMethods.includes('standardShipping') && shippingMethods?.standardShipping.available && shippingMethods.standardShipping.estimatedDelivery?.[zoneKey] && shippingZones[zoneKey]?.available && ((shippingZones[zoneKey] as any).excludedCountries?.length > 0 || (shippingZones[zoneKey] as any).excludedCities?.length > 0) && (
+                                        {selectedShippingMethods.includes('standardShipping') && shippingMethods?.standardShipping.available && shippingMethods.standardShipping.estimatedDelivery?.[zoneKey] && (
                                             <div className="mb-3">
                                                 <label className="block text-sm font-medium mb-1">Standard Shipping Fee:</label>
-                                                <div className="flex items-center rounded-md">
-
+                                                <div className="flex items-center">
                                                     <Input
                                                         name="currencySymbol"
                                                         type="text"
@@ -440,25 +431,24 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                                                         disabled
                                                         className="text-center block border-none p-2 text-gray-900 bg-transparent w-1/5"
                                                     />
-
                                                     <MoneyInput
-                                                        numericValue={methodFees?.standard?.[zoneKey]?.fee ?? shippingMethods.standardShipping.estimatedDelivery[zoneKey]!.fee}
+                                                        numericValue={methodFees?.standard?.[zoneKey]?.fee ?? shippingMethods.standardShipping.estimatedDelivery[zoneKey]?.fee}
                                                         onNumericChange={(value) => handleFeeChange('standard', zoneKey, value)}
                                                         className="w-1/2 border-2"
                                                         placeholder="0.00"
                                                     />
-
                                                 </div>
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     Est. Delivery: {shippingMethods.standardShipping.estimatedDelivery[zoneKey]?.from}-{shippingMethods.standardShipping.estimatedDelivery[zoneKey]?.to} days
                                                 </p>
                                             </div>
                                         )}
+
                                         {/* Express Shipping Fee for this zone */}
                                         {selectedShippingMethods.includes('expressShipping') && shippingMethods?.expressShipping.available && shippingMethods.expressShipping.estimatedDelivery?.[zoneKey] && (
                                             <div className="mb-3">
                                                 <label className="block text-sm font-medium mb-1">Express Shipping Fee:</label>
-                                                <div className="flex items-center rounded-md">
+                                                <div className="flex items-center">
                                                     <Input
                                                         name="currencySymbol"
                                                         type="text"
@@ -470,55 +460,44 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
                                                         className="text-center block border-none p-2 text-gray-900 bg-transparent w-1/5"
                                                     />
                                                     <MoneyInput
-                                                        numericValue={methodFees?.express?.[zoneKey]?.fee ?? shippingMethods.expressShipping.estimatedDelivery[zoneKey]!.fee}
+                                                        numericValue={methodFees?.express?.[zoneKey]?.fee ?? shippingMethods.expressShipping.estimatedDelivery[zoneKey]?.fee}
                                                         onNumericChange={(value) => handleFeeChange('express', zoneKey, value)}
                                                         className="w-1/2 border-2"
                                                         placeholder="0.00"
                                                     />
                                                 </div>
-                                               
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     Est. Delivery: {shippingMethods.expressShipping.estimatedDelivery[zoneKey]?.from}-{shippingMethods.expressShipping.estimatedDelivery[zoneKey]?.to} days
                                                 </p>
                                             </div>
                                         )}
-                                        {zoneKey === 'domestic' && shippingZones.domestic.excludedCities.length > 0 && (
+
+                                        {/* Exclusions */}
+                                        {exclusions.length > 0 && (
                                             <p className="text-xs text-gray-500 my-1">
-                                                Excluded Cities: {shippingZones.domestic.excludedCities.join(', ')}
+                                                {zoneKey === 'domestic' ? 'Excluded Cities' : 'Excluded Countries'}: {exclusions.join(', ')}
                                             </p>
                                         )}
-                                        {(zoneKey === 'regional' || zoneKey === 'sub_regional' || zoneKey === 'global') &&
-                                            (shippingZones[zoneKey] as any).excludedCountries?.length > 0 && (
-                                                <p className="text-xs text-gray-500 my-1">
-                                                    Excluded Countries: {(shippingZones[zoneKey] as any).excludedCountries.join(', ')}
-                                                </p>
-                                            )
-                                        }
                                     </div>
                                 )
                             })}
-
                         </div>
                     </CardContent>
                 </Card>
             )}
-
-            {errorMessage && (
-                <div className="my-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                    <p>{errorMessage}</p>
-                </div>
-            )}
-            {/* TODO: Add Save Button and Logic */}
             <div className="mt-6 flex justify-end">
-                <Button 
-                    onClick={handleSave} 
+                <Button
+                    type="submit"
                     disabled={isSaveButtonDisabled}
-                    className="flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                    className="flex justify-center px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
                 >
                     Save Shipping Details
                 </Button>
             </div>
-        </div>
+        </form>
     );
 }
-export default ProductShippingDetails;
+
+
+
+export default ShippingDetailsForm;
