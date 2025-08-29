@@ -1,4 +1,8 @@
-export async function createTags(supabase: any, tags: string[], productId: string) {
+import { createClient } from "@/supabase/server";
+
+export async function createTags(tags: string[], productId: string) {
+
+    const supabase = await createClient();
     try {
         // --- Step 1: Delete all existing product_tags for this productId ---
         const { error: deleteError } = await supabase
@@ -15,9 +19,10 @@ export async function createTags(supabase: any, tags: string[], productId: strin
 
         for (const tag of tags) {
             // Use UPSERT to find or create the tag in the 'tags' lookup table
+            console.log("Upserting tag: ", tag);
             const { data: newTagData, error: tagError } = await supabase
                 .from("tags")
-                .upsert({ name: tag }, { onConflict: ["name"] })
+                .upsert({ name: tag }, { onConflict: "name" })
                 .select()
                 .single();
 
@@ -40,7 +45,6 @@ export async function createTags(supabase: any, tags: string[], productId: strin
             if (tagInsertionError) {
                 throw tagInsertionError;
             }
-            console.log("The inserted tags are: ", insertedTags);
         } else {
             console.log("No tags provided to insert, existing tags for product deleted.");
         }

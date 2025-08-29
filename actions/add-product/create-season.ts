@@ -1,6 +1,8 @@
+import { createClient } from "@/supabase/server";
 
 
-export async function createSeason(supabase: any, season: string) {
+export async function createSeason(season: string) {
+    const supabase = await createClient();
     try {
         const { data: seasonData, error: seasonError } = await supabase
             .from("product_season")

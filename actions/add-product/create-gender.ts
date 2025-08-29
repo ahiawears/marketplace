@@ -1,6 +1,7 @@
+import { createClient } from "@/supabase/server";
 
-
-export async function createGender(supabase: any, gender: string) {
+export async function createGender( gender: string) {
+    const supabase = await createClient();
     try {
         const { data: genderData, error: genderError } = await supabase
             .from("product_gender")

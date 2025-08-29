@@ -1,42 +1,49 @@
+import { createClient } from "@/supabase/server";
+
 export async function createProduct(
-    supabase: any,
     categoryId: string,
     subCategoryId: string,
-    materialId: string,
     description: string,
     name: string,
-    currencyId: string,
     genderId: string,
     seasonId: string,
-    brandId: string,
-    // The editProductId is now definitely a string or null thanks to the type assertion
-    editProductId: string | null // Changed from 'string | undefined' to 'string | null'
+    slug: string,
+    metaTitle: string,
+    metaDescription: string,
+    keywords: string[]
 ) {
+    const supabase = await createClient();
     try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError || !user) throw new Error("User not authenticated");
+
+        const brandId = user.id;
+
+        const seoMetadata = {
+            slug,
+            metaTitle,
+            metaDescription,
+            keywords
+        }
         const productDataToUpsert: any = {
-            name: name,
+            name,
             product_description: description,
-            material_id: materialId,
             category_id: categoryId,
             subcategory_id: subCategoryId,
-            currency_id: currencyId,
             gender_id: genderId,
             season_id: seasonId,
-            brand_id: brandId // Assuming brand_id is always set
+            brand_id: brandId,
+            seo_metadata: seoMetadata, // JSONB column
         };
 
-        // If editProductId is provided, include it for the upsert operation
-        if (editProductId) {
-            productDataToUpsert.id = editProductId;
-        }
 
         const { data: productDataInserted, error: productError } = await supabase
             .from("products_list")
             .upsert(productDataToUpsert, {
-                onConflict: 'id', // Specify 'id' as the conflict target
-                ignoreDuplicates: false // Set to false to ensure update if conflict occurs
+                onConflict: "id",
+                ignoreDuplicates: false,
             })
-            .select('id') // Select the 'id' of the inserted/updated row
+            .select("id")
             .single();
 
         if (productError) {
@@ -44,7 +51,6 @@ export async function createProduct(
             throw productError;
         }
 
-        console.log("The product data (upserted) is: ", productDataInserted);
         return productDataInserted.id;
 
     } catch (error) {

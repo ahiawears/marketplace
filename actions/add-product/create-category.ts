@@ -1,6 +1,8 @@
+import { createClient } from "@/supabase/server";
 
 
-export async function createCategory(supabase: any, category: string) {
+export async function createCategory(category: string) {
+    const supabase = await createClient();
     try {
         const { data: categoryData, error: categoryError } = await supabase
             .from("categories")

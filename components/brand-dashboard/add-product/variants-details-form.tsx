@@ -1,4 +1,3 @@
-// src/components/upload-product/ProductVariantsForm.tsx
 import { FC, FormEvent, useCallback, useState } from "react";
 import { toast } from "sonner";
 import { Plus, X } from 'lucide-react';
@@ -11,10 +10,13 @@ import ProductImageUploadGrid from "@/components/upload-product/product-image-up
 import { findNearestColor } from "@/lib/findNearestColor";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PATTERNS } from "@/lib/colorPatterns";
+import { MarketingAndExclusivityTags, SustainabilityTags, CraftmanshipTags } from '@/lib/variantTags';
 import { clothingMaterials } from "@/lib/item-material-list";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Switch } from "@/components/ui/switch";
+import { VariantFormErrors, validateVariantFormDetails } from "@/lib/productDataValidation";
+
 
 interface VariantDetailsFormProps {
     currencyCode: string;
@@ -50,7 +52,9 @@ export interface VariantFormDetails {
     availableDate: string;
     slug: string;
     status: "active" | "inactive";
-
+    marketingAndExclusivityTags: string[];
+    sustainabilityTags: string[];
+    craftmanshipTags: string[];
 }
 
 export const DEFAULT_VARIANT: VariantFormDetails = {
@@ -68,21 +72,61 @@ export const DEFAULT_VARIANT: VariantFormDetails = {
     measurements: {},
     availableDate: "",
     slug: "",
-    status: "active"
+    status: "active",
+    marketingAndExclusivityTags: [],
+    sustainabilityTags: [],
+    craftmanshipTags: [],
+};
+
+const generateSKU = (productName: string, color: string): string => {
+    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const namePart = productName.slice(0, 3).replace(/\s+/g, "").toUpperCase();
+    const colorPart = color.slice(0, 3).toUpperCase();
+    return `${namePart}-${colorPart}-${randomNum}`;
+};
+  
+const generateProductCode = (productName: string): string => {
+    const namePart = productName.slice(0, 5).replace(/\s+/g, "").toUpperCase();
+    return `${namePart}-${Date.now().toString().slice(-5)}`;
+};
+
+const generateSlug = (productName: string, colorName: string, pattern?: string) => {
+    const namePart = productName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const colorPart = colorName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    const patternPart = pattern ? pattern.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '';
+    const randomPart = Math.random().toString(36).substring(2, 7);
+    return [namePart, colorPart, patternPart, randomPart].filter(Boolean).join('-').replace(/-{2,}/g, '-');
 };
 
 const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
     const { category } = useProductFormStore();
     const { variants, addVariant, updateVariant, removeVariant } = useVariantManagement();
 
-    const handleSave = async (e: FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        toast.loading("Saving data....");
-        console.log(variants);
+    const handleSaveVariant = async (index: number, variantToSave: VariantFormDetails) => {
+        toast.loading("Saving variant...");
+        
+        try {
+            // Here you would make your API call to save the single variant
+            // For example: await api.saveVariant(variantToSave);
+            const formData = new FormData();
+            formData.append('variantDetails', JSON.stringify(variantToSave));
+            const response = await fetch('/api/products/upload-variant-details', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+            console.log(`Saving variant at index ${index}: `, variantToSave);
+            toast.success("Variant saved successfully!");
+        } catch (error) {
+            toast.error("Failed to save variant.");
+            console.error(error);
+        }
     };
 
     return (
-        <form onSubmit={handleSave}>
+        <form>
             {variants.map((variant, index) => (
                 <VariantForm
                     key={index}
@@ -92,7 +136,7 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
                     currency={currencyCode}
                     onUpdate={(updates) => updateVariant(index, updates)}
                     onRemove={() => removeVariant(index)}
-
+                    onSave={() => handleSaveVariant(index, variant)}
                 />
             ))}
             
@@ -107,31 +151,49 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
                     Add Another Variant
                 </Button>
             </div>
-            
-            <div className="my-4">
-                <Button
-                    type="submit"
-                    className="flex justify-center px-3 py-1.5 text-sm/6"
-                >
-                    Save All Variants
-                </Button>
-            </div>
         </form>
     );
 };
 
 const useVariantManagement = () => {
+    // Assuming productName is available in your store, similar to category.
+    // You might need to add it to useProductFormStore if it's not there.
+    const { productName } = useProductFormStore();
     const [variants, setVariants] = useState<VariantFormDetails[]>([DEFAULT_VARIANT]);
 
     const updateVariant = useCallback((index: number, updates: Partial<VariantFormDetails>) => {
-        setVariants(prev => prev.map((v, i) => 
-            i === index ? { ...v, ...updates } : v
-        ));
-    }, []);
+        setVariants(prev => prev.map((v, i) => {
+            if (i !== index) {
+                return v;
+            }
+
+            const newVariant = { ...v, ...updates };
+
+            // Auto-generate SKU and slug when colors are updated and SKU is empty
+            if (updates.colors && updates.colors.length > 0 && !v.sku) {
+                const mainColor = updates.colors[0];
+                if (productName && mainColor.name) {
+                    newVariant.sku = generateSKU(productName, mainColor.name);
+                    newVariant.slug = generateSlug(productName, mainColor.name, newVariant.pattern);
+                }
+            }
+            
+            // Also handle pattern update for slug
+            if (updates.pattern && newVariant.colors.length > 0) {
+                 const mainColor = newVariant.colors[0];
+                 if (productName && mainColor.name) {
+                    newVariant.slug = generateSlug(productName, mainColor.name, updates.pattern);
+                 }
+            }
+
+            return newVariant;
+        }));
+    }, [productName]);
 
     const addVariant = useCallback(() => {
-        setVariants(prev => [...prev, { ...DEFAULT_VARIANT }]);
-    }, []);
+        const newProductCode = productName ? generateProductCode(productName) : "";
+        setVariants(prev => [...prev, { ...DEFAULT_VARIANT, productCode: newProductCode }]);
+    }, [productName]);
     const removeVariant = useCallback((index: number) => {
         if (variants.length <= 1) {
             toast.error("At least one variant is required.");
@@ -139,6 +201,7 @@ const useVariantManagement = () => {
         }
         setVariants(prev => prev.filter((_, i) => i !== index));
     }, [variants]);
+
 
     return { variants, updateVariant, addVariant, removeVariant };
 };
@@ -150,9 +213,27 @@ interface VariantFormProps {
     currency: string;
     onUpdate: (updates: Partial<VariantFormDetails>) => void;
     onRemove: () => void; 
+    onSave: () => void;
 }
 
-const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency, onUpdate, onRemove }) => {
+const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency, onUpdate, onRemove, onSave }) => {
+    const [isSaving, setIsSaving] = useState(false);
+    const [errors, setErrors] = useState<VariantFormErrors>({});
+    const { productId } = useProductFormStore();
+
+    const handleSaveButtonClick = async () => {
+        const { isValid, errors: validationErrors } = validateVariantFormDetails(variant, category);
+        setErrors(validationErrors);
+
+        if (!isValid) {
+            toast.error("Please fix the errors before saving.");
+            return;
+        }
+
+        setIsSaving(true);
+        await onSave();
+        setIsSaving(false);
+    };
   return (
     <div className="border-b pb-6 mb-6 last-of-type:border-b-0">
         <h3 className="text-lg font-bold mb-4">Variant {index + 1}</h3>
@@ -160,12 +241,14 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
         <VariantBasicInfo
             variant={variant}
             currency={currency}
+            errors={errors}
             onUpdate={onUpdate}
         />
         
         <ImageSection
             images={variant.images}
             imagesDescription={variant.imagesDescription}
+            error={errors.images}
             onUpdate={onUpdate}
         />
       
@@ -190,6 +273,7 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
             measurements={variant.measurements}
             measurementUnit={variant.measurementUnit}
             onUpdate={onUpdate}
+            error={errors.measurements}
         />
 
         <div className="flex flex-col md:flex-row justify-between border-2">
@@ -203,15 +287,40 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
                 onUpdate={onUpdate}
             />
         </div>
-        <div className="my-4">
+
+        <MarketingAndExclusivityTagsSection
+            marketingAndExclusivityTags={variant.marketingAndExclusivityTags}
+            onUpdate={onUpdate}
+        />
+
+        <SustainabilityTagsSection
+            sustainabilityTags={variant.sustainabilityTags}
+            onUpdate={onUpdate}
+        />
+
+        <CraftmanshipTagsSection
+            craftmanshipTags={variant.craftmanshipTags}
+            onUpdate={onUpdate}
+        />
+
+
+        <div className="my-8 flex flex-row justify-between">
             <Button 
                 type="button" 
-                onClick={onRemove} // Call the onRemove prop here
+                onClick={onRemove}
                 variant="outline" 
                 className="flex items-center gap-2 border-2"
             >
                 <X size={16} className="h-4 w-4" />
                 Remove Variant
+            </Button>
+
+            <Button
+                type="button"
+                onClick={handleSaveButtonClick}
+                disabled={isSaving}
+            >
+                {isSaving ? "Saving..." : "Save Variant"}
             </Button>
         </div>
 
@@ -220,7 +329,7 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
 };
 
 // Sub-components
-const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ variant, currency, onUpdate }) => {
+const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; errors: VariantFormErrors; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ variant, currency, errors, onUpdate }) => {
     const handleInputChange = (field: keyof VariantFormDetails, value: string) => {
         onUpdate({ [field]: value });
     };
@@ -241,22 +350,32 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; onUp
                     maxLength={150}
                     className="border-2"
                 />
+                {errors.variantName && <p className="text-red-500 text-xs mt-1">{errors.variantName}</p>}
             </div>
 
             <div className="grid grid-cols-3 gap-4 my-4">
-                <PriceInput value={variant.price} currencySymbol={currency} onChange={handlePriceChange} />
-                <TextInput
-                    label="SKU:*"
-                    value={variant.sku}
-                    onChange={(value) => handleInputChange('sku', value)}
-                    maxLength={100}
-                />
-                <TextInput
-                    label="Product code:*"
-                    value={variant.productCode}
-                    onChange={(value) => handleInputChange('productCode', value)}
-                    maxLength={100}
-                />
+                <div>
+                    <PriceInput value={variant.price} currencySymbol={currency} onChange={handlePriceChange} />
+                    {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
+                </div>
+                <div>
+                    <TextInput
+                        label="SKU:*"
+                        value={variant.sku}
+                        onChange={(value) => handleInputChange('sku', value)}
+                        maxLength={100}
+                    />
+                    {errors.sku && <p className="text-red-500 text-xs mt-1">{errors.sku}</p>}
+                </div>
+                <div>
+                    <TextInput
+                        label="Product code:*"
+                        value={variant.productCode}
+                        onChange={(value) => handleInputChange('productCode', value)}
+                        maxLength={100}
+                    />
+                    {errors.productCode && <p className="text-red-500 text-xs mt-1">{errors.productCode}</p>}
+                </div>
             </div>
         </>
     );
@@ -301,7 +420,7 @@ const TextInput: FC<{ label: string; value: string; onChange: (value: string) =>
     </div>
 );
 
-const ImageSection: FC<{ images: string[]; imagesDescription: string; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ images, imagesDescription, onUpdate }) => {
+const ImageSection: FC<{ images: string[]; imagesDescription: string; onUpdate: (updates: Partial<VariantFormDetails>) => void; error?: string; }> = ({ images, imagesDescription, onUpdate, error }) => {
     const handleImagesChange = (newImages: string[]) => {
         onUpdate({ images: newImages });
     };
@@ -325,6 +444,7 @@ const ImageSection: FC<{ images: string[]; imagesDescription: string; onUpdate: 
                     images={images}
                     onImagesChange={handleImagesChange}
                 />
+                {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
             </div>
         
             <div className="my-4">
@@ -548,7 +668,7 @@ const MaterialInput: FC<{ material: MaterialComposition; onChange: (updates: Par
     );
 };
 
-const MeasurementSection: FC<{ category: string; measurements: Record<string, any>; measurementUnit: "Inch" | "Centimeter"; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ category, measurements, measurementUnit, onUpdate }) => {
+const MeasurementSection: FC<{ category: string; measurements: Record<string, any>; measurementUnit: "Inch" | "Centimeter"; onUpdate: (updates: Partial<VariantFormDetails>) => void; error?: string; }> = ({ category, measurements, measurementUnit, onUpdate, error }) => {
     const handleMeasurementChange = (size: string, field: string, value: number | undefined) => {
         const newMeasurements = { ...measurements };
         
@@ -576,6 +696,7 @@ const MeasurementSection: FC<{ category: string; measurements: Record<string, an
                 measurementUnit={measurementUnit}
                 onUnitChange={handleUnitChange}
             />
+            {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
         </div>
     );
 };
@@ -616,7 +737,7 @@ const AvailableDateSection: FC<{ availableDate: string; onUpdate: (updates: Part
 
 const StatusSection: FC<{ status: "active" | "inactive"; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ status, onUpdate }) => {
     const handleStatusChange = (newStatus: "active" | "inactive") => {
-        onUpdate({ status: newStatus });
+        onUpdate({ status: newStatus});
     };
 
     return (
@@ -634,5 +755,123 @@ const StatusSection: FC<{ status: "active" | "inactive"; onUpdate: (updates: Par
         </div>
     );
 };
+
+const MarketingAndExclusivityTagsSection: FC<{ marketingAndExclusivityTags: string[]; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ marketingAndExclusivityTags, onUpdate}) => {
+    const handleTagClick = (tag: string) => {
+        const isTagSelected = marketingAndExclusivityTags.includes(tag);
+
+        const newVariantSpecificTags = isTagSelected
+            ? marketingAndExclusivityTags.filter((t) => t !== tag)
+            : [...marketingAndExclusivityTags, tag];
+
+        if (newVariantSpecificTags.length > 1) {
+            toast.error("You can only select up to 1 marketing tag.");
+        } else {
+            onUpdate({ marketingAndExclusivityTags: newVariantSpecificTags });
+        }
+    }
+    return (
+        <div className="my-4">
+            <label htmlFor="marketingTags" className="block text-sm font-bold text-gray-900 mb-2">
+                Marketing Specific Tags:
+            </label>
+            <div className="my-1 flex flex-wrap gap-2">
+                {MarketingAndExclusivityTags.map((tag, index) => (
+                    <span
+                        key={index}
+                        className={`px-3 py-1 text-sm cursor-pointer
+                                    ${marketingAndExclusivityTags.includes(tag)
+                                        ? "bg-black text-white ring-2 ring-offset-1 ring-black"
+                                        : "bg-primary text-white opacity-50"}
+                                    hover:bg-primary/90 hover:text-white`
+                                    }        
+                        onClick={() => handleTagClick(tag)}
+                    >
+                        {tag}
+                    </span>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+const SustainabilityTagsSection: FC<{ sustainabilityTags: string[]; onUpdate: (updates: Partial<VariantFormDetails>) => void }> =({ sustainabilityTags, onUpdate }) => {
+    const handleTagClick = (tag: string) => {
+        const isTagSelected = sustainabilityTags.includes(tag);
+        const newVariantSpecificTags = isTagSelected
+            ? sustainabilityTags.filter((t) => t !== tag)
+            : [...sustainabilityTags, tag];
+
+        if (newVariantSpecificTags.length > 1) {
+            toast.error("You can only select up to 1 sustainability tag.");
+        } else {
+            onUpdate({ sustainabilityTags: newVariantSpecificTags });
+        }
+    }
+
+    return (
+        <div className="my-4">
+            <label htmlFor="variantSpecificTags" className="block text-sm font-bold text-gray-900 mb-2">
+                Sustainability Specific Tags:
+            </label>
+            <div className="my-1 flex flex-wrap gap-2">
+                {SustainabilityTags.map((tag, index) => (
+                    <span
+                        key={index}
+                        className={`px-3 py-1 text-sm cursor-pointer
+                                    ${sustainabilityTags.includes(tag)
+                                        ? "bg-black text-white ring-2 ring-offset-1 ring-black"
+                                        : "bg-primary text-white opacity-50"}
+                                    hover:bg-primary/90 hover:text-white`
+                                    }        
+                        onClick={() => handleTagClick(tag)}
+                    >
+                        {tag}
+                    </span>
+                ))}
+            </div>
+        </div>
+    )
+
+}
+
+const CraftmanshipTagsSection: FC<{ craftmanshipTags: string[]; onUpdate: (updates: Partial<VariantFormDetails>) => void }> =({ craftmanshipTags, onUpdate }) => {
+    const handleTagClick = (tag: string) => {
+        const isTagSelected = craftmanshipTags.includes(tag);
+        const newVariantSpecificTags = isTagSelected
+            ? craftmanshipTags.filter((t) => t !== tag)
+            : [...craftmanshipTags, tag];
+
+        if (newVariantSpecificTags.length > 1) {
+            toast.error("You can only select up to 1 craftmasnship tag.");
+        } else {
+            onUpdate({ craftmanshipTags: newVariantSpecificTags });
+        }
+    }
+    return (
+        <div className="my-4">
+            <label htmlFor="variantSpecificTags" className="block text-sm font-bold text-gray-900 mb-2">
+                Craftmanship Specific Tags:
+            </label>
+            <div className="my-1 flex flex-wrap gap-2">
+                {CraftmanshipTags.map((tag, index) => (
+                    <span
+                        key={index}
+                        className={`px-3 py-1 text-sm cursor-pointer
+                                    ${craftmanshipTags.includes(tag)
+                                        ? "bg-black text-white ring-2 ring-offset-1 ring-black"
+                                        : "bg-primary text-white opacity-50"}
+                                    hover:bg-primary/90 hover:text-white`
+                                    }        
+                        onClick={() => handleTagClick(tag)}
+                    >
+                        {tag}
+                    </span>
+                ))}
+            </div>
+        </div>
+    )
+}
+
 
 export default ProductVariantsForm;

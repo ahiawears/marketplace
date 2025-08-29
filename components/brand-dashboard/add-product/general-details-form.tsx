@@ -10,7 +10,7 @@ import { ChangeEvent, FC, FormEvent, useState } from "react";
 import { toast } from "sonner";
 import validator from 'validator';
 
-interface MultiVariantGeneralDetailsInterface {
+export interface MultiVariantGeneralDetailsInterface {
     productName: string;
     productDescription: string;
     category: string;
@@ -23,7 +23,7 @@ interface MultiVariantGeneralDetailsInterface {
 const gender = ["Male", "Female", "Unisex"];
 
 const GeneralDetailsForm: FC = () => {
-    const { setCategory } = useProductFormStore();
+    const { setCategory, setProductId, setBaseSlug, setProductName } = useProductFormStore();
     
     const [subcategories, setSubcategories] = useState<string[]>([]);
     const [generalDetailsData, setGeneralDetailsData] = useState<MultiVariantGeneralDetailsInterface>({
@@ -92,10 +92,43 @@ const GeneralDetailsForm: FC = () => {
 
     const handleSave = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        
+        if (!isFormValid()) {
+            toast.error("Please fill in all required fields correctly.");
+            return;
+        }
+        
         setIsSubmitting(true);
-        toast.loading("Saving data....")
-        console.log(generalDetailsData);
-    }   
+        const toastId = toast.loading("Saving general details...");
+
+        try {
+            const formData = new FormData();
+            formData.append('generalDetails', JSON.stringify(generalDetailsData));
+
+            const response = await fetch('/api/products/upload-general-details', {
+                method: 'POST',
+                body: formData,
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                toast.success(result.message, { id: toastId });
+                // Save the returned productUploadId to the Zustand store
+                setProductId(result.productUploadId);
+                setBaseSlug(result.baseSlug);
+                setProductName(generalDetailsData.productName);
+            } else {
+                toast.error(result.message || "Something went wrong.", { id: toastId });
+                console.error("Upload failed:", result.errors || result.message);
+            }
+        } catch (error) {
+            toast.error("Network or server error.", { id: toastId });
+            console.error("Unexpected error:", error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    }; 
 
     return (
         <form onSubmit={handleSave}>
@@ -139,11 +172,9 @@ const GeneralDetailsForm: FC = () => {
                         options={categoriesList.map((category) => category.name)}
                         getOptionLabel={(option) => option}
                         onSelect={(selectedOption) => {
-                            // 1. Update the local component state
                             setGeneralDetailsData((prevData) => ({
                                 ...prevData,
                                 category: selectedOption,
-                                // Optionally reset subcategory and tags if the category changes
                                 subCategory: "",
                                 tags: [],
                             }));

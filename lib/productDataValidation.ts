@@ -1,5 +1,6 @@
 import { categoriesList } from "./categoriesList";
 import { DeliveryZoneKey, GeneralProductDetailsType, ProductCareInstruction, ProductShippingDeliveryType, ProductVariantType, ShippingConfigDataProps } from "./types";
+import { VariantFormDetails } from "@/components/brand-dashboard/add-product/variants-details-form";
 
 export interface GeneralDetailsErrors {
     productName: string;
@@ -58,6 +59,104 @@ export const validateGeneralProductDetails = (details: GeneralProductDetailsType
 
     return { isValid, errors };
 }
+
+export interface VariantFormErrors {
+    variantName?: string;
+    price?: string;
+    sku?: string;
+    productCode?: string;
+    images?: string;
+    imagesDescription?: string;
+    colors?: string;
+    materialComposition?: string;
+    measurements?: string;
+}
+
+// const isValidHexColor = (hex: string): boolean => {
+//     if (!hex) return false;
+//     return /^#[0-9A-F]{6}$/i.test(hex);
+// };
+
+export const validateVariantFormDetails = (variant: VariantFormDetails, categoryName: string): { isValid: boolean; errors: VariantFormErrors } => {
+    const errors: VariantFormErrors = {};
+    let isValid = true;
+
+    if (!variant.variantName?.trim()) {
+        errors.variantName = "Variant name is required.";
+        isValid = false;
+    }
+
+    if (variant.price <= 0) {
+        errors.price = "Price must be a positive number.";
+        isValid = false;
+    }
+
+    if (!variant.sku?.trim()) {
+        errors.sku = "SKU is required. Generate one if needed.";
+        isValid = false;
+    }
+
+    if (!variant.productCode?.trim()) {
+        errors.productCode = "Product code is required. Generate one if needed.";
+        isValid = false;
+    }
+
+    if (!variant.images || variant.images.filter(img => img && img.trim() !== "").length === 0) {
+        errors.images = "At least one product image is required.";
+        isValid = false;
+    }
+
+    if (variant.imagesDescription && variant.imagesDescription.length > 350) {
+        errors.imagesDescription = "Image description cannot exceed 350 characters.";
+        isValid = false;
+    }
+
+    if (!variant.colors || variant.colors.length === 0) {
+        errors.colors = "At least one variant color is required.";
+        isValid = false;
+    } else {
+        for (const color of variant.colors) {
+            if (!isValidHexColor(color.hexCode)) {
+                errors.colors = `Invalid hex color format: ${color.hexCode}. Must be #RRGGBB.`;
+                isValid = false;
+                break;
+            }
+        }
+    }
+
+    if (!variant.materialComposition || variant.materialComposition.length === 0) {
+        errors.materialComposition = "At least one material is required.";
+        isValid = false;
+    } else {
+        const totalPercentage = variant.materialComposition.reduce((sum, mat) => sum + (mat.percentage || 0), 0);
+        if (totalPercentage !== 100) {
+            errors.materialComposition = `Material composition must add up to 100%. Current total: ${totalPercentage}%.`;
+            isValid = false;
+        }
+    }
+
+    const categoryDetails = categoriesList.find(cat => cat.name === categoryName);
+    if (categoryDetails && categoryDetails.measurements.length > 0) {
+        if (!variant.measurements || Object.keys(variant.measurements).length === 0) {
+            errors.measurements = "At least one size must be selected for this category.";
+            isValid = false;
+        } else {
+            for (const sizeKey in variant.measurements) {
+                if (Object.prototype.hasOwnProperty.call(variant.measurements, sizeKey)) {
+                    const sizeData = variant.measurements[sizeKey];
+
+                    if (sizeData.quantity === undefined || sizeData.quantity === null || isNaN(sizeData.quantity) || sizeData.quantity <= 0) {
+                        errors.measurements = `A positive quantity is required for size '${sizeKey}'.`;
+                        isValid = false;
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    return { isValid, errors };
+};
 
 
 

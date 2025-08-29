@@ -87,7 +87,7 @@ Deno.serve(async (req: Request) => {
                 { status: 401, headers: corsHeaders }
             );
         }
-    
+     
         // Validate content type
         const contentType = req.headers.get("content-type");
         if (!contentType || !contentType.includes("multipart/form-data")) {
@@ -137,27 +137,27 @@ Deno.serve(async (req: Request) => {
                 }
 
                 // Insert General Details into database
-                const genderId = await createGender(supabase, generalDetails.gender); 
-                const seasonId = await createSeason(supabase, generalDetails.season); 
-                const categoryId = await createCategory(supabase, generalDetails.category);
-                const subCategoryId = await createSubCategory(supabase, generalDetails.subCategory, categoryId);
+                const genderId = await createGender(generalDetails.gender); 
+                const seasonId = await createSeason(generalDetails.season); 
+                const categoryId = await createCategory(generalDetails.category);
+                const subCategoryId = await createSubCategory( generalDetails.subCategory, categoryId);
                 const materialId = await createMaterial(supabase, generalDetails.material);
                 const currencyId = await createCurrency(supabase, generalDetails.currency);
-                const productUploadId = await createProduct(
-                    supabase, 
-                    categoryId, 
-                    subCategoryId,
-                    materialId,
-                    generalDetails.productDescription,
-                    generalDetails.productName, 
-                    currencyId, 
-                    genderId, 
-                    seasonId,
-                    user.id,
-                    editProductId ? editProductId : ""
-                )
+                // const productUploadId = await createProduct(
+                //     categoryId, 
+                //     subCategoryId,
+                //     materialId,
+                //     generalDetails.productDescription,
+                //     generalDetails.productName, 
+                //     currencyId, 
+                //     genderId, 
+                //     seasonId,
+                //     user.id,
+                // )
 
-                await createTags(supabase, generalDetails.tags, productUploadId);
+                const productUploadId = "something herer is different"
+
+                await createTags(generalDetails.tags, productUploadId);
 
                 return new Response(
                     JSON.stringify({

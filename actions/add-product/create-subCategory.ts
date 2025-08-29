@@ -1,6 +1,8 @@
-export async function createSubCategory(supabase: any, subCategory: string, categoryId: string) {
+import { createClient } from "@/supabase/server";
+
+export async function createSubCategory(subCategory: string, categoryId: string) {
+    const supabase = await createClient();
     try {
-        
         const { data: subCategoryData, error: subCategoryError } = await supabase
             .from("subcategories")
             .upsert({
