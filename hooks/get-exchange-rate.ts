@@ -1,4 +1,7 @@
-export async function GetExchangeRates(supabase: any, base_currency: string, target_currency: string): Promise<number> {
+import { createClient } from "@/supabase/server";
+
+export async function GetExchangeRates(base_currency: string, target_currency: string): Promise<number> {
+    const supabase = await createClient();
     try {
 
         if (target_currency === base_currency) {

@@ -72,10 +72,10 @@ export interface VariantFormErrors {
     measurements?: string;
 }
 
-// const isValidHexColor = (hex: string): boolean => {
-//     if (!hex) return false;
-//     return /^#[0-9A-F]{6}$/i.test(hex);
-// };
+const isValidHexColor = (hex: string): boolean => {
+    if (!hex) return false;
+    return /^#[0-9A-F]{6}$/i.test(hex);
+};
 
 export const validateVariantFormDetails = (variant: VariantFormDetails, categoryName: string): { isValid: boolean; errors: VariantFormErrors } => {
     const errors: VariantFormErrors = {};
@@ -183,11 +183,6 @@ export interface ProductVariantErrors {
     measurements: string;
     availableDate: string;
 }
-
-const isValidHexColor = (hex: string): boolean => {
-    if (!hex) return false;
-    return /^#[0-9A-F]{6}$/i.test(hex);
-};
 
 const isValidDateString = (dateStr: string): boolean => {
     if (!dateStr) return true; // Optional field

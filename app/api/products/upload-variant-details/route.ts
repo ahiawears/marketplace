@@ -1,5 +1,35 @@
+import { VariantFormDetails } from "@/components/brand-dashboard/add-product/variants-details-form";
+import { validateVariantFormDetails } from "@/lib/productDataValidation";
 import { createClient } from "@/supabase/server";
 import { NextResponse } from "next/server";
+import { GetBrandLegalDetails } from "@/actions/get-brand-details/get-brand-legal-details";
+import { GetExchangeRates } from "@/hooks/get-exchange-rate";
+import { CountryData, CountryDataType } from "@/lib/country-data";
+import { createVariant } from "@/actions/add-product/create-variant";
+import { createVariantColors } from "@/actions/add-product/create-variant-colors";
+import { createSizes } from "@/actions/add-product/create-sizes";
+import { createVariantMaterials } from "@/actions/add-product/create-variant-materials";
+import { createVariantTags } from "@/actions/add-product/create-variant-tags";
+import { createImages } from "@/actions/add-product/create-images";
+
+
+const decodeBase64Image = (dataString: string) => {
+    const matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    if (!matches || matches.length !== 3) {
+        throw new Error('Invalid base64 image string');
+    }
+    return {
+        type: matches[1],
+        data: Buffer.from(matches[2], 'base64'),
+    };
+}
+
+function getCurrencyByIso2(iso2Code: string, countryData: CountryDataType[]): string | null {
+    const country = countryData.find(
+        (country) => country.iso2.toLowerCase() === iso2Code.toLowerCase()
+    );
+    return country ? country.currency : null;
+}
 
 export async function POST (req: Request) {
     try{
@@ -9,8 +39,88 @@ export async function POST (req: Request) {
             return NextResponse.json({ success: false, message: "User not authenticated" }, { status: 401 });
         }
         const formData = await req.formData();
+        const variantDetailsRaw = formData.get("variantDetails");
+        const productId = formData.get("productId");
+        const categoryName = formData.get("categoryName");
+        if (!variantDetailsRaw || typeof variantDetailsRaw !== 'string') {
+            return NextResponse.json({ success: false, message: "Variant details not provided" }, { status: 400 })
+        }
+        if (!productId || typeof productId !== 'string') {
+            return NextResponse.json({ success: false, message: "Product ID not provided" }, { status: 400 });
+        }
+        if (!categoryName || typeof categoryName !== 'string') {
+            return NextResponse.json({ success: false, message: "Category name not provided" }, { status: 400 });
+        }
+
+        let variantDetails: VariantFormDetails;
+        try {
+            variantDetails = JSON.parse(variantDetailsRaw);
+        } catch (error) {
+            return NextResponse.json({ success: false, message: "Invalid JSON format for variant details" }, { status: 400 });
+        }
+
+        // Server-side validation
+        const { isValid, errors } = validateVariantFormDetails(variantDetails, categoryName);
+        if (!isValid) {
+            return NextResponse.json({ success: false, message: "Validation failed", errors }, { status: 400 });
+        }
+
+        // --- Data Processing & DB Insertion ---
+
+        // 1. Calculate base currency price
+        const brandData = await GetBrandLegalDetails(user.id);
+        if (!brandData) {
+            return NextResponse.json({ success: false, message: "Brand not found" }, { status: 404 });
+        }
+        const brandCountry = brandData.country_of_registration;
+        const brandCurrency = getCurrencyByIso2(brandCountry!, CountryData);
+        const baseCurrencyRate = await GetExchangeRates("USD", brandCurrency!);
+
+        const baseCurrencyPrice = variantDetails.price / baseCurrencyRate;
+        console.log("The base currency price is:", baseCurrencyPrice);
+        // 2. Create the main variant record
+        const newVariantId = await createVariant(
+            productId,
+            baseCurrencyPrice,
+            variantDetails
+        );
+
+        if (!newVariantId) {
+            throw new Error("Failed to create product variant.");
+        }
+
+        // 3. Handle relational data insertions
+        await createVariantColors(newVariantId, variantDetails.colors);
+        await createVariantMaterials(supabase, newVariantId, variantDetails.materialComposition);
+        await createVariantTags(newVariantId, {
+            marketing: variantDetails.marketingAndExclusivityTags,
+            sustainability: variantDetails.sustainabilityTags,
+            craftsmanship: variantDetails.craftmanshipTags,
+        });
+
+        if (variantDetails.measurements && Object.keys(variantDetails.measurements).length > 0) {
+            await createSizes(newVariantId, { measurements: variantDetails.measurements }, variantDetails.measurementUnit);
+        }
+
+        const imageFiles: File[] = variantDetails.images
+            .filter(img => img && img.startsWith('data:image'))
+            .map((base64Image, index) => {
+                const { type, data } = decodeBase64Image(base64Image);
+                const blob = new Blob([data], { type });
+                return new File([blob], `image-${index}.${type.split('/')[1] || 'png'}`, { type });
+            });
+
+        await Promise.all(
+            imageFiles.map((file, index) => createImages(newVariantId, file, index))
+        );
+
+        return NextResponse.json({
+            success: true,
+            message: "Variant saved successfully!",
+            variantId: newVariantId
+        });
     } catch (error) {
-        console.error("Error in POST /api/products/variants:", error);
+        console.error("Error in POST /api/products/upload-variant-details:", error);
         return NextResponse.json({
             success: false, 
             message: error instanceof Error ? error.message : "Internal server error"

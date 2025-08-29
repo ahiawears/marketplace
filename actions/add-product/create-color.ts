@@ -1,4 +1,7 @@
-export async function createColor(supabase: any, colorName: string, colorHex: string) {
+import { createClient } from "@/supabase/server";
+
+export async function createColor(colorName: string, colorHex: string) {
+    const supabase = await createClient();
     try {
         const { data: colorData, error } = await supabase
             .from("colors")

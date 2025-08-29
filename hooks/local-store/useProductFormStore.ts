@@ -1,36 +1,28 @@
 import { create } from 'zustand';
+import { MultiVariantGeneralDetailsInterface } from '@/components/brand-dashboard/add-product/general-details-form';
+
+const DEFAULT_GENERAL_DETAILS: MultiVariantGeneralDetailsInterface = {
+    productName: "",
+    productDescription: "",
+    category: "",
+    subCategory: "",
+    tags: [],
+    gender: "",
+    season: "",
+};
 
 interface ProductFormState {
-  category: string;
-  setCategory: (newCategory: string) => void;
-
-  isShippingConfigSet: boolean,
-  setIsShippingConfigSet: (newIsShippingConfigSet: boolean) => void;
+  generalDetails: MultiVariantGeneralDetailsInterface;
+  setGeneralDetails: (updates: Partial<MultiVariantGeneralDetailsInterface>) => void;
 
   productId: string,
   setProductId: (newProductId: string) => void;
-
-  productName: string,
-  setProductName: (newProductName: string) => void;
-
-  baseSlug: string,
-  setBaseSlug: (newBaseSlug: string) => void;
 }
 
 export const useProductFormStore = create<ProductFormState>((set) => ({
-  category: '',
-
-  setCategory: (newCategory) => set({ category: newCategory }),
-
-  isShippingConfigSet: false,
-  setIsShippingConfigSet: (newIsShippingConfigSet) => set({ isShippingConfigSet: newIsShippingConfigSet }),
+  generalDetails: DEFAULT_GENERAL_DETAILS,
+  setGeneralDetails: (updates) => set((state) => ({ generalDetails: { ...state.generalDetails, ...updates } })),
 
   productId: '',
   setProductId: (newProductId) => set({ productId: newProductId}),
-
-  baseSlug: '',
-  setBaseSlug: (newBaseSlug) => set({ baseSlug: newBaseSlug }),
-
-  productName: '',
-  setProductName: (newProductName) => set({ productName: newProductName }),
 }));

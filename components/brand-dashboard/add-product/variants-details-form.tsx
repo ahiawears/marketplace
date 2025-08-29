@@ -1,4 +1,4 @@
-import { FC, FormEvent, useCallback, useState } from "react";
+import { FC, FormEvent, useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,7 @@ export interface MeasurementValue {
 }
 
 export interface VariantFormDetails {
+    id: string;
     variantName: string;
     price: number;
     sku: string;
@@ -58,6 +59,7 @@ export interface VariantFormDetails {
 }
 
 export const DEFAULT_VARIANT: VariantFormDetails = {
+    id: `variant_${Date.now()}_${Math.random()}`,
     variantName: "",
     price: 0.00,
     sku: "",
@@ -99,28 +101,33 @@ const generateSlug = (productName: string, colorName: string, pattern?: string) 
 };
 
 const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
-    const { category } = useProductFormStore();
-    const { variants, addVariant, updateVariant, removeVariant } = useVariantManagement();
+    const { generalDetails, productId } = useProductFormStore();
+    const { category } = generalDetails;
+    const { variants, addVariant, updateVariant, removeVariant, copyFromPreviousVariant } = useVariantManagement();
 
     const handleSaveVariant = async (index: number, variantToSave: VariantFormDetails) => {
-        toast.loading("Saving variant...");
+        const toastId = toast.loading("Saving variant...");
         
         try {
-            // Here you would make your API call to save the single variant
-            // For example: await api.saveVariant(variantToSave);
             const formData = new FormData();
             formData.append('variantDetails', JSON.stringify(variantToSave));
+            formData.append('productId', productId);
+            formData.append('categoryName', category);
+            console.log("The form being uploaded is: ", formData);
             const response = await fetch('/api/products/upload-variant-details', {
                 method: 'POST',
                 body: formData,
             });
 
             const result = await response.json();
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-            console.log(`Saving variant at index ${index}: `, variantToSave);
-            toast.success("Variant saved successfully!");
+            if (response.ok && result.success) {
+                toast.success("Variant saved successfully!", { id: toastId });
+                console.log("The result is ", result);
+            } else {
+                toast.error("Failed to save variant.", { id: toastId });
+            }
         } catch (error) {
-            toast.error("Failed to save variant.");
+            toast.error("Failed to save variant.", { id: toastId });
             console.error(error);
         }
     };
@@ -129,7 +136,7 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
         <form>
             {variants.map((variant, index) => (
                 <VariantForm
-                    key={index}
+                    key={variant.id}
                     variant={variant}
                     index={index}
                     category={category}
@@ -137,6 +144,7 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
                     onUpdate={(updates) => updateVariant(index, updates)}
                     onRemove={() => removeVariant(index)}
                     onSave={() => handleSaveVariant(index, variant)}
+                    onCopyFromPrevious={() => copyFromPreviousVariant(index)}
                 />
             ))}
             
@@ -158,8 +166,8 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
 const useVariantManagement = () => {
     // Assuming productName is available in your store, similar to category.
     // You might need to add it to useProductFormStore if it's not there.
-    const { productName } = useProductFormStore();
-    const [variants, setVariants] = useState<VariantFormDetails[]>([DEFAULT_VARIANT]);
+    const { generalDetails } = useProductFormStore();
+    const [variants, setVariants] = useState<VariantFormDetails[]>([{...DEFAULT_VARIANT, id: `variant_${Date.now()}_${Math.random()}`}]);
 
     const updateVariant = useCallback((index: number, updates: Partial<VariantFormDetails>) => {
         setVariants(prev => prev.map((v, i) => {
@@ -172,28 +180,28 @@ const useVariantManagement = () => {
             // Auto-generate SKU and slug when colors are updated and SKU is empty
             if (updates.colors && updates.colors.length > 0 && !v.sku) {
                 const mainColor = updates.colors[0];
-                if (productName && mainColor.name) {
-                    newVariant.sku = generateSKU(productName, mainColor.name);
-                    newVariant.slug = generateSlug(productName, mainColor.name, newVariant.pattern);
+                if (generalDetails.productName && mainColor.name) {
+                    newVariant.sku = generateSKU(generalDetails.productName, mainColor.name);
+                    newVariant.slug = generateSlug(generalDetails.productName, mainColor.name, newVariant.pattern);
                 }
             }
             
             // Also handle pattern update for slug
             if (updates.pattern && newVariant.colors.length > 0) {
                  const mainColor = newVariant.colors[0];
-                 if (productName && mainColor.name) {
-                    newVariant.slug = generateSlug(productName, mainColor.name, updates.pattern);
+                 if (generalDetails.productName && mainColor.name) {
+                    newVariant.slug = generateSlug(generalDetails.productName, mainColor.name, updates.pattern);
                  }
             }
 
             return newVariant;
         }));
-    }, [productName]);
+    }, [generalDetails.productName]);
 
     const addVariant = useCallback(() => {
-        const newProductCode = productName ? generateProductCode(productName) : "";
-        setVariants(prev => [...prev, { ...DEFAULT_VARIANT, productCode: newProductCode }]);
-    }, [productName]);
+        const newProductCode = generalDetails.productName ? generateProductCode(generalDetails.productName) : "";
+        setVariants(prev => [...prev, { ...DEFAULT_VARIANT, productCode: newProductCode, id: `variant_${Date.now()}_${Math.random()}` }]);
+    }, [generalDetails.productName]);
     const removeVariant = useCallback((index: number) => {
         if (variants.length <= 1) {
             toast.error("At least one variant is required.");
@@ -202,8 +210,38 @@ const useVariantManagement = () => {
         setVariants(prev => prev.filter((_, i) => i !== index));
     }, [variants]);
 
+    const copyFromPreviousVariant = useCallback((index: number) => {
+        if (index === 0) return;
 
-    return { variants, updateVariant, addVariant, removeVariant };
+        setVariants(prev => {
+            const previousVariant = prev[index - 1];
+            const newVariants = [...prev];
+            const currentVariant = newVariants[index];
+
+            const copiedVariant = {
+                ...previousVariant,
+                id: `variant_${Date.now()}_${Math.random()}`,
+                variantName: "",
+                sku: "",
+                slug: "",
+                productCode: currentVariant.productCode,
+                // Reset fields that should be unique per variant
+                colors: [],
+                colorDescription: "",
+                images: DEFAULT_VARIANT.images,
+                imagesDescription: DEFAULT_VARIANT.imagesDescription,
+                marketingAndExclusivityTags: [],
+                sustainabilityTags: [],
+                craftmanshipTags: [],
+            };
+
+            newVariants[index] = copiedVariant;
+            toast.success("Copied details from previous variant.");
+            return newVariants;
+        });
+    }, []);
+
+    return { variants, updateVariant, addVariant, removeVariant, copyFromPreviousVariant };
 };
 
 interface VariantFormProps {
@@ -214,12 +252,12 @@ interface VariantFormProps {
     onUpdate: (updates: Partial<VariantFormDetails>) => void;
     onRemove: () => void; 
     onSave: () => void;
+    onCopyFromPrevious: () => void;
 }
 
-const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency, onUpdate, onRemove, onSave }) => {
+const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency, onUpdate, onRemove, onSave, onCopyFromPrevious }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [errors, setErrors] = useState<VariantFormErrors>({});
-    const { productId } = useProductFormStore();
 
     const handleSaveButtonClick = async () => {
         const { isValid, errors: validationErrors } = validateVariantFormDetails(variant, category);
@@ -236,7 +274,19 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
     };
   return (
     <div className="border-b pb-6 mb-6 last-of-type:border-b-0">
-        <h3 className="text-lg font-bold mb-4">Variant {index + 1}</h3>
+        <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold">Variant {index + 1}</h3>
+            {index > 0 && (
+                <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onCopyFromPrevious}
+                    className="text-sm border-2"
+                >
+                    Copy from previous
+                </Button>
+            )}
+        </div>
         
         <VariantBasicInfo
             variant={variant}
@@ -599,6 +649,10 @@ const MaterialSection: FC<{ materialComposition: MaterialComposition[]; onUpdate
         onUpdate({ materialComposition: materialComposition.filter((_, i) => i !== materialIndex) });
     };
 
+    const totalPercentage = useMemo(() => 
+        materialComposition.reduce((sum, mat) => sum + (mat.percentage || 0), 0),
+    [materialComposition]);
+
     return (
         <div className="my-4">
             <label className="block text-sm font-bold text-gray-900 mb-2">
@@ -612,6 +666,12 @@ const MaterialSection: FC<{ materialComposition: MaterialComposition[]; onUpdate
                     onRemove={() => removeMaterial(materialIndex)}
                 />
             ))}
+            <div className="my-2 text-right">
+                <p className="text-sm font-medium">Total: {totalPercentage}%</p>
+                {totalPercentage !== 100 && materialComposition.length > 0 && (
+                    <p className="text-xs text-red-500">Total percentage must add up to 100%.</p>
+                )}
+            </div>
             <div className="my-2">
                 <Button 
                     type="button" 

@@ -1,18 +1,40 @@
-export async function createVariant(supabase: any, variantName: string, variantSku: string, variantPrice: number,  baseCurrencyPrice: number, colorId: string, colorDescription: string, variantProductCode: string, availableDate: string, imagesDescription: string, mainProdductId: string){
+import { VariantFormDetails } from "@/components/brand-dashboard/add-product/variants-details-form";
+import { createClient } from "@/supabase/server";
+
+export async function createVariant(
+    mainProductId: string,
+    baseCurrencyPrice: number,
+    variantDetails: Pick<
+        VariantFormDetails,
+        | 'variantName'
+        | 'sku'
+        | 'price'
+        | 'productCode'
+        | 'slug'
+        | 'status'
+        | 'availableDate'
+        | 'pattern'
+        | 'colorDescription'
+        | 'imagesDescription'
+    >
+){
+    const supabase = await createClient();
     try {
         const { data: variantDataInserted, error: variantError } = await supabase
             .from("product_variants")
             .insert({
-                name: variantName,
-                sku: variantSku, 
-                price: variantPrice,
-                color_id: colorId,
-                product_code: variantProductCode,
-                main_product_id: mainProdductId,
+                name: variantDetails.variantName,
+                sku: variantDetails.sku, 
+                price: variantDetails.price,
+                product_code: variantDetails.productCode,
+                main_product_id: mainProductId,
                 base_currency_price: baseCurrencyPrice,
-                color_description: colorDescription,
-                available_date: availableDate,
-                images_description: imagesDescription
+                slug: variantDetails.slug,
+                status: variantDetails.status,
+                available_date: variantDetails.availableDate || null,
+                fabric_pattern: variantDetails.pattern,
+                color_description: variantDetails.colorDescription,
+                images_description: variantDetails.imagesDescription,
             })
             .select('id')
             .single();

@@ -1,4 +1,8 @@
-export async function createImages(supabase: any, variantId: string, variantImages: File, index: number) {
+import { createClient } from "@/supabase/server";
+
+export async function createImages(variantId: string, variantImages: File, index: number) {
+    const supabase = await createClient();
+
     try {
         const imageUrls: string[] = [];
         const bucketName = "product-images";
@@ -21,12 +25,12 @@ export async function createImages(supabase: any, variantId: string, variantImag
         }
 
         // Get public URL of the uploaded image
-        const { data: publicUrlData, error: publicUrlError } = supabase.storage
+        const { data: publicUrlData } = supabase.storage
             .from(bucketName)
             .getPublicUrl(`products/${uniqueFileName}`);
 
-        if (publicUrlError) {
-            throw new Error(`Error getting public URL: ${publicUrlError.message}`);
+        if (!publicUrlData.publicUrl) {
+            throw new Error(`Error getting public URL`);
         }
 
         const publicUrl = publicUrlData.publicUrl;

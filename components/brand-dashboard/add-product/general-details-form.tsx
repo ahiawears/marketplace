@@ -23,24 +23,15 @@ export interface MultiVariantGeneralDetailsInterface {
 const gender = ["Male", "Female", "Unisex"];
 
 const GeneralDetailsForm: FC = () => {
-    const { setCategory, setProductId, setBaseSlug, setProductName } = useProductFormStore();
+    const { generalDetails, setGeneralDetails, setProductId } = useProductFormStore();
     
     const [subcategories, setSubcategories] = useState<string[]>([]);
-    const [generalDetailsData, setGeneralDetailsData] = useState<MultiVariantGeneralDetailsInterface>({
-        productName: "",
-        productDescription: "",
-        category: "",
-        subCategory: "",
-        tags: [],
-        gender: "",
-        season: "",
-    });
     const [customTags, setCustomTags] = useState<string[]>([]);
     const seasonOptions = generateSeasonOptions();
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
    const isFormValid = () => {
-        const { productName, productDescription, category, subCategory, gender, season, tags } = generalDetailsData;
+        const { productName, productDescription, category, subCategory, gender, season, tags } = generalDetails;
         const requiredFieldsFilled =
             validator.trim(productName).length > 0 &&
             validator.trim(productDescription).length > 0 &&
@@ -61,32 +52,25 @@ const GeneralDetailsForm: FC = () => {
     };
     
     const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        setGeneralDetailsData({
-            ...generalDetailsData,
-            [e.target.name]: e.target.value,
-        });
+        setGeneralDetails({ [e.target.name]: e.target.value });
     };
 
     const handleSubcategoryClick = (sub: string) => {
-        setGeneralDetailsData((prevData) => ({
-            ...prevData,
-            subCategory: sub, 
-        }));
+        setGeneralDetails({ subCategory: sub });
     };
 
     const handleTagClick = (tag: string) => {
-        const isTagSelected = generalDetailsData.tags.includes(tag);
-        const newTagCount = isTagSelected ? generalDetailsData.tags.length - 1 : generalDetailsData.tags.length + 1;
+        const isTagSelected = generalDetails.tags.includes(tag);
+        const newTagCount = isTagSelected ? generalDetails.tags.length - 1 : generalDetails.tags.length + 1;
 
         if (newTagCount > 5) {
             toast.error("You can only select up to 5 tags");
         } else {
-            setGeneralDetailsData((prevData) => ({
-                ...prevData,
-                tags: isTagSelected
-                    ? prevData.tags.filter((t) => t !== tag)
-                    : [...prevData.tags, tag],
-            }));
+            const newTags = isTagSelected
+                ? generalDetails.tags.filter((t) => t !== tag)
+                : [...generalDetails.tags, tag];
+            
+            setGeneralDetails({ tags: newTags });
         }
     }
 
@@ -103,7 +87,7 @@ const GeneralDetailsForm: FC = () => {
 
         try {
             const formData = new FormData();
-            formData.append('generalDetails', JSON.stringify(generalDetailsData));
+            formData.append('generalDetails', JSON.stringify(generalDetails));
 
             const response = await fetch('/api/products/upload-general-details', {
                 method: 'POST',
@@ -116,8 +100,6 @@ const GeneralDetailsForm: FC = () => {
                 toast.success(result.message, { id: toastId });
                 // Save the returned productUploadId to the Zustand store
                 setProductId(result.productUploadId);
-                setBaseSlug(result.baseSlug);
-                setProductName(generalDetailsData.productName);
             } else {
                 toast.error(result.message || "Something went wrong.", { id: toastId });
                 console.error("Upload failed:", result.errors || result.message);
@@ -140,7 +122,7 @@ const GeneralDetailsForm: FC = () => {
                         id="productName"
                         type="text"
                         name="productName"
-                        value={generalDetailsData.productName}
+                        value={generalDetails.productName}
                         onChange={handleFormInput}
                         maxLength={100}
                         placeholder="Enter a clear and concise name for your product. This will be the main title customers see. (100 characters max)"
@@ -155,7 +137,7 @@ const GeneralDetailsForm: FC = () => {
                     <Textarea
                         id="productDescription"
                         name="productDescription"
-                        value={generalDetailsData.productDescription}
+                        value={generalDetails.productDescription}
                         onChange={handleFormInput}
                         maxLength={300}
                         placeholder="Provide a detailed description of your product. Highlight key features, materials, and what makes it unique. Good descriptions help sales! (300 characters max)"
@@ -172,16 +154,12 @@ const GeneralDetailsForm: FC = () => {
                         options={categoriesList.map((category) => category.name)}
                         getOptionLabel={(option) => option}
                         onSelect={(selectedOption) => {
-                            setGeneralDetailsData((prevData) => ({
-                                ...prevData,
+                            setGeneralDetails({
                                 category: selectedOption,
                                 subCategory: "",
                                 tags: [],
-                            }));
+                            });
                             
-                            // 2. Update the Zustand store
-                            setCategory(selectedOption);
-
                             // Find the category and update subcategories/tags
                             const category = categoriesList.find((cat) => cat.name === selectedOption);
                             setSubcategories(category?.subcategories || []);
@@ -202,8 +180,8 @@ const GeneralDetailsForm: FC = () => {
                             <span
                                 key={index}
                                 onClick={() => handleSubcategoryClick(sub)}
-                                className={`px-3 py-1 text-sm cursor-pointer
-                                            ${generalDetailsData.subCategory === sub
+                                className={`px-3 py-1 text-sm cursor-pointer ${
+                                    generalDetails.subCategory === sub
                                                 ? "bg-black text-white ring-2 ring-offset-1 ring-black"
                                                 : "bg-primary text-white opacity-50"}
                                             hover:bg-primary/90 hover:text-white`
@@ -227,8 +205,8 @@ const GeneralDetailsForm: FC = () => {
                         {customTags.map((tag, index) => (
                             <span
                                 key={index}
-                                className={`px-3 py-1 text-sm cursor-pointer 
-                                            ${generalDetailsData.tags.includes(tag) 
+                                className={`px-3 py-1 text-sm cursor-pointer ${
+                                    generalDetails.tags.includes(tag) 
                                                 ? "bg-black text-white ring-2 ring-offset-1 ring-black" 
                                                 : "bg-primary text-white opacity-50"} 
                                             hover:bg-primary/90 hover:text-white` 
@@ -253,7 +231,7 @@ const GeneralDetailsForm: FC = () => {
                         id="season"
                         name="season"
                         onChange={handleFormInput}
-                        value={generalDetailsData.season}
+                        value={generalDetails.season}
                         className="block border-2 bg-transparent"
                     >
                         <option value="" disabled>Indicate the fashion season this product is most suitable for(e.g., Spring/Summer, Autumn/Winter).</option>
@@ -274,7 +252,7 @@ const GeneralDetailsForm: FC = () => {
                         id="gender"
                         name="gender"
                         onChange={handleFormInput}
-                        value={generalDetailsData.gender}
+                        value={generalDetails.gender}
                         className="block border-2 bg-transparent"
                     >
                         <option value="" disabled>Specify the gender this product is primarily designed for.</option>

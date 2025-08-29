@@ -1,18 +1,20 @@
+import { createClient } from "@/supabase/server";
+
 interface MeasurementSizesProps {
     measurements: {
         [size: string]: {
-          [measurement: string]: number | string; // Measurements (e.g., "chest", "waist", etc.)
-          quantity: number;
+          [measurement: string]: number | string | undefined; // Measurements (e.g., "chest", "waist", etc.)
+          quantity: number | undefined;
         };
     };
 }
 
 export async function createSizes(
-    supabase: any,
     variantId: string,
     { measurements }: MeasurementSizesProps,
     measurementUnit: string
 ) {
+    const supabase = await createClient();
     try {
         // First delete existing sizes and measurements for this variant
         const { error: deleteError } = await supabase
@@ -24,6 +26,9 @@ export async function createSizes(
 
         for (const sizeName in measurements) {
             const sizeData = measurements[sizeName];
+
+            // Skip if quantity is not a valid, positive number
+            if (typeof sizeData.quantity !== 'number' || sizeData.quantity <= 0) continue;
 
             // 1. Handle Size - use upsert to avoid duplicates
             const { data: sizeRecord, error: sizeError } = await supabase

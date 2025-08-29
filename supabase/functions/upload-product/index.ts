@@ -273,10 +273,10 @@ Deno.serve(async (req: Request) => {
                         });
                     }
 
-                    const baseCurrencyRate = await GetExchangeRates(supabase, "USD", brandCurrency);
+                    const baseCurrencyRate = await GetExchangeRates("USD", brandCurrency);
                     const baseCurrencyPrice = priceNum / baseCurrencyRate;
 
-                    const colorId = await createColor(supabase, colorName, mainColor); // Assuming these are required
+                    const colorId = await createColor(colorName, mainColor); 
 
                     const variantId = await createVariant(
                         supabase,
@@ -293,7 +293,7 @@ Deno.serve(async (req: Request) => {
                     );
 
                     if (measurementUnit && measurements && Object.keys(measurements).length > 0) {
-                        await createSizes(supabase, variantId, { measurements: measurements }, measurementUnit);
+                        await createSizes(variantId, { measurements: measurements }, measurementUnit);
                     }
 
                     await Promise.all(imagesToUpload.map((imageFile, imgIndex) =>
