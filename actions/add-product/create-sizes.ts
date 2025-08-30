@@ -1,4 +1,3 @@
-import { createClient } from "@/supabase/server";
 
 interface MeasurementSizesProps {
     measurements: {
@@ -10,11 +9,11 @@ interface MeasurementSizesProps {
 }
 
 export async function createSizes(
+    supabase: any,
     variantId: string,
     { measurements }: MeasurementSizesProps,
     measurementUnit: string
 ) {
-    const supabase = await createClient();
     try {
         // First delete existing sizes and measurements for this variant
         const { error: deleteError } = await supabase

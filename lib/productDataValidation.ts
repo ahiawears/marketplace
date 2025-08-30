@@ -342,7 +342,12 @@ export const validateProductShippingDetails = (
         } else if (methodKeyString === 'standardShipping' && methodFees?.standard) {
             for (const zoneKeyStr in methodFees.standard) {
                 const zoneKey = zoneKeyStr as DeliveryZoneKey;
-                if (shippingConfig.shippingZones[zoneKey]?.available && shippingConfig.shippingMethods.standardShipping.estimatedDelivery[zoneKey]) {
+                const standardConfig = shippingConfig.shippingMethods.standardShipping;
+                if (
+                    shippingConfig.shippingZones[zoneKey]?.available &&
+                    standardConfig?.available &&
+                    standardConfig.estimatedDelivery?.[zoneKey]
+                ) {
                     if (!methodFees.standard[zoneKey]?.fee || methodFees.standard[zoneKey]!.fee! <= 0) {
                         return { isValid: false, error: `The fee for Standard Shipping in the ${zoneKey.replace(/_/g, ' ')} zone cannot be zero or empty.` };
                     }
@@ -351,7 +356,12 @@ export const validateProductShippingDetails = (
         } else if (methodKeyString === 'expressShipping' && methodFees?.express) {
             for (const zoneKeyStr in methodFees.express) {
                 const zoneKey = zoneKeyStr as DeliveryZoneKey;
-                if (shippingConfig.shippingZones[zoneKey]?.available && shippingConfig.shippingMethods.expressShipping.estimatedDelivery[zoneKey]) {
+                const expressConfig = shippingConfig.shippingMethods.expressShipping;
+                if (
+                    shippingConfig.shippingZones[zoneKey]?.available &&
+                    expressConfig?.available &&
+                    expressConfig.estimatedDelivery?.[zoneKey]
+                ) {
                     if (!methodFees.express[zoneKey]?.fee || methodFees.express[zoneKey]!.fee! <= 0) {
                         return { isValid: false, error: `The fee for Express Shipping in the ${zoneKey.replace(/_/g, ' ')} zone cannot be zero or empty.` };
                     }

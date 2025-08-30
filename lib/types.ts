@@ -462,6 +462,7 @@ export interface ProductShippingDeliveryType {
   };
   weight: number;
   dimensions: { length: number; width: number; height: number };
+  measurementUnit: "Inch" | "Centimeter";
 }
 
 export interface ShippingDeliveryType {

@@ -12,18 +12,6 @@ import { createVariantMaterials } from "@/actions/add-product/create-variant-mat
 import { createVariantTags } from "@/actions/add-product/create-variant-tags";
 import { createImages } from "@/actions/add-product/create-images";
 
-
-const decodeBase64Image = (dataString: string) => {
-    const matches = dataString.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-        throw new Error('Invalid base64 image string');
-    }
-    return {
-        type: matches[1],
-        data: Buffer.from(matches[2], 'base64'),
-    };
-}
-
 function getCurrencyByIso2(iso2Code: string, countryData: CountryDataType[]): string | null {
     const country = countryData.find(
         (country) => country.iso2.toLowerCase() === iso2Code.toLowerCase()
@@ -39,6 +27,8 @@ export async function POST (req: Request) {
             return NextResponse.json({ success: false, message: "User not authenticated" }, { status: 401 });
         }
         const formData = await req.formData();
+        // Safely get all file entries for the 'images' key.
+        const imageFiles = formData.getAll("images").filter((v): v is File => v instanceof File);
         const variantDetailsRaw = formData.get("variantDetails");
         const productId = formData.get("productId");
         const categoryName = formData.get("categoryName");
@@ -59,8 +49,14 @@ export async function POST (req: Request) {
             return NextResponse.json({ success: false, message: "Invalid JSON format for variant details" }, { status: 400 });
         }
 
+        // Reconstruct the full object for validation, adding image placeholders
+        const fullVariantDetailsForValidation: VariantFormDetails = {
+            ...variantDetails,
+            images: imageFiles.map(file => file.name), // Use file names as placeholders for validation
+        };
+
         // Server-side validation
-        const { isValid, errors } = validateVariantFormDetails(variantDetails, categoryName);
+        const { isValid, errors } = validateVariantFormDetails(fullVariantDetailsForValidation, categoryName);
         if (!isValid) {
             return NextResponse.json({ success: false, message: "Validation failed", errors }, { status: 400 });
         }
@@ -80,9 +76,10 @@ export async function POST (req: Request) {
         console.log("The base currency price is:", baseCurrencyPrice);
         // 2. Create the main variant record
         const newVariantId = await createVariant(
+            supabase,
             productId,
             baseCurrencyPrice,
-            variantDetails
+            fullVariantDetailsForValidation
         );
 
         if (!newVariantId) {
@@ -90,28 +87,20 @@ export async function POST (req: Request) {
         }
 
         // 3. Handle relational data insertions
-        await createVariantColors(newVariantId, variantDetails.colors);
-        await createVariantMaterials(supabase, newVariantId, variantDetails.materialComposition);
-        await createVariantTags(newVariantId, {
-            marketing: variantDetails.marketingAndExclusivityTags,
-            sustainability: variantDetails.sustainabilityTags,
-            craftsmanship: variantDetails.craftmanshipTags,
+        await createVariantColors(supabase, newVariantId, fullVariantDetailsForValidation.colors);
+        await createVariantMaterials(supabase, newVariantId, fullVariantDetailsForValidation.materialComposition);
+        await createVariantTags(supabase, newVariantId, {
+            marketing: fullVariantDetailsForValidation.marketingAndExclusivityTags,
+            sustainability: fullVariantDetailsForValidation.sustainabilityTags,
+            craftsmanship: fullVariantDetailsForValidation.craftmanshipTags,
         });
 
-        if (variantDetails.measurements && Object.keys(variantDetails.measurements).length > 0) {
-            await createSizes(newVariantId, { measurements: variantDetails.measurements }, variantDetails.measurementUnit);
+        if (fullVariantDetailsForValidation.measurements && Object.keys(fullVariantDetailsForValidation.measurements).length > 0) {
+            await createSizes(supabase, newVariantId, { measurements: fullVariantDetailsForValidation.measurements }, fullVariantDetailsForValidation.measurementUnit);
         }
 
-        const imageFiles: File[] = variantDetails.images
-            .filter(img => img && img.startsWith('data:image'))
-            .map((base64Image, index) => {
-                const { type, data } = decodeBase64Image(base64Image);
-                const blob = new Blob([data], { type });
-                return new File([blob], `image-${index}.${type.split('/')[1] || 'png'}`, { type });
-            });
-
         await Promise.all(
-            imageFiles.map((file, index) => createImages(newVariantId, file, index))
+            imageFiles.map((file, index) => createImages(supabase, newVariantId, file, index))
         );
 
         return NextResponse.json({

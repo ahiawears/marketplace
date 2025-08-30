@@ -100,6 +100,17 @@ const generateSlug = (productName: string, colorName: string, pattern?: string) 
     return [namePart, colorPart, patternPart, randomPart].filter(Boolean).join('-').replace(/-{2,}/g, '-');
 };
 
+async function imageUrlToFile(url: string, filename: string): Promise<File | null> {
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        return new File([blob], filename, { type: blob.type });
+    } catch (error) {
+        console.error("Error converting image URL to File:", error);
+        return null;
+    }
+}
+
 const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
     const { generalDetails, productId } = useProductFormStore();
     const { category } = generalDetails;
@@ -109,11 +120,27 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
         const toastId = toast.loading("Saving variant...");
         
         try {
+            // Separate images from the rest of the details for FormData
+            const { images, ...detailsForJson } = variantToSave;
+            // The JSON payload should not contain image data, as it's sent separately.
+            (detailsForJson as Partial<VariantFormDetails>).images = [];
+
             const formData = new FormData();
-            formData.append('variantDetails', JSON.stringify(variantToSave));
+            formData.append('variantDetails', JSON.stringify(detailsForJson));
             formData.append('productId', productId);
             formData.append('categoryName', category);
-            console.log("The form being uploaded is: ", formData);
+
+            // Convert all valid image URLs (blob or data) to File objects and append them.
+            const imageUploadPromises = images
+                .filter(img => img && (img.startsWith("blob:") || img.startsWith("data:image")))
+                .map(async (imageUrl, i) => {
+                    const imageFile = await imageUrlToFile(imageUrl, `variant-${index}-image-${i}.png`);
+                    if (imageFile) {
+                        formData.append('images', imageFile);
+                    }
+                });
+            await Promise.all(imageUploadPromises);
+
             const response = await fetch('/api/products/upload-variant-details', {
                 method: 'POST',
                 body: formData,
@@ -124,11 +151,19 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
                 toast.success("Variant saved successfully!", { id: toastId });
                 console.log("The result is ", result);
             } else {
-                toast.error("Failed to save variant.", { id: toastId });
+                // Log the detailed errors from the server for debugging
+                if (result.errors) {
+                    console.error("Server validation errors:", result.errors);
+                    // Create a more descriptive error message for the user
+                    const errorMessages = Object.values(result.errors).join(' ');
+                    toast.error(`Validation failed: ${errorMessages}`, { id: toastId, duration: 6000 });
+                } else {
+                    toast.error(`Failed to save variant: ${result.message}`, { id: toastId });
+                }
             }
         } catch (error) {
             toast.error("Failed to save variant.", { id: toastId });
-            console.error(error);
+            console.error(error instanceof Error ? error.message : error);
         }
     };
 

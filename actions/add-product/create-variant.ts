@@ -1,7 +1,7 @@
 import { VariantFormDetails } from "@/components/brand-dashboard/add-product/variants-details-form";
-import { createClient } from "@/supabase/server";
 
 export async function createVariant(
+    supabase: any,
     mainProductId: string,
     baseCurrencyPrice: number,
     variantDetails: Pick<
@@ -18,7 +18,6 @@ export async function createVariant(
         | 'imagesDescription'
     >
 ){
-    const supabase = await createClient();
     try {
         const { data: variantDataInserted, error: variantError } = await supabase
             .from("product_variants")

@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { ChangeEvent, FC, FormEvent, useState, useEffect } from "react";
 import { validateProductShippingDetails } from "@/lib/productDataValidation";
 import Link from "next/link";
+import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
+import { toast } from "sonner";
 
 interface ShippingDetailsPropss {
     currencySymbol: string;
@@ -58,7 +60,9 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
 
     const { shippingMethods, shippingZones } = shippingConfig;
     const [isSaveButtonDisabled, setIsSaveButtonDisabled] = useState<boolean>(true);
+    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
     const [selectedShippingMethods, setSelectedShippingMethods] = useState<string[]>([]);
+    const { productId } = useProductFormStore();
     
     // State to hold the fees the user enters for each method/zone
     const [methodFees, setMethodFees] = useState<ProductShippingDeliveryType["methods"]>({});
@@ -194,10 +198,39 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
     }
     const handleSave = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        console.log({
+
+        setIsSubmitting(true);
+        const toastId = toast.loading("Saving shipping details...");
+        
+        const finalShippingDetails = {
             ...shippingDetailsData,
-            methods: methodFees
-        });
+            methods: methodFees,
+            productId: productId
+        };
+
+        try {
+            const formData = new FormData();
+            formData.append('productShippingConfig', JSON.stringify(finalShippingDetails));
+
+            const response = await fetch('/api/products/upload-shipping-details', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                toast.success("Shipping details saved successfully!", { id: toastId });
+            } else {
+                toast.error(result.message || "An unknown error occurred.", { id: toastId });
+            }
+            
+        } catch (error) {
+            console.log(error);
+            toast.error("Failed to save shipping details.", { id: toastId });
+        } finally {
+            setIsSubmitting(false);
+        }
     }
 
     return (

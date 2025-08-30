@@ -10,6 +10,8 @@ export async function createProductShippingDetails(supabase: any, productShippin
                 height: productShippingConfig.dimensions.height,
                 width: productShippingConfig.dimensions.width,
                 length: productShippingConfig.dimensions.length,
+                measurement_unit: productShippingConfig.measurementUnit,
+
             }, {
                 onConflict: "product_id",
             })

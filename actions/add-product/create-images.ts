@@ -1,16 +1,9 @@
-import { createClient } from "@/supabase/server";
-
-export async function createImages(variantId: string, variantImages: File, index: number) {
-    const supabase = await createClient();
-
+export async function createImages(supabase: any, variantId: string, variantImages: File, index: number) {
     try {
         const imageUrls: string[] = [];
         const bucketName = "product-images";
-
-        console.log("The variantImages Blobs are: ", variantImages);
         
         const uniqueFileName = `${variantId}/image-${index}.${variantImages.type.split("/")[1] || "png"}`;
-        console.log(`Uploading: ${uniqueFileName}`, "Type:", variantImages.type);
 
         // Upload to Supabase Storage
         const { data, error } = await supabase.storage

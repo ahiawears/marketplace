@@ -185,7 +185,7 @@ const ProductShippingDetails: React.FC<ProductShippingDetailsProps> = ({ userId,
             methods: selectedMethodsAndFees,
             weight: productWeight,
             dimensions: productDimensions,
-            
+            measurementUnit: "Inch"
         };
         onSaveShippingDetails(shippingDetailsToSave);
         console.log("Saved Product Shipping Details:", shippingDetailsToSave);    

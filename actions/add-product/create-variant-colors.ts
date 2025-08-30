@@ -1,4 +1,3 @@
-import { createClient } from "@/supabase/server.ts";
 import { createColor } from "./create-color.ts";
 
 interface Color {
@@ -6,17 +5,15 @@ interface Color {
     hexCode: string;
 }
 
-export async function createVariantColors(variantId: string, colors: Color[]) {
+export async function createVariantColors(supabase: any, variantId: string, colors: Color[]) {
     if (!colors || colors.length === 0) {
         return; // Nothing to do
     }
 
-    const supabase = await createClient();
-
     try {
         // 1. Get or create all color IDs by calling createColor for each one.
         const colorIds = await Promise.all(
-            colors.map(color => createColor(color.name, color.hexCode))
+            colors.map(color => createColor(supabase, color.name, color.hexCode))
         );
 
         // 2. Prepare the data for the `product_variant_colors` join table.
