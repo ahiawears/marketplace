@@ -105,7 +105,7 @@ const GeneralDetailsForm: FC = () => {
                 console.error("Upload failed:", result.errors || result.message);
             }
         } catch (error) {
-            toast.error("Network or server error.", { id: toastId });
+            toast.error(`${error instanceof Error ? error.message : "Something went wrong."}`, { id: toastId });
             console.error("Unexpected error:", error);
         } finally {
             setIsSubmitting(false);

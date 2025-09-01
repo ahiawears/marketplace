@@ -10,20 +10,57 @@ import { ChangeEvent, FC, FormEvent, useState } from "react";
 interface ReturnPolicyProps {
 	currencySymbol: string;
 }
+export interface RestockingFee {
+	type: 'percentage' | 'fixed';
+	value: number;
+}
+export type RefundMethod = 'original_payment' | 'store_credit' | 'exchange';
+
+export interface ItemConditionRequirements {
+	mustBeUnused: boolean;
+	mustHaveOriginalTags: boolean;
+	mustBeInOriginalPackaging: boolean;
+	otherConditions: string;
+}
+export interface GeneralReturnPolicy {
+	returnWindowDays: number;
+	isReturnShippingFree: boolean;
+	restockingFee: RestockingFee | null;
+	acceptedRefundMethods: RefundMethod[];
+	conditionRequirements: ItemConditionRequirements;
+}
+export interface ReturnAddress {
+	useCentralized: boolean; 
+	addressLine1?: string;
+	addressLine2?: string;
+	city?: string;
+	state?: string;
+	zipCode?: string;
+	country?: string;
+}
+
+export interface BrandReturnPolicy {
+	isReturnable: "refundable" | "non-refundable"; // Quick yes/no flag
+	general: GeneralReturnPolicy;
+	exceptions: string;
+	returnAddress: ReturnAddress;
+	userFacingPolicyText: string;
+}
+
 interface ReturnPolicyInterface {
-  isReturnable: "refundable" | "non-refundable"; // Quick yes/no flag
-  returnWindowDays?: number; // How long after delivery a return is allowed
-  refundMethods?: ("originalPayment" | "exchange")[];
-  returnMethods?: ("pickup" | "dropoff" | "shipBack")[];
-  restockingFee?: number; 
-  returnShippingCost?: "buyer" | "seller" | "shared";
-  conditionRequirements?: {
-    unused?: boolean;
-    originalPackaging?: boolean;
-    tagsAttached?: boolean;
-  };
-  exclusions?: string[]; 
-  notes?: string;
+	isReturnable: "refundable" | "non-refundable"; // Quick yes/no flag
+	returnWindowDays?: number; // How long after delivery a return is allowed
+	refundMethods?: ("originalPayment" | "exchange")[];
+	returnMethods?: ("pickup" | "dropoff" | "shipBack")[];
+	restockingFee?: number; 
+	returnShippingCost?: "buyer" | "seller" | "shared";
+	conditionRequirements?: {
+		unused?: boolean;
+		originalPackaging?: boolean;
+		tagsAttached?: boolean;
+	};
+	exclusions?: string[]; 
+	notes?: string;
 }
 
 const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol }) => {
@@ -43,6 +80,7 @@ const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol }) => {
         notes: "",
     });
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
     const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setRefundPolicy({
             ...refundPolicy,
@@ -108,7 +146,8 @@ const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol }) => {
 
     const handleSave = async (e: FormEvent<HTMLFormElement | HTMLSelectElement>) => {
         e.preventDefault();
-        setIsSubmitting(false);
+		console.log("The refund policy is: ", refundPolicy);
+        // setIsSubmitting(false);
     }
 
     return (

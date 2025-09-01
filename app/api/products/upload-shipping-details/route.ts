@@ -1,4 +1,3 @@
-// import { createProductShippingDetails } from "@/actions/add-product/create-product-shipping-details";
 import { createProductShippingDetails } from "@/actions/add-product/create-shipping-details";
 import { validateProductShippingDetails } from "@/lib/productDataValidation";
 import { ProductShippingDeliveryType, ShippingConfigDataProps } from "@/lib/types";
@@ -47,15 +46,15 @@ export async function POST (req: Request) {
             return '';
         }).filter(Boolean);
 
-        const { isValid, error: validationError } = validateProductShippingDetails(
-            selectedMethods,
-            productShippingConfig.methods,
-            brandShippingConfig as unknown as ShippingConfigDataProps
-        );
+        // const { isValid, error: validationError } = validateProductShippingDetails(
+        //     selectedMethods,
+        //     productShippingConfig.methods,
+        //     brandShippingConfig as unknown as ShippingConfigDataProps
+        // );
 
-        if (!isValid) {
-            return NextResponse.json({ success: false, message: validationError || "Validation failed" }, { status: 400 });
-        }
+        // if (!isValid) {
+        //     return NextResponse.json({ success: false, message: validationError || "Validation failed" }, { status: 400 });
+        // }
 
         // If valid, proceed to save the data
         const shippingDetailsId = await createProductShippingDetails(supabase, productShippingConfig);

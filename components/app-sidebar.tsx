@@ -69,7 +69,7 @@ const items: SibarMenuItem[] = [
     url: "/dashboard/marketing",
     icon: TicketPercent,
     subitems: [
-      { title: "Coupons", url: "/dashboard/add-coupons" },
+      { title: "Coupons", url: "/dashboard/coupons" },
       { title: "Lookbook", url: "/dashboard/lookbook" }, // optional if relevant here too
     ],
   },

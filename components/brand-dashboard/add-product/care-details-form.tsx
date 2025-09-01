@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
 import { bleachingInstruction, dryCleaningInstruction, dryingInstruction, ironingInstruction, specialCases, washingInstruction } from "@/lib/productCareInstruction";
 import { ChangeEvent, FC, FormEvent, useState } from "react";
+import { toast } from "sonner";
 
 interface CareInstructionInterface {
     washingInstruction: string | null,
@@ -22,7 +24,7 @@ const CareDetailsForm: FC = () => {
         specialCases: "",
     })
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-
+    const {productId} = useProductFormStore();
     const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setCareDetailsData({
             ...careDetailsData,
@@ -32,7 +34,33 @@ const CareDetailsForm: FC = () => {
     const handleSave = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
+        console.log(careDetailsData);
+        const toastId = toast.loading("Saving care instructions...");
+        const finalCareDetails = {
+            ...careDetailsData,
+            productId: productId
+        };
+        try {
+            const formData = new FormData();
+            formData.append('careDetails', JSON.stringify(finalCareDetails));
 
+            const response = await fetch('/api/products/upload-care-instructions', {
+                method: 'POST',
+                body: formData
+            })
+
+            const result = await response.json();
+
+            if (response.ok && result.success) {
+                toast.success("Care instructions saved successfully!", { id: toastId });
+            } else {
+                toast.error(result.message || "An unknown error occurred.", { id: toastId });
+            }
+        } catch (error) {
+            toast.error(`${error instanceof Error ? error.message : "An unknown error occurred."}`, { id: toastId });
+        } finally {
+            setIsSubmitting(false);
+        }
     }
     return (
         <form onSubmit={handleSave}>
