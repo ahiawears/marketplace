@@ -49,7 +49,13 @@ const PaymentSettingsClient: React.FC<PaymentSettingsClientProps> = ({
                 setBeneficiaryList(data);
             } 
         } catch(error) {
-            toast.error("Failed to fetch beneficiaries. Please refresh the page.")
+            let errorMessage;
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            } else {
+                errorMessage = "An unknown error occurred.";
+            }
+            toast.error("Failed to fetch beneficiaries: " + errorMessage + ". Please refresh the page.")
         }
     }
 

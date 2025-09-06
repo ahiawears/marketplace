@@ -1,4 +1,15 @@
-export async function FetchBrandProducts(supabase: any, brandId: string) {
+"use server";
+import { createClient } from "@/supabase/server";
+
+export interface BrandProductListItem {
+    id: string;
+    name: string;
+    category: string;
+    subcategory: string;
+    season: string;
+}[];
+export async function FetchBrandProducts(brandId: string) {
+    const supabase = await createClient();
     try {
         const { data, error } = await supabase
             .from('products_list')
@@ -7,18 +18,47 @@ export async function FetchBrandProducts(supabase: any, brandId: string) {
             .order('created_at', { ascending: false });
 
         if (error) {
-            throw error;
+            console.log(error);
+            return {
+                success: false,
+                data: null,
+                message: error.message,
+            }
         }
 
         if (!data || data.length === 0) {
             console.log("No products found for the brand.");
-            return [];
+            return {
+                success: true,
+                data: null,
+                message: "No products found for the brand.",
+            }
         }
 
-        console.log("Products fetched successfully:", data);
-        return data;
+        const dataToReturn: BrandProductListItem[] = data.map((product: any) => ({
+            id: product.id,
+            name: product.name,
+            category: product.category_id?.name,
+            subcategory: product.subcategory_id?.name,
+            season: product.season_id?.name,
+        }))
+
+        return {
+            success: true,
+            data: dataToReturn,
+            message: "Products fetched successfully.",
+        };
     } catch (error) {
-        console.error("Error fetching brand products:", error);
-        throw new Error(`Error fetching brand products: ${error}`);
+        let errorMessage;
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        } else {
+            errorMessage = "An unknown error occurred.";
+        }
+        return {
+            success: false,
+            data: null,
+            message: errorMessage,
+        }
     }
 }

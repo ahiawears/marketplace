@@ -1,27 +1,15 @@
-import { TicketPercent, Trash2, Edit, BarChart2 } from "lucide-react";
+import { TicketPercent, Edit, BarChart2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
 import { useEffect, useState } from "react";
 import { CouponSwitch } from "../ui/coupon-switch";
 import { cn } from "@/lib/utils";
+import { CouponListItem } from "./coupon-client";
 
 interface CouponsListProps {
     onAddCouponDetails: () => void;
-    data: {
-        id: string;
-        name: string;
-        code: string;
-        discountType: string;
-        discountValue: number;
-        baseCurrencyDiscountValue?: number;
-
-        startDate: string;
-        endDate: string;
-        isActive: boolean;
-        created_at: string;
-    }[];
+    data: CouponListItem[];
     onUpdateCoupon: (couponId: string) => void;
-    onDeleteCoupon: (couponId:string) => void;
     onUpdateCouponStatus: (couponId: string, isActive: boolean) => void;
     onViewStats: (couponId: string) => void;
     activeFilter: 'all' | 'active' | 'inactive' | 'expired';
@@ -38,7 +26,6 @@ const ClientFormattedDate = ({ dateString }: { dateString: string }) => {
     const [formattedDate, setFormattedDate] = useState('');
 
     useEffect(() => {
-        // This code runs only on the client side
         if (dateString) {
             setFormattedDate(new Date(dateString).toLocaleDateString());
         }
@@ -61,7 +48,7 @@ const formatDiscount = (type: string, value: number, currency: string = "$") => 
     }
 }
 
-const BrandCouponList = ({ onAddCouponDetails, data, onUpdateCoupon, onDeleteCoupon, onUpdateCouponStatus, onViewStats, activeFilter, onFilterChange, couponCounts }: CouponsListProps) => {
+const BrandCouponList = ({ onAddCouponDetails, data, onUpdateCoupon, onUpdateCouponStatus, onViewStats, activeFilter, onFilterChange, couponCounts }: CouponsListProps) => {
     const filterTabs = [
         { label: 'All', value: 'all', count: couponCounts.all },
         { label: 'Active', value: 'active', count: couponCounts.active },
@@ -92,7 +79,7 @@ const BrandCouponList = ({ onAddCouponDetails, data, onUpdateCoupon, onDeleteCou
                                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                             )}
                         >
-                            {tab.label} <span className="ml-1 sm:ml-2 bg-gray-200 text-gray-700 rounded-full px-2 py-0.5 text-xs">{tab.count}</span>
+                            {tab.label} <span className="ml-1 sm:ml-2 bg-black text-white px-2 py-0.5 text-xs">{tab.count}</span>
                         </button>
                     ))}
                 </div>
@@ -132,9 +119,6 @@ const BrandCouponList = ({ onAddCouponDetails, data, onUpdateCoupon, onDeleteCou
                                             </Button>
                                             <Button size="icon" variant="ghost" className="hover:text-gray-700" onClick={() => onUpdateCoupon(coupon.id)}>
                                                 <Edit className="h-5 w-5" />
-                                            </Button>
-                                            <Button size="icon" variant="ghost" className="hover:text-red-600" onClick={() => onDeleteCoupon(coupon.id)}>
-                                                <Trash2 className="h-5 w-5" />
                                             </Button>
                                         </div>
                                     </div>

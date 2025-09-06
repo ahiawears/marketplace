@@ -1,4 +1,3 @@
-// src/components/ui/status-switch.tsx (enhanced)
 "use client";
 
 import * as React from "react";

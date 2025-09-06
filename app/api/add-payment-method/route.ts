@@ -79,7 +79,7 @@ export async function POST(req: Request) {
         const { success, paymentMethod, error } = await addPaymentMethod(flutterwaveResult, body.card.card_holder_name);
 
         if (!success) throw new Error(error);
-
+ 
         revalidatePath('/my-account');
         
         return NextResponse.json({
