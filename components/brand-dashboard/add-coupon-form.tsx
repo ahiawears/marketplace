@@ -16,6 +16,7 @@ import { MoneyInput } from "../ui/money-input";
 import { getFieldError, validateField, validateForm, ValidationError } from "@/lib/validation-logics/coupon-form-validation";
 import { toast } from "sonner";
 import { CreateCoupon } from "@/actions/brand-actions/create-coupon";
+import { UpdateCoupon } from "@/actions/brand-actions/update-coupon";
 
 interface AddCouponFormProps {
     onBack: () => void;
@@ -39,6 +40,7 @@ const SwitchField = ({ label, description, status, onStatusChange }: { label: st
 const AddCouponForm = ({ onBack, currency, initialFormData, products }: AddCouponFormProps) => {
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [formData, setFormData] = useState<CouponFormDetails>(initialFormData);
+    const isEditMode = !!formData.id;
     const [isSelectorModalOpen, setIsSelectorModalOpen] = useState(false);
     const [selectorMode, setSelectorMode] = useState<'products' | 'categories' | null>(null);
     const [limitCountries, setLimitCountries] = useState(false);
@@ -219,26 +221,20 @@ const AddCouponForm = ({ onBack, currency, initialFormData, products }: AddCoupo
         setIsSubmitting(true);
         const toastId = toast.loading("Saving coupon...")
         try {
-            // TODO: Implement form submission logic here
-            console.log('Form is valid, submitting:', formData);
-            // e.g., call an API, show toast notifications for success/error
-            // const response = await fetch('/api/upsert-coupon', {
-            //     method: 'POST',
-            //     body: JSON.stringify(formData),
-            //     headers: {
-            //         'Content-Type': 'application/json'
-            //     }
-            // });
-            // const result = await response.json();
+            let result;
+            if (isEditMode) {
+                console.log('Form is valid, updating:', formData);
+                result = await UpdateCoupon(formData);
+            } else {
+                console.log('Form is valid, creating:', formData);
+                result = await CreateCoupon(formData);
+            }
 
-            // if (response.ok && result.success) {
-            //     toast.success("Coupon created successfully!", { id: toastId });
-            //     onBack(); 
-            // }
-            // toast.success("Coupon created successfully!", { id: toastId });
-
-            await CreateCoupon(formData);
-            toast.success("Coupon created successfully!", { id: toastId });
+            if (result.success) {
+                toast.success(result.message || `Coupon ${isEditMode ? 'updated' : 'created'} successfully!`, { id: toastId });
+            } else {
+                throw new Error(result.message || `Failed to ${isEditMode ? 'update' : 'create'} coupon.`);
+            }
             onBack();
         } catch (error) {
             console.error('Submission error:', error);
@@ -274,10 +270,10 @@ const AddCouponForm = ({ onBack, currency, initialFormData, products }: AddCoupo
                 <CardHeader className="flex flex-row items-start justify-between">
                     <div>
                         <CardTitle className="text-2xl font-bold text-gray-900">
-                            Create a New Coupon
+                            {isEditMode ? 'Edit Coupon' : 'Create a New Coupon'}
                         </CardTitle>
                         <CardDescription className="text-md text-gray-600">
-                            Fill out the details below to generate a new discount coupon for your store.
+                            {isEditMode ? 'Update the details for your coupon.' : 'Fill out the details below to generate a new discount coupon for your store.'}
                         </CardDescription>
                     </div>
                     <Button
@@ -322,6 +318,7 @@ const AddCouponForm = ({ onBack, currency, initialFormData, products }: AddCoupo
                                         onBlur={handleBlur}
                                         onChange={handleCouponFormChange}
                                         placeholder="e.g., SUMMER20"
+                                        disabled={isEditMode}
                                         className="border-2"
                                     />
                                     
@@ -700,7 +697,7 @@ const AddCouponForm = ({ onBack, currency, initialFormData, products }: AddCoupo
                                 disabled={isSubmitting}
                                 className="w-full sm:w-auto text-white"
                             >
-                                {isSubmitting ? "Saving..." : "Save Coupon"}
+                                {isSubmitting ? "Saving..." : (isEditMode ? "Update Coupon" : "Save Coupon")}
                             </Button>
                         </div>
                     </form>

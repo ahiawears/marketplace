@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { cn } from '@/lib/utils';
 
 interface Item {
     id: string;
@@ -40,7 +41,6 @@ export const CouponItemSelectorModal = ({
     const filteredItems = useMemo(() => {
         if (!searchTerm) return items;
         return items.filter(item =>
-            // item.name.toLowerCase().includes(searchTerm.toLowerCase())
             item.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }, [items, searchTerm]);
@@ -78,8 +78,20 @@ export const CouponItemSelectorModal = ({
                     <div className="max-h-[400px] overflow-y-auto border-2 p-2 space-y-1 rounded-md">
                         {filteredItems.length > 0 ? (
                             filteredItems.map(item => (
-                                <div key={item} className="flex items-center space-x-3 p-2 hover:bg-gray-100 rounded cursor-pointer" onClick={() => handleToggleItem(item)}>
-                                    <Input type="checkbox" id={`item-${item}`} checked={currentSelectedIds.has(item)} readOnly className="h-4 w-4" />
+                                <div key={item} className="flex items-center space-x-3 p-2 hover:bg-gray-100 cursor-pointer" onClick={() => handleToggleItem(item)}>
+                                    <Input 
+                                        type="checkbox" 
+                                        id={`item-${item}`} 
+                                        checked={currentSelectedIds.has(item)} 
+                                        readOnly 
+                                        className={cn(
+                                                "h-4 w-4 border-2 p-2 text-black focus:ring-0 focus:ring-offset-0",
+                                                "peer appearance-none",
+                                                "checked:bg-black checked:border-transparent",
+                                                "hover:border-gray-500 cursor-pointer"
+                                            )}
+                                        
+                                    />
                                     <Label htmlFor={`item-${item}`} className="font-normal cursor-pointer flex-1">
                                         {item}
                                     </Label>

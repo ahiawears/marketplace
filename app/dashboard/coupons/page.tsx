@@ -6,7 +6,6 @@ import { GetBrandLegalDetails } from "@/actions/get-brand-details/get-brand-lega
 import { CountryData } from "@/lib/country-data";
 import { FetchBrandProducts } from "@/actions/get-products-list/fetchBrandProducts";
 import { GetCoupons } from "@/actions/brand-actions/get-coupons";
-import { stat } from "fs";
 
 export const metadata: Metadata = {
     title: "Coupons",
@@ -35,7 +34,6 @@ export default async function Coupons () {
 
         const brandProducts = await FetchBrandProducts(userId);
         if (!brandProducts.success) {
-            // Handle the case where products fail to load, as they are needed for creating some coupons.
             return (
                 <div className="p-4">
                     <div className="bg-red-50 border border-red-200  p-4">

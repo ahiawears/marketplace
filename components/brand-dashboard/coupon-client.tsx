@@ -5,11 +5,13 @@ import CouponStatsModal from "../modals/coupon-stats-modal";
 import { toast } from "sonner";
 import AddCouponForm from "./add-coupon-form";
 import { BrandProductListItem } from "@/actions/get-products-list/fetchBrandProducts";
+import { GetCouponDetails } from "@/actions/brand-actions/get-coupon-details";
 
 type ComponentItems = "addCoupon" | "couponList";
 type CouponFilterStatus = 'all' | 'active' | 'inactive' | 'expired';
 export interface CouponFormDetails {
     // Section 1: Basic Information
+    id?: string;
     name: string;
     code: string;
     description?: string;
@@ -137,6 +139,7 @@ const CouponClient: FC<CouponClientProps> = ({
     const [couponsList, setCouponsList] = useState<CouponClientProps["couponList"]>(couponList.length > 0 ? couponList : sampleCoupons);
     const [filter, setFilter] = useState<CouponFilterStatus>('active');
 
+    const [couponToEdit, setCouponToEdit] = useState<CouponFormDetails | null>(null);
     const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
     const [couponForStats, setCouponForStats] = useState<typeof couponsList[0] | null>(null);
     const fetchCoupons = async () => {
@@ -207,13 +210,21 @@ const CouponClient: FC<CouponClientProps> = ({
         });
     }, [filter, couponsList]);
 
-    const handleUpdateCoupon = (couponId: string) => {
-        // Here you would likely navigate to the add/edit form with the coupon's data pre-filled
-        console.log("Editing coupon:", couponId);
-        // For now, let's just switch to the form view
-        setCurrentComponent("addCoupon");
-        toast.info(`Loading coupon ${couponId} for editing...`);
-    }
+    const handleUpdateCoupon = async (couponId: string) => {
+        const editToastId = toast.loading("Loading coupon for editing...");
+        try {
+            const result = await GetCouponDetails(couponId);
+            if (!result.success || !result.data) {
+                throw new Error(result.message || "Failed to load coupon details.");
+            }
+            setCouponToEdit(result.data);
+            setCurrentComponent("addCoupon");
+            toast.success("Coupon loaded.", { id: editToastId });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+            toast.error(`Error: ${errorMessage}`, { id: editToastId });
+        }
+    };
 
     const handleViewStats = (couponId: string) => {
         const coupon = couponsList.find(c => c.id === couponId);
@@ -257,11 +268,12 @@ const CouponClient: FC<CouponClientProps> = ({
         if (currentComponent === "addCoupon") {
             return <AddCouponForm
                 onBack={() =>{
+                        setCouponToEdit(null); // Clear the coupon being edited
                         setCurrentComponent("couponList")
                         fetchCoupons();
                     }}
                 currency={currency}
-                initialFormData={couponFormDetails}
+                initialFormData={couponToEdit || couponFormDetails}
                 products={brandProducts}
             />; 
         }

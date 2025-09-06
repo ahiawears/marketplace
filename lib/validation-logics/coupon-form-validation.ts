@@ -17,6 +17,7 @@ export const validateField = (name: string, value: any, formData: CouponFormDeta
             return null;
         
         case 'code':
+            if (formData.id) return null; 
             if (!value || value.trim().length === 0) return 'Coupon code is required';
             if (value.length < 5) return 'Coupon code must be at least 5 characters';
             if (!/^[a-zA-Z0-9_-]+$/.test(value)) return 'Coupon code can only contain letters, numbers, hyphens, and underscores';
@@ -85,7 +86,6 @@ export const validateField = (name: string, value: any, formData: CouponFormDeta
         case 'appliesTo':
             if (!value) return 'Applies to selection is required';
             
-            // Validate related fields based on appliesTo value
             if (value === 'products' && (!formData.includedProductNames || formData.includedProductNames.length === 0)) {
                 return 'At least one product must be selected';
             }
@@ -108,7 +108,6 @@ export const validateField = (name: string, value: any, formData: CouponFormDeta
             return null;
         
         case 'allowedCountries':
-            // Check if limitCountries is enabled (this needs to be passed separately or inferred)
             if (formData.allowedCountries && formData.allowedCountries.length > 0 && (!value || value.length === 0)) {
                 return 'At least one country must be selected when limiting by country';
             }
@@ -140,7 +139,6 @@ export const validateForm = (formData: CouponFormDetails, limitCountries: boolea
         }
     });
     
-    // Validate conditional fields
     if (formData.appliesTo === 'products') {
         const error = validateField('includedProductIds', formData.includedProductNames, formData);
         if (error) errors.push({ field: 'includedProductIds', message: error });
@@ -162,7 +160,6 @@ export const validateForm = (formData: CouponFormDetails, limitCountries: boolea
     };
 };
 
-// Helper function to get the first error for a specific field
 export const getFieldError = (errors: ValidationError[], fieldName: string): string | null => {
     const error = errors.find(e => e.field === fieldName);
     return error ? error.message : null;
