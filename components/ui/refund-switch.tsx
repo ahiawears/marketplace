@@ -34,7 +34,7 @@ const RefundSwitch: React.FC<StatusSwitchProps> = ({ status, onStatusChange, cla
                         "border-2 inline-flex h-7 w-7 transform items-center justify-center bg-white shadow-lg transition-transform duration-200 ease-in-out",
                         isActive ? "translate-x-7" : "translate-x-0"
                     )}
-                    >
+                >
                     {isActive ? (
                         <Check size={12} className="text-black" />
                     ) : (

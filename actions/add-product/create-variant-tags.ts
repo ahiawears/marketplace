@@ -12,7 +12,7 @@ export async function createVariantTags(supabase: any, variantId: string, tagsBy
     }
 
     if (allTags.length === 0) return;
-
+ 
     try {
         // 1. Upsert all tags to get their IDs
         const tagUpserts = allTags.map(tag =>

@@ -2,7 +2,6 @@
 
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -10,84 +9,93 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState } from "react";
-import Cropper from "react-easy-crop";
+import Cropper, { Area } from "react-easy-crop";
 import { Button } from "../ui/button";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
 
 type Props = {
   image?: string;
-  onClose?: (image: string) => void;
+  onClose?: (image?: string) => void; // Allow undefined for cancellation
+  aspectRatio?: number;
 };
 
-export const CropModal = (props: Props) => {
+export const CropModal = ({ image, onClose, aspectRatio = 3 / 4 }: Props) => {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<{
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-  }>({
+  const [isCropping, setIsCropping] = useState(false);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area>({
     x: 0,
     y: 0,
     width: 0,
     height: 0,
   });
 
-  const onCropComplete = (
-    croppedArea: {
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    },
-    croppedAreaPixels: { x: number; y: number; width: number; height: number }
-  ) => {
+  const onCropComplete = (croppedArea: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
   };
 
-  const onClose = async () => {
-    if (props.onClose && props.image) {
-      const croppedImg = await getCroppedImg(props.image, croppedAreaPixels);
-
-      props.onClose(croppedImg);
+  const handleCrop = async () => {
+    if (!image) return;
+    setIsCropping(true);
+    try {
+      const croppedImg = await getCroppedImg(image, croppedAreaPixels);
+      onClose?.(croppedImg);
+    } catch (e) {
+      console.error(e);
+      onClose?.(); // Close without image on error
+    } finally {
+      setIsCropping(false);
     }
   };
 
+  const handleCancel = () => {
+    onClose?.();
+  };
+
   return (
-    <Dialog open={!!props.image} onOpenChange={onClose}>
-      <DialogContent>
+    <Dialog open={!!image} onOpenChange={(isOpen) => !isOpen && handleCancel()}>
+      <DialogContent className="sm:max-w-[625px]">
         <DialogHeader>
-          <DialogTitle>Crop</DialogTitle>
+          <DialogTitle>Crop Image</DialogTitle>
+          <DialogDescription>
+            Adjust the image to fit the required frame. You can scroll or use the slider to zoom.
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="relative h-[50vh] min-h-[500px]">
-          {/* <Cropper
-            image={props.image}
-            crop={crop}
-            zoom={zoom}
-            aspect={1 / 1}
-            onCropChange={setCrop}
-            onCropComplete={onCropComplete}
-            onZoomChange={setZoom}
-          /> */}
+        <div className="relative h-[500px] w-full bg-gray-100 border-2">
           <Cropper
-            image={props.image}
+            image={image}
             crop={crop}
             zoom={zoom}
-            aspect={3 / 4} // Example: 4:3 aspect ratio
+            aspect={aspectRatio}
             onCropChange={setCrop}
             onCropComplete={onCropComplete}
             onZoomChange={setZoom}
-            minZoom={1} // Minimum zoom level
-            maxZoom={3} // Maximum zoom level
           />
+        </div>
 
+        <div className="space-y-2">
+          <Label htmlFor="zoom-slider">Zoom</Label>
+          <Input
+            id="zoom-slider"
+            type="range"
+            min={1}
+            max={3}
+            step={0.1}
+            value={zoom}
+            onChange={(e) => setZoom(Number(e.target.value))}
+            className="w-full h-4 p-0 bg-gray-200 rounded-none appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:rounded-none [&::-webkit-slider-thumb]:bg-black [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:rounded-none [&::-moz-range-thumb]:bg-black"
+          />
         </div>
 
         <DialogFooter>
-          <DialogClose asChild>
-            <Button>Crop</Button>
-          </DialogClose>
+          <Button variant="outline" className="border-2 rounded-none" onClick={handleCancel} disabled={isCropping}>
+            Cancel
+          </Button>
+          <Button onClick={handleCrop} className="border-2 rounded-none" disabled={isCropping}>
+            {isCropping ? "Cropping..." : "Crop & Save"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

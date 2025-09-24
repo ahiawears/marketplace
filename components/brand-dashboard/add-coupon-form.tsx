@@ -466,7 +466,7 @@ const AddCouponForm = ({ onBack, currency, initialFormData, products }: AddCoupo
                                         id="usageLimit"
                                         type="number"
                                         onBlur={handleBlur}
-                                        value={formData.usageLimit}
+                                        value={formData.usageLimit === 0 ? '' : formData.usageLimit}
                                         onChange={handleCouponFormChange}
                                         className="border-2"
                                         placeholder="e.g. 100"

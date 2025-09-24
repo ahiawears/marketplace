@@ -3,12 +3,12 @@ import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { generateSeasonOptions } from "@/hooks/generate-fashion-season";
 import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
+import { submitFormData } from "@/lib/api-helpers";
 import { categoriesList } from "@/lib/categoriesList";
-import { ChangeEvent, FC, FormEvent, useState } from "react";
+import { GeneralDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { ChangeEvent, FC, FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import validator from 'validator';
 
 export interface MultiVariantGeneralDetailsInterface {
     productName: string;
@@ -20,37 +20,61 @@ export interface MultiVariantGeneralDetailsInterface {
     season: string;
 }
 
+type GeneralDetailsErrors = Partial<Record<keyof MultiVariantGeneralDetailsInterface, string>>;
+
 const gender = ["Male", "Female", "Unisex"];
+
+const seasonTypes = [
+    { name: "Spring/Summer", code: "SS" },
+    { name: "Fall/Winter", code: "FW" },
+    { name: "Resort", code: "RS" },
+    { name: "Pre-Fall", code: "PF" },
+];
 
 const GeneralDetailsForm: FC = () => {
     const { generalDetails, setGeneralDetails, setProductId } = useProductFormStore();
     
-    const [subcategories, setSubcategories] = useState<string[]>([]);
-    const [customTags, setCustomTags] = useState<string[]>([]);
-    const seasonOptions = generateSeasonOptions();
+
+    const selectedCategoryData = categoriesList.find(
+        (cat) => cat.name === generalDetails.category
+    );
+    const subcategories = selectedCategoryData?.subcategories || [];
+    const customTags = selectedCategoryData?.tags || [];
+
+    const [seasonYear, setSeasonYear] = useState<string>("");
+    const [seasonType, setSeasonType] = useState<string>("");
+
+    const [errors, setErrors] = useState<GeneralDetailsErrors>({});
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-   const isFormValid = () => {
-        const { productName, productDescription, category, subCategory, gender, season, tags } = generalDetails;
-        const requiredFieldsFilled =
-            validator.trim(productName).length > 0 &&
-            validator.trim(productDescription).length > 0 &&
-            validator.trim(category).length > 0 &&
-            validator.trim(subCategory).length > 0 &&
-            validator.trim(gender).length > 0 &&
-            validator.trim(season).length > 0 &&
-            tags.length > 0;
-
-        if (!requiredFieldsFilled) {
+    const validateForm = () => {
+        const result = GeneralDetailsValidationSchema.safeParse(generalDetails);
+        if (!result.success) {
+            // Zod's .flatten() method provides a convenient error object structure.
+            const newErrors: GeneralDetailsErrors = {};
+            for (const key in result.error.flatten().fieldErrors) {
+                if (Object.prototype.hasOwnProperty.call(result.error.flatten().fieldErrors, key)) {
+                    newErrors[key as keyof MultiVariantGeneralDetailsInterface] = result.error.flatten().fieldErrors[key as keyof MultiVariantGeneralDetailsInterface]?.[0];
+                }
+            }
+            setErrors(newErrors);
             return false;
         }
-
-        const isNameLengthValid = productName.length >= 3 && productName.length <= 100;
-        const isDescriptionLengthValid = productDescription.length <= 300;
-                
-        return isNameLengthValid && isDescriptionLengthValid;
+        setErrors({});
+        return true;
     };
     
+    useEffect(() => {
+        if (seasonYear.length === 4 && seasonType) {
+            const seasonCode = `${seasonType}${seasonYear.slice(-2)}`;
+            setGeneralDetails({ season: seasonCode });
+        } else if (generalDetails.season) {
+            // Clear season in store if inputs are incomplete
+            setGeneralDetails({ season: "" });
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [seasonYear, seasonType, setGeneralDetails]);
+
     const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setGeneralDetails({ [e.target.name]: e.target.value });
     };
@@ -77,39 +101,31 @@ const GeneralDetailsForm: FC = () => {
     const handleSave = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         
-        if (!isFormValid()) {
-            toast.error("Please fill in all required fields correctly.");
+        if (!validateForm()) {
+            toast.error("Please fix the errors highlighted below.");
             return;
         }
         
         setIsSubmitting(true);
-        const toastId = toast.loading("Saving general details...");
 
-        try {
-            const formData = new FormData();
-            formData.append('generalDetails', JSON.stringify(generalDetails));
+        const formData = new FormData();
+        formData.append('generalDetails', JSON.stringify(generalDetails));
 
-            const response = await fetch('/api/products/upload-general-details', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                toast.success(result.message, { id: toastId });
-                // Save the returned productUploadId to the Zustand store
-                setProductId(result.productUploadId);
-            } else {
-                toast.error(result.message || "Something went wrong.", { id: toastId });
-                console.error("Upload failed:", result.errors || result.message);
+        const result = await submitFormData<{ success: boolean; message: string; productUploadId: string }>(
+            '/api/products/upload-general-details',
+            formData,
+            {
+                loadingMessage: "Saving general details...",
+                successMessage: "General details saved successfully!",
             }
-        } catch (error) {
-            toast.error(`${error instanceof Error ? error.message : "Something went wrong."}`, { id: toastId });
-            console.error("Unexpected error:", error);
-        } finally {
-            setIsSubmitting(false);
+        );
+
+        if (result) {
+            // Save the returned productUploadId to the Zustand store
+            setProductId(result.productUploadId);
         }
+
+        setIsSubmitting(false);
     }; 
 
     return (
@@ -126,8 +142,9 @@ const GeneralDetailsForm: FC = () => {
                         onChange={handleFormInput}
                         maxLength={100}
                         placeholder="Enter a clear and concise name for your product. This will be the main title customers see. (100 characters max)"
-                        className="border-2"
+                        className="border-2 rounded-none"
                     />
+                    {errors.productName && <p className="text-red-500 text-xs mt-1">{errors.productName}</p>}
                 </div>
             </div>
             <div className="my-4">
@@ -141,8 +158,9 @@ const GeneralDetailsForm: FC = () => {
                         onChange={handleFormInput}
                         maxLength={300}
                         placeholder="Provide a detailed description of your product. Highlight key features, materials, and what makes it unique. Good descriptions help sales! (300 characters max)"
-                        className="border-2"
+                        className="border-2 rounded-none"
                     />
+                    {errors.productDescription && <p className="text-red-500 text-xs mt-1">{errors.productDescription}</p>}
                 </div>
             </div>
             <div className="my-4">
@@ -159,13 +177,9 @@ const GeneralDetailsForm: FC = () => {
                                 subCategory: "",
                                 tags: [],
                             });
-                            
-                            // Find the category and update subcategories/tags
-                            const category = categoriesList.find((cat) => cat.name === selectedOption);
-                            setSubcategories(category?.subcategories || []);
-                            setCustomTags(category ? category.tags : []);
                         }}
                     />
+                    {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category}</p>}
                 </div>
             </div>
             {subcategories.length > 0 && (
@@ -191,6 +205,7 @@ const GeneralDetailsForm: FC = () => {
                             </span>
                         ))}
                     </div>
+                    {errors.subCategory && <p className="text-red-500 text-xs mt-1">{errors.subCategory}</p>}
                 </>
             )}
 
@@ -219,33 +234,48 @@ const GeneralDetailsForm: FC = () => {
                             </span>
                         ))}
                     </div>
+                    {errors.tags && <p className="text-red-500 text-xs mt-1">{errors.tags}</p>}
                 </>
             )}
            
-            <div className="my-4">
-                <label htmlFor="season" className="block text-sm font-bold text-gray-900 mb-2">
-                    Season:
-                </label>
-                <div className="my-1">
+            <div className="my-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label htmlFor="seasonYear" className="block text-sm font-bold text-gray-900 mb-2">
+                        Season Year
+                    </label>
+                    <Input
+                        id="seasonYear"
+                        name="seasonYear"
+                        type="number"
+                        placeholder={`e.g., ${new Date().getFullYear()}`}
+                        value={seasonYear}
+                        onChange={(e) => setSeasonYear(e.target.value)}
+                        className="border-2 rounded-none"
+                        min="1900"
+                        max={new Date().getFullYear() + 5}
+                    />
+                </div>
+                <div>
+                    <label htmlFor="seasonType" className="block text-sm font-bold text-gray-900 mb-2">
+                        Season Type
+                    </label>
                     <Select
-                        id="season"
-                        name="season"
-                        onChange={handleFormInput}
-                        value={generalDetails.season}
-                        className="block border-2 bg-transparent"
+                        id="seasonType"
+                        name="seasonType"
+                        value={seasonType}
+                        onChange={(e) => setSeasonType(e.target.value)}
+                        className="block border-2 bg-transparent rounded-none"
                     >
-                        <option value="" disabled>Indicate the fashion season this product is most suitable for(e.g., Spring/Summer, Autumn/Winter).</option>
-                        {seasonOptions.map((season) => (
-                            <option key={season.name} value={season.code}>
-                                {season.name} ({season.code})
-                            </option>
+                        <option value="" disabled>Select season type</option>
+                        {seasonTypes.map((type) => (
+                            <option key={type.code} value={type.code}>{type.name}</option>
                         ))}
                     </Select>
                 </div>
             </div>
             <div className="my-4">
                 <label htmlFor="gender" className="block text-sm font-bold text-gray-900 mb-2">
-                    Target Gender:
+                    Target Gender:*
                 </label>
                 <div className="my-1">
                     <Select
@@ -253,7 +283,7 @@ const GeneralDetailsForm: FC = () => {
                         name="gender"
                         onChange={handleFormInput}
                         value={generalDetails.gender}
-                        className="block border-2 bg-transparent"
+                        className="block border-2 bg-transparent rounded-none"
                     >
                         <option value="" disabled>Specify the gender this product is primarily designed for.</option>
                         {gender.map((g) => (
@@ -262,13 +292,14 @@ const GeneralDetailsForm: FC = () => {
                             </option>
                         ))}
                     </Select>
+                    {errors.gender && <p className="text-red-500 text-xs mt-1">{errors.gender}</p>}
                 </div>
             </div>
 
             <div className="my-4">
                 <Button
                     type="submit"
-                    disabled={!isFormValid() || isSubmitting}
+                    disabled={isSubmitting}
                     className="flex justify-center px-3 py-1.5 text-sm/6 "
 
                 >

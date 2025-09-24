@@ -5,29 +5,9 @@ import { createSeason } from '@/actions/add-product/create-season';
 import { createSubCategory } from '@/actions/add-product/create-subCategory';
 import { createTags } from '@/actions/add-product/create-tags';
 import { MultiVariantGeneralDetailsInterface } from '@/components/brand-dashboard/add-product/general-details-form';
+import { GeneralDetailsValidationSchema } from '@/lib/validation-logics/add-product-validation/product-schema';
 import { createClient } from '@/supabase/server'
 import { NextResponse } from 'next/server'
-import { z } from 'zod'
-
-const ValidateGeneralDetailsSchema = z.object({
-
-    productName: z.string().trim().min(3, "Name too short").max(100, "Max 100 chars"),
-    productDescription: z
-        .string()
-        .trim()
-        .min(20, "Write at least 20 characters")
-        .max(300, "Max 300 chars"),
-    category: z.string().trim().min(1, "Category is required"),
-    subCategory: z.string().trim().min(1, "Subcategory is required"),
-    tags: z
-        .array(z.string().trim())
-        .min(1, "Pick at least 1 tag")
-        .max(5, "You can select up to 5 tags"),
-    gender: z.enum(["Male", "Female", "Unisex"], {
-        required_error: "Gender is required",
-    }),
-    season: z.string().trim().min(1, "Season is required"),
-})
 
 const slugify = (input: string) => {
     return input
@@ -39,6 +19,38 @@ const slugify = (input: string) => {
         .replace(/\s+/g, "-")
         .replace(/-+/g, "-");    
 }
+
+/**
+ * Checks the database for an existing slug and appends a counter if it exists to ensure uniqueness.
+ * @param supabase - The Supabase client instance.
+ * @param baseSlug - The base slug generated from the product name.
+ * @returns A unique slug string.
+ */
+const generateUniqueSlug = async (supabase: any, baseSlug: string): Promise<string> => {
+    let slug = baseSlug;
+    let counter = 1;
+    let isUnique = false;
+
+    while (!isUnique) {
+        const { count, error } = await supabase
+            .from('products_list')
+            .select('id', { count: 'exact', head: true })
+            .eq('seo_metadata->>slug', slug);
+
+        if (error) {
+            console.error('Error checking slug uniqueness:', error);
+            return `${baseSlug}-${Date.now()}`;
+        }
+
+        if (count !== null && count > 0) {
+            counter++;
+            slug = `${baseSlug}-${counter}`;
+        } else {
+            isUnique = true;
+        }
+    }
+    return slug;
+};
 
 export async function POST (req: Request) {
     try {
@@ -61,7 +73,7 @@ export async function POST (req: Request) {
         }
 
         //Server side validation
-        const validationResult = ValidateGeneralDetailsSchema.safeParse(generalDetails);
+        const validationResult = GeneralDetailsValidationSchema.safeParse(generalDetails);
         if (!validationResult.success) {
             // If validation failed, return a 400 error with details
             return NextResponse.json(
@@ -79,7 +91,7 @@ export async function POST (req: Request) {
 
         // Generate SEO data
         const baseSlug = slugify(validatedData.productName);
-        const uniqueSlug = `${baseSlug}-${Date.now()}`;
+        const uniqueSlug = await generateUniqueSlug(supabase, baseSlug);
         const metaTitle = `${validatedData.productName} | ${validatedData.category}`;
         const metaDescription = validatedData.productDescription.substring(0, 160);
         const keywords = Array.from(
@@ -88,7 +100,7 @@ export async function POST (req: Request) {
 
         //insert to database
         const genderId = await createGender(validatedData.gender);
-        const seasonId = await createSeason(validatedData.season);
+        const seasonId = validatedData.season ? await createSeason(validatedData.season) : null;
         const categoryId = await createCategory(validatedData.category);
         const subCategoryId = await createSubCategory(validatedData.subCategory, categoryId);
 

@@ -1,4 +1,5 @@
 import { FC, useState } from "react";
+import { Info } from "lucide-react";
 import GeneralDetailsForm from "./general-details-form";
 import Accordion from "@/components/ui/Accordion";
 import { Button } from "@/components/ui/button";
@@ -12,14 +13,15 @@ type ProductMode = "single" | "multi-variant";
 
 interface ProductFormProps {
     currencyCode: string;
+    todayExchangeRate?: number;
     shippingConfig: ShippingDetails | null;
 }
-const ProductForm: FC<ProductFormProps> = ({ currencyCode, shippingConfig }) => {
+const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, shippingConfig }) => {
     const [productMode, setProductMode] = useState<ProductMode>("multi-variant");
     
     // State for the active indices in each mode
-    const [multiVariantActiveIndices, setMultiVariantActiveIndices] = useState<number | null>(0); // Open both by default
-    const [singleProductActiveIndices, setSingleProductActiveIndices] = useState<number | null>(0); // Open the single one by default
+    const [multiVariantActiveIndices, setMultiVariantActiveIndices] = useState<number | null>(0); 
+    const [singleProductActiveIndices, setSingleProductActiveIndices] = useState<number | null>(0); 
 
     const multiVariantAccordionItems = [
         {
@@ -31,6 +33,7 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, shippingConfig }) => 
             title: "Variants Details", 
             content: <VariantDetailsForm 
                 currencyCode={currencyCode}
+                todayExchangeRate={todayExchangeRate}
             />,
             disabled: false
         },
@@ -73,18 +76,35 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, shippingConfig }) => 
     };
 
     return (
-        <div className="rounded-lg shadow-sm">
+        <div className="shadow-sm">
+            <div className="my-4 p-4 bg-gray-50 border-2" role="alert">
+                <div className="flex items-start">
+                    <Info className="h-5 w-5 mr-3 flex-shrink-0" />
+                    <div>
+                        {currencyCode === "USD" ? (
+                            <p className="text-sm">All prices should be entered and will be stored in USD.</p>
+                        ) : (
+                            <p className="text-sm">
+                                Please enter prices in <span className="font-semibold">{currencyCode}</span>. They will be converted and stored in <span className="font-semibold">USD</span> based on today&apos;s exchange rate: 
+                                <strong className="ml-1">1 USD = {todayExchangeRate} {currencyCode}</strong>.
+                            </p>
+                        )}
+                    </div>
+                </div>
+            </div>
             <div className="flex items-center gap-2 mb-6">
                 <span className="text-sm font-medium">Product Type:</span>
                 <Button 
                     variant={productMode === "single" ? "default" : "outline"}
                     onClick={() => handleModeChange("single")}
+                    className="mx-2 border-2"
                 >
                     Single Product
                 </Button>
                 <Button 
                     variant={productMode === "multi-variant" ? "default" : "outline"}
                     onClick={() => handleModeChange("multi-variant")}
+                    className="mx-2 border-2"
                 >
                     Multi-Variant Product
                 </Button>

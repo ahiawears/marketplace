@@ -12,7 +12,7 @@ export async function createVariant(
         | 'productCode'
         | 'slug'
         | 'status'
-        | 'availableDate'
+        | 'availableDate' 
         | 'pattern'
         | 'colorDescription'
         | 'imagesDescription'
@@ -44,7 +44,14 @@ export async function createVariant(
         }
         return variantDataInserted.id;
     } catch (error) {
-        console.log("Error adding product variant:", error);
-        throw error;
+        // console.log("Error adding product variant:", error);
+        // throw error;
+        let errorMessage;
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        } else {
+            errorMessage = "An unknown error occurred.";
+        }   
+        throw new Error(`${errorMessage}`);
     }
 }

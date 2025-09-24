@@ -161,7 +161,7 @@ const DatePicker: FC<DatePickerProps> = ({
 		}
     
 		setValidationError(error);
-		onChange(""); // Clear the date if invalid
+		onChange(""); 
   	};
 
 	// Helper function to get days in a month
@@ -190,7 +190,7 @@ const DatePicker: FC<DatePickerProps> = ({
 							id={`${id}-day`}
 							value={day}
 							onChange={(e) => handleDateChange('day', e.target.value)}
-							className="w-full appearance-none border-2 px-3 py-2 pr-8 cursor-pointer"
+							className="w-full appearance-none rounded-none border-2 px-3 py-2 pr-8 cursor-pointer"
 						>
 							<option value="">DD</option>
 							{days.map((d) => (
@@ -199,7 +199,7 @@ const DatePicker: FC<DatePickerProps> = ({
 								</option>
 							))}
 						</Select>
-						<ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+						<ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 pointer-events-none" />
 					</div>
 				</div>
 
@@ -211,7 +211,7 @@ const DatePicker: FC<DatePickerProps> = ({
 							id={`${id}-month`}
 							value={month}
 							onChange={(e) => handleDateChange('month', e.target.value)}
-							className="w-full appearance-none border-2 px-3 py-2 pr-8 cursor-pointer"
+							className="w-full appearance-none rounded-none border-2 px-3 py-2 pr-8 cursor-pointer"
 						>
 							<option value="">MM</option>
 							{months.map((m) => (
@@ -220,7 +220,7 @@ const DatePicker: FC<DatePickerProps> = ({
 								</option>
 							))}
 						</Select>
-						<ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+						<ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 pointer-events-none" />
 					</div>
 				</div>
 
@@ -232,7 +232,7 @@ const DatePicker: FC<DatePickerProps> = ({
 							id={`${id}-year`}
 							value={year}
 							onChange={(e) => handleDateChange('year', e.target.value)}
-							className="w-full appearance-none border-2 px-3 py-2 pr-8 cursor-pointer"
+							className="w-full appearance-none rounded-none border-2 px-3 py-2 pr-8 cursor-pointer"
 						>
 							<option value="">YYYY</option>
 							{years.map((y) => (
@@ -241,7 +241,7 @@ const DatePicker: FC<DatePickerProps> = ({
 								</option>
 							))}
 						</Select>
-						<ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+						<ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 h-4 w-4 pointer-events-none" />
 					</div>
 				</div>
 			</div>

@@ -11,7 +11,7 @@ export async function createImages(supabase: any, variantId: string, variantImag
             .upload(`products/${uniqueFileName}`, variantImages, {
                 upsert: true,
                 contentType: variantImages.type
-            });
+            }); 
 
         if (error) {
             throw new Error(`Error uploading image: ${error.message}`);

@@ -6,15 +6,17 @@ import { ShippingConfigDataProps } from "@/lib/types";
 
 interface AddProductClientProps {
     currencyCode: string;
+    todayExchangeRate: number;
     shippingConfig: ShippingConfigDataProps | null;
 }
-const AddProductClient:FC<AddProductClientProps> = ({ currencyCode, shippingConfig }) => {
+const AddProductClient:FC<AddProductClientProps> = ({ currencyCode, todayExchangeRate, shippingConfig }) => {
     return (
         <div className="container mx-auto">
             <div className="flex flex-col">
                 <div className="w-full">
                     <ProductForm 
                         currencyCode={currencyCode!}
+                        todayExchangeRate={todayExchangeRate}
                         shippingConfig={shippingConfig}
                     /> 
                 </div>

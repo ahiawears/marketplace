@@ -22,7 +22,12 @@ export async function GetExchangeRates(base_currency: string, target_currency: s
 
         return data?.rate;
     } catch (error) {
-        console.log(error);
-        throw error;
+        let errorMessage;
+        if (error instanceof Error) {
+            errorMessage = error.message;
+        } else {
+            errorMessage = "An unknown error occurred.";
+        }   
+        throw new Error(`${errorMessage}`);
     }
 }

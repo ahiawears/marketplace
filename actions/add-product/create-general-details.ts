@@ -6,7 +6,7 @@ export async function createProduct(
     description: string,
     name: string,
     genderId: string,
-    seasonId: string,
+    seasonId: string | null,
     slug: string,
     metaTitle: string,
     metaDescription: string,

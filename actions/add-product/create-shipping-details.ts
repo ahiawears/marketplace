@@ -28,17 +28,15 @@ export async function createProductShippingDetails(supabase: any, productShippin
 
         const productShippingDetailsId = productShippingConfigData.id;
 
-        // 2. Flatten the nested 'methods' object into an array for insertion.
         const methodFeesToInsert: any[] = [];
         if (productShippingConfig.methods) {
 
-             // Handle Same Day Delivery, which has a unique structure
             const sameDayMethod = productShippingConfig.methods.sameDay;
             if (sameDayMethod && sameDayMethod.available && sameDayMethod.fee && sameDayMethod.fee > 0) {
                 methodFeesToInsert.push({
                     product_shipping_id: productShippingDetailsId,
-                    method_type: 'same_day', // Use 'same_day' for DB consistency
-                    zone_type: 'domestic', // Same Day is always domestic
+                    method_type: 'same_day',
+                    zone_type: 'domestic', 
                     available: sameDayMethod.available,
                     fee: sameDayMethod.fee,
                 });

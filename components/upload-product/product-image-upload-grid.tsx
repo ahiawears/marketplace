@@ -64,21 +64,21 @@ const SortableImage: FC<{
           <Image
             src={image}
             alt={`Uploaded image ${index + 1}`}
-            className="w-full h-full object-cover border-2 rounded-lg"
+            className="w-full h-full object-cover border-2 "
             width={510}
             height={650}
             priority
           />
           <Button
             onClick={(e) => { e.stopPropagation(); handleRemoveImage(index); }}
-            className="absolute top-0 right-0 -mt-2 -mr-2 p-1 text-white bg-red-500 rounded-full z-20"
+            className="absolute top-0 right-0 -mt-2 -mr-2 p-1 text-white  rounded-none z-20"
           >
             <FiX />
           </Button>
         </>
       ) : (
         <div
-          className="flex items-center justify-center w-full h-full border-2 border-dashed rounded-lg cursor-pointer hover:bg-gray-50"
+          className="flex items-center justify-center w-full h-full border-2 border-dashed cursor-pointer hover:bg-gray-50"
           onClick={handleAddImageClick}
         >
           <div className="text-center">

@@ -1,6 +1,6 @@
 import { createProductShippingDetails } from "@/actions/add-product/create-shipping-details";
-import { validateProductShippingDetails } from "@/lib/productDataValidation";
 import { ProductShippingDeliveryType, ShippingConfigDataProps } from "@/lib/types";
+import { ShippingDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
 import { createClient } from "@/supabase/server";
 import { NextResponse } from "next/server";
 
@@ -27,37 +27,19 @@ export async function POST (req: Request) {
             }, { status: 400})
         }
 
-        // Fetch the brand's main shipping configuration for validation
-        const { data: brandShippingConfig, error: configError } = await supabase
-            .from('shipping_configurations')
-            .select('*')
-            .eq('brand_id', user.id)
-            .single();
-
-        if (configError || !brandShippingConfig) {
-            return NextResponse.json({ success: false, message: "Brand shipping configuration not found or could not be loaded." }, { status: 404 });
+        // Server-side validation using the shared Zod schema
+        const validationResult = ShippingDetailsValidationSchema.safeParse(productShippingConfig);
+        if (!validationResult.success) {
+            return NextResponse.json({ 
+                success: false, 
+                message: "Validation failed",
+                errors: validationResult.error.flatten() 
+            }, { status: 400 });
         }
 
-        // Server-side validation
-        const selectedMethods = Object.keys(productShippingConfig.methods || {}).map(key => {
-            if (key === 'sameDay') return 'sameDayDelivery';
-            if (key === 'standard') return 'standardShipping';
-            if (key === 'express') return 'expressShipping';
-            return '';
-        }).filter(Boolean);
-
-        // const { isValid, error: validationError } = validateProductShippingDetails(
-        //     selectedMethods,
-        //     productShippingConfig.methods,
-        //     brandShippingConfig as unknown as ShippingConfigDataProps
-        // );
-
-        // if (!isValid) {
-        //     return NextResponse.json({ success: false, message: validationError || "Validation failed" }, { status: 400 });
-        // }
-
         // If valid, proceed to save the data
-        const shippingDetailsId = await createProductShippingDetails(supabase, productShippingConfig);
+        // Using validationResult.data is safer as it ensures only validated and expected properties are passed on.
+        const shippingDetailsId = await createProductShippingDetails(supabase, validationResult.data);
 
         return NextResponse.json({
             success: true,

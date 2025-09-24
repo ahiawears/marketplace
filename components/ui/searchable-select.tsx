@@ -73,7 +73,7 @@ export function SearchableSelect<T>({
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     onFocus={handleFocus}
-                    className="pr-10 border-2"
+                    className="pr-10 border-2 rounded-none"
                 />
                 {isOpen ?
                     (

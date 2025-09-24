@@ -1,11 +1,11 @@
 import React from "react";
-//import AddProductForm from "../../../components/ui/add-product-form"
 import AddProductClient from "@/components/brand-dashboard/add-product/add-product-client";
 import { createClient } from "@/supabase/server";
 import { redirect } from "next/navigation";
 import { CountryData, CountryDataType } from "@/lib/country-data";
 import { GetBrandLegalDetails } from "@/actions/get-brand-details/get-brand-legal-details";
 import { GetShippingConfig } from "@/actions/get-brand-details/get-shipping-config";
+import { GetExchangeRates } from "@/hooks/get-exchange-rate";
 export const metadata = {
     title: "Add Product",
 }
@@ -31,16 +31,25 @@ const AddProduct = async () => {
     }
     const brandCountry = brandData.country_of_registration;
     const brandCurrency = getCurrencyByIso2(brandCountry!, CountryData);
-    //Fetch base currency exchange rate also and use it to show the users how the prices are stored
+    console.log("Brand Currency is ", brandCurrency);
 
+    //Fetch base currency exchange rate also and use it to show the users how the prices are stored
+    let todaysRate;
+    if(brandCurrency !== null) {
+        todaysRate = await GetExchangeRates('USD', brandCurrency);
+    }
+    if (brandCurrency === 'USD' ) {
+        todaysRate = 1;
+    } 
+    
     const shippingConfig = await GetShippingConfig();
     return (
         <div>
             <div className="mx-auto shadow-2xl">
                 <div className="mx-auto max-w-7xl border-2 p-4">
-                    {/* <AddProductForm />   */}
                     <AddProductClient 
                         currencyCode={brandCurrency!}
+                        todayExchangeRate={todaysRate!}
                         shippingConfig={shippingConfig.data}
                     />
                 </div>

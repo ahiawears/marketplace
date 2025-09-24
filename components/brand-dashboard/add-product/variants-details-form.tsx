@@ -1,6 +1,6 @@
-import { FC, FormEvent, useCallback, useMemo, useState } from "react";
+import { FC, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Info, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
 import MeasurementSizesTable from "@/components/upload-product/measurement-sizes-table";
@@ -14,12 +14,20 @@ import { MarketingAndExclusivityTags, SustainabilityTags, CraftmanshipTags } fro
 import { clothingMaterials } from "@/lib/item-material-list";
 import { Textarea } from "@/components/ui/textarea";
 import { DatePicker } from "@/components/ui/date-picker";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { VariantFormErrors, validateVariantFormDetails } from "@/lib/productDataValidation";
+import { submitFormData } from "@/lib/api-helpers";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import imageCompression from 'browser-image-compression';
+import { VariantDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { cn } from "@/lib/utils";
+
+type VariantFormErrors = Partial<Record<keyof VariantFormDetails | 'measurements' | 'materialComposition', string | undefined>>;
 
 
 interface VariantDetailsFormProps {
     currencyCode: string;
+    todayExchangeRate?: number;
 }
 export interface Color {
     name: string;
@@ -45,8 +53,8 @@ export interface VariantFormDetails {
     images: string[];
     imagesDescription: string;
     colors: Color[];
-    colorDescription?: string;
-    pattern?: string;
+    colorDescription: string;
+    pattern: string;
     materialComposition: MaterialComposition[];
     measurementUnit: "Inch" | "Centimeter";
     measurements: Record<string, MeasurementValue>;
@@ -102,68 +110,64 @@ const generateSlug = (productName: string, colorName: string, pattern?: string) 
 
 async function imageUrlToFile(url: string, filename: string): Promise<File | null> {
     try {
-        const res = await fetch(url);
-        const blob = await res.blob();
-        return new File([blob], filename, { type: blob.type });
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const originalFile = new File([blob], filename, { type: blob.type });
+
+        // Define compression options. We aim for files under 1MB and reasonable dimensions.
+        const options = {
+            maxSizeMB: 2, // Target maximum size of 2MB
+            maxWidthOrHeight: 1280, // Resize images to a max width/height of 1280px
+            useWebWorker: true,
+        };
+
+        // Compress the file
+        const compressedFile = await imageCompression(originalFile, options);
+        console.log(`Original size: ${(originalFile.size / 1024).toFixed(2)} KB, Compressed size: ${(compressedFile.size / 1024).toFixed(2)} KB`);
+        return compressedFile;
     } catch (error) {
-        console.error("Error converting image URL to File:", error);
+        console.error("Error converting and compressing image URL to File:", error);
         return null;
     }
 }
 
-const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
+const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayExchangeRate }) => {
     const { generalDetails, productId } = useProductFormStore();
     const { category } = generalDetails;
     const { variants, addVariant, updateVariant, removeVariant, copyFromPreviousVariant } = useVariantManagement();
 
-    const handleSaveVariant = async (index: number, variantToSave: VariantFormDetails) => {
-        const toastId = toast.loading("Saving variant...");
-        
-        try {
-            // Separate images from the rest of the details for FormData
-            const { images, ...detailsForJson } = variantToSave;
-            // The JSON payload should not contain image data, as it's sent separately.
-            (detailsForJson as Partial<VariantFormDetails>).images = [];
+    const handleSaveVariant = async (index: number, variantData: VariantFormDetails) => {
+        // Update the parent state first to reflect any auto-generated values
+        const variantToSave = { ...variantData };
+        updateVariant(index, variantToSave);
+        // Separate images from the rest of the details for FormData
+        const { images, ...detailsForJson } = variantToSave;
+        // The JSON payload should not contain image data, as it's sent separately.
+        (detailsForJson as Partial<VariantFormDetails>).images = [];
 
-            const formData = new FormData();
-            formData.append('variantDetails', JSON.stringify(detailsForJson));
-            formData.append('productId', productId);
-            formData.append('categoryName', category);
+        const formData = new FormData();
+        formData.append('variantDetails', JSON.stringify(detailsForJson));
+        formData.append('productId', productId);
+        formData.append('categoryName', category);
 
-            // Convert all valid image URLs (blob or data) to File objects and append them.
-            const imageUploadPromises = images
-                .filter(img => img && (img.startsWith("blob:") || img.startsWith("data:image")))
-                .map(async (imageUrl, i) => {
-                    const imageFile = await imageUrlToFile(imageUrl, `variant-${index}-image-${i}.png`);
-                    if (imageFile) {
-                        formData.append('images', imageFile);
-                    }
-                });
-            await Promise.all(imageUploadPromises);
-
-            const response = await fetch('/api/products/upload-variant-details', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const result = await response.json();
-            if (response.ok && result.success) {
-                toast.success("Variant saved successfully!", { id: toastId });
-                console.log("The result is ", result);
-            } else {
-                // Log the detailed errors from the server for debugging
-                if (result.errors) {
-                    console.error("Server validation errors:", result.errors);
-                    // Create a more descriptive error message for the user
-                    const errorMessages = Object.values(result.errors).join(' ');
-                    toast.error(`Validation failed: ${errorMessages}`, { id: toastId, duration: 6000 });
-                } else {
-                    toast.error(`Failed to save variant: ${result.message}`, { id: toastId });
+        // Convert all valid image URLs (blob or data) to File objects and append them.
+        const imageUploadPromises = images
+            .filter(img => img && (img.startsWith("blob:") || img.startsWith("data:image")))
+            .map(async (imageUrl, i) => {
+                const imageFile = await imageUrlToFile(imageUrl, `variant-${index}-image-${i}.png`);
+                if (imageFile) {
+                    formData.append('images', imageFile);
                 }
-            }
-        } catch (error) {
-            toast.error("Failed to save variant.", { id: toastId });
-            console.error(error instanceof Error ? error.message : error);
+            });
+        await Promise.all(imageUploadPromises);
+
+        const result = await submitFormData('/api/products/upload-variant-details', formData, {
+            loadingMessage: "Saving variant...",
+            successMessage: "Variant saved successfully!",
+        });
+
+        if (result) {
+            console.log("The result is ", result);
         }
     };
 
@@ -176,9 +180,10 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
                     index={index}
                     category={category}
                     currency={currencyCode}
+                    exchangeRate={todayExchangeRate}
                     onUpdate={(updates) => updateVariant(index, updates)}
                     onRemove={() => removeVariant(index)}
-                    onSave={() => handleSaveVariant(index, variant)}
+                    onSave={(variantToSave) => handleSaveVariant(index, variantToSave)}
                     onCopyFromPrevious={() => copyFromPreviousVariant(index)}
                 />
             ))}
@@ -199,8 +204,6 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode }) => {
 };
 
 const useVariantManagement = () => {
-    // Assuming productName is available in your store, similar to category.
-    // You might need to add it to useProductFormStore if it's not there.
     const { generalDetails } = useProductFormStore();
     const [variants, setVariants] = useState<VariantFormDetails[]>([{...DEFAULT_VARIANT, id: `variant_${Date.now()}_${Math.random()}`}]);
 
@@ -234,9 +237,8 @@ const useVariantManagement = () => {
     }, [generalDetails.productName]);
 
     const addVariant = useCallback(() => {
-        const newProductCode = generalDetails.productName ? generateProductCode(generalDetails.productName) : "";
-        setVariants(prev => [...prev, { ...DEFAULT_VARIANT, productCode: newProductCode, id: `variant_${Date.now()}_${Math.random()}` }]);
-    }, [generalDetails.productName]);
+        setVariants(prev => [...prev, { ...DEFAULT_VARIANT, id: `variant_${Date.now()}_${Math.random()}` }]);
+    }, []);
     const removeVariant = useCallback((index: number) => {
         if (variants.length <= 1) {
             toast.error("At least one variant is required.");
@@ -250,17 +252,25 @@ const useVariantManagement = () => {
 
         setVariants(prev => {
             const previousVariant = prev[index - 1];
+            const currentVariant = prev[index]; 
             const newVariants = [...prev];
-            const currentVariant = newVariants[index];
 
-            const copiedVariant = {
-                ...previousVariant,
+            const copiedVariant: VariantFormDetails = {
+                // --- Fields to copy from the previous variant ---
+                price: previousVariant.price,
+                materialComposition: previousVariant.materialComposition,
+                measurementUnit: previousVariant.measurementUnit,
+                measurements: previousVariant.measurements,
+                availableDate: previousVariant.availableDate,
+                pattern: previousVariant.pattern,
+                status: previousVariant.status,
+
+                // --- Fields that are preserved from the current variant shell or reset ---
+                productCode: currentVariant.productCode,
                 id: `variant_${Date.now()}_${Math.random()}`,
                 variantName: "",
                 sku: "",
                 slug: "",
-                productCode: currentVariant.productCode,
-                // Reset fields that should be unique per variant
                 colors: [],
                 colorDescription: "",
                 images: DEFAULT_VARIANT.images,
@@ -284,33 +294,81 @@ interface VariantFormProps {
     index: number;
     category: string;
     currency: string;
+    exchangeRate?: number;
     onUpdate: (updates: Partial<VariantFormDetails>) => void;
     onRemove: () => void; 
-    onSave: () => void;
+    onSave: (variantToSave: VariantFormDetails) => Promise<void>;
     onCopyFromPrevious: () => void;
 }
 
-const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency, onUpdate, onRemove, onSave, onCopyFromPrevious }) => {
+const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency, exchangeRate, onUpdate, onRemove, onSave, onCopyFromPrevious }) => {
     const [isSaving, setIsSaving] = useState(false);
+    const [isValid, setIsValid] = useState<boolean | null>(null);
     const [errors, setErrors] = useState<VariantFormErrors>({});
+    const { generalDetails } = useProductFormStore();
+
+    const runValidation = useCallback((dataToValidate: VariantFormDetails) => {
+        const result = VariantDetailsValidationSchema.safeParse({ ...dataToValidate, categoryName: category });
+        setIsValid(result.success);
+        if (!result.success) {
+            const flatErrors = result.error.flatten().fieldErrors;
+            const newErrors: VariantFormErrors = {};
+            for (const key in flatErrors) {
+                newErrors[key as keyof VariantFormDetails] = flatErrors[key as keyof VariantFormDetails]?.[0];
+            }
+            setErrors(newErrors);
+        } else {
+            setErrors({});
+        }
+        return result.success;
+    }, [category]);
+
+    useEffect(() => {
+        if (isValid !== null) { // Only re-validate if it has been validated at least once
+            runValidation(variant);
+        }
+    }, [variant, isValid, runValidation]);
 
     const handleSaveButtonClick = async () => {
-        const { isValid, errors: validationErrors } = validateVariantFormDetails(variant, category);
-        setErrors(validationErrors);
+        let variantToSave = { ...variant };
 
-        if (!isValid) {
+        if (!variantToSave.sku && generalDetails.productName && variantToSave.colors.length > 0) {
+            variantToSave.sku = generateSKU(generalDetails.productName, variantToSave.colors[0].name);
+        }
+        if (!variantToSave.productCode && generalDetails.productName) {
+            variantToSave.productCode = generateProductCode(generalDetails.productName);
+        }
+
+        if (!runValidation(variantToSave)) {
             toast.error("Please fix the errors before saving.");
             return;
         }
-
         setIsSaving(true);
-        await onSave();
+        await onSave(variantToSave);
         setIsSaving(false);
     };
   return (
     <div className="border-b pb-6 mb-6 last-of-type:border-b-0">
         <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold">Variant {index + 1}</h3>
+            <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold">Variant {index + 1}</h3>
+                {isValid === true && (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger><CheckCircle2 className="h-5 w-5 text-green-500" /></TooltipTrigger>
+                            <TooltipContent><p>Variant details are valid.</p></TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
+                {isValid === false && (
+                     <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger><XCircle className="h-5 w-5 text-red-500" /></TooltipTrigger>
+                            <TooltipContent><p>This variant has errors.</p></TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )}
+            </div>
             {index > 0 && (
                 <Button
                     type="button"
@@ -327,6 +385,7 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
             variant={variant}
             currency={currency}
             errors={errors}
+            exchangeRate={exchangeRate}
             onUpdate={onUpdate}
         />
         
@@ -351,6 +410,7 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
         <MaterialSection
             materialComposition={variant.materialComposition}
             onUpdate={onUpdate}
+            error={errors.materialComposition}
         />
       
         <MeasurementSection
@@ -368,26 +428,40 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
             />
 
             <StatusSection
+                variantId={variant.id}
                 status={variant.status}
                 onUpdate={onUpdate}
             />
         </div>
 
-        <MarketingAndExclusivityTagsSection
-            marketingAndExclusivityTags={variant.marketingAndExclusivityTags}
+        <TagSelectionSection
+            label="Marketing Specific Tags"
+            tags={variant.marketingAndExclusivityTags}
+            availableTags={MarketingAndExclusivityTags}
             onUpdate={onUpdate}
+            updateKey="marketingAndExclusivityTags"
+            maxSelectionMessage="You can only select up to 1 marketing tag."
         />
 
-        <SustainabilityTagsSection
-            sustainabilityTags={variant.sustainabilityTags}
+        <TagSelectionSection
+            label="Sustainability Tags"
+            tags={variant.sustainabilityTags}
+            availableTags={SustainabilityTags}
             onUpdate={onUpdate}
+            updateKey="sustainabilityTags"
+            maxSelection={3}
+            maxSelectionMessage="You can select up to 3 sustainability tags."
         />
 
-        <CraftmanshipTagsSection
-            craftmanshipTags={variant.craftmanshipTags}
+        <TagSelectionSection
+            label="Craftsmanship Tags"
+            tags={variant.craftmanshipTags}
+            availableTags={CraftmanshipTags}
             onUpdate={onUpdate}
+            updateKey="craftmanshipTags"
+            maxSelection={3}
+            maxSelectionMessage="You can select up to 3 craftsmanship tags."
         />
-
 
         <div className="my-8 flex flex-row justify-between">
             <Button 
@@ -414,7 +488,7 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
 };
 
 // Sub-components
-const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; errors: VariantFormErrors; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ variant, currency, errors, onUpdate }) => {
+const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; errors: VariantFormErrors; onUpdate: (updates: Partial<VariantFormDetails>) => void; exchangeRate?: number; }> = ({ variant, currency, errors, onUpdate, exchangeRate }) => {
     const handleInputChange = (field: keyof VariantFormDetails, value: string) => {
         onUpdate({ [field]: value });
     };
@@ -422,6 +496,13 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; erro
     const handlePriceChange = (value: number | undefined) => {
         onUpdate({ price: value ?? 0 });
     };
+
+    const usdPrice = useMemo(() => {
+        if (!exchangeRate || currency === 'USD' || !variant.price) {
+            return null;
+        }
+        return (variant.price / exchangeRate).toFixed(2);
+    }, [variant.price, exchangeRate, currency]);
 
     return (
         <>
@@ -433,7 +514,6 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; erro
                     value={variant.variantName}
                     onChange={(e) => handleInputChange('variantName', e.target.value)}
                     maxLength={150}
-                    className="border-2"
                 />
                 {errors.variantName && <p className="text-red-500 text-xs mt-1">{errors.variantName}</p>}
             </div>
@@ -441,6 +521,9 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; erro
             <div className="grid grid-cols-3 gap-4 my-4">
                 <div>
                     <PriceInput value={variant.price} currencySymbol={currency} onChange={handlePriceChange} />
+                    {usdPrice && (
+                        <p className="text-xs text-gray-500 mt-1">Approx. ${usdPrice} USD</p>
+                    )}
                     {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price}</p>}
                 </div>
                 <div>
@@ -449,6 +532,7 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; erro
                         value={variant.sku}
                         onChange={(value) => handleInputChange('sku', value)}
                         maxLength={100}
+                        tooltip="A unique code to identify this specific variant for inventory tracking. Example: ABC-BLU-1234. Leave blank to auto-generate on save."
                     />
                     {errors.sku && <p className="text-red-500 text-xs mt-1">{errors.sku}</p>}
                 </div>
@@ -458,6 +542,7 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; erro
                         value={variant.productCode}
                         onChange={(value) => handleInputChange('productCode', value)}
                         maxLength={100}
+                        tooltip="An internal code for this variant, if different from the SKU. Example: ABC-98765. Leave blank to auto-generate on save."
                     />
                     {errors.productCode && <p className="text-red-500 text-xs mt-1">{errors.productCode}</p>}
                 </div>
@@ -491,15 +576,28 @@ const PriceInput: FC<{ value: number; currencySymbol: string; onChange: (value: 
     </div>
 );
 
-const TextInput: FC<{ label: string; value: string; onChange: (value: string) => void; maxLength?: number }> = ({ label, value, onChange, maxLength }) => (
+const TextInput: FC<{ label: string; value: string; onChange: (value: string) => void; maxLength?: number; tooltip?: React.ReactNode; }> = ({ label, value, onChange, maxLength, tooltip }) => (
     <div>
-        <label className="block text-sm font-bold text-gray-900">{label}</label>
-        <div className="my-1">
+        <div className="flex items-center gap-1 mb-1">
+            <label className="block text-sm font-bold text-gray-900">{label}</label>
+            {tooltip && (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Info size={14} className="cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p className="max-w-xs">{tooltip}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )}
+        </div>
+        <div>
             <Input
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 maxLength={maxLength}
-                className="border-2"
             />
         </div>
     </div>
@@ -541,7 +639,6 @@ const ImageSection: FC<{ images: string[]; imagesDescription: string; onUpdate: 
                     maxLength={350}
                     value={imagesDescription}
                     onChange={(e) => handleInputChange(e.target.value)}
-                    className="border-2"
                 />
             </div>
         </>
@@ -668,7 +765,7 @@ const PatternSection: FC<{ pattern?: string; onUpdate: (updates: Partial<Variant
     );
 };
 
-const MaterialSection: FC<{ materialComposition: MaterialComposition[]; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ materialComposition, onUpdate }) => {
+const MaterialSection: FC<{ materialComposition: MaterialComposition[]; onUpdate: (updates: Partial<VariantFormDetails>) => void; error?: string; }> = ({ materialComposition, onUpdate, error}) => {
     const handleMaterialChange = (materialIndex: number, updates: Partial<MaterialComposition>) => {
         const newMaterials = materialComposition.map((material, i) => 
             i === materialIndex ? { ...material, ...updates } : material
@@ -690,9 +787,21 @@ const MaterialSection: FC<{ materialComposition: MaterialComposition[]; onUpdate
 
     return (
         <div className="my-4">
-            <label className="block text-sm font-bold text-gray-900 mb-2">
-                Material Composition:
-            </label>
+            <div className="flex items-center gap-1 mb-2">
+                <label className="block text-sm font-bold text-gray-900">
+                    Material Composition:
+                </label>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Info size={14} className="cursor-help text-gray-500" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p className="max-w-xs">List the materials and their percentages. The total must add up to 100% for accurate product information and customs declarations.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </div>
             {materialComposition.map((material, materialIndex) => (
                 <MaterialInput
                     key={materialIndex}
@@ -703,16 +812,17 @@ const MaterialSection: FC<{ materialComposition: MaterialComposition[]; onUpdate
             ))}
             <div className="my-2 text-right">
                 <p className="text-sm font-medium">Total: {totalPercentage}%</p>
-                {totalPercentage !== 100 && materialComposition.length > 0 && (
-                    <p className="text-xs text-red-500">Total percentage must add up to 100%.</p>
+                {totalPercentage !== 100 && materialComposition.length > 0 && !error && (
+                    <p className="text-xs text-yellow-600">Total percentage should add up to 100%.</p>
                 )}
+                {error && <p className="text-xs text-red-500">{error}</p>}
             </div>
             <div className="my-2">
                 <Button 
                     type="button" 
                     onClick={addMaterial}
                     variant="outline"
-                    className="flex items-center gap-2 border-2"
+                    className="flex items-center gap-2 border-2 rounded-none"
                 >
                 <Plus size={16} />
                     Add Material
@@ -830,52 +940,83 @@ const AvailableDateSection: FC<{ availableDate: string; onUpdate: (updates: Part
     );
 };
 
-const StatusSection: FC<{ status: "active" | "inactive"; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ status, onUpdate }) => {
-    const handleStatusChange = (newStatus: "active" | "inactive") => {
-        onUpdate({ status: newStatus});
+const StatusSection: FC<{ variantId: string; status: "active" | "inactive"; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ variantId, status, onUpdate }) => {
+    const handleStatusChange = (checked: boolean) => {
+        onUpdate({ status: checked ? "active" : "inactive" });
     };
+
+    const isActive = status === 'active';
 
     return (
         <div className="my-4 p-4">
-            <label className="block text-sm font-bold text-gray-900 mb-2">
+            <p className="block text-sm font-bold text-gray-900 mb-2">
                 Variant Status:
-            </label>
+            </p>
             <p className="text-xs text-gray-600 mb-3">
                 Set this variant as active or inactive. Inactive variants won't be shown to customers.
             </p>
-            <Switch 
-                status={status} 
-                onStatusChange={handleStatusChange}
-            />
+            <div className="flex items-center gap-3">
+                <Switch
+                    id={`status-${variantId}`}
+                    checked={isActive}
+                    onCheckedChange={handleStatusChange}
+                />
+                <div className="flex flex-col">
+                    <Label htmlFor={`status-${variantId}`} className={cn("text-sm font-medium transition-colors", isActive ? "text-black font-bold" : "text-gray-600")}>
+                        {isActive ? "Active" : "Inactive"}
+                    </Label>
+                    <span className="text-xs text-gray-500">
+                        {isActive ? "Visible to customers" : "Hidden from customers"}
+                    </span>
+                </div>
+            </div>
         </div>
     );
 };
 
-const MarketingAndExclusivityTagsSection: FC<{ marketingAndExclusivityTags: string[]; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ marketingAndExclusivityTags, onUpdate}) => {
+interface TagSelectionSectionProps {
+    tags: string[];
+    availableTags: readonly string[];
+    onUpdate: (updates: Partial<VariantFormDetails>) => void;
+    label: string;
+    updateKey: keyof VariantFormDetails;
+    maxSelection?: number;
+    maxSelectionMessage?: string;
+}
+
+const TagSelectionSection: FC<TagSelectionSectionProps> = ({
+    tags,
+    availableTags,
+    onUpdate,
+    label,
+    updateKey,
+    maxSelection = 1,
+    maxSelectionMessage,
+}) => {
     const handleTagClick = (tag: string) => {
-        const isTagSelected = marketingAndExclusivityTags.includes(tag);
+        const isTagSelected = tags.includes(tag);
+        const newTags = isTagSelected
+            ? tags.filter((t) => t !== tag)
+            : [...tags, tag];
 
-        const newVariantSpecificTags = isTagSelected
-            ? marketingAndExclusivityTags.filter((t) => t !== tag)
-            : [...marketingAndExclusivityTags, tag];
-
-        if (newVariantSpecificTags.length > 1) {
-            toast.error("You can only select up to 1 marketing tag.");
+        if (newTags.length > maxSelection) {
+            toast.error(maxSelectionMessage || `You can only select up to ${maxSelection} tag(s).`);
         } else {
-            onUpdate({ marketingAndExclusivityTags: newVariantSpecificTags });
+            onUpdate({ [updateKey]: newTags });
         }
-    }
+    };
+
     return (
         <div className="my-4">
-            <label htmlFor="marketingTags" className="block text-sm font-bold text-gray-900 mb-2">
-                Marketing Specific Tags:
+            <label className="block text-sm font-bold text-gray-900 mb-2">
+                {label}:
             </label>
             <div className="my-1 flex flex-wrap gap-2">
-                {MarketingAndExclusivityTags.map((tag, index) => (
+                {availableTags.map((tag, index) => (
                     <span
                         key={index}
                         className={`px-3 py-1 text-sm cursor-pointer
-                                    ${marketingAndExclusivityTags.includes(tag)
+                                    ${tags.includes(tag)
                                         ? "bg-black text-white ring-2 ring-offset-1 ring-black"
                                         : "bg-primary text-white opacity-50"}
                                     hover:bg-primary/90 hover:text-white`
@@ -887,86 +1028,8 @@ const MarketingAndExclusivityTagsSection: FC<{ marketingAndExclusivityTags: stri
                 ))}
             </div>
         </div>
-    )
-}
-
-const SustainabilityTagsSection: FC<{ sustainabilityTags: string[]; onUpdate: (updates: Partial<VariantFormDetails>) => void }> =({ sustainabilityTags, onUpdate }) => {
-    const handleTagClick = (tag: string) => {
-        const isTagSelected = sustainabilityTags.includes(tag);
-        const newVariantSpecificTags = isTagSelected
-            ? sustainabilityTags.filter((t) => t !== tag)
-            : [...sustainabilityTags, tag];
-
-        if (newVariantSpecificTags.length > 1) {
-            toast.error("You can only select up to 1 sustainability tag.");
-        } else {
-            onUpdate({ sustainabilityTags: newVariantSpecificTags });
-        }
-    }
-
-    return (
-        <div className="my-4">
-            <label htmlFor="variantSpecificTags" className="block text-sm font-bold text-gray-900 mb-2">
-                Sustainability Specific Tags:
-            </label>
-            <div className="my-1 flex flex-wrap gap-2">
-                {SustainabilityTags.map((tag, index) => (
-                    <span
-                        key={index}
-                        className={`px-3 py-1 text-sm cursor-pointer
-                                    ${sustainabilityTags.includes(tag)
-                                        ? "bg-black text-white ring-2 ring-offset-1 ring-black"
-                                        : "bg-primary text-white opacity-50"}
-                                    hover:bg-primary/90 hover:text-white`
-                                    }        
-                        onClick={() => handleTagClick(tag)}
-                    >
-                        {tag}
-                    </span>
-                ))}
-            </div>
-        </div>
-    )
-
-}
-
-const CraftmanshipTagsSection: FC<{ craftmanshipTags: string[]; onUpdate: (updates: Partial<VariantFormDetails>) => void }> =({ craftmanshipTags, onUpdate }) => {
-    const handleTagClick = (tag: string) => {
-        const isTagSelected = craftmanshipTags.includes(tag);
-        const newVariantSpecificTags = isTagSelected
-            ? craftmanshipTags.filter((t) => t !== tag)
-            : [...craftmanshipTags, tag];
-
-        if (newVariantSpecificTags.length > 1) {
-            toast.error("You can only select up to 1 craftmasnship tag.");
-        } else {
-            onUpdate({ craftmanshipTags: newVariantSpecificTags });
-        }
-    }
-    return (
-        <div className="my-4">
-            <label htmlFor="variantSpecificTags" className="block text-sm font-bold text-gray-900 mb-2">
-                Craftmanship Specific Tags:
-            </label>
-            <div className="my-1 flex flex-wrap gap-2">
-                {CraftmanshipTags.map((tag, index) => (
-                    <span
-                        key={index}
-                        className={`px-3 py-1 text-sm cursor-pointer
-                                    ${craftmanshipTags.includes(tag)
-                                        ? "bg-black text-white ring-2 ring-offset-1 ring-black"
-                                        : "bg-primary text-white opacity-50"}
-                                    hover:bg-primary/90 hover:text-white`
-                                    }        
-                        onClick={() => handleTagClick(tag)}
-                    >
-                        {tag}
-                    </span>
-                ))}
-            </div>
-        </div>
-    )
-}
+    );
+};
 
 
 export default ProductVariantsForm;

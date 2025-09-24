@@ -4,11 +4,12 @@ import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/ui/money-input";
 import { DeliveryZoneKey, ProductMethodZoneConfig, ShippingConfigDataProps } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { ChangeEvent, FC, FormEvent, useState, useEffect } from "react";
-import { validateProductShippingDetails } from "@/lib/productDataValidation";
+import { ChangeEvent, FC, FormEvent, useState } from "react";
 import Link from "next/link";
 import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
 import { toast } from "sonner";
+import { ShippingDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
+import z from "zod";
 
 interface ShippingDetailsPropss {
     currencySymbol: string;
@@ -59,10 +60,10 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
     }
 
     const { shippingMethods, shippingZones } = shippingConfig;
-    const [isSaveButtonDisabled, setIsSaveButtonDisabled] = useState<boolean>(true);
-    const [ isSubmitting, setIsSubmitting ] = useState<boolean>(false);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [selectedShippingMethods, setSelectedShippingMethods] = useState<string[]>([]);
     const { productId } = useProductFormStore();
+    const [errors, setErrors] = useState<any>({}); 
     
     // State to hold the fees the user enters for each method/zone
     const [methodFees, setMethodFees] = useState<ProductShippingDeliveryType["methods"]>({});
@@ -77,11 +78,26 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
         measurementUnit: "Inch"
     });
 
-    // Use a useEffect hook to validate the form whenever relevant state changes
-    useEffect(() => {
-        const { isValid } = validateProductShippingDetails(selectedShippingMethods, methodFees, shippingConfig);
-        setIsSaveButtonDisabled(!isValid);
-    }, [selectedShippingMethods, methodFees, shippingConfig]);
+    type ShippingDetailsErrors = Partial<Record<keyof z.infer<typeof ShippingDetailsValidationSchema>, string[]>>;
+
+    const validateForm = () => {
+        const dataToValidate = {
+            ...shippingDetailsData,
+            methods: selectedShippingMethods.length > 0 ? methodFees : undefined,
+        };
+        const result = ShippingDetailsValidationSchema.safeParse(dataToValidate);
+        if (!result.success) {
+            const flatErrors = result.error.flatten();
+            const newErrors = {
+                ...flatErrors.fieldErrors,
+                methods: flatErrors.formErrors[0],
+            };
+            setErrors(newErrors);
+            return false;
+        }
+        setErrors({});
+        return true;
+    };
 
     const handleWeightChange = (e: ChangeEvent<HTMLInputElement>) => {
         const value = parseFloat(e.target.value);
@@ -199,6 +215,11 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
     const handleSave = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
+        if (!validateForm()) {
+            toast.error("Please fix the validation errors before submitting.");
+            return;
+        }
+
         setIsSubmitting(true);
         const toastId = toast.loading("Saving shipping details...");
         
@@ -255,6 +276,8 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                             step="0.1"
                             placeholder="0.00"
                         />
+                        {errors.weight && <p className="text-red-500 text-xs mt-1">{errors.weight[0]}</p>}
+
                     </div>
                     <div className="my-2">
                         <div>
@@ -310,6 +333,8 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                     className="w-full p-2 border-2"
                                     min="1"
                                 />
+                                {errors.dimensions?.[dim as keyof ProductDimensions] && <p className="text-red-500 text-xs mt-1">{errors.dimensions[dim as keyof ProductDimensions][0]}</p>}
+
                             </div>
                         ))}
                     </div>
@@ -321,6 +346,8 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                     <CardDescription className="text-sm text-gray-600">
                         Please select at least one Shipping Method available for this product and configure their fees.
                     </CardDescription>
+                    {errors.methods && <p className="text-red-500 text-xs mt-1">{errors.methods}</p>}
+
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
@@ -521,7 +548,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
             <div className="mt-6 flex justify-end">
                 <Button
                     type="submit"
-                    disabled={isSaveButtonDisabled}
+                    disabled={isSubmitting}
                     className="flex justify-center px-3 py-1.5 text-sm/6 font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
                 >
                     Save Shipping Details

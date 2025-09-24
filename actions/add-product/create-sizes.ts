@@ -9,7 +9,7 @@ interface MeasurementSizesProps {
 }
 
 export async function createSizes(
-    supabase: any,
+    supabase: any, 
     variantId: string,
     { measurements }: MeasurementSizesProps,
     measurementUnit: string

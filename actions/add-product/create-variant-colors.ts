@@ -9,7 +9,7 @@ export async function createVariantColors(supabase: any, variantId: string, colo
     if (!colors || colors.length === 0) {
         return; // Nothing to do
     }
-
+ 
     try {
         // 1. Get or create all color IDs by calling createColor for each one.
         const colorIds = await Promise.all(

@@ -1,6 +1,8 @@
 const ColourListOriginal: { [key: string]: string } = {
     // A
     "#F0F8FF": "Alice Blue",
+
+    // B
     "#89CFF0": "Baby Blue", // NEW
     "#F5F5DC": "Beige",
     "#000000": "Black",
@@ -153,7 +155,7 @@ const ColourListOriginal: { [key: string]: string } = {
     "#FF0000": "Red",
     "#BC8F8F": "Rosy Brown",
     "#4169E1": "Royal Blue",
-    "#80461B": "Russet", // NEW
+    "#80461B": "Russet",
 
     // S
     "#8B4513": "Saddle Brown",
@@ -169,32 +171,32 @@ const ColourListOriginal: { [key: string]: string } = {
     "#4DD21D": "Sport Green",
     "#00FF7F": "Spring Green",
     "#4682B4": "Steel Blue",
-    "#E4D96F": "Straw", // NEW
+    "#E4D96F": "Straw", 
 
     // T
     "#D2B48C": "Tan",
     "#008080": "Teal",
     "#FF6347": "Tomato",
     "#40E0D0": "Turquoise",
-    "#3F00FF": "Ultramarine", // NEW
+    "#3F00FF": "Ultramarine",
 
     // V
     "#EE82EE": "Violet",
-    "#40826D": "Viridian", // NEW
+    "#40826D": "Viridian", 
 
     // W
     "#F5DEB3": "Wheat",
     "#FFFFFF": "White",
     "#F5F5F5": "White Smoke",
-    "#722F37": "Wine", // NEW
+    "#722F37": "Wine", 
 
     // X
-    "#0F4D92": "Yale Blue", // NEW
+    "#0F4D92": "Yale Blue", 
 
     // Y
     "#FFFF00": "Yellow",
     "#9ACD32": "Yellow Green",
-    "#39A78E": "Zomp", // NEW
+    "#39A78E": "Zomp",
 };
 
 export const ColourList = Object.entries(ColourListOriginal).map(([hex, name]) => ({

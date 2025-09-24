@@ -8,7 +8,7 @@ import { MaterialComposition } from "@/components/brand-dashboard/add-product/va
 export async function createVariantMaterials(supabase: any, variantId: string, materials: MaterialComposition[]) {
     if (!materials || materials.length === 0) {
         return;
-    }
+    } 
 
     try {
         // 1. Upsert all materials to get their IDs

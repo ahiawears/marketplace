@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
+import { submitFormData } from "@/lib/api-helpers";
+import { CareDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
 import { bleachingInstruction, dryCleaningInstruction, dryingInstruction, ironingInstruction, specialCases, washingInstruction } from "@/lib/productCareInstruction";
 import { ChangeEvent, FC, FormEvent, useState } from "react";
 import { toast } from "sonner";
@@ -14,6 +16,30 @@ interface CareInstructionInterface {
     specialCases: string | null,
 }
 
+interface CareInstructionSelectProps {
+    id: keyof CareInstructionInterface;
+    label: string;
+    value: string | null;
+    onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
+    options: readonly string[];
+}
+
+const CareInstructionSelect: FC<CareInstructionSelectProps> = ({ id, label, value, onChange, options }) => (
+    <div className="my-4">
+        <label className="block text-sm font-bold mt-3 mb-1" htmlFor={id}>
+            {label}:
+        </label>
+        <div className="my-1">
+            <Select id={id} name={id} value={value || ""} onChange={onChange} className="block border-2 bg-transparent">
+                <option value=""></option>
+                {options.map((option) => (
+                    <option key={option} value={option}>{option}</option>
+                ))}
+            </Select>
+        </div>
+    </div>
+);
+
 const CareDetailsForm: FC = () => {
     const [careDetailsData, setCareDetailsData] = useState<CareInstructionInterface>({
         washingInstruction: "",
@@ -24,7 +50,24 @@ const CareDetailsForm: FC = () => {
         specialCases: "",
     })
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+    const [errors, setErrors] = useState<{ formError?: string }>({});
     const {productId} = useProductFormStore();
+
+    const validateForm = () => {
+        const dataToValidate = {
+            ...careDetailsData,
+            productId: productId,
+        };
+        const result = CareDetailsValidationSchema.safeParse(dataToValidate);
+        if (!result.success) {
+            const formError = result.error.flatten().formErrors[0];
+            setErrors({ formError });
+            return false;
+        }
+        setErrors({});
+        return true;
+    };
+
     const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setCareDetailsData({
             ...careDetailsData,
@@ -33,188 +76,85 @@ const CareDetailsForm: FC = () => {
     }
     const handleSave = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            toast.error("Please select at least one care instruction.");
+            return;
+        }
+
         setIsSubmitting(true);
-        console.log(careDetailsData);
-        const toastId = toast.loading("Saving care instructions...");
+
         const finalCareDetails = {
             ...careDetailsData,
             productId: productId
         };
-        try {
-            const formData = new FormData();
-            formData.append('careDetails', JSON.stringify(finalCareDetails));
 
-            const response = await fetch('/api/products/upload-care-instructions', {
-                method: 'POST',
-                body: formData
-            })
+        const formData = new FormData();
+        formData.append('careDetails', JSON.stringify(finalCareDetails));
 
-            const result = await response.json();
-
-            if (response.ok && result.success) {
-                toast.success("Care instructions saved successfully!", { id: toastId });
-            } else {
-                toast.error(result.message || "An unknown error occurred.", { id: toastId });
+        await submitFormData(
+            '/api/products/upload-care-instructions',
+            formData,
+            {
+                loadingMessage: "Saving care instructions...",
+                successMessage: "Care instructions saved successfully!",
             }
-        } catch (error) {
-            toast.error(`${error instanceof Error ? error.message : "An unknown error occurred."}`, { id: toastId });
-        } finally {
-            setIsSubmitting(false);
-        }
+        );
+
+        setIsSubmitting(false);
     }
     return (
         <form onSubmit={handleSave}>
-            <div className="my-4">
-                <label className="block text-sm font-bold mt-3 mb-1" htmlFor="washingInstruction">
-                    Washing Instructions:
-                </label>
-                <div className="my-1">
-                    <Select
-                        id="washingInstruction"
-                        name="washingInstruction"
-                        value={careDetailsData.washingInstruction || ""}
-                        onChange={handleFormInput}
-                        className="block border-2 bg-transparent"
-                    >
-                        <option value="" >
-                            
-                        </option>
-
-                        {washingInstruction.map((wi) => (
-                            <option key={wi} value={wi}>
-                                {wi}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
-            </div>
-            <div className="my-4">
-                <label className="block text-sm font-bold mt-3 mb-1" htmlFor="bleachingInstruction">
-                    Bleaching Instructions:
-                </label>
-                <div className="my-1">
-                    <Select
-                        id="bleachingInstruction"
-                        name="bleachingInstruction"
-                        value={careDetailsData.bleachingInstruction || ""}
-                        onChange={handleFormInput}
-                        className="block border-2 bg-transparent"
-                    >
-                        <option value="" >
-                        </option>
-    
-                        {bleachingInstruction.map((bi) => (
-                            <option key={bi} value={bi}>
-                                {bi}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
-            </div>
-            <div className="my-4">
-                <label className="block text-sm font-bold mt-3 mb-1" htmlFor="dryingInstruction">
-                    Drying Instructions:
-                </label>
-                <div className="my-1">
-                    <Select
-                        id="dryingInstruction"
-                        name="dryingInstruction"
-                        value={careDetailsData.dryingInstruction || ""}
-                        onChange={handleFormInput}
-                        className="block border-2 bg-transparent"
-                    >
-                        <option value="" >
-
-                        </option>
-
-                        {dryingInstruction.map((di) => (
-                            <option key={di} value={di}>
-                                {di}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
-            </div>
-            <div className="my-4">
-                <label className="block text-sm font-bold mt-3 mb-1" htmlFor="ironingInstruction">
-                    Ironing Instructions:
-                </label> 
-                <div className="my-1">
-                    <Select
-                        id="ironingInstruction"
-                        name="ironingInstruction"
-                        value={careDetailsData.ironingInstruction || ""}
-                        onChange={handleFormInput}
-                        className="block border-2 bg-transparent"
-                    >
-                        <option value="" >
-                        </option>
-
-                        {ironingInstruction.map((ii) => (
-                            <option key={ii} value={ii}>
-                                {ii}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
-            </div>
-            <div className="my-4">
-                <label className="block text-sm font-bold mt-3 mb-1" htmlFor="dryCleaningInstruction">
-                    Dry Cleaning Instructions:
-                </label>
-                <div className="my-1">
-                    <Select
-                        id="dryCleaningInstruction"
-                        name="dryCleaningInstruction"
-                        value={careDetailsData.dryCleaningInstruction || ""}
-                        onChange={handleFormInput}
-                        className="block border-2 bg-transparent"
-                    >
-                        <option value="" >
-                            
-                        </option>
-
-                        {dryCleaningInstruction.map((dci) => (
-                            <option key={dci} value={dci}>
-                                {dci}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
-            </div>
-            <div className="my-4">
-                <label className="block text-sm font-bold mt-3 mb-1" htmlFor="specialInstruction">
-                    Special Instruction:
-                </label>
-
-                <div className="my-1">
-                    <Select
-                        id="specialInstruction"
-                        name="specialInstruction"
-                        value={careDetailsData.specialCases || ""}
-                        onChange={handleFormInput}
-                        className="block border-2 bg-transparent"
-                    >
-                        <option value="" >
-
-                        </option>
-
-                        {specialCases.map((sc) => (
-                            <option key={sc} value={sc}>
-                                {sc}
-                            </option>
-                        ))}
-                    </Select>
-                </div>
-            </div>
+            {errors.formError && <p className="text-red-500 text-sm mb-4">{errors.formError}</p>}
+            <CareInstructionSelect
+                id="washingInstruction"
+                label="Washing Instructions"
+                value={careDetailsData.washingInstruction}
+                onChange={handleFormInput}
+                options={washingInstruction}
+            />
+            <CareInstructionSelect
+                id="bleachingInstruction"
+                label="Bleaching Instructions"
+                value={careDetailsData.bleachingInstruction}
+                onChange={handleFormInput}
+                options={bleachingInstruction}
+            />
+            <CareInstructionSelect
+                id="dryingInstruction"
+                label="Drying Instructions"
+                value={careDetailsData.dryingInstruction}
+                onChange={handleFormInput}
+                options={dryingInstruction}
+            />
+            <CareInstructionSelect
+                id="ironingInstruction"
+                label="Ironing Instructions"
+                value={careDetailsData.ironingInstruction}
+                onChange={handleFormInput}
+                options={ironingInstruction}
+            />
+            <CareInstructionSelect
+                id="dryCleaningInstruction"
+                label="Dry Cleaning Instructions"
+                value={careDetailsData.dryCleaningInstruction}
+                onChange={handleFormInput}
+                options={dryCleaningInstruction}
+            />
+            <CareInstructionSelect
+                id="specialCases"
+                label="Special Instruction"
+                value={careDetailsData.specialCases}
+                onChange={handleFormInput}
+                options={specialCases}
+            />
             <div>
                 <Button
                     type="submit"
                     disabled={isSubmitting}
                     className="flex justify-center rounded-md px-3 py-1.5 text-sm/6 font-semibold shadow-sm"
                 >
-                    {/* Save Care Instruction */}
-                    {isSubmitting ? "Saving" : "Save Shipping Configuration"}
+                    {isSubmitting ? "Saving..." : "Save Care Instructions"}
                 </Button>
             </div>
         </form>
