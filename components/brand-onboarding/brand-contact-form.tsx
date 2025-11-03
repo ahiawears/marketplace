@@ -171,7 +171,7 @@ const BrandContactForm = ({data, onDataChange}: BrandContactProps) => {
                             onChange={setMobileNumber}
                             className={cn(
                                 "w-full",
-                                "flex h-12 rounded-md border-2  bg-background px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                "flex h-12 rounded-none border-2 bg-background px-3 py-2 text-sm file:text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
                             )}                            
                             placeholder="Enter phone number"
                         />
@@ -290,18 +290,6 @@ const BrandContactForm = ({data, onDataChange}: BrandContactProps) => {
                     </div>
                 </div>
             </div>
-            <style jsx global>{`
-                .react-phone-number-input__country {
-                    @apply h-12 border border-input rounded-md;
-                }
-                .react-phone-number-input__country-select {
-                    @apply h-full;
-                }
-                .react-phone-number-input__input {
-                    outline: none;
-                    @apply ring-0;
-                }
-            `}</style>
         </form>
     )
 }

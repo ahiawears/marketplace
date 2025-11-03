@@ -85,6 +85,7 @@ const items: SibarMenuItem[] = [
     subitems: [
       { title: "Brand Profile", url: "/dashboard/brand-profile-management" },
       { title: "Shipping Configuration", url: "/dashboard/shipping-configuration" },
+      { title: "Return Policy", url: "/dashboard/return-policy" },
       { title: "Payment Settings", url: "/dashboard/payment-settings" },
       { title: "Notifications", url: "/dashboard/notifications" },
     ],

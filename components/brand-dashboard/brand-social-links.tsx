@@ -213,7 +213,7 @@ const BrandSocialLinks: React.FC<BrandSocialLinksProps> = ({ userId, data }) => 
                             onChange={handlePhoneChange}
                             className={cn(
                                 "w-full",
-                                "flex h-12 rounded-md border-2 bg-background px-3 py-2 text-sm placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                "flex h-12 rounded-none border-2 bg-background px-3 py-2 text-sm file:text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
                             )}
                             placeholder="Enter phone number"
                         />

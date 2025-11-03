@@ -174,7 +174,7 @@ const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol }) => {
         setIsSubmitting(true);
 
         const finalReturnPolicy = {
-            ...refundPolicy,
+            ...refundPolicy, 
             productId: productId
         };
 

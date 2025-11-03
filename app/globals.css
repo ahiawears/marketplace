@@ -94,3 +94,8 @@ body {
     margin: 0;
   }
 }
+
+.PhoneInputInput {
+    box-shadow: none !important; 
+    outline: none !important;
+}
