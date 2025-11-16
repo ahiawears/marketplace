@@ -1,4 +1,3 @@
-// src/components/ui/status-switch.tsx (enhanced)
 "use client";
 
 import * as React from "react";
@@ -6,17 +5,17 @@ import { cn } from "@/lib/utils";
 import { Check, X } from "lucide-react";
 
 interface StatusSwitchProps {
-    status: "refundable" | "non-refundable";
-    onStatusChange: (status: "refundable" | "non-refundable") => void;
+    status: "returnable" | "non-returnable";
+    onStatusChange: (status: "returnable" | "non-returnable") => void;
     className?: string;
 }
 
 const RefundSwitch: React.FC<StatusSwitchProps> = ({ status, onStatusChange, className }) => {
     const handleToggle = () => {
-        onStatusChange(status === "refundable" ? "non-refundable" : "refundable");
+        onStatusChange(status === "returnable" ? "non-returnable" : "returnable");
     };
 
-    const isActive = status === "refundable";
+    const isActive = status === "returnable";
 
     return (
         <div className={cn("flex items-center gap-3", className)}>
@@ -50,10 +49,10 @@ const RefundSwitch: React.FC<StatusSwitchProps> = ({ status, onStatusChange, cla
                         isActive ? "text-black font-bold" : "text-gray-600"
                     )}
                 >
-                    {isActive ? "Refundable" : "Non-Refundable"}
+                    {isActive ? "Returnable" : "Non-Returnable"}
                 </span>
                 <span className="text-xs text-gray-500">
-                    {isActive ? "Product is refundable" : "Product is non-refundable"}
+                    {isActive ? "Product is returnable" : "Product is non-returnable"}
                 </span>
             </div>
         </div>

@@ -29,8 +29,6 @@ export type GeneralDetailsSchemaType = z.infer<typeof GeneralDetailsValidationSc
 
 
 
-
-
 // Variant Details Schema
 // This schema is more complex due to the nested structures and conditional validations.
 // It ensures that each variant adheres to the specified rules, including arrays of objects and
@@ -171,52 +169,39 @@ const RestockingFeeSchema = z.object({
 });
 
 export const ReturnPolicyValidationSchema = z.object({
-    productId: z.string().min(1, "Product ID is required"),
-    isReturnable: z.enum(["refundable", "non-refundable"]),
-    returnWindowDays: z.number().optional(),
-    refundMethods: z.array(z.enum(["originalPayment", "exchange"])).optional(),
-    returnMethods: z.array(z.enum(["pickup", "dropoff", "shipBack"])).optional(),
-    restockingFee: RestockingFeeSchema.optional(),
-    returnShippingCost: z.enum(["buyer", "seller", "shared"]).optional(),
+    productId: z.string().min(1, "Product ID is required."),
+    isReturnable: z.enum(['returnable', 'non-returnable']),
+    useProductSpecificReturnPolicy: z.boolean(),
+    returnWindowDays: z.number().min(7, "Return window must be at least 7 days").max(30, "Return window cannot exceed 30 days"),
     conditionRequirements: z.object({
-        unused: z.boolean().optional(),
-        originalPackaging: z.boolean().optional(),
-        tagsAttached: z.boolean().optional(),
-    }).optional(),
-    exclusions: z.array(z.string()).optional(),
-    notes: z.string().max(1000, "Notes cannot exceed 1000 characters.").optional(),
-    internationalReturnsAllowed: z.boolean().optional(),
-    internationalReturnWindowDays: z.number().optional(),
-    customsAndDutiesResponsibility: z.enum(["buyer", "seller"]).optional(),
-    internationalReturnNotes: z.string().max(1000, "International notes cannot exceed 1000 characters.").optional(),
-}).superRefine((data, ctx) => {
-    if (data.isReturnable === "refundable") {
-        if (data.returnWindowDays === undefined || data.returnWindowDays <= 0) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["returnWindowDays"], message: "Return window must be at least 1 day." });
-        }
-        if (!data.refundMethods || data.refundMethods.length === 0) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["refundMethods"], message: "At least one refund method is required." });
-        }
-        if (!data.returnMethods || data.returnMethods.length === 0) {
-            ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["returnMethods"], message: "At least one return method is required." });
-        }
-        if (data.restockingFee?.type === 'percentage' && (data.restockingFee.value > 100)) {
-             ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["restockingFee", "value"], message: "Percentage fee cannot exceed 100." });
-        }
-    }
-
-    if (data.internationalReturnsAllowed) {
-        if (data.internationalReturnWindowDays === undefined || data.internationalReturnWindowDays <= 0) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                path: ["internationalReturnWindowDays"],
-                message: "International return window must be at least 1 day.",
-            });
-        }
-        if (!data.customsAndDutiesResponsibility) {
-             ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["customsAndDutiesResponsibility"], message: "Please specify who is responsible for customs and duties." });
-        }
-    }
+        unwornAndUnwashed: z.boolean(),
+        originalPackagingAndTagsIntact: z.boolean(),
+        notADiscountedItem: z.boolean(),
+        notCustomMade: z.boolean(),
+        damagedItem: z.object({
+            allowed: z.boolean(),
+            imagesRequired: z.boolean().optional(),
+        }),
+        finalSaleItemsNotAllowed: z.boolean(),
+        otherConditions: z.boolean(),   
+    }),
+    returnShippingResponsibility: z.object({
+        brandPays: z.boolean(),
+        customerPays: z.boolean(),
+        dependsOnReason: z.boolean(),
+    }),
+    refundMethods: z.object({
+        fullRefund: z.boolean(),
+        storeCredit: z.boolean(),
+        exchange: z.boolean(),
+        replace: z.boolean(),
+    }),
+    refundProcessingTimeDays: z.number().min(1, "Processing time must be at least 1 day").max(14, "Processing time cannot exceed 14 days"),
+    restockingFee: RestockingFeeSchema, 
 });
 
 export type ReturnPolicySchemaType = z.infer<typeof ReturnPolicyValidationSchema>;
+
+export const validateReturnPolicy = (data: ReturnPolicySchemaType) => {
+    return ReturnPolicyValidationSchema.safeParse(data);
+}

@@ -29,6 +29,7 @@ export const returnPolicySchema = z.object({
             allowed: z.boolean(),
             imagesRequired: z.boolean().optional(),
         }),
+        finalSaleItemsNotAllowed: z.boolean(),
         otherConditions: z.boolean(),
     }),
     returnShippingResponsibility: z.object({

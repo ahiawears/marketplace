@@ -1,3 +1,4 @@
+import { getBrandGlobalReturnPolicy } from "@/actions/return-policy/get-brand-global-return-policy";
 import ReturnPolicyForm from "@/components/brand-dashboard/return-policy-form";
 import { createClient } from "@/supabase/server";
 import { Metadata } from "next";
@@ -17,10 +18,23 @@ const ReturnPolicy = async () => {
 
     const userId = user.user.id;
 
+    const brandReturnPolicy = await getBrandGlobalReturnPolicy(userId);
+    let brandReturnPolicyData;
+
+    if (!brandReturnPolicy.success) {
+        // Return a notFound or error page if the policy is not found or fails
+        // You could also render a message on the page instead
+        // return notFound();
+        console.log(brandReturnPolicy.message);
+    }
+
+    brandReturnPolicyData = brandReturnPolicy.success ? brandReturnPolicy.data : null;
+
     return (
         <div className="my-4">
             <ReturnPolicyForm 
                 userId={userId} 
+                data={brandReturnPolicyData ?? null}
             />
         </div>
     )

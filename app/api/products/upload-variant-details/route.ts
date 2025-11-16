@@ -13,12 +13,15 @@ import { createVariantTags } from "@/actions/add-product/create-variant-tags";
 import { createSizes } from "@/actions/add-product/create-sizes";
 
 
-function getCurrencyByIso2(iso2Code: string, countryData: CountryDataType[]): string | null {
+function getCurrencyByIso2(iso2Code: string | undefined, countryData: CountryDataType[]): string | null {
+    if (!iso2Code) return null;
+    const iso2Lower = iso2Code.toLowerCase();
     const country = countryData.find(
-        (country) => country.iso2.toLowerCase() === iso2Code.toLowerCase()
+        (country) => country.iso2.toLowerCase() === iso2Lower
     );
     return country ? country.currency : null;
 }
+
 export async function POST(req: Request) {
     try {
         const supabase = await createClient();
@@ -73,8 +76,11 @@ export async function POST(req: Request) {
                 message: brandData.message,
             })
         }
-        const brandCountry = brandData.country_of_registration;
-        const brandCurrency = getCurrencyByIso2(brandCountry!, CountryData);
+        let brandCountry;
+        if (brandData.success && brandData.data !== null) {
+            brandCountry = brandData.data.country_of_registration;
+        }
+        const brandCurrency = getCurrencyByIso2(brandCountry, CountryData);
         if (!brandCurrency) {
             return NextResponse.json({
                 success: false,

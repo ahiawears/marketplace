@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FC, FormEvent, useState } from "react";
+import { ChangeEvent, FC, FormEvent, useEffect, useState } from "react";
 import { Input } from "../ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { Info } from "lucide-react";
@@ -24,72 +24,75 @@ import { toast } from "sonner";
 
 interface ReturnPolicyFormProps {
     userId: string;
-    // data: any;
+    data: ReturnPolicyInterface | null;
 }
 
-const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
+const defaultPolicy: ReturnPolicyInterface = {
+    policyScope: 'brand',
+    returnWindowDays: 14,
+    conditionRequirements: {
+        unwornAndUnwashed: true,
+        originalPackagingAndTagsIntact: true,
+        notADiscountedItem: false,
+        notCustomMade: false,
+        damagedItem: {
+            allowed: true,
+            imagesRequired: true,
+        },
+        finalSaleItemsNotAllowed: true,
+        otherConditions: false,
+    },
+    returnShippingResponsibility: {
+        brandPays: false,
+        customerPays: true,
+        dependsOnReason: false,
+    },
+    returnReasons: {
+        wrongSize: true,
+        defectiveItem: true,
+        notAsDescribed: true,
+        changedMind: false,
+        wrongItemSent: true,
+        otherReasons: "",
+    },
+    returnMethods: {
+        customerShipsBack: true,
+        brandProvidesReturnLabel: false,
+        arrangePickup: false,
+    },
+    refundMethods: {
+        fullRefund: true,
+        storeCredit: true,
+        exchange: true,
+        replace: true,
+    },
+    refundProcessingTimeDays: 7,
+    restockingFee: {
+        type: 'fixed',
+        value: 0,
+    },
+    returnAddress: {
+        contactPerson: "",
+        addressLine: "",
+        city: "",
+        region: "",
+        postalCode: "",
+        country: "",
+        phoneNumber: "",
+        email: "",
+    },
+    returnContact: {
+        name: "",
+        email: "",
+        phoneNumber: "",
+    },
+    returnInstructions: "",
+};
+
+const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, data }) => {
     const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
 
-    const [refundPolicy, setRefundPolicy] = useState<ReturnPolicyInterface>({
-        policyScope: 'brand',
-        returnWindowDays: 14,
-        conditionRequirements: {
-            unwornAndUnwashed: true,
-            originalPackagingAndTagsIntact: true,
-            notADiscountedItem: false,
-            notCustomMade: false,
-            damagedItem: {
-                allowed: true,
-                imagesRequired: true,
-            },
-            otherConditions: false,
-        },
-        returnShippingResponsibility: {
-            brandPays: false,
-            customerPays: true,
-            dependsOnReason: false,
-        },
-        returnReasons: {
-            wrongSize: true,
-            defectiveItem: true,
-            notAsDescribed: true,
-            changedMind: false,
-            wrongItemSent: true,
-            otherReasons: "",
-        },
-        returnMethods: {
-            customerShipsBack: true,
-            brandProvidesReturnLabel: false,
-            arrangePickup: false,
-        },
-        refundMethods: {
-            fullRefund: true,
-            storeCredit: true,
-            exchange: true,
-            replace: true,
-        },
-        refundProcessingTimeDays: 7,
-        restockingFee: {
-            type: 'fixed',
-            value: 0,
-        },
-        returnAddress: {
-            contactPerson: "",
-            addressLine: "",
-            city: "",
-            region: "",
-            postalCode: "",
-            country: "",
-            phoneNumber: "",
-            email: "",
-        },
-        returnContact: {
-            name: "",
-            email: "",
-            phoneNumber: "",
-        },
-        returnInstructions: "",
-    });
+    const [refundPolicy, setRefundPolicy] = useState<ReturnPolicyInterface>(data || defaultPolicy);
     const [errors, setErrors] = useState<z.ZodFormattedError<ReturnPolicyInterface> | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -99,11 +102,14 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
             restockingFee: { 
                 ...prev.restockingFee!, 
                 type: e.target.value as 'percentage' | 'fixed',
-                // Reset value when switching types for better UX
                 value: 0
             },
         }));
     };
+
+    useEffect(() => {
+        setRefundPolicy(data || defaultPolicy);
+    }, [data]);
 
     const handleNumberInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -219,18 +225,45 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
     const validateForm = (): boolean => {
         const result = validateReturnPolicy(refundPolicy);
         if (!result.success) {
-            const formattedErrors = result.error.format();
-            setErrors(formattedErrors);
+            setErrors(result.error.format());
             return false;
         }
         setErrors(null);
         return true;
     };
 
+    const handleBlur = () => {
+        validateForm();
+    };
+
+    const findFirstError = (currentErrors: z.ZodFormattedError<ReturnPolicyInterface>) => {
+        const errorKeys = Object.keys(currentErrors).filter(key => key !== '_errors');
+        for (const key of errorKeys) {
+            // Special handling for nested fields like returnAddress.addressLine
+            const selector = key.includes('.') ? `[name="${key}"]` : `[name="${key}"], [id^="${key}."]`;
+            return document.querySelector(selector);
+        }
+        return null;
+    };
+
     const handleOpenConfirmation = (e: FormEvent) => {
         e.preventDefault();
         if (validateForm()) {
             setIsConfirmationOpen(true);
+        }
+        else {
+            const validationErrors = validateReturnPolicy(refundPolicy);
+            toast.error("Please fix the errors before saving.", {
+                description: "Review the fields marked in red and try again.",
+            });
+            // Use a timeout to ensure the state has updated and the DOM reflects the errors
+            setTimeout(() => {
+                if (!validationErrors.success) {
+                    const firstErrorElement = findFirstError(validationErrors.error.format());
+                    firstErrorElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    (firstErrorElement as HTMLElement)?.focus({ preventScroll: true });
+                }
+            }, 100);
         }
     };
 
@@ -265,7 +298,6 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
 
         } catch (error) {
             console.error("Error saving policy:", error);
-            // You can add error toast notification here
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
             toast.error(`Error: ${errorMessage}`, { id: toastId });
         } finally {
@@ -310,8 +342,9 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
                                 type="number"
                                 id="returnWindowDays"
                                 name="returnWindowDays"
-                                value={refundPolicy.returnWindowDays}
+                                value={refundPolicy.returnWindowDays === 0 ? '' : refundPolicy.returnWindowDays }
                                 onChange={handleNumberInputChange}
+                                onBlur={handleBlur}
                                 placeholder="e.g., 30"
                                 min="0"
                                 className="mt-2"
@@ -378,15 +411,17 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
                                         className="flex-1 rounded-l-none"
                                         numericValue={refundPolicy.restockingFee?.value || 0.00}
                                         required
+                                        onBlur={handleBlur}
                                         placeholder="0.00"
                                     />
                                 ) : (
                                     <Input
                                         name="restockingFeeValue"
                                         type="number"
-                                        value={refundPolicy.restockingFee?.value}
+                                        value={refundPolicy.restockingFee?.value === 0 ? '' : refundPolicy.restockingFee?.value }
                                         onChange={handleRestockingFeePercentageChange}
                                         placeholder="0.00"
+                                        onBlur={handleBlur}
                                         className="flex-1 rounded-l-none"
                                         min="0"
                                         max="100"
@@ -416,6 +451,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
                         { key: "originalPackagingAndTagsIntact", label: "Original packaging and tags intact", tooltip: "All original packaging and tags must be present and undamaged" },
                         { key: "notADiscountedItem", label: "Not a discounted/sale item", tooltip: "Items purchased on sale may not be returnable" },
                         { key: "notCustomMade", label: "Not custom made", tooltip: "Custom or personalized items cannot be returned" },
+                        { key: "finalSaleItemsNotAllowed", label: "Final sale items not allowed", tooltip: "Final sale items may not be returned" },
                         { key: "otherConditions", label: "Other specific conditions", tooltip: "Additional conditions may apply" },
                     ]}
                 />  
@@ -556,8 +592,9 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
                                 type="number"
                                 id="refundProcessingTimeDays"
                                 name="refundProcessingTimeDays"
-                                value={refundPolicy.refundProcessingTimeDays}
+                                value={refundPolicy.refundProcessingTimeDays === 0 ? '' : refundPolicy.refundProcessingTimeDays }
                                 onChange={handleNumberInputChange}
+                                onBlur={handleBlur}
                                 placeholder="e.g., 7"
                                 min="1"
                                 className="mt-2"
@@ -576,6 +613,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
                     onStringChange={handleStringInputChange}
                     onSelectChange={handleSelectChange}
                     onPhoneChange={handlePhoneChange}
+                    onBlur={handleBlur}
                 />
 
                 <Card className="border-2 rounded-none">
@@ -593,6 +631,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
                                 name="returnInstructions"
                                 value={refundPolicy.returnInstructions}
                                 onChange={handleStringInputChange}
+                                onBlur={handleBlur}
                                 placeholder="Add any specific return instructions for your customers here..."
                                 rows={4}
                             />
@@ -617,6 +656,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
                                 name="returnContact.name"
                                 value={refundPolicy.returnContact.name}
                                 onChange={handleStringInputChange}
+                                onBlur={handleBlur}
                                 placeholder="John Doe"
                             />
                             {errors?.returnContact?.name?._errors[0] && (
@@ -632,6 +672,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId }) => {
                                 type="email"
                                 value={refundPolicy.returnContact.email}
                                 onChange={handleStringInputChange}
+                                onBlur={handleBlur}
                                 placeholder="returns@yourcompany.com"
                             />
                             {errors?.returnContact?.email?._errors[0] && (

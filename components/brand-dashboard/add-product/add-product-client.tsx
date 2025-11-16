@@ -1,6 +1,6 @@
 'use client'
+
 import { FC } from "react";
-// import AddProductDetails from "@/components/ui/add-product-details";
 import ProductForm from "./product-form";
 import { ShippingConfigDataProps } from "@/lib/types";
 
@@ -15,7 +15,7 @@ const AddProductClient:FC<AddProductClientProps> = ({ currencyCode, todayExchang
             <div className="flex flex-col">
                 <div className="w-full">
                     <ProductForm 
-                        currencyCode={currencyCode!}
+                        currencyCode={currencyCode}
                         todayExchangeRate={todayExchangeRate}
                         shippingConfig={shippingConfig}
                     /> 

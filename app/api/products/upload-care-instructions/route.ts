@@ -35,7 +35,6 @@ export async function POST(req: Request) {
             }, { status: 400 });
         }
 
-        // Assuming an action exists to handle the database interaction
         await createProductCareInstruction(supabase, validationResult.data);
 
         return NextResponse.json({ success: true, message: "Care instructions saved successfully." });

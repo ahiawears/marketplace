@@ -11,9 +11,11 @@ export const metadata: Metadata = {
     title: "Shipping Configuration",
 };
 
-function getCurrencyByIso2(iso2Code: string, countryData: CountryDataType[]): string | null {
+function getCurrencyByIso2(iso2Code: string | undefined, countryData: CountryDataType[]): string | null {
+    if (!iso2Code) return null;
+    const iso2Lower = iso2Code.toLowerCase();
     const country = countryData.find(
-        (country) => country.iso2.toLowerCase() === iso2Code.toLowerCase()
+        (country) => country.iso2.toLowerCase() === iso2Lower
     );
     return country ? country.currency : null;
 }
@@ -44,12 +46,16 @@ const ShippingConfiguration = async () => {
 
     if (!brandLegal.success) {
         // If legal details are not found, we can't get the country or currency.
-        // It's best to return an error state.
-        return notFound();
+        redirect("/login-brand");
     }
 
-    const brand_country = brandLegal.country_of_registration;
-    const brand_currency = getCurrencyByIso2(brand_country!, CountryData);
+    let brand_country;
+
+    if (brandLegal.success && brandLegal.data !== null) {
+        brand_country = brandLegal.data.country_of_registration;
+    }
+
+    const brand_currency = getCurrencyByIso2(brand_country, CountryData) || 'USD';
 
     return (
         <div className="my-4">
@@ -57,7 +63,7 @@ const ShippingConfiguration = async () => {
                 userId={userId}
                 data={brandConfig.data!}
                 brandCountry={brand_country!}
-                brandCurrency={brand_currency!}
+                brandCurrency={brand_currency}
             />
         </div>
     );

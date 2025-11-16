@@ -3,12 +3,21 @@ import { createClient } from "@/supabase/server";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import { GetBrandLegalDetails } from "@/actions/get-brand-details/get-brand-legal-details";
-import { CountryData } from "@/lib/country-data";
+import { CountryData, CountryDataType } from "@/lib/country-data";
 import { FetchBrandProducts } from "@/actions/get-products-list/fetchBrandProducts";
 import { GetCoupons } from "@/actions/brand-actions/get-coupons";
 
 export const metadata: Metadata = {
     title: "Coupons",
+}
+
+function getCurrencyByIso2(iso2Code: string | undefined, countryData: CountryDataType[]): string | null {
+    if (!iso2Code) return null;
+    const iso2Lower = iso2Code.toLowerCase();
+    const country = countryData.find(
+        (country) => country.iso2.toLowerCase() === iso2Lower
+    );
+    return country ? country.currency : null;
 }
 
 export default async function Coupons () {
@@ -24,13 +33,17 @@ export default async function Coupons () {
 
         // Fetch brand's country to determine currency
         const brandLegalData = await GetBrandLegalDetails(userId);
-        let currency = "USD"; // Default currency
-        if (brandLegalData.success && brandLegalData.country_of_registration) {
-            const country = CountryData.find(c => c.iso2 === brandLegalData.country_of_registration);
-            if (country) {
-                currency = country.currency;
-            }
+        if (!brandLegalData.success) {
+            redirect("/login-brand");
         }
+       
+        let brandCountry;
+
+        if (brandLegalData.success && brandLegalData.data !== null) {
+            brandCountry = brandLegalData.data.country_of_registration;
+        }       
+        
+        const currency = getCurrencyByIso2(brandCountry, CountryData) || 'USD';
 
         const brandProducts = await FetchBrandProducts(userId);
         if (!brandProducts.success) {

@@ -44,9 +44,12 @@ export default async function PaymentSettings() {
         const brandLegalData = await GetBrandLegalDetails(userId);
         if(!brandLegalData.success) {
             //add a proper error here
-            return;
-        } else {
-            userCountry = brandLegalData.country_of_registration;
+            redirect("/login-brand");
+        } 
+        
+
+        if (brandLegalData.success && brandLegalData.data !== null) {
+            userCountry = brandLegalData.data.country_of_registration;
         }
 
         if (userCountry === null || userCountry === undefined) {

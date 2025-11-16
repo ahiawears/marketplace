@@ -26,6 +26,7 @@ interface ReturnAddressSectionProps {
     onStringChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
     onSelectChange: (e: ChangeEvent<HTMLSelectElement>) => void;
     onPhoneChange: (value: string | undefined) => void;
+    onBlur: () => void;
 }
 
 const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
@@ -34,6 +35,7 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
     onStringChange,
     onSelectChange,
     onPhoneChange,
+    onBlur,
 }) => {
     return (
         <Card className="border-2 rounded-none">
@@ -53,6 +55,7 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             name="returnAddress.contactPerson"
                             value={address.contactPerson}
                             onChange={onStringChange}
+                            onBlur={onBlur}
                             placeholder="John Doe"
                         />
                     </div>
@@ -84,6 +87,7 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                         name="returnAddress.addressLine"
                         value={address.addressLine}
                         onChange={onStringChange}
+                        onBlur={onBlur}
                         placeholder="123 Main Street"
                         className={errors?.addressLine?._errors.length ? "border-red-500" : ""}
                     />
@@ -100,6 +104,7 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             name="returnAddress.city"
                             value={address.city}
                             onChange={onStringChange}
+                            onBlur={onBlur}
                             placeholder="New York"
                             className={errors?.city?._errors.length ? "border-red-500" : ""}
                         />
@@ -115,6 +120,7 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             name="returnAddress.region"
                             value={address.region}
                             onChange={onStringChange}
+                            onBlur={onBlur}
                             placeholder="NY"
                         />
                     </div>
@@ -126,6 +132,7 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             name="returnAddress.postalCode"
                             value={address.postalCode}
                             onChange={onStringChange}
+                            onBlur={onBlur}
                             placeholder="10001"
                         />
                     </div>
@@ -138,7 +145,10 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             id="returnAddress.country"
                             name="returnAddress.country"
                             value={address.country}
-                            onChange={onSelectChange}
+                            onChange={(e) => {
+                                onSelectChange(e);
+                                onBlur();
+                            }}
                             className="border-2"
                         >
                             <option value="">Select a country</option>
@@ -161,6 +171,7 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             type="email"
                             value={address.email}
                             onChange={onStringChange}
+                            onBlur={onBlur}
                             placeholder="returns@yourcompany.com"
                         />
                     </div>
