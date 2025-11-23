@@ -3,36 +3,42 @@ export const categoriesList = [
         name: "T-Shirts",
         measurements: [
             "Chest",
-            "Waist",
             "Length",
             "Shoulder Width",
             "Sleeve Length"
         ],
         material: ["100% Cotton", "Cotton Blend", "Polyester", "Organic Cotton", "Recycled Polyester"],
         subcategories: [
+            "Basic T-Shirts",
+            'Ringer T-Shirts',
             "Plain T-Shirts",
             "Graphic T-Shirts",
             "Long Sleeve T-Shirts",
             "Striped T-Shirts",
             "Henley T-Shirts",
             "Pocket T-Shirts",
+            "Oversized T-Shirts",
+            "Round Neck T-Shirts",
+            "V-Neck T-Shirts",
+            "Crew Neck T-Shirts"
         ],
         tags: [
             "Casual",
             "Everyday Wear",
-            "Street Style",
+            "Streetwear",
             "Lightweight",
             "Comfortable",
-            "Layering",
+            "Layering Piece",
             "Breathable",
-            "Athleisure",
-            "Summer Wear",
+            "Minimalist",
+            "Summer Essential",
+            "Vintage"
         ],
     },
     {
         name: "Shirts",
         measurements: [
-            "Collar Size",
+            "Collar",
             "Chest",
             "Waist",
             "Length",
@@ -47,9 +53,11 @@ export const categoriesList = [
             "Flannel Shirts",
             "Plain Shirts",
             "Printed Shirts",
-            "Check Shirts",
+            "Checkered Shirts",
             "Short Sleeve Shirts",
             "Denim Shirts",
+            "Linen Shirts",
+            "Mandarin Collar Shirts",
         ],
         tags: [
             "Formal",
@@ -60,26 +68,32 @@ export const categoriesList = [
             "Breathable",
             "Stylish",
             "Comfort Fit",
+            "Slim Fit",
         ],
     },
     {
         name: "Hoodies & Sweatshirts",
         measurements: [
             "Chest",
-            "Waist",
             "Length",
             "Sleeve Length",
             "Shoulder Width"
         ],
         material: ["Cotton", "Fleece", "Polyester", "Sherpa", "Knitted Fabric"],
         subcategories: [
-            "Hoodies",
+            "Pullover Hoodies",
             "Sweatshirts",
-            "Zip Hoodies",
+            "Zip-Up Hoodies",
             "Fleeces",
             "Pullover Hoodies",
+            "Crewneck Sweatshirts",
+            "Graphic Sweatshirts",
+            "Oversized Hoodies",
+            "Fleece Sweatshirts",
+            "Cropped Sweatshirts"
         ],
         tags: [
+            "Casual",
             "Cozy",
             "Layering",
             "Streetwear",
@@ -87,13 +101,13 @@ export const categoriesList = [
             "Warm",
             "Comfortable Fit",
             "Winter Wear",
+            "Crewneck Sweatshirts",
         ],
     },
     {
         name: "Jackets & Coats",
         measurements: [
             "Chest",
-            "Waist",
             "Length",
             "Shoulder Width",
             "Sleeve Length"
@@ -101,10 +115,15 @@ export const categoriesList = [
         material: ["Wool", "Polyester", "Denim", "Leather", "Nylon", "Down Fill"],
         subcategories: [
             "Puffer Jackets",
+            "Denim Jackets",
+            "Leather Jackets",
+            "Bomber Jackets",
             "Denim Coats",
             "Blazers",
             "Rain Coats",
             "Winter Coats",
+            "Windbreakers",
+            "Varsity Jackets",
         ],
         tags: [
             "Outerwear",
@@ -133,6 +152,13 @@ export const categoriesList = [
             "Skinny Jeans",
             "Relaxed Fit Jeans",
             "Bootcut Jeans",
+            "Slim Jeans",
+            "Flared Jeans",
+            "Boyfriend Jeans",
+            "Mom Jeans",
+            "High-Waisted Jeans",
+            "Distressed Jeans",
+            "Baggy Jeans"
         ],
         tags: [
             "Casual",
@@ -142,6 +168,11 @@ export const categoriesList = [
             "Versatile",
             "Street Style",
             "Comfortable Fit",
+            "Stretch",
+            "Vintage Wash",
+            "Dark Wash",
+            "Ripped",
+            "Classic",
         ],
     },
     {
@@ -161,6 +192,12 @@ export const categoriesList = [
             "Joggers",
             "Formal Trousers",
             "Wide-Leg Trousers",
+            "Slim Fit Pants",
+            "Pleated Trousers",
+            "Linen Pants",
+            "Cropped Pants",
+            "Leather Pants",
+            "Palazzo Pants",
         ],
         tags: [
             "Smart Casual",
@@ -170,6 +207,9 @@ export const categoriesList = [
             "Comfortable",
             "Stylish",
             "Durable",
+            "Utility",
+            "High Fashion",
+            "Wrinkle-Resistant"
         ],
     },
     {
@@ -182,11 +222,15 @@ export const categoriesList = [
         material: ["Cotton", "Polyester", "Linen", "Silk"],
         subcategories: [
             "Maxi Skirts",
+            "Midi Skirts",
             "Mini Skirts",
             "Wrap Skirts",
             "Pencil Skirts",
             "Pleated Skirts",
             "A-Line Skirts",
+            "Denim Skirts",
+            "Tiered Skirts",
+            "Bodycon Skirts"
         ],
         tags: [
             "Fashionable",
@@ -195,42 +239,54 @@ export const categoriesList = [
             "Versatile",
             "Everyday Wear",
             "Stylish",
+            "Office Wear",
+            "Flowy",
+            "Formal",
+            "Vintage",
         ],
     },
     {
-        name: "Co-Ord",
+        name: "Sweaters",
         measurements: [
             "Chest",
-            "Waist",
             "Length",
-            "Hip"
+            "Sleeve Length",
+            "Shoulder Width"
         ],
-        material: ["Cotton", "Polyester"],
         subcategories: [
-            "Matching Tops and Bottoms",
+            "Knitted Sweaters",
+            "Turtlenecks",
+            "Cardigans",
+            "Cable Knit Sweaters",
+            "Oversized Sweaters",
+            "Fine Gauge Knits",
+            "Chunky Knits"
         ],
         tags: [
-            "Effortless",
-            "Stylish",
-            "Trendy",
-            "Versatile",
-            "Casual",
-            "Summer Wear",
-        ],
+            "Warm",
+            "Winter",
+            "Cozy",
+            "Minimalist",
+            "Layering",
+        ]
     },
     {
         name: "Polo Shirts",
         measurements: [
             "Chest",
-            "Waist",
+            "Sleeve Length",
             "Length",
             "Shoulder Width",
-            "Collar Size"
+            "Sleeve Opening"
         ],
         material: ["Cotton", "Polyester", "Piqué Fabric"],
         subcategories: [
-            "Short Sleeve Polo Shirts",
             "Long Sleeve Polo Shirts",
+            "Classic Piqué Polo",
+            "Performance Polo",
+            "Rugby Shirt",
+            "Interlock/Jersey Polo",
+            "Fashion/Tipped Polo"
         ],
         tags: [
             "Smart Casual",
@@ -238,6 +294,11 @@ export const categoriesList = [
             "Sporty",
             "Comfortable",
             "Versatile",
+            "Traditional",
+            "Trendy",
+            "Casual",
+            "Summer Wear",
+            "Street Style"
         ],
     },
     {
@@ -249,10 +310,12 @@ export const categoriesList = [
         ],
         material: ["Cotton", "Wool", "Synthetic"],
         subcategories: [
-            "Beanies",
             "Bucket Hats",
             "Baseball Caps",
             "Snapback Caps",
+            "Fitted Caps",
+            "Beanies / Knit Caps",
+            "Sun Hats"
         ],
         tags: [
             "Accessories",
@@ -260,33 +323,17 @@ export const categoriesList = [
             "Street Style",
             "Everyday Wear",
             "Functional",
-        ],
-    },
-    {
-        name: "Accessories",
-        measurements: [],
-        material: ["Leather", "Synthetic", "Metal", "Plastic"],
-        subcategories: [
-            "Bags",
-            "Belts",
-            "Wallets",
-            "Sunglasses",
-        ],
-        tags: [
-            "Functional",
-            "Trendy",
-            "Statement Pieces",
-            "Everyday Use",
+            "Logo Hat",
         ],
     },
     {
         name: "Shorts",
         measurements: [
             "Waist",
-            "Hip",
+            "Hips",
+            "Rise",
             "Inseam",
-            "Outseam",
-            "Thigh"
+            "Leg Opening"
         ],
         material: ["Cotton", "Polyester", "Denim"],
         subcategories: [
@@ -294,6 +341,12 @@ export const categoriesList = [
             "Cargo Shorts",
             "Jersey Shorts",
             "Athletic Shorts",
+            "Biker Shorts",
+            "Sweat Shorts",
+            "Tailored Shorts",
+            "Beach Shorts",
+            "Bermuda Shorts",
+            "High-Waisted Shorts",
         ],
         tags: [
             "Summer Wear",
@@ -304,4 +357,40 @@ export const categoriesList = [
             "Athleisure",
         ],
     },
+    {
+        name: "Dresses",
+        measurements: [
+            "Bust",
+            "Waist",
+            "Hips",
+            "Length",
+            "Strap Length (if applicable)"
+        ],
+        subcategories: [
+            "Maxi Dresses",
+            "Midi Dresses",
+            "Mini Dresses",
+            "Shift Dresses",
+            "Bodycon Dresses",
+            "A-Line Dresses",
+            "Wrap Dresses",
+            "Shirt Dresses",
+            "Evening Gowns",
+            "Cocktail Dresses",
+            "Summer Sundresses",
+            "Slip Dresses",
+        ],
+        tags: [
+            "Formal",
+            "Casual",
+            "Wedding Guest",
+            "Date Night",
+            "Elegant",
+            "Floaty",
+            "Floral",
+            "Party Wear",
+            "Bohemian",
+            "Chic"
+        ],
+    }
 ];

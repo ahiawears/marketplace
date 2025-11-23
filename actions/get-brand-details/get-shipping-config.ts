@@ -1,6 +1,6 @@
 import { DEFAULT_SHIPPING_CONFIG, DeliveryZone, ShippingConfigDataProps } from "@/lib/types";
 import { createClient } from "@/supabase/server"
-import { RawApiData, RawApiDataSchema, RawShippingMethodDelivery, RawShippingZone } from "@/lib/validation-logics/shipping-config/product-shipping-config-validation";
+import { RawApiData, RawApiDataSchema, RawShippingMethodDelivery, RawShippingZone, RawZoneExclusion } from "@/lib/validation-logics/shipping-config/product-shipping-config-validation";
 
 interface ShippingConfigDataResponse {
     success: boolean;
@@ -9,8 +9,35 @@ interface ShippingConfigDataResponse {
     data: ShippingConfigDataProps | null;
 }
 
+type InternationalZone = Exclude<DeliveryZone, 'domestic'>;
+
+const isInternationalZone = (zone: DeliveryZone): zone is InternationalZone => {
+    return zone !== 'domestic';
+};
+
 const isValidDeliveryZone = (zone: string): zone is DeliveryZone => {
     return ['domestic', 'regional', 'sub_regional', 'global'].includes(zone);
+};
+
+const createExclusionMap = (exclusions: RawZoneExclusion[] = []) => {
+    const map = new Map<string, string[]>();
+    exclusions.forEach(ex => {
+        const key = `${ex.zone_type}:${ex.exclusion_type}`;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(ex.value);
+    });
+    return map;
+};
+
+const ensureSameDayConfig = (config: ShippingConfigDataProps) => {
+    config.shippingMethods.sameDayDelivery.estimatedDelivery ??= { 
+        cutOffTime: "12:00", 
+        timeZone: "" 
+    };
+    config.shippingMethods.sameDayDelivery.conditions ??= { 
+        applicableCities: [], 
+        excludePublicHolidays: false 
+    };
 };
 
 function buildDeliveryMap(deliveries: RawShippingMethodDelivery[] | null | undefined) {
@@ -39,30 +66,26 @@ const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfig
 
     // 2. Shipping Zones (availability and exclusions)
     const zones = apiData.shipping_zones ?? [];
-    const exclusions = apiData.zone_exclusions ?? [];
+	const exclusionMap = createExclusionMap(apiData.zone_exclusions || []);
 
     zones.forEach((zoneApi) => {
 		if (!isValidDeliveryZone(zoneApi.zone_type)) {
-			console.warn(`Invalid zone type: ${zoneApi.zone_type}`);
-			return; // Skip invalid zones
+			console.warn(`Skipping invalid zone type: ${zoneApi.zone_type}`);
+			return;
 		}
-        const zoneKey = zoneApi.zone_type; 
-        const available = !!zoneApi.available;
 
-        if (zoneKey === "domestic") {
-            const dom = newConfig.shippingZones.domestic;
-            dom.available = available;
-            dom.excludedCities = exclusions
-                .filter((ex) => ex.zone_type === zoneApi.zone_type && ex.exclusion_type === "city")
-                .map((ex) => ex.value);
-        } else {
-            // safe typed access for other zones
-            const other = newConfig.shippingZones[zoneKey];
-            other.available = available;
-            (other as any).excludedCountries = exclusions
-                .filter((ex) => ex.zone_type === zoneApi.zone_type && ex.exclusion_type === "country")
-                .map((ex) => ex.value);
-        }
+		const zoneConfig = newConfig.shippingZones[zoneApi.zone_type];
+		zoneConfig.available = zoneApi.available;
+
+		if (zoneApi.zone_type === "domestic") {
+			const citiesKey = `${zoneApi.zone_type}:city`;
+			// Narrow to the domestic variant before assigning excludedCities
+			(zoneConfig as { available: boolean; excludedCities: string[] }).excludedCities = exclusionMap.get(citiesKey) ?? [];
+		} else if (isInternationalZone(zoneApi.zone_type)) {
+			const countriesKey = `${zoneApi.zone_type}:country`;
+			// Narrow to the international variant before assigning excludedCountries
+			(zoneConfig as { available: boolean; excludedCountries: string[] }).excludedCountries = exclusionMap.get(countriesKey) ?? [];
+		}
     });
 
     const deliveryMap = buildDeliveryMap(apiData.shipping_method_delivery);
@@ -73,39 +96,29 @@ const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfig
     // Same Day Delivery
   	const sameDayApi = shippingMethods.find((m) => m.method_type === "same_day");
     if (sameDayApi) {
+        ensureSameDayConfig(newConfig);
         newConfig.shippingMethods.sameDayDelivery.available = sameDayApi.available;
-        if (!newConfig.shippingMethods.sameDayDelivery.estimatedDelivery) { // Should exist from default
-            newConfig.shippingMethods.sameDayDelivery.estimatedDelivery = { cutOffTime: "12:00", timeZone: "" };
-        }
-        if (!newConfig.shippingMethods.sameDayDelivery.conditions) { // Ensure conditions object exists
-            newConfig.shippingMethods.sameDayDelivery.conditions = { applicableCities: [], excludePublicHolidays: false };
-        }
-        newConfig.shippingMethods.sameDayDelivery.estimatedDelivery.cutOffTime =
-            sameDayApi.cut_off_time ? sameDayApi.cut_off_time.substring(0, 5) : "12:00";
-        newConfig.shippingMethods.sameDayDelivery.estimatedDelivery.timeZone = sameDayApi.time_zone || "";
+        
+        const estimatedDelivery = newConfig.shippingMethods.sameDayDelivery.estimatedDelivery!;
+        estimatedDelivery.cutOffTime = sameDayApi.cut_off_time?.substring(0, 5) ?? "12:00";
+        estimatedDelivery.timeZone = sameDayApi.time_zone ?? "";
 
-		newConfig.shippingMethods.sameDayDelivery.conditions.applicableCities = 
-			apiData.same_day_applicable_cities?.map(c => c.city_name) ?? [];
+        const conditions = newConfig.shippingMethods.sameDayDelivery.conditions!;
+        conditions.applicableCities = apiData.same_day_applicable_cities?.map(c => c.city_name) ?? [];
 
-        const sameDayFeeInfo = apiData.shipping_method_delivery?.find(
-            d => d.method_type === 'same_day' && d.zone_type === 'domestic' // Assuming same-day fee is for domestic
-        );
-        if (sameDayFeeInfo) {
-            newConfig.shippingMethods.sameDayDelivery.fee = sameDayFeeInfo.fee ?? newConfig.shippingMethods.sameDayDelivery.fee;
+        const sameDayFeeInfo = deliveryMap.get('same_day:domestic');
+        if (sameDayFeeInfo?.fee != null) {
+            newConfig.shippingMethods.sameDayDelivery.fee = sameDayFeeInfo.fee;
         }
-        // Note: `conditions.applicableCities` and `conditions.excludePublicHolidays` for sameDayDelivery
-        // are not in the provided API structure. They will retain default values unless API provides them.
     }
 
     // STANDARD & EXPRESS: iterate zones and apply delivery details
     const applyMethod = (methodType: "standard" | "express", frontendKey: "standardShipping" | "expressShipping") => {
         const methodApi = shippingMethods.find((m) => m.method_type === methodType);
-        const uiMethod = newConfig.shippingMethods[frontendKey];
-
-        if (!methodApi) {
-            // keep defaults
+		if (!methodApi) {
             return;
         }
+        const uiMethod = newConfig.shippingMethods[frontendKey];
 
         uiMethod.available = methodApi.available;
 
@@ -131,17 +144,12 @@ const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfig
     // 4. Free Shipping
     const freeRules = apiData.free_shipping_rules ?? [];
     if (freeRules.length > 0) {
-		const rule = freeRules[0];
-		newConfig.freeShipping = {
-			available: rule.available ?? true,
-			threshold: rule.threshold ?? 0,
-			applicableMethods: rule.method_type ? [rule.method_type as "standard" | "express"] : [],
-		};
-    } else {
-            newConfig.freeShipping = {
-            available: false,
-            threshold: 0,
-            applicableMethods: [],
+        // Take the first rule (you might want to handle multiple rules differently)
+        const rule = freeRules[0];
+        newConfig.freeShipping = {
+            available: rule.available ?? true,
+            threshold: rule.threshold ?? 0,
+            applicableMethods: rule.method_type ? [rule.method_type as "standard" | "express"] : [],
         };
     }
 
@@ -149,73 +157,69 @@ const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfig
 };
 
 export async function GetShippingConfig(brandId?: string): Promise<ShippingConfigDataResponse> {
-  const supabase = await createClient();
+	const supabase = await createClient();
 
-  // determine brandId: prefer explicit param, fallback to logged-in user's id
-  let actualBrandId = brandId;
-  if (!actualBrandId) {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData?.user) {
-      return { success: false, message: "Unauthorized", code: "UNAUTHORIZED", data: null };
-    }
-    actualBrandId = userData.user.id;
-  }
+	let actualBrandId = brandId;
+	if (!actualBrandId) {
+		const { data: userData } = await supabase.auth.getUser();
+		if (!userData?.user) {
+			return { success: false, message: "Unauthorized", code: "UNAUTHORIZED", data: null };
+		}
+		actualBrandId = userData.user.id;
+	}
 
-  try {
-    
-    const { data, error } = await supabase
-      .from("shipping_configurations")
-      .select(
-        [
-          "id",
-          "brand_id",
-          "handling_time_from",
-          "handling_time_to",
-          "shipping_methods(id,method_type,available,cut_off_time,time_zone)",
-          "shipping_method_delivery(id,method_type,zone_type,delivery_from,delivery_to,fee)",
-          "shipping_zones(id,zone_type,available)",
-          "zone_exclusions(id,zone_type,exclusion_type,value)",
-          "free_shipping_rules(id,available,threshold,method_type)",
-          "same_day_applicable_cities(city_name)",
-        ].join(",")
-      )
-      .eq("brand_id", actualBrandId)
-      .single<RawApiData>();
+	try {
+		
+		const { data, error } = await supabase
+			.from("shipping_configurations")
+			.select(
+				[
+					"id",
+					"brand_id",
+					"handling_time_from",
+					"handling_time_to",
+					"shipping_methods(id,method_type,available,cut_off_time,time_zone)",
+					"shipping_method_delivery(id,method_type,zone_type,delivery_from,delivery_to,fee)",
+					"shipping_zones(id,zone_type,available)",
+					"zone_exclusions(id,zone_type,exclusion_type,value)",
+					"free_shipping_rules(id,available,threshold,method_type)",
+					"same_day_applicable_cities(city_name)",
+				].join(",")
+			)
+			.eq("brand_id", actualBrandId)
+			.single<RawApiData>();
 
-    if (error) {
-      const errMsg = error.message ?? "Database error";
-      // Distinguish common cases (PostgREST error codes vary by host/version)
-      if (errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("forbidden")) {
-        return { success: false, message: "Permission denied", code: "UNAUTHORIZED", data: null };
-      }
-      if (errMsg.toLowerCase().includes("not found") || errMsg.toLowerCase().includes("no rows")) {
-        return { success: false, message: "No shipping configuration found", code: "NOT_FOUND", data: null };
-      }
-      // Generic DB error
-      return { success: false, message: errMsg, code: "DB_ERROR", data: null };
-    }
+		if (error) {
+			const errMsg = error.message ?? "Database error";
+			// Distinguish common cases (PostgREST error codes vary by host/version)
+			if (errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("forbidden")) {
+				return { success: false, message: "Permission denied", code: "UNAUTHORIZED", data: null };
+			}
+			if (errMsg.toLowerCase().includes("not found") || errMsg.toLowerCase().includes("no rows")) {
+				return { success: false, message: "No shipping configuration found", code: "NOT_FOUND", data: null };
+			}
+			return { success: false, message: errMsg, code: "DB_ERROR", data: null };
+		}
 
-    if (!data) {
-      return { success: false, message: "No shipping configuration found", code: "NOT_FOUND", data: null };
-    }
+		if (!data) {
+			return { success: false, message: "No shipping configuration found", code: "NOT_FOUND", data: null };
+		}
 
-    // Runtime validate shape
-    const parseResult = RawApiDataSchema.safeParse(data);
-    if (!parseResult.success) {
-      // validation failed: log or surface error with details
-      // In production you might log this to an observability tool
-      const issues = parseResult.error.format();
-      console.warn("GetShippingConfig: DB shape mismatch", issues);
-      return { success: false, message: "Invalid shipping configuration format", code: "DB_ERROR", data: null };
-    }
+		// Runtime validate shape
+		const parseResult = RawApiDataSchema.safeParse(data);
+		if (!parseResult.success) {
+			const issues = parseResult.error.format();
+			console.warn("GetShippingConfig: DB shape mismatch", issues);
+			return { success: false, message: "Invalid shipping configuration format", code: "DB_ERROR", data: null };
+		}
 
-    const validated = parseResult.data as RawApiData;
-    const shippingDetails = transformApiDataToShippingDetails(validated);
+		const validated = parseResult.data as RawApiData;
+		const shippingDetails = transformApiDataToShippingDetails(validated);
 
-    return { success: true, message: "Shipping config fetched", code: "OK", data: shippingDetails };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error occurred";
-    console.error("GetShippingConfig error:", message);
-    return { success: false, message, code: "DB_ERROR", data: null };
-  }
+		return { success: true, message: "Shipping config fetched", code: "OK", data: shippingDetails };
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "Unknown error occurred";
+		console.error("GetShippingConfig error:", message);
+		return { success: false, message, code: "DB_ERROR", data: null };
+	}
 }

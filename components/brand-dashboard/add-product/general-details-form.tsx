@@ -3,24 +3,18 @@ import { Input } from "@/components/ui/input";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Select } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useGeneralDetailsValidation } from "@/hooks/local-store/add-product/use-steps-validation";
 import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
 import { submitFormData } from "@/lib/api-helpers";
 import { categoriesList } from "@/lib/categoriesList";
-import { GeneralDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { GeneralDetailsSchemaType } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { Info } from "lucide-react";
 import { ChangeEvent, FC, FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 
-export interface MultiVariantGeneralDetailsInterface {
-    productName: string;
-    productDescription: string;
-    category: string;
-    subCategory: string; 
-    tags: string[];
-    gender: string;
-    season: string;
-}
 
-type GeneralDetailsErrors = Partial<Record<keyof MultiVariantGeneralDetailsInterface, string>>;
+type GeneralDetailsErrors = Partial<Record<keyof GeneralDetailsSchemaType, string>>;
 
 const gender = ["Male", "Female", "Unisex"];
 
@@ -33,8 +27,8 @@ const seasonTypes = [
 
 const GeneralDetailsForm: FC = () => {
     const { generalDetails, setGeneralDetails, setProductId } = useProductFormStore();
+    const { validateField, validateStep } = useGeneralDetailsValidation();
     
-
     const selectedCategoryData = categoriesList.find(
         (cat) => cat.name === generalDetails.category
     );
@@ -47,17 +41,29 @@ const GeneralDetailsForm: FC = () => {
     const [errors, setErrors] = useState<GeneralDetailsErrors>({});
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
+    // const validateForm = () => {
+    //     const result = GeneralDetailsValidationSchema.safeParse(generalDetails);
+    //     if (!result.success) {
+    //         // Zod's .flatten() method provides a convenient error object structure.
+    //         const newErrors: GeneralDetailsErrors = {};
+    //         for (const key in result.error.flatten().fieldErrors) {
+    //             if (Object.prototype.hasOwnProperty.call(result.error.flatten().fieldErrors, key)) {
+    //                 newErrors[key as keyof GeneralDetailsSchemaType] = result.error.flatten().fieldErrors[key as keyof GeneralDetailsSchemaType]?.[0];
+    //             }
+    //         }
+    //         setErrors(newErrors);
+    //         return false;
+    //     }
+    //     setErrors({});
+    //     return true;
+    // };
+
     const validateForm = () => {
-        const result = GeneralDetailsValidationSchema.safeParse(generalDetails);
-        if (!result.success) {
-            // Zod's .flatten() method provides a convenient error object structure.
-            const newErrors: GeneralDetailsErrors = {};
-            for (const key in result.error.flatten().fieldErrors) {
-                if (Object.prototype.hasOwnProperty.call(result.error.flatten().fieldErrors, key)) {
-                    newErrors[key as keyof MultiVariantGeneralDetailsInterface] = result.error.flatten().fieldErrors[key as keyof MultiVariantGeneralDetailsInterface]?.[0];
-                }
-            }
-            setErrors(newErrors);
+        // Use the hook's validateStep for type-safe validation
+        const result = validateStep(generalDetails);
+
+        if (!result.isValid) {
+            setErrors(result.errors as GeneralDetailsErrors);
             return false;
         }
         setErrors({});
@@ -72,11 +78,55 @@ const GeneralDetailsForm: FC = () => {
             // Clear season in store if inputs are incomplete
             setGeneralDetails({ season: "" });
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [seasonYear, seasonType, setGeneralDetails]);
 
+
+    const handleFieldValidation = async <TField extends keyof GeneralDetailsSchemaType>(
+        name: TField, 
+        value: GeneralDetailsSchemaType[TField]
+    ) => {
+        // Run field-level validation using the helper hook
+        const { isValid, error } = validateField(name, value);
+
+        if (!isValid) {
+            // Set error for the specific field
+            setErrors(prev => ({ ...prev, [name]: error }));
+        } else {
+            // Clear error for the specific field
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            });
+        }
+    };
+
     const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        setGeneralDetails({ [e.target.name]: e.target.value });
+        // setGeneralDetails({ [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        
+        // 1. Get the field key, guaranteed to be in the schema
+        const fieldName = name as keyof GeneralDetailsSchemaType;
+        
+        // 2. Set the form state
+        setGeneralDetails({ [fieldName]: value });
+        
+        // 3. Call validation.
+        // Although the input event gives us a 'string' for 'value', 
+        // the GeneralDetailsSchemaType often expects a string (for product name, description, category, etc.).
+        // We use the string value here, which aligns with most fields in your schema.
+        // For fields that require number/boolean (which you don't have in GeneralDetails), 
+        // you would need specific handlers or type conversion logic here.
+        handleFieldValidation(fieldName, value as GeneralDetailsSchemaType[typeof fieldName]);
+    };
+
+    // Handler for blur event
+    const handleBlur = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        const fieldName = name as keyof GeneralDetailsSchemaType;
+        
+        // Run validation on blur
+        handleFieldValidation(fieldName, value as GeneralDetailsSchemaType[typeof fieldName]);
     };
 
     const handleSubcategoryClick = (sub: string) => {
@@ -131,8 +181,24 @@ const GeneralDetailsForm: FC = () => {
     return (
         <form onSubmit={handleSave}>
             <div className="my-4">
-                <label htmlFor="productName" className="block text-sm font-bold text-gray-900">
-                    Enter Product Name:* </label>
+                <div className="flex items-center gap-1">
+                    <label htmlFor="productName" className="block text-sm font-bold text-gray-900">
+                        Enter Product Name:* 
+                    </label>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Info size={14} className="cursor-help"/>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p className="max-w-xs">
+                                    Enter a clear and concise name for your product. This will be the main title customers see. (150 characters max)
+                                </p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+                
                 <div className="my-1">
                     <Input
                         id="productName"
@@ -140,25 +206,37 @@ const GeneralDetailsForm: FC = () => {
                         name="productName"
                         value={generalDetails.productName}
                         onChange={handleFormInput}
-                        maxLength={100}
-                        placeholder="Enter a clear and concise name for your product. This will be the main title customers see. (100 characters max)"
-                        className="border-2 rounded-none"
+                        onBlur={handleBlur}
+                        maxLength={150}
                     />
                     {errors.productName && <p className="text-red-500 text-xs mt-1">{errors.productName}</p>}
                 </div>
             </div>
             <div className="my-4">
-                <label htmlFor="productDescription" className="block text-sm font-bold text-gray-900">
-                    Enter Product Description:* </label>
+                <div className="flex items-center gap-1">
+                    <label htmlFor="productDescription" className="block text-sm font-bold text-gray-900">
+                        Enter Product Description:* 
+                    </label>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Info size={14} className="cursor-help"/>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p className="max-w-xs">
+                                    Provide a detailed description of your product. Highlight key features, materials, and what makes it unique. Good descriptions help sales! (5000 characters max)                                </p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
                 <div className="my-1">
                     <Textarea
                         id="productDescription"
                         name="productDescription"
                         value={generalDetails.productDescription}
                         onChange={handleFormInput}
-                        maxLength={300}
-                        placeholder="Provide a detailed description of your product. Highlight key features, materials, and what makes it unique. Good descriptions help sales! (300 characters max)"
-                        className="border-2 rounded-none"
+                        maxLength={5000}
+                        onBlur={handleBlur}
                     />
                     {errors.productDescription && <p className="text-red-500 text-xs mt-1">{errors.productDescription}</p>}
                 </div>
@@ -171,6 +249,7 @@ const GeneralDetailsForm: FC = () => {
                     <SearchableSelect 
                         options={categoriesList.map((category) => category.name)}
                         getOptionLabel={(option) => option}
+                        value={generalDetails.category}
                         onSelect={(selectedOption) => {
                             setGeneralDetails({
                                 category: selectedOption,

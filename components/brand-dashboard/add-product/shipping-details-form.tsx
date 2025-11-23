@@ -8,8 +8,8 @@ import { ChangeEvent, FC, FormEvent, useState } from "react";
 import Link from "next/link";
 import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
 import { toast } from "sonner";
-import { ShippingDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
-import z from "zod";
+import { ShippingDetailsSchemaType } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { useShippingDetailsValidation } from "@/hooks/local-store/add-product/use-steps-validation";
 
 interface ShippingDetailsPropss {
     currencySymbol: string;
@@ -34,7 +34,7 @@ interface ProductShippingDeliveryType {
     dimensions: ProductDimensions;
     measurementUnit: "Inch" | "Centimeter";
 }
-
+type ShippingDetailsErrors = Partial<Record<keyof ShippingDetailsSchemaType, string | number>>;
 const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippingConfig }) => {
     if (shippingConfig === null) {
         return (
@@ -59,73 +59,102 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
         )  
     }
 
+    const { validateField, validateStep } = useShippingDetailsValidation();
+
     const { shippingMethods, shippingZones } = shippingConfig;
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [selectedShippingMethods, setSelectedShippingMethods] = useState<string[]>([]);
-    const { productId } = useProductFormStore();
-    const [errors, setErrors] = useState<any>({}); 
+    const { productId, setShippingDetails, shippingDetails } = useProductFormStore();
+    const [errors, setErrors] = useState<ShippingDetailsErrors>({}); 
     
     // State to hold the fees the user enters for each method/zone
-    const [methodFees, setMethodFees] = useState<ProductShippingDeliveryType["methods"]>({});
+    const [methodFees, setMethodFees] = useState<ProductShippingDeliveryType["methods"]>();
 
-    const [shippingDetailsData, setShippingDetailsData] = useState<Omit<ProductShippingDeliveryType, 'methods'>>({
-        weight: 0,
-        dimensions: {
-            length: 0,
-            width: 0,
-            height: 0
-        },
-        measurementUnit: "Inch"
-    });
-
-    type ShippingDetailsErrors = Partial<Record<keyof z.infer<typeof ShippingDetailsValidationSchema>, string[]>>;
+    const handleFieldValidation = async <TField extends keyof ShippingDetailsSchemaType>(
+        name: TField,
+        value: ShippingDetailsSchemaType[TField]
+    ) => {
+        const { isValid, error } = validateField(name, value);
+        if (!isValid) {
+            setErrors(prev => ({ ...prev, [name]: error }));
+        } else {
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors[name];
+                return newErrors;
+            })
+        }
+    }
+    // const validateForm = () => {
+    //     const dataToValidate = {
+    //         ...shippingDetailsData,
+    //         methods: selectedShippingMethods.length > 0 ? methodFees : undefined,
+    //     };
+    //     const result = ShippingDetailsValidationSchema.safeParse(dataToValidate);
+    //     if (!result.success) {
+    //         const flatErrors = result.error.flatten();
+    //         const newErrors = {
+    //             ...flatErrors.fieldErrors,
+    //             methods: flatErrors.formErrors[0],
+    //         };
+    //         setErrors(newErrors);
+    //         return false;
+    //     }
+    //     setErrors({});
+    //     return true;
+    // };
 
     const validateForm = () => {
-        const dataToValidate = {
-            ...shippingDetailsData,
-            methods: selectedShippingMethods.length > 0 ? methodFees : undefined,
-        };
-        const result = ShippingDetailsValidationSchema.safeParse(dataToValidate);
-        if (!result.success) {
-            const flatErrors = result.error.flatten();
-            const newErrors = {
-                ...flatErrors.fieldErrors,
-                methods: flatErrors.formErrors[0],
-            };
-            setErrors(newErrors);
+        const result = validateStep(shippingDetails);
+        if(!result.isValid) {
+            setErrors(result.errors as ShippingDetailsErrors);
             return false;
         }
         setErrors({});
         return true;
-    };
+    }
 
-    const handleWeightChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const value = parseFloat(e.target.value);
-        setShippingDetailsData({
-            ...shippingDetailsData,
-            weight: isNaN(value) ? 0 : value,
-        });
-    };
+    const handleBlur = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target;
+        const fieldName = name as keyof ShippingDetailsSchemaType;
+        let processedValue: string | number = value;
 
-    const handleDimensionsChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        const numericValue = parseFloat(value);
-
-        setShippingDetailsData(prevData => ({
-            ...prevData,
-            dimensions: {
-                ...prevData.dimensions,
-                [name]: isNaN(numericValue) ? 0 : numericValue,
+        if (type === 'number') {
+            processedValue = value === '' ? 0 : parseFloat(value);
+            if (isNaN(processedValue as number)) {
+                processedValue = 0;
             }
-        }));
-    };
+        }
 
-    const handleMeasurementUnitChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setShippingDetailsData({
-            ...shippingDetailsData,
-            measurementUnit: e.target.value as "Inch" | "Centimeter",
-        });
-    };
+        handleFieldValidation(fieldName, processedValue);
+    }
+
+    const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        const { name, value } = e.target;
+        const isDimension = ['length', 'width', 'height'].includes(name);
+        const isNumeric = e.target.type === 'number';
+        let processedValue: string | number = value;
+
+        if (isNumeric) {
+            processedValue = value === '' ? 0 : parseFloat(value);
+            if (isNaN(processedValue as number)) {
+                processedValue = 0;
+            }
+        }
+
+        if (isDimension) {
+            setShippingDetails({
+                dimensions: {
+                    ...shippingDetails.dimensions,
+                    [name]: processedValue,
+                },
+            });
+        } else {
+            setShippingDetails({ [name]: processedValue });
+        }
+
+        handleFieldValidation(name as keyof ShippingDetailsSchemaType, processedValue);
+    }
 
     const handleFeeChange = (
         productMethodKey: 'sameDay' | 'standard' | 'express',
@@ -224,7 +253,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
         const toastId = toast.loading("Saving shipping details...");
         
         const finalShippingDetails = {
-            ...shippingDetailsData,
+            ...shippingDetails,
             methods: methodFees,
             productId: productId
         };
@@ -269,14 +298,15 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                         <Input
                             name="weight"
                             type="number"
-                            value={shippingDetailsData.weight === 0 ? '' : shippingDetailsData.weight}
-                            onChange={handleWeightChange}
+                            value={shippingDetails.weight === 0 ? '' : shippingDetails.weight}
+                            onChange={handleFormInput}
                             className="w-full p-2 border-2"
                             min="0.1"
+                            onBlur={handleBlur}
                             step="0.1"
                             placeholder="0.00"
                         />
-                        {errors.weight && <p className="text-red-500 text-xs mt-1">{errors.weight[0]}</p>}
+                        {errors.weight && <p className="text-red-500 text-xs mt-1">{errors.weight}</p>}
 
                     </div>
                     <div className="my-2">
@@ -289,8 +319,8 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                         id="measurementUnitInch"
                                         name="measurementUnit"
                                         value="Inch"
-                                        checked={shippingDetailsData.measurementUnit === "Inch"}
-                                        onChange={handleMeasurementUnitChange}
+                                        checked={shippingDetails.measurementUnit === "Inch"}
+                                        onChange={handleFormInput}
                                         className={cn(
                                             "h-4 w-4 border-2 cursor-pointer",
                                             "peer appearance-none",
@@ -305,8 +335,8 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                         id="measurementUnitCentimeter"
                                         name="measurementUnit"
                                         value="Centimeter"
-                                        checked={shippingDetailsData.measurementUnit === "Centimeter"}
-                                        onChange={handleMeasurementUnitChange}
+                                        checked={shippingDetails.measurementUnit === "Centimeter"}
+                                        onChange={handleFormInput}
                                         className={cn(
                                             "h-4 w-4 border-2 cursor-pointer",
                                             "peer appearance-none",
@@ -322,19 +352,21 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                         {['length', 'width', 'height'].map((dim) => (
                             <div key={dim}>
                                 <label className="block text-sm font-medium mb-1">
-                                    {dim.charAt(0).toUpperCase() + dim.slice(1)} <span className="font-bold">({shippingDetailsData.measurementUnit === "Inch" ? "in" : "cm"})</span>
+                                    {dim.charAt(0).toUpperCase() + dim.slice(1)} <span className="font-bold">({shippingDetails.measurementUnit === "Inch" ? "in" : "cm"})</span>
                                 </label>
                                 <Input
                                     name={dim}
                                     type="number"
                                     placeholder="0.00"
-                                    value={shippingDetailsData.dimensions[dim as keyof ProductDimensions] === 0 ? '' : shippingDetailsData.dimensions[dim as keyof ProductDimensions]}
-                                    onChange={handleDimensionsChange}
+                                    onBlur={handleBlur}
+                                    value={shippingDetails.dimensions[dim as keyof ProductDimensions] === 0 ? '' : shippingDetails.dimensions[dim as keyof ProductDimensions]}
+                                    onChange={handleFormInput}
                                     className="w-full p-2 border-2"
                                     min="1"
                                 />
-                                {errors.dimensions?.[dim as keyof ProductDimensions] && <p className="text-red-500 text-xs mt-1">{errors.dimensions[dim as keyof ProductDimensions][0]}</p>}
-
+                                {errors.dimensions && typeof errors.dimensions === 'object' && errors.dimensions[dim as keyof ProductDimensions] && (
+                                    <p className="text-red-500 text-xs mt-1">{errors.dimensions[dim as keyof ProductDimensions]}</p>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -446,6 +478,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                             numericValue={methodFees?.sameDay?.fee ?? shippingMethods.sameDayDelivery.fee}
                                             className="w-1/2 border-2"
                                             placeholder="0.00"
+                                            onBlur={handleBlur}
                                             onNumericChange={(value) => {
                                                 handleFeeChange('sameDay', undefined, value);
                                             }}
@@ -496,7 +529,9 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                                         onNumericChange={(value) => handleFeeChange('standard', zoneKey, value)}
                                                         className="w-1/2 border-2"
                                                         placeholder="0.00"
+                                                        onBlur={handleBlur}
                                                     />
+                                                    {/* {errors.methods && typeof errors.methods === 'object' && } */}
                                                 </div>
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     Est. Delivery: {shippingMethods.standardShipping.estimatedDelivery[zoneKey]?.from}-{shippingMethods.standardShipping.estimatedDelivery[zoneKey]?.to} days
@@ -524,6 +559,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                                         onNumericChange={(value) => handleFeeChange('express', zoneKey, value)}
                                                         className="w-1/2 border-2"
                                                         placeholder="0.00"
+                                                        onBlur={handleBlur}
                                                     />
                                                 </div>
                                                 <p className="text-xs text-gray-500 mt-1">

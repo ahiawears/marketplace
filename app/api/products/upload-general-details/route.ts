@@ -4,8 +4,7 @@ import { createProduct } from '@/actions/add-product/create-general-details';
 import { createSeason } from '@/actions/add-product/create-season';
 import { createSubCategory } from '@/actions/add-product/create-subCategory';
 import { createTags } from '@/actions/add-product/create-tags';
-import { MultiVariantGeneralDetailsInterface } from '@/components/brand-dashboard/add-product/general-details-form';
-import { GeneralDetailsValidationSchema } from '@/lib/validation-logics/add-product-validation/product-schema';
+import { GeneralDetailsSchemaType, GeneralDetailsValidationSchema } from '@/lib/validation-logics/add-product-validation/product-schema';
 import { createClient } from '@/supabase/server'
 import { NextResponse } from 'next/server'
 
@@ -65,7 +64,7 @@ export async function POST (req: Request) {
         if (!generalDetailsRaw) {
             return NextResponse.json({ success: false, message: "Missing generalDetails data" }, { status: 400 });
         }
-        let generalDetails: MultiVariantGeneralDetailsInterface;
+        let generalDetails: GeneralDetailsSchemaType;
         try {
             generalDetails = JSON.parse(generalDetailsRaw);
         } catch (error) {

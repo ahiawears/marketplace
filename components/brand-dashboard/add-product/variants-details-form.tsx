@@ -1,4 +1,4 @@
-import { FC, FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, X, Info, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -347,144 +347,144 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
         await onSave(variantToSave);
         setIsSaving(false);
     };
-  return (
-    <div className="border-b pb-6 mb-6 last-of-type:border-b-0">
-        <div className="flex justify-between items-center mb-4">
-            <div className="flex items-center gap-2">
-                <h3 className="text-lg font-bold">Variant {index + 1}</h3>
-                {isValid === true && (
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger><CheckCircle2 className="h-5 w-5 text-green-500" /></TooltipTrigger>
-                            <TooltipContent><p>Variant details are valid.</p></TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                )}
-                {isValid === false && (
-                     <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger><XCircle className="h-5 w-5 text-red-500" /></TooltipTrigger>
-                            <TooltipContent><p>This variant has errors.</p></TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+    return (
+        <div className="border-b pb-6 mb-6 last-of-type:border-b-0">
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-bold">Variant {index + 1}</h3>
+                    {isValid === true && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger><CheckCircle2 className="h-5 w-5 text-green-500" /></TooltipTrigger>
+                                <TooltipContent><p>Variant details are valid.</p></TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                    {isValid === false && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger><XCircle className="h-5 w-5 text-red-500" /></TooltipTrigger>
+                                <TooltipContent><p>This variant has errors.</p></TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                </div>
+                {index > 0 && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        onClick={onCopyFromPrevious}
+                        className="text-sm border-2"
+                    >
+                        Copy from previous
+                    </Button>
                 )}
             </div>
-            {index > 0 && (
+            
+            <VariantBasicInfo
+                variant={variant}
+                currency={currency}
+                errors={errors}
+                exchangeRate={exchangeRate}
+                onUpdate={onUpdate}
+            />
+            
+            <ImageSection
+                images={variant.images}
+                imagesDescription={variant.imagesDescription}
+                error={errors.images}
+                onUpdate={onUpdate}
+            />
+        
+            <ColorSection
+                colors={variant.colors}
+                colorDescription={variant.colorDescription}
+                onUpdate={onUpdate}
+            />
+            
+            <PatternSection
+                pattern={variant.pattern}
+                onUpdate={onUpdate}
+            />
+            
+            <MaterialSection
+                materialComposition={variant.materialComposition}
+                onUpdate={onUpdate}
+                error={errors.materialComposition}
+            />
+        
+            <MeasurementSection
+                category={category}
+                measurements={variant.measurements}
+                measurementUnit={variant.measurementUnit}
+                onUpdate={onUpdate}
+                error={errors.measurements}
+            />
+
+            <div className="flex flex-col md:flex-row justify-between border-2">
+                <AvailableDateSection
+                    availableDate={variant.availableDate}
+                    onUpdate={onUpdate}
+                />
+
+                <StatusSection
+                    variantId={variant.id}
+                    status={variant.status}
+                    onUpdate={onUpdate}
+                />
+            </div>
+
+            <TagSelectionSection
+                label="Marketing Specific Tags"
+                tags={variant.marketingAndExclusivityTags}
+                availableTags={MarketingAndExclusivityTags}
+                onUpdate={onUpdate}
+                updateKey="marketingAndExclusivityTags"
+                maxSelectionMessage="You can only select up to 1 marketing tag."
+            />
+
+            <TagSelectionSection
+                label="Sustainability Tags"
+                tags={variant.sustainabilityTags}
+                availableTags={SustainabilityTags}
+                onUpdate={onUpdate}
+                updateKey="sustainabilityTags"
+                maxSelection={3}
+                maxSelectionMessage="You can select up to 3 sustainability tags."
+            />
+
+            <TagSelectionSection
+                label="Craftsmanship Tags"
+                tags={variant.craftmanshipTags}
+                availableTags={CraftmanshipTags}
+                onUpdate={onUpdate}
+                updateKey="craftmanshipTags"
+                maxSelection={3}
+                maxSelectionMessage="You can select up to 3 craftsmanship tags."
+            />
+
+            <div className="my-8 flex flex-row justify-between">
+                <Button 
+                    type="button" 
+                    onClick={onRemove}
+                    variant="outline" 
+                    className="flex items-center gap-2 border-2"
+                >
+                    <X size={16} className="h-4 w-4" />
+                    Remove Variant
+                </Button>
+
                 <Button
                     type="button"
-                    variant="outline"
-                    onClick={onCopyFromPrevious}
-                    className="text-sm border-2"
+                    onClick={handleSaveButtonClick}
+                    disabled={isSaving}
                 >
-                    Copy from previous
+                    {isSaving ? "Saving..." : "Save Variant"}
                 </Button>
-            )}
+            </div>
+
         </div>
-        
-        <VariantBasicInfo
-            variant={variant}
-            currency={currency}
-            errors={errors}
-            exchangeRate={exchangeRate}
-            onUpdate={onUpdate}
-        />
-        
-        <ImageSection
-            images={variant.images}
-            imagesDescription={variant.imagesDescription}
-            error={errors.images}
-            onUpdate={onUpdate}
-        />
-      
-        <ColorSection
-            colors={variant.colors}
-            colorDescription={variant.colorDescription}
-            onUpdate={onUpdate}
-        />
-        
-        <PatternSection
-            pattern={variant.pattern}
-            onUpdate={onUpdate}
-        />
-        
-        <MaterialSection
-            materialComposition={variant.materialComposition}
-            onUpdate={onUpdate}
-            error={errors.materialComposition}
-        />
-      
-        <MeasurementSection
-            category={category}
-            measurements={variant.measurements}
-            measurementUnit={variant.measurementUnit}
-            onUpdate={onUpdate}
-            error={errors.measurements}
-        />
-
-        <div className="flex flex-col md:flex-row justify-between border-2">
-            <AvailableDateSection
-                availableDate={variant.availableDate}
-                onUpdate={onUpdate}
-            />
-
-            <StatusSection
-                variantId={variant.id}
-                status={variant.status}
-                onUpdate={onUpdate}
-            />
-        </div>
-
-        <TagSelectionSection
-            label="Marketing Specific Tags"
-            tags={variant.marketingAndExclusivityTags}
-            availableTags={MarketingAndExclusivityTags}
-            onUpdate={onUpdate}
-            updateKey="marketingAndExclusivityTags"
-            maxSelectionMessage="You can only select up to 1 marketing tag."
-        />
-
-        <TagSelectionSection
-            label="Sustainability Tags"
-            tags={variant.sustainabilityTags}
-            availableTags={SustainabilityTags}
-            onUpdate={onUpdate}
-            updateKey="sustainabilityTags"
-            maxSelection={3}
-            maxSelectionMessage="You can select up to 3 sustainability tags."
-        />
-
-        <TagSelectionSection
-            label="Craftsmanship Tags"
-            tags={variant.craftmanshipTags}
-            availableTags={CraftmanshipTags}
-            onUpdate={onUpdate}
-            updateKey="craftmanshipTags"
-            maxSelection={3}
-            maxSelectionMessage="You can select up to 3 craftsmanship tags."
-        />
-
-        <div className="my-8 flex flex-row justify-between">
-            <Button 
-                type="button" 
-                onClick={onRemove}
-                variant="outline" 
-                className="flex items-center gap-2 border-2"
-            >
-                <X size={16} className="h-4 w-4" />
-                Remove Variant
-            </Button>
-
-            <Button
-                type="button"
-                onClick={handleSaveButtonClick}
-                disabled={isSaving}
-            >
-                {isSaving ? "Saving..." : "Save Variant"}
-            </Button>
-        </div>
-
-    </div>
-  );
+    );
 };
 
 // Sub-components

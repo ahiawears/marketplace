@@ -6,13 +6,13 @@ import { categoriesList } from '@/lib/categoriesList';
 export const GeneralDetailsValidationSchema = z.object({
     productName: z.string({ required_error: "Product name is required." })
         .trim()
-        .min(3, "Product name must be between 3 and 100 characters.")
-        .max(100, "Product name must be between 3 and 100 characters."),
+        .min(3, "Product name must be at least 3 characters.")
+        .max(150, "Product name must be 150 characters or less."),
     productDescription: z
         .string({ required_error: "Product description is required." })
         .trim()
         .min(20, "Product description must be at least 20 characters.")
-        .max(300, "Product description must be 300 characters or less."),
+        .max(5000, "Product description must be 5000 characters or less."),
     category: z.string().trim().min(1, "Category is required."),
     subCategory: z.string().trim().min(1, "Subcategory is required."),
     tags: z
@@ -26,7 +26,6 @@ export const GeneralDetailsValidationSchema = z.object({
 });
 
 export type GeneralDetailsSchemaType = z.infer<typeof GeneralDetailsValidationSchema>;
-
 
 
 // Variant Details Schema

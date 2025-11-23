@@ -7,6 +7,7 @@ export type SearchableSelectProps<T> = {
     options: T[];
     getOptionLabel: (option: T) => string;
     onSelect: (option: T) => void;
+    value?: string;
     placeholder?: string;
     className?: string;
 };
@@ -15,13 +16,14 @@ export function SearchableSelect<T>({
     options,
     getOptionLabel,
     onSelect,
+    value,
     placeholder = "Select or search for an option...",
     className,
 }: SearchableSelectProps<T>) {
     const [search, setSearch] = React.useState("");
     const [isOpen, setIsOpen] = React.useState(false);
     const [filteredOptions, setFilteredOptions] = React.useState<T[]>(options);
-    const [selectedOption, setSelectedOption] = React.useState<T | null>(null); // Track the selected option
+    const [selectedOption, setSelectedOption] = React.useState<T | null>(null);
     const containerRef = React.useRef<HTMLDivElement>(null);
 
     React.useEffect(() => {
@@ -54,7 +56,7 @@ export function SearchableSelect<T>({
 
     const handleOptionSelect = (option: T) => {
         onSelect(option);
-        setSelectedOption(option); // Update the selected option
+        setSelectedOption(option);
         setSearch(getOptionLabel(option));
         setIsOpen(false);
     };
@@ -70,7 +72,7 @@ export function SearchableSelect<T>({
                 <Input
                     type="text"
                     placeholder={placeholder}
-                    value={search}
+                    value={value ? value : search}
                     onChange={(e) => setSearch(e.target.value)}
                     onFocus={handleFocus}
                     className="pr-10 border-2 rounded-none"
