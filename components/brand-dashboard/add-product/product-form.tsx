@@ -8,6 +8,8 @@ import ShippingDetailsForm from "./shipping-details-form";
 import { ShippingDetails } from '@/lib/types';
 import CareDetailsForm from "./care-details-form";
 import ReturnPolicyDetailsForm from "./return-policy-details-form";
+import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
+import { toast } from "sonner";
 
 type ProductMode = "single" | "multi-variant";
 
@@ -19,6 +21,13 @@ interface ProductFormProps {
 const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, shippingConfig }) => {
     const [productMode, setProductMode] = useState<ProductMode>("multi-variant");
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
+
+    const { resetAll } = useProductFormStore();
+
+    const handleResetStore = () => {
+        resetAll();
+        toast.success("Store reset");
+    };
 
     // Accordion Item Definitions
     const multiVariantItems = useMemo(() => 
@@ -120,6 +129,12 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
                     className="mx-2 border-2"
                 >
                     Multi-Variant Product
+                </Button>
+            </div>
+
+            <div>
+                <Button onClick={handleResetStore} variant="destructive" className="mb-4">
+                    Reset Store (Debug)
                 </Button>
             </div>
 

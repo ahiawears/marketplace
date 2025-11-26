@@ -2,7 +2,7 @@ import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Plus, X, Info, CheckCircle2, XCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
+import { DEFAULT_SINGLE_VARIANT, useProductFormStore } from "@/hooks/local-store/useProductFormStore";
 import MeasurementSizesTable from "@/components/upload-product/measurement-sizes-table";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/ui/money-input";
@@ -19,74 +19,19 @@ import { Switch } from "@/components/ui/switch";
 import { submitFormData } from "@/lib/api-helpers";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import imageCompression from 'browser-image-compression';
-import { VariantDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { VariantDetailsSchemaType, VariantDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { Color, MaterialComposition } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { useVariantDetailsStepValidation } from "@/hooks/local-store/add-product/use-steps-validation";
 import { cn } from "@/lib/utils";
+import { imageStorage } from "@/lib/utils/imageStorage";
 
-type VariantFormErrors = Partial<Record<keyof VariantFormDetails | 'measurements' | 'materialComposition', string | undefined>>;
+type VariantFormErrors = Partial<Record<keyof VariantDetailsSchemaType | 'measurements' | 'materialComposition', string | undefined>>;
 
 
 interface VariantDetailsFormProps {
     currencyCode: string;
     todayExchangeRate?: number;
 }
-export interface Color {
-    name: string;
-    hexCode: string;
-}
-
-export interface MaterialComposition {
-    name: string;
-    percentage: number;
-}
-
-export interface MeasurementValue {
-    [measurement: string]: number | undefined;
-    quantity: number | undefined;
-}
-
-export interface VariantFormDetails {
-    id: string;
-    variantName: string;
-    price: number;
-    sku: string;
-    productCode: string;
-    images: string[];
-    imagesDescription: string;
-    colors: Color[];
-    colorDescription: string;
-    pattern: string;
-    materialComposition: MaterialComposition[];
-    measurementUnit: "Inch" | "Centimeter";
-    measurements: Record<string, MeasurementValue>;
-    availableDate: string;
-    slug: string;
-    status: "active" | "inactive";
-    marketingAndExclusivityTags: string[];
-    sustainabilityTags: string[];
-    craftmanshipTags: string[];
-}
-
-export const DEFAULT_VARIANT: VariantFormDetails = {
-    id: `variant_${Date.now()}_${Math.random()}`,
-    variantName: "",
-    price: 0.00,
-    sku: "",
-    productCode: "",
-    images: ["", "", "", ""],
-    imagesDescription: "",
-    colors: [],
-    colorDescription: "",
-    pattern: "",
-    materialComposition: [],
-    measurementUnit: "Inch",
-    measurements: {},
-    availableDate: "",
-    slug: "",
-    status: "active",
-    marketingAndExclusivityTags: [],
-    sustainabilityTags: [],
-    craftmanshipTags: [],
-};
 
 const generateSKU = (productName: string, color: string): string => {
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -114,7 +59,6 @@ async function imageUrlToFile(url: string, filename: string): Promise<File | nul
         const blob = await response.blob();
         const originalFile = new File([blob], filename, { type: blob.type });
 
-        // Define compression options. We aim for files under 1MB and reasonable dimensions.
         const options = {
             maxSizeMB: 2, // Target maximum size of 2MB
             maxWidthOrHeight: 1280, // Resize images to a max width/height of 1280px
@@ -132,18 +76,23 @@ async function imageUrlToFile(url: string, filename: string): Promise<File | nul
 }
 
 const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayExchangeRate }) => {
-    const { generalDetails, productId } = useProductFormStore();
-    const { category } = generalDetails;
-    const { variants, addVariant, updateVariant, removeVariant, copyFromPreviousVariant } = useVariantManagement();
+    const { generalDetails, productId, updateVariant, addVariant, removeVariant } = useProductFormStore();
+    const { variants, copyFromPreviousVariant } = useVariantManagement();
+    
+    // The useEffect for loading images has been removed from here.
+    // Image loading will now be handled directly within the ImageSection component.
 
-    const handleSaveVariant = async (index: number, variantData: VariantFormDetails) => {
+    const { category } = generalDetails;
+    const { validateField, validateSingleVariant } = useVariantDetailsStepValidation();
+
+    const handleSaveVariant = async (index: number, variantData: VariantDetailsSchemaType) => {
         // Update the parent state first to reflect any auto-generated values
         const variantToSave = { ...variantData };
         updateVariant(index, variantToSave);
         // Separate images from the rest of the details for FormData
         const { images, ...detailsForJson } = variantToSave;
         // The JSON payload should not contain image data, as it's sent separately.
-        (detailsForJson as Partial<VariantFormDetails>).images = [];
+        (detailsForJson as Partial<VariantDetailsSchemaType>).images = [];
 
         const formData = new FormData();
         formData.append('variantDetails', JSON.stringify(detailsForJson));
@@ -171,6 +120,11 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayE
         }
     };
 
+    const addVariantClick = () => {
+        addVariant();
+    }
+    
+
     return (
         <form>
             {variants.map((variant, index) => (
@@ -184,14 +138,15 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayE
                     onUpdate={(updates) => updateVariant(index, updates)}
                     onRemove={() => removeVariant(index)}
                     onSave={(variantToSave) => handleSaveVariant(index, variantToSave)}
-                    onCopyFromPrevious={() => copyFromPreviousVariant(index)}
+                    onCopyFromPrevious={() => copyFromPreviousVariant(index)} 
+                    validateField={(fieldName, value) => validateField(index, fieldName, value)}
                 />
             ))}
             
             <div className="my-4">
                 <Button 
                     type="button" 
-                    onClick={addVariant} 
+                    onClick={() => addVariantClick()} 
                     variant="outline" 
                     className="flex items-center gap-2 border-2"
                 >
@@ -204,59 +159,16 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayE
 };
 
 const useVariantManagement = () => {
-    const { generalDetails } = useProductFormStore();
-    const [variants, setVariants] = useState<VariantFormDetails[]>([{...DEFAULT_VARIANT, id: `variant_${Date.now()}_${Math.random()}`}]);
-
-    const updateVariant = useCallback((index: number, updates: Partial<VariantFormDetails>) => {
-        setVariants(prev => prev.map((v, i) => {
-            if (i !== index) {
-                return v;
-            }
-
-            const newVariant = { ...v, ...updates };
-
-            // Auto-generate SKU and slug when colors are updated and SKU is empty
-            if (updates.colors && updates.colors.length > 0 && !v.sku) {
-                const mainColor = updates.colors[0];
-                if (generalDetails.productName && mainColor.name) {
-                    newVariant.sku = generateSKU(generalDetails.productName, mainColor.name);
-                    newVariant.slug = generateSlug(generalDetails.productName, mainColor.name, newVariant.pattern);
-                }
-            }
-            
-            // Also handle pattern update for slug
-            if (updates.pattern && newVariant.colors.length > 0) {
-                 const mainColor = newVariant.colors[0];
-                 if (generalDetails.productName && mainColor.name) {
-                    newVariant.slug = generateSlug(generalDetails.productName, mainColor.name, updates.pattern);
-                 }
-            }
-
-            return newVariant;
-        }));
-    }, [generalDetails.productName]);
-
-    const addVariant = useCallback(() => {
-        setVariants(prev => [...prev, { ...DEFAULT_VARIANT, id: `variant_${Date.now()}_${Math.random()}` }]);
-    }, []);
-    const removeVariant = useCallback((index: number) => {
-        if (variants.length <= 1) {
-            toast.error("At least one variant is required.");
-            return;
-        }
-        setVariants(prev => prev.filter((_, i) => i !== index));
-    }, [variants]);
+    const { variantDetails, updateVariant } = useProductFormStore();
 
     const copyFromPreviousVariant = useCallback((index: number) => {
         if (index === 0) return;
 
-        setVariants(prev => {
-            const previousVariant = prev[index - 1];
-            const currentVariant = prev[index]; 
-            const newVariants = [...prev];
+        const previousVariant = variantDetails[index - 1];
+        const currentVariant = variantDetails[index]; 
 
-            const copiedVariant: VariantFormDetails = {
-                // --- Fields to copy from the previous variant ---
+        const copiedVariant: VariantDetailsSchemaType = {
+            // --- Fields to copy from the previous variant ---
                 price: previousVariant.price,
                 materialComposition: previousVariant.materialComposition,
                 measurementUnit: previousVariant.measurementUnit,
@@ -271,34 +183,38 @@ const useVariantManagement = () => {
                 variantName: "",
                 sku: "",
                 slug: "",
-                colors: [],
+                colors: [{ name: "", hexCode: "" }],
                 colorDescription: "",
-                images: DEFAULT_VARIANT.images,
-                imagesDescription: DEFAULT_VARIANT.imagesDescription,
+                images: DEFAULT_SINGLE_VARIANT.images,
+                imagesDescription: DEFAULT_SINGLE_VARIANT.imagesDescription,
                 marketingAndExclusivityTags: [],
                 sustainabilityTags: [],
                 craftmanshipTags: [],
-            };
+        };
 
-            newVariants[index] = copiedVariant;
-            toast.success("Copied details from previous variant.");
-            return newVariants;
-        });
-    }, []);
+        updateVariant(index, copiedVariant);
+        toast.success("Copied details from previous variant.");
+    }, [variantDetails, updateVariant]);
 
-    return { variants, updateVariant, addVariant, removeVariant, copyFromPreviousVariant };
+    // Ensure variants is always an array, defaulting to one if empty.
+    const variants = Array.isArray(variantDetails) && variantDetails.length > 0 
+        ? variantDetails 
+        : [DEFAULT_SINGLE_VARIANT];
+
+    return { variants, copyFromPreviousVariant };
 };
 
 interface VariantFormProps {
-    variant: VariantFormDetails;
+    variant: VariantDetailsSchemaType;
     index: number;
     category: string;
     currency: string;
     exchangeRate?: number;
-    onUpdate: (updates: Partial<VariantFormDetails>) => void;
+    onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void;
     onRemove: () => void; 
-    onSave: (variantToSave: VariantFormDetails) => Promise<void>;
+    onSave: (variantToSave: VariantDetailsSchemaType) => Promise<void>;
     onCopyFromPrevious: () => void;
+    validateField: (fieldName: keyof VariantDetailsSchemaType, value: any) => { isValid: boolean; error?: string };
 }
 
 const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency, exchangeRate, onUpdate, onRemove, onSave, onCopyFromPrevious }) => {
@@ -307,31 +223,21 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
     const [errors, setErrors] = useState<VariantFormErrors>({});
     const { generalDetails } = useProductFormStore();
 
-    const runValidation = useCallback((dataToValidate: VariantFormDetails) => {
-        const result = VariantDetailsValidationSchema.safeParse({ ...dataToValidate, categoryName: category });
-        setIsValid(result.success);
-        if (!result.success) {
-            const flatErrors = result.error.flatten().fieldErrors;
-            const newErrors: VariantFormErrors = {};
-            for (const key in flatErrors) {
-                newErrors[key as keyof VariantFormDetails] = flatErrors[key as keyof VariantFormDetails]?.[0];
-            }
-            setErrors(newErrors);
-        } else {
-            setErrors({});
-        }
-        return result.success;
-    }, [category]);
-
-    useEffect(() => {
-        if (isValid !== null) { // Only re-validate if it has been validated at least once
-            runValidation(variant);
-        }
-    }, [variant, isValid, runValidation]);
+    // const handleBlur = (fieldName: keyof VariantDetailsSchemaType, value: any) => {
+    //     const { isValid, error } = validateField(fieldName, value);
+    //     if (!isValid) {
+    //         setErrors(prev => ({ ...prev, [fieldName]: error }));
+    //     } else {
+    //         setErrors(prev => {
+    //             const newErrors = { ...prev };
+    //             delete newErrors[fieldName as keyof VariantFormErrors];
+    //             return newErrors;
+    //         });
+    //     }
+    // };
 
     const handleSaveButtonClick = async () => {
         let variantToSave = { ...variant };
-
         if (!variantToSave.sku && generalDetails.productName && variantToSave.colors.length > 0) {
             variantToSave.sku = generateSKU(generalDetails.productName, variantToSave.colors[0].name);
         }
@@ -339,14 +245,27 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
             variantToSave.productCode = generateProductCode(generalDetails.productName);
         }
 
-        if (!runValidation(variantToSave)) {
+        // Full validation before saving
+        const result = VariantDetailsValidationSchema.safeParse({ ...variantToSave, categoryName: category });
+        setIsValid(result.success);
+
+        if (!result.success) {
+            const flatErrors = result.error.flatten().fieldErrors;
+            const newErrors: VariantFormErrors = {};
+            for (const key in flatErrors) {
+                newErrors[key as keyof VariantDetailsSchemaType] = flatErrors[key as keyof VariantDetailsSchemaType]?.[0];
+            }
+            setErrors(newErrors);
             toast.error("Please fix the errors before saving.");
             return;
-        }
+        } 
+
+        setErrors({});
         setIsSaving(true);
         await onSave(variantToSave);
         setIsSaving(false);
     };
+
     return (
         <div className="border-b pb-6 mb-6 last-of-type:border-b-0">
             <div className="flex justify-between items-center mb-4">
@@ -387,18 +306,23 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
                 errors={errors}
                 exchangeRate={exchangeRate}
                 onUpdate={onUpdate}
+                // onBlur={handleBlur}
+                onBlur={() => console.log("hello blurred variant basic field")}
             />
             
             <ImageSection
                 images={variant.images}
-                imagesDescription={variant.imagesDescription}
+                imagesDescription={variant.imagesDescription || ""}
                 error={errors.images}
                 onUpdate={onUpdate}
-            />
+                variantIndex={index}
+                // onBlur={() => handleBlur('images', variant.images)}
+                onBlur={() => console.log("Hello Blurred image")}
+            /> 
         
             <ColorSection
                 colors={variant.colors}
-                colorDescription={variant.colorDescription}
+                colorDescription={variant.colorDescription || ""}
                 onUpdate={onUpdate}
             />
             
@@ -488,14 +412,14 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
 };
 
 // Sub-components
-const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; errors: VariantFormErrors; onUpdate: (updates: Partial<VariantFormDetails>) => void; exchangeRate?: number; }> = ({ variant, currency, errors, onUpdate, exchangeRate }) => {
-    const handleInputChange = (field: keyof VariantFormDetails, value: string) => {
+const VariantBasicInfo: FC<{ variant: VariantDetailsSchemaType; currency: string; errors: VariantFormErrors; onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void; onBlur: (field: keyof VariantDetailsSchemaType, value: any) => void; exchangeRate?: number; }> = ({ variant, currency, errors, onUpdate, onBlur, exchangeRate }) => {
+    const handleInputChange = (field: keyof VariantDetailsSchemaType, value: string) => {
         onUpdate({ [field]: value });
     };
 
     const handlePriceChange = (value: number | undefined) => {
         onUpdate({ price: value ?? 0 });
-    };
+    };    
 
     const usdPrice = useMemo(() => {
         if (!exchangeRate || currency === 'USD' || !variant.price) {
@@ -513,6 +437,7 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; erro
                 <Input
                     value={variant.variantName}
                     onChange={(e) => handleInputChange('variantName', e.target.value)}
+                    onBlur={(e) => onBlur('variantName', e.target.value)}
                     maxLength={150}
                 />
                 {errors.variantName && <p className="text-red-500 text-xs mt-1">{errors.variantName}</p>}
@@ -520,7 +445,11 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; erro
 
             <div className="grid grid-cols-3 gap-4 my-4">
                 <div>
-                    <PriceInput value={variant.price} currencySymbol={currency} onChange={handlePriceChange} />
+                    <PriceInput 
+                        value={variant.price} 
+                        currencySymbol={currency} 
+                        onChange={handlePriceChange} 
+                        onBlur={() => onBlur('price', variant.price)} />
                     {usdPrice && (
                         <p className="text-xs text-gray-500 mt-1">Approx. ${usdPrice} USD</p>
                     )}
@@ -531,6 +460,7 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; erro
                         label="SKU:*"
                         value={variant.sku}
                         onChange={(value) => handleInputChange('sku', value)}
+                        onBlur={(value) => onBlur('sku', value)}
                         maxLength={100}
                         tooltip="A unique code to identify this specific variant for inventory tracking. Example: ABC-BLU-1234. Leave blank to auto-generate on save."
                     />
@@ -541,6 +471,7 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; erro
                         label="Product code:*"
                         value={variant.productCode}
                         onChange={(value) => handleInputChange('productCode', value)}
+                        onBlur={(value) => onBlur('productCode', value)}
                         maxLength={100}
                         tooltip="An internal code for this variant, if different from the SKU. Example: ABC-98765. Leave blank to auto-generate on save."
                     />
@@ -551,7 +482,7 @@ const VariantBasicInfo: FC<{ variant: VariantFormDetails; currency: string; erro
     );
 };
 
-const PriceInput: FC<{ value: number; currencySymbol: string; onChange: (value: number | undefined) => void }> = ({ value, currencySymbol, onChange }) => (
+const PriceInput: FC<{ value: number; currencySymbol: string; onChange: (value: number | undefined) => void; onBlur: () => void; }> = ({ value, currencySymbol, onChange, onBlur }) => (
     <div>
         <label className="block text-sm font-bold text-gray-900">Price:*</label>
         <div className="my-1 flex items-center">
@@ -570,13 +501,14 @@ const PriceInput: FC<{ value: number; currencySymbol: string; onChange: (value: 
                 numericValue={value}
                 onNumericChange={onChange}
                 required
+                onBlur={onBlur}
                 placeholder="0.00"
             />
         </div>
     </div>
 );
 
-const TextInput: FC<{ label: string; value: string; onChange: (value: string) => void; maxLength?: number; tooltip?: React.ReactNode; }> = ({ label, value, onChange, maxLength, tooltip }) => (
+const TextInput: FC<{ label: string; value: string; onChange: (value: string) => void; onBlur: (value: string) => void; maxLength?: number; tooltip?: React.ReactNode; }> = ({ label, value, onChange, onBlur, maxLength, tooltip }) => (
     <div>
         <div className="flex items-center gap-1 mb-1">
             <label className="block text-sm font-bold text-gray-900">{label}</label>
@@ -597,17 +529,82 @@ const TextInput: FC<{ label: string; value: string; onChange: (value: string) =>
             <Input
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
+                onBlur={(e) => onBlur(e.target.value)}
                 maxLength={maxLength}
             />
         </div>
     </div>
 );
 
-const ImageSection: FC<{ images: string[]; imagesDescription: string; onUpdate: (updates: Partial<VariantFormDetails>) => void; error?: string; }> = ({ images, imagesDescription, onUpdate, error }) => {
-    const handleImagesChange = (newImages: string[]) => {
-        onUpdate({ images: newImages });
-    };
+const ImageSection: FC<{ images: string[]; imagesDescription: string; onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void; variantIndex: number; onBlur: () => void; error?: string; }> = ({ images, imagesDescription, onUpdate, variantIndex, onBlur, error }) => {
+    const { saveImagesToStorage } = useProductFormStore();
+    const [displayImages, setDisplayImages] = useState<string[]>(['', '', '', '']);
 
+    useEffect(() => {
+        const loadDisplayImages = async () => {
+            // Create a new array for the images to be displayed
+            const newDisplayImages = ['', '', '', ''];
+            
+            const imagePromises = images.map(async (image, index) => {
+                if (!image) return;
+
+                // If it's an ID, get the blob URL from storage.
+                if (image.startsWith('variant-')) {
+                    try {
+                        const blobUrl = await imageStorage.getImage(image);
+                        if (blobUrl) newDisplayImages[index] = blobUrl;
+                    } catch (error) {
+                        console.error('Error loading image for display:', error);
+                    }
+                } else if (image.startsWith('blob:') || image.startsWith('data:')) {
+                    // If it's already a blob or data URL, use it directly.
+                    newDisplayImages[index] = image;
+                }
+            });
+
+            await Promise.all(imagePromises);
+            setDisplayImages(newDisplayImages);
+        };
+
+        loadDisplayImages();
+
+        // This effect should NOT return a cleanup function that revokes blob URLs,
+        // as they are needed for rendering. The browser will handle cleanup on page unload.
+    }, [images]);
+
+
+    // const handleImagesChange = async (newImageFiles: (File | string)[]) => {
+    //     const newImageUrls = await Promise.all(
+    //         newImageFiles.map(fileOrUrl => {
+    //             if (typeof fileOrUrl === 'string') {
+    //                 // It's already a URL (data:, http:, etc.), so keep it.
+    //                 return Promise.resolve(fileOrUrl);
+    //             }
+    //             // It's a new File object, convert it to a Data URL for persistence.
+    //             return fileToDataUrl(fileOrUrl);
+    //         })
+    //     );
+    //     onUpdate({ images: newImageUrls });
+    //     onBlur(); // Trigger validation if needed
+    // };
+
+    const handleImagesChange = async (newImages: string[]) => {
+        // Update display immediately with blob URLs
+        setDisplayImages(newImages);
+        
+        // Then save to persistent storage (which converts to IDs)
+        try {
+            await saveImagesToStorage(variantIndex, newImages);
+        } catch (error) {
+            console.error('Error saving images to storage:', error);
+            toast.error('Failed to save images locally');
+        } finally {
+            toast.success('Images saved locally');
+        }
+        
+        onBlur();
+    };
+    
     const handleInputChange = (value: string) => {
         onUpdate({ imagesDescription: value });
     };
@@ -624,7 +621,7 @@ const ImageSection: FC<{ images: string[]; imagesDescription: string; onUpdate: 
                     </p>
                 </div>
                 <ProductImageUploadGrid
-                    images={images}
+                    images={displayImages}
                     onImagesChange={handleImagesChange}
                 />
                 {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
@@ -645,25 +642,52 @@ const ImageSection: FC<{ images: string[]; imagesDescription: string; onUpdate: 
     );
 };
 
-const ColorSection: FC<{ colors: Color[]; colorDescription?: string; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ colors, colorDescription, onUpdate }) => {
+const ColorSection: FC<{ colors: Color[]; colorDescription: string; onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void }> = ({ colors, colorDescription, onUpdate }) => {
+    // const handleColorChange = (colorIndex: number, updates: Partial<Color>) => {
+    //     const newColors = colors.map((color, i) => 
+    //         i === colorIndex ? { ...color, ...updates } : color
+    //     );
+    //     onUpdate({ colors: newColors });
+    // };
+
+    // const addColor = () => {
+    //     onUpdate({ colors: [...colors, { name: "Black", hexCode: "#000000" }] });
+    // };
+
+    // const removeColor = (colorIndex: number) => {
+    //     onUpdate({ colors: colors.filter((_, i) => i !== colorIndex) });
+    // };
+
+    // const handleDescriptionChange = (value: string) => {
+    //     onUpdate({ colorDescription: value });
+    // };
+
+    const ensureNonEmpty = (arr: Color[]) => {
+        return arr.length > 0 ? arr : [{ name: "", hexCode: "" }];
+    };
+
     const handleColorChange = (colorIndex: number, updates: Partial<Color>) => {
         const newColors = colors.map((color, i) => 
             i === colorIndex ? { ...color, ...updates } : color
-        );
+        ) as [Color, ...Color[]]; // Assert type for Zod .min(1)
         onUpdate({ colors: newColors });
     };
 
     const addColor = () => {
-        onUpdate({ colors: [...colors, { name: "Black", hexCode: "#000000" }] });
+        const newColor: Color = { name: "Black", hexCode: "#000000" };
+        // Ensure the resulting array satisfies the non-empty tuple type [Color, ...Color[]]
+        const newColors = colors.length > 0 ? [...colors, newColor] : [newColor];
+        onUpdate({ colors: newColors as [Color, ...Color[]] });
     };
 
     const removeColor = (colorIndex: number) => {
-        onUpdate({ colors: colors.filter((_, i) => i !== colorIndex) });
+        const filtered = colors.filter((_, i) => i !== colorIndex);
+        onUpdate({ colors: ensureNonEmpty(filtered) as [Color, ...Color[]] });
     };
 
     const handleDescriptionChange = (value: string) => {
         onUpdate({ colorDescription: value });
-    };
+    }; 
 
     return (
         <>
@@ -697,7 +721,7 @@ const ColorSection: FC<{ colors: Color[]; colorDescription?: string; onUpdate: (
                 </label>
                 <Input
                     type="text"
-                    value={colorDescription || ""}
+                    value={colorDescription}
                     onChange={(e) => handleDescriptionChange(e.target.value)}
                     className="border-2"
                     placeholder="Describe the color combination or pattern of the fabric..."
@@ -746,7 +770,7 @@ const ColorInput: FC<{ color: Color; onChange: (updates: Partial<Color>) => void
     );
 };
 
-const PatternSection: FC<{ pattern?: string; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ pattern, onUpdate }) => {
+const PatternSection: FC<{ pattern?: string; onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void }> = ({ pattern, onUpdate }) => {
     const handleSelect = (selectedOption: string) => {
         onUpdate({ pattern: selectedOption });
     };
@@ -765,20 +789,26 @@ const PatternSection: FC<{ pattern?: string; onUpdate: (updates: Partial<Variant
     );
 };
 
-const MaterialSection: FC<{ materialComposition: MaterialComposition[]; onUpdate: (updates: Partial<VariantFormDetails>) => void; error?: string; }> = ({ materialComposition, onUpdate, error}) => {
+const MaterialSection: FC<{ materialComposition: MaterialComposition[]; onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void; error?: string; }> = ({ materialComposition, onUpdate, error}) => {
+    const ensureNonEmpty = (arr: MaterialComposition[]): [MaterialComposition, ...MaterialComposition[]] => {
+        return (arr.length > 0 ? arr : [{ name: "", percentage: 0 }]) as [MaterialComposition, ...MaterialComposition[]];
+    };
+
     const handleMaterialChange = (materialIndex: number, updates: Partial<MaterialComposition>) => {
         const newMaterials = materialComposition.map((material, i) => 
             i === materialIndex ? { ...material, ...updates } : material
         );
-        onUpdate({ materialComposition: newMaterials });
+        onUpdate({ materialComposition: newMaterials as [MaterialComposition, ...MaterialComposition[]] });
     };
 
     const addMaterial = () => {
-        onUpdate({ materialComposition: [...materialComposition, { name: "", percentage: 0 }] });
+        const newMaterials = [...materialComposition, { name: "", percentage: 0 }];
+        onUpdate({ materialComposition: newMaterials as [MaterialComposition, ...MaterialComposition[]] });
     };
 
     const removeMaterial = (materialIndex: number) => {
-        onUpdate({ materialComposition: materialComposition.filter((_, i) => i !== materialIndex) });
+        const filtered = materialComposition.filter((_, i) => i !== materialIndex);
+        onUpdate({ materialComposition: ensureNonEmpty(filtered) });
     };
 
     const totalPercentage = useMemo(() => 
@@ -847,6 +877,7 @@ const MaterialInput: FC<{ material: MaterialComposition; onChange: (updates: Par
                 <SearchableSelect
                     options={clothingMaterials}
                     getOptionLabel={(option) => option}
+                    value={material.name}
                     onSelect={handleSelect}
                 />
             </div>
@@ -873,7 +904,7 @@ const MaterialInput: FC<{ material: MaterialComposition; onChange: (updates: Par
     );
 };
 
-const MeasurementSection: FC<{ category: string; measurements: Record<string, any>; measurementUnit: "Inch" | "Centimeter"; onUpdate: (updates: Partial<VariantFormDetails>) => void; error?: string; }> = ({ category, measurements, measurementUnit, onUpdate, error }) => {
+const MeasurementSection: FC<{ category: string; measurements: Record<string, any>; measurementUnit: "Inch" | "Centimeter"; onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void; error?: string; }> = ({ category, measurements, measurementUnit, onUpdate, error }) => {
     const handleMeasurementChange = (size: string, field: string, value: number | undefined) => {
         const newMeasurements = { ...measurements };
         
@@ -906,7 +937,7 @@ const MeasurementSection: FC<{ category: string; measurements: Record<string, an
     );
 };
 
-const AvailableDateSection: FC<{ availableDate: string; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ availableDate, onUpdate }) => {
+const AvailableDateSection: FC<{ availableDate: string; onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void }> = ({ availableDate, onUpdate }) => {
     const handleDateChange = (date: string) => {
         onUpdate({ availableDate: date });
     };
@@ -940,7 +971,7 @@ const AvailableDateSection: FC<{ availableDate: string; onUpdate: (updates: Part
     );
 };
 
-const StatusSection: FC<{ variantId: string; status: "active" | "inactive"; onUpdate: (updates: Partial<VariantFormDetails>) => void }> = ({ variantId, status, onUpdate }) => {
+const StatusSection: FC<{ variantId: string; status: "active" | "inactive"; onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void }> = ({ variantId, status, onUpdate }) => {
     const handleStatusChange = (checked: boolean) => {
         onUpdate({ status: checked ? "active" : "inactive" });
     };
@@ -977,9 +1008,9 @@ const StatusSection: FC<{ variantId: string; status: "active" | "inactive"; onUp
 interface TagSelectionSectionProps {
     tags: string[];
     availableTags: readonly string[];
-    onUpdate: (updates: Partial<VariantFormDetails>) => void;
+    onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void;
     label: string;
-    updateKey: keyof VariantFormDetails;
+    updateKey: keyof VariantDetailsSchemaType;
     maxSelection?: number;
     maxSelectionMessage?: string;
 }

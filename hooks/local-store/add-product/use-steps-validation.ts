@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useFormValidation } from "./use-product-form-validation";
-import { CareDetailsSchemaType, GeneralDetailsSchemaType, ReturnPolicySchemaType, ShippingDetailsSchemaType, VariantDetailsSchemaType } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { CareDetailsSchemaType, GeneralDetailsSchemaType, ReturnPolicySchemaType, ShippingDetailsSchemaType, VariantDetailsArraySchemaType, VariantDetailsSchemaType, VariantDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
 
 export const useGeneralDetailsValidation = () => {
     const { validateField, validateStep } = useFormValidation();
@@ -28,32 +28,69 @@ export const useGeneralDetailsValidation = () => {
     };
 };
 
-export const useVariantDetailsValidation = () => {
+
+
+
+
+
+export const useVariantDetailsStepValidation = () => {
     const { validateArrayField, validateStep } = useFormValidation();
 
+    // Validate a specific field in a specific variant
     const validateVariantDetailsField = useCallback(
         <TField extends keyof VariantDetailsSchemaType>(
-            index: number,
+            variantIndex: number,
             field: TField,
             value: VariantDetailsSchemaType[TField]
         ) => {
-            return validateArrayField('variantDetails', index, field, value);
+            return validateArrayField('variantDetails', variantIndex, field, value);
         },
         [validateArrayField]
     );
 
+    // Validate all variants (the entire array)
     const validateVariantDetailsStep = useCallback(
-        (data: VariantDetailsSchemaType[]) => {
+        (data: VariantDetailsArraySchemaType) => {
             return validateStep('variantDetails', data);
         },
         [validateStep]
     );
 
+    // Validate a single variant by index
+    const validateSingleVariant = useCallback(
+        (variantIndex: number, data: VariantDetailsArraySchemaType) => {
+            const variant = data[variantIndex];
+            if (!variant) {
+                return { isValid: false, errors: { _index: 'Variant not found' } };
+            }
+
+            const result = VariantDetailsValidationSchema.safeParse(variant);
+            
+            if (!result.success) {
+                const errors: Record<string, string> = {};
+                result.error.errors.forEach((error) => {
+                    if (error.path[0]) {
+                        errors[error.path[0] as string] = error.message;
+                    }
+                });
+                return { isValid: false, errors };
+            }
+            
+            return { isValid: true, errors: {} };
+        },[]
+    );
+
     return {
         validateField: validateVariantDetailsField,
         validateStep: validateVariantDetailsStep,
+        validateSingleVariant,
     };
-}
+};
+
+
+
+
+
 
 export const useShippingDetailsValidation = () => {
     const { validateField, validateStep } = useFormValidation();

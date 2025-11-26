@@ -7,5 +7,13 @@
     
 
 
+
+    //for the add product(variant)
+    //get the product id and its data from the useProductFormStore
+    //get the form data and validate each field
+
+
 //dimensions
 // product images are stored in a 510 x 650 pixel image.
+
+

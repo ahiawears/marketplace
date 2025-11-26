@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CareDetailsSchemaType, GeneralDetailsSchemaType, ReturnPolicySchemaType, ShippingDetailsSchemaType, VariantDetailsSchemaType } from '@/lib/validation-logics/add-product-validation/product-schema';
+import { CareDetailsSchemaType, GeneralDetailsSchemaType, ReturnPolicySchemaType, ShippingDetailsSchemaType, VariantDetailsArraySchemaType, VariantDetailsSchemaType } from '@/lib/validation-logics/add-product-validation/product-schema';
+import { imageStorage } from '../../lib/utils/imageStorage';
 
 const deepMerge = <T extends object>(target: T, source: Partial<T>): T => {
 	const result = { ...target };
@@ -44,13 +45,16 @@ const DEFAULT_GENERAL_DETAILS: GeneralDetailsSchemaType = {
     season: "",
 };
 
-const DEFAULT_VARIANT_DETAILS: VariantDetailsSchemaType = {
-  	id: '',
+const generateVariantId = () => `variant_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+// Single variant default (for adding new variants)
+export const DEFAULT_SINGLE_VARIANT: VariantDetailsSchemaType = {
+	id: generateVariantId(),
 	variantName: "",
-	price: 0,
+	price: 0.00,
 	sku: "",
 	productCode: "",
-	images: [],
+	images: ["", "", "", ""],
 	imagesDescription: "",
 	colors: [{
 		name: "",
@@ -71,7 +75,35 @@ const DEFAULT_VARIANT_DETAILS: VariantDetailsSchemaType = {
 	sustainabilityTags: [],
 	craftmanshipTags: [],
 	categoryName: "",
-}
+};
+
+export const DEFAULT_VARIANT_DETAILS: VariantDetailsArraySchemaType = [{
+  	id: `variant_${Date.now()}_${Math.random()}`,
+	variantName: "",
+	price: 0.00,
+	sku: "",
+	productCode: "",
+	images: ["", "", "", ""],
+	imagesDescription: "",
+	colors: [{
+		name: "",
+		hexCode: ""
+	}],
+	colorDescription: "",
+	pattern: "",
+	materialComposition: [{
+		name: "",
+		percentage: 0
+	}],
+	measurementUnit: "Inch",
+	measurements: {},
+	availableDate: "",
+	slug: "",
+	status: "active",
+	marketingAndExclusivityTags: [],
+	sustainabilityTags: [],
+	craftmanshipTags: [],
+}];
 
 const DEFAULT_SHIPPING_DETAILS: ShippingDetailsSchemaType = {
 	productId: "",
@@ -133,7 +165,7 @@ const DEFAULT_RETURN_POLICY: ReturnPolicySchemaType = {
 interface ProductFormState {
 	// State
 	generalDetails: GeneralDetailsSchemaType;
-	variantDetails: VariantDetailsSchemaType;
+	variantDetails: VariantDetailsArraySchemaType;
 	shippingDetails: ShippingDetailsSchemaType;
 	careDetails: CareDetailsSchemaType;
 	returnPolicy: ReturnPolicySchemaType;
@@ -141,11 +173,23 @@ interface ProductFormState {
 
 	// Setters
 	setGeneralDetails: (updates: Partial<GeneralDetailsSchemaType>) => void;
-	setVariantDetails: (updates: Partial<VariantDetailsSchemaType>) => void;
+	setVariantDetails: (updates: VariantDetailsArraySchemaType) => void;
 	setShippingDetails: (updates: Partial<ShippingDetailsSchemaType>) => void;
 	setCareDetails: (updates: Partial<CareDetailsSchemaType>) => void;
 	setReturnPolicy: (updates: Partial<ReturnPolicySchemaType>) => void;
 	setProductId: (newProductId: string) => void;
+
+	//variant details array operations
+	addVariant: (variant?: Partial<VariantDetailsSchemaType>) => void;
+	updateVariant: (index: number, updates: Partial<VariantDetailsSchemaType>) => void;
+	removeVariant: (index: number) => void;
+	moveVariant: (fromIndex: number, toIndex: number) => void;
+
+	//Image persistence
+	saveImagesToStorage: (variantIndex: number, images: string[]) => Promise<void>;
+	loadImagesFromStorage: (variantIndex: number) => Promise<string[]>;
+	clearImageStorage: (variantIndex: number) => Promise<void>;
+	clearAllImagesStorage: () => Promise<void>;
 
 	// Reset functions
 	resetGeneralDetails: () => void;
@@ -155,10 +199,63 @@ interface ProductFormState {
 	resetReturnPolicy: () => void;
 	resetAll: () => void;
 }
+
+const convertToImageIds = async (images: string[], variantIndex: number): Promise<string[]> => {
+	return await Promise.all(
+		images.map(async (image, imageIndex) => {
+			if (!image || image === '') return '';
+			
+			if (image.startsWith('blob:') || image.startsWith('data:')) {
+				try {
+				const imageId = `variant-${variantIndex}-image-${imageIndex}-${Date.now()}`;
+				
+				if (image.startsWith('blob:')) {
+					const response = await fetch(image);
+					const blob = await response.blob();
+					await imageStorage.saveImage(imageId, blob);
+				} else if (image.startsWith('data:')) {
+					const response = await fetch(image);
+					const blob = await response.blob();
+					await imageStorage.saveImage(imageId, blob);
+				}
+				
+				return imageId;
+				} catch (error) {
+				console.error('Error saving image to storage:', error);
+				return '';
+				}
+			}
+			
+			return image;
+		})
+	);
+};
+
+
+const loadImagesFromIds = async (images: string[]): Promise<string[]> => {
+	return await Promise.all(
+		images.map(async (image) => {
+			if (!image || image === '') return '';
+			
+			if (image.startsWith('variant-')) {
+				try {
+					const loadedImage = await imageStorage.getImage(image);
+					return loadedImage || '';
+				} catch (error) {
+					console.error('Error loading image from storage:', error);
+					return '';
+				}
+			}
+			
+			return image;
+		})
+	);
+};
+
  
 export const useProductFormStore = create<ProductFormState>()(
 	persist(
-		(set) => ({
+		(set, get) => ({
 			generalDetails: DEFAULT_GENERAL_DETAILS,
 			variantDetails: DEFAULT_VARIANT_DETAILS,
 			shippingDetails: DEFAULT_SHIPPING_DETAILS,
@@ -172,10 +269,8 @@ export const useProductFormStore = create<ProductFormState>()(
 					generalDetails: deepMerge({ ...state.generalDetails }, updates),
 				})),
 
-			setVariantDetails: (updates) =>
-				set((state) => ({
-					variantDetails: deepMerge({ ...state.variantDetails }, updates),
-				})),
+			setVariantDetails: (updates: VariantDetailsArraySchemaType) =>
+				set({ variantDetails: updates }),
 
 			setShippingDetails: (updates) =>
 				set((state) => ({
@@ -184,16 +279,103 @@ export const useProductFormStore = create<ProductFormState>()(
 
 			setCareDetails: (updates) =>
 				set((state) => ({
-				careDetails: deepMerge({ ...state.careDetails }, updates),
+					careDetails: deepMerge({ ...state.careDetails }, updates),
 				})),
 
 			setReturnPolicy: (updates) =>
 				set((state) => ({
-				returnPolicy: deepMerge({ ...state.returnPolicy }, updates),
+					returnPolicy: deepMerge({ ...state.returnPolicy }, updates),
 				})),
 
 			setProductId: (id) => set({ productId: id }),
 
+			// In your Zustand store implementation, make sure the array operations are correct:
+			addVariant: (variant = {}) =>
+				set((state) => {
+					// Ensure variantDetails is always an array
+					const currentVariants = Array.isArray(state.variantDetails) ? state.variantDetails : [];
+					
+					return {
+						variantDetails: [
+							...currentVariants,
+							{
+							...DEFAULT_SINGLE_VARIANT,
+							...variant,
+							id: generateVariantId(),
+							}
+						]
+					}
+				}),
+
+			updateVariant: (index, updates) =>
+				set((state) => {
+					// Ensure variantDetails is always an array
+					const currentVariants = Array.isArray(state.variantDetails) ? state.variantDetails : [];
+					
+					return {
+						variantDetails: currentVariants.map((variant, i) =>
+							i === index ? deepMerge(variant, updates) : variant
+						)
+					}
+				}),
+
+			removeVariant: (index) =>
+				set((state) => {
+					// Ensure variantDetails is always an array
+					const currentVariants = Array.isArray(state.variantDetails) ? state.variantDetails : [];
+					
+					return {
+						variantDetails: currentVariants.filter((_, i) => i !== index)
+					}
+				}),
+
+			moveVariant: (fromIndex, toIndex) =>
+				set((state) => {
+					const variants = [...state.variantDetails];
+					const [movedVariant] = variants.splice(fromIndex, 1);
+					variants.splice(toIndex, 0, movedVariant);
+					return { variantDetails: variants };
+				}),
+
+
+			saveImagesToStorage: async (variantIndex: number, images: string[]) => {
+				const imageIds = await convertToImageIds(images, variantIndex);
+				
+				set((state) => ({
+					variantDetails: state.variantDetails.map((variant, index) =>
+						index === variantIndex ? { ...variant, images: imageIds } : variant
+					)
+				}));
+			},
+
+			loadImagesFromStorage: async (variantIndex: number) => {
+				const state = get();
+				const variant = state.variantDetails[variantIndex];
+				
+				if (!variant) return Array(4).fill('');
+				
+				const loadedImages = await loadImagesFromIds(variant.images);
+				return loadedImages;
+			},
+
+			clearImageStorage: async (variantIndex: number) => {
+				const state = get();
+				const variant = state.variantDetails[variantIndex];
+				
+				if (variant) {
+					await Promise.all(
+						variant.images.map(async (image: string) => {
+							if (image.startsWith('variant-')) {
+								await imageStorage.deleteImage(image);
+							}
+						})
+					);
+				}
+			},
+
+			clearAllImagesStorage: async () => {
+				await imageStorage.clearAllImages();
+			},
 
 			resetGeneralDetails: () => set({ generalDetails: DEFAULT_GENERAL_DETAILS }),
 			resetVariantDetails: () => set({ variantDetails: DEFAULT_VARIANT_DETAILS }),
@@ -201,7 +383,10 @@ export const useProductFormStore = create<ProductFormState>()(
 			resetCareDetails: () => set({ careDetails: DEFAULT_CARE_DETAILS }),
 			resetReturnPolicy: () => set({ returnPolicy: DEFAULT_RETURN_POLICY }),
 
-			resetAll: () =>
+			resetAll: () => {
+				const state = get();
+				// Clear all images from storage
+				state.clearAllImagesStorage().catch(console.error);
 				set({
 					generalDetails: DEFAULT_GENERAL_DETAILS,
 					variantDetails: DEFAULT_VARIANT_DETAILS,
@@ -209,8 +394,9 @@ export const useProductFormStore = create<ProductFormState>()(
 					careDetails: DEFAULT_CARE_DETAILS,
 					returnPolicy: DEFAULT_RETURN_POLICY,
 					productId: "",
-				}),
-			}),
+				});
+			},
+		}),
 		{
 			name: "add-product-form",
 			partialize: (state) => ({
@@ -221,6 +407,13 @@ export const useProductFormStore = create<ProductFormState>()(
 				returnPolicy: state.returnPolicy,
 				productId: state.productId,
 			}),
+			version: 1,
+			migrate: (persistedState: any, version: number) => {
+				if (version === 0) {
+					// Handle migration from previous versions if needed
+				}
+				return persistedState as ProductFormState;
+			},
 		}
 	)
 );

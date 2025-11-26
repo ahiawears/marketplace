@@ -1,5 +1,5 @@
 import { useCallback } from "react"
-import { CareDetailsSchemaType, CareDetailsValidationSchema, GeneralDetailsSchemaType, GeneralDetailsValidationSchema, ReturnPolicySchemaType, ReturnPolicyValidationSchema, ShippingDetailsSchemaType, ShippingDetailsValidationSchema, VariantDetailsSchemaType, VariantDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema"
+import { CareDetailsSchemaType, CareDetailsValidationSchema, GeneralDetailsSchemaType, GeneralDetailsValidationSchema, ReturnPolicySchemaType, ReturnPolicyValidationSchema, ShippingDetailsSchemaType, ShippingDetailsValidationSchema, VariantDetailsArraySchemaType, VariantDetailsArrayValidationSchema, VariantDetailsSchemaType } from "@/lib/validation-logics/add-product-validation/product-schema"
 import { z } from "zod"
 
 type FormStep = 
@@ -11,7 +11,7 @@ type FormStep =
 
 type FormData = {
 	generalDetails: GeneralDetailsSchemaType;
-	variantDetails: VariantDetailsSchemaType[];
+	variantDetails: VariantDetailsArraySchemaType;
 	shippingDetails: ShippingDetailsSchemaType;
 	careDetails: CareDetailsSchemaType;
 	returnPolicy: ReturnPolicySchemaType;
@@ -22,7 +22,7 @@ type SchemaLike = z.ZodTypeAny | z.ZodEffects<z.ZodTypeAny, unknown, unknown>;
 
 const productValidationSchemas: Record<FormStep, SchemaLike> = {
 	generalDetails: GeneralDetailsValidationSchema,
-	variantDetails: VariantDetailsValidationSchema,
+	variantDetails: VariantDetailsArrayValidationSchema,
 	shippingDetails: ShippingDetailsValidationSchema,
 	careDetails: CareDetailsValidationSchema,
 	returnPolicy: ReturnPolicyValidationSchema
@@ -67,38 +67,54 @@ export const useFormValidation = () => {
 	}, []);
 
 	// Validate a specific field in an array of objects (e.g., for variantDetails)
-	const validateArrayField = useCallback(<
-		TStep extends 'variantDetails', // Currently only for variantDetails
-		TField extends keyof FormData[TStep][number]
-	>(
-		step: TStep,
-		index: number,
-		field: TField,
-		value: FormData[TStep][number][TField]
-	) => {
-		const schema = productValidationSchemas[step];
+	const validateArrayField = useCallback(
+		<TField extends keyof VariantDetailsSchemaType>(
+			step: 'variantDetails',
+			variantIndex: number, 
+			field: TField,
+			value: VariantDetailsSchemaType[TField]
+		) => {
+			const schema = productValidationSchemas[step];
 
-		// The schema for variantDetails is an array schema. We need its element type.
-		if (schema instanceof z.ZodArray) {
-			const itemSchema = schema.element;
-			if (itemSchema instanceof z.ZodObject) {
+			if (schema instanceof z.ZodArray) {
+				const itemSchema = schema.element;
+				
 				try {
-					const fieldSchema = itemSchema.pick({ [field as string]: true });
-					fieldSchema.parse({ [field]: value });
+					// Validate the specific field using the item schema
+					if (itemSchema instanceof z.ZodObject) {
+						const fieldSchema = itemSchema.pick({ [field as string]: true });
+						fieldSchema.parse({ [field]: value });
+					}
+					
+					// Now also validate that this wouldn't break any array-specific constraints
+					// For example, if you have array-level validations like .min(1) etc.
+					// We create a minimal valid array to test array-level constraints
+					const minimalValidArray = Array.from({ length: Math.max(1, variantIndex + 1) }, () => ({}));
+					schema.parse(minimalValidArray);
+					
 					return { isValid: true, error: '' };
 				} catch (error) {
 					if (error instanceof z.ZodError) {
+						// Check if this is an array-level error or field-level error
+						const fieldLevelError = error.errors.find(err => 
+							err.path.length > 1 && err.path[1] === field
+						);
+						
+						const arrayLevelError = error.errors.find(err => 
+							err.path.length === 0 || err.path.length === 1
+						);
+						
 						return { 
 							isValid: false, 
-							error: error.errors[0]?.message || 'Invalid value' 
+							error: fieldLevelError?.message || arrayLevelError?.message || 'Invalid value' 
 						};
 					}
 					return { isValid: false, error: 'Validation failed' };
 				}
 			}
-		}
-		return { isValid: false, error: 'Unable to validate this field' };
-	}, []);
+			return { isValid: false, error: 'Unable to validate this field' };
+		},[]
+		);
 
 	// Validate an entire step
 	const validateStep = useCallback(<TStep extends FormStep>(

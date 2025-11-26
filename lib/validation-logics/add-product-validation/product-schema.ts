@@ -39,7 +39,7 @@ const ColorSchema = z.object({
     hexCode: z.string().regex(/^#[0-9A-F]{6}$/i, "Invalid hex color format."),
 });
 
-const MaterialCompositionSchema = z.object({
+export const MaterialCompositionSchema = z.object({
     name: z.string().min(1, "Material name is required."),
     percentage: z.number().min(0, "Percentage cannot be negative.").max(100, "Percentage cannot exceed 100."),
 });
@@ -91,6 +91,12 @@ export const VariantDetailsValidationSchema = z.object({
         }
     }
 });
+export const VariantDetailsArrayValidationSchema = z.array(VariantDetailsValidationSchema);
+export type VariantDetailsArraySchemaType = z.infer<typeof VariantDetailsArrayValidationSchema>;
+
+export type Color = z.infer<typeof ColorSchema>;
+
+export type MaterialComposition = z.infer<typeof MaterialCompositionSchema>;
 
 export type VariantDetailsSchemaType = z.infer<typeof VariantDetailsValidationSchema>;
 
