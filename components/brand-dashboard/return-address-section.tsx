@@ -12,12 +12,13 @@ import { z } from "zod";
 interface ReturnAddress {
     contactPerson: string;
     addressLine: string;
+    addressLine2?: string;
     city: string;
     region: string;
     postalCode: string;
     country: string;
-    phoneNumber: string;
-    email: string;
+    phoneNumber?: string;
+    email?: string;
 }
 
 interface ReturnAddressSectionProps {

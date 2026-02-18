@@ -108,7 +108,7 @@ export type VariantDetailsSchemaType = z.infer<typeof VariantDetailsValidationSc
 
 const ProductMethodZoneConfigSchema = z.object({
     fee: z.number({ required_error: "Fee is required.", invalid_type_error: "Fee must be a number." }).positive("Fee must be a positive number."),
-    available: z.boolean().optional(),
+    available: z.boolean(),
 });
 
 
@@ -121,7 +121,7 @@ export const ShippingDetailsValidationSchema = z.object({
         height: z.number({ required_error: "Height is required.", invalid_type_error: "Height must be a number." }).positive("Height must be a positive number."),
     }),
     measurementUnit: z.enum(["Inch", "Centimeter"]),
-    methods: z.object({ // This object defines the structure of the shipping methods
+    methods: z.object({ 
         standard: z.record(ProductMethodZoneConfigSchema).optional(),
         express: z.record(ProductMethodZoneConfigSchema).optional(),
         sameDay: ProductMethodZoneConfigSchema.optional(), 
@@ -203,6 +203,7 @@ export const ReturnPolicyValidationSchema = z.object({
     }),
     refundProcessingTimeDays: z.number().min(1, "Processing time must be at least 1 day").max(14, "Processing time cannot exceed 14 days"),
     restockingFee: RestockingFeeSchema, 
+    returnInstruction: z.string().max(5000, "Return Instructions must be 5000 characters or less.").optional()
 });
 
 export type ReturnPolicySchemaType = z.infer<typeof ReturnPolicyValidationSchema>;

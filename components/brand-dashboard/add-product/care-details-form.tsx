@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
 import { submitFormData } from "@/lib/api-helpers";
-import { CareDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { CareDetailsSchemaType, CareDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
 import { bleachingInstruction, dryCleaningInstruction, dryingInstruction, ironingInstruction, specialCases, washingInstruction } from "@/lib/productCareInstruction";
 import { ChangeEvent, FC, FormEvent, useState } from "react";
 import { toast } from "sonner";
@@ -41,6 +41,7 @@ const CareInstructionSelect: FC<CareInstructionSelectProps> = ({ id, label, valu
 );
 
 const CareDetailsForm: FC = () => {
+    const { careDetails, setCareDetails } = useProductFormStore();
     const [careDetailsData, setCareDetailsData] = useState<CareInstructionInterface>({
         washingInstruction: "",
         dryingInstruction: "",
@@ -48,7 +49,7 @@ const CareDetailsForm: FC = () => {
         ironingInstruction: "",
         dryCleaningInstruction: "",
         specialCases: "",
-    })
+    });
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [errors, setErrors] = useState<{ formError?: string }>({});
     const {productId} = useProductFormStore();
@@ -68,11 +69,17 @@ const CareDetailsForm: FC = () => {
         return true;
     };
 
+    // const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    //     setCareDetailsData({
+    //         ...careDetailsData,
+    //         [e.target.name]: e.target.value,
+    //     })
+    // }
+
     const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        setCareDetailsData({
-            ...careDetailsData,
-            [e.target.name]: e.target.value,
-        })
+        const {name, value} = e.target;
+        const fieldName = name as keyof CareDetailsSchemaType
+        setCareDetails({[fieldName]: value});
     }
     const handleSave = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -109,42 +116,42 @@ const CareDetailsForm: FC = () => {
             <CareInstructionSelect
                 id="washingInstruction"
                 label="Washing Instructions"
-                value={careDetailsData.washingInstruction}
+                value={careDetails.washingInstruction || ""}
                 onChange={handleFormInput}
                 options={washingInstruction}
             />
             <CareInstructionSelect
                 id="bleachingInstruction"
                 label="Bleaching Instructions"
-                value={careDetailsData.bleachingInstruction}
+                value={careDetails.bleachingInstruction || ""}
                 onChange={handleFormInput}
                 options={bleachingInstruction}
             />
             <CareInstructionSelect
                 id="dryingInstruction"
                 label="Drying Instructions"
-                value={careDetailsData.dryingInstruction}
+                value={careDetails.dryingInstruction || ""}
                 onChange={handleFormInput}
                 options={dryingInstruction}
             />
             <CareInstructionSelect
                 id="ironingInstruction"
                 label="Ironing Instructions"
-                value={careDetailsData.ironingInstruction}
+                value={careDetails.ironingInstruction || ""}
                 onChange={handleFormInput}
                 options={ironingInstruction}
             />
             <CareInstructionSelect
                 id="dryCleaningInstruction"
                 label="Dry Cleaning Instructions"
-                value={careDetailsData.dryCleaningInstruction}
+                value={careDetails.dryCleaningInstruction || ""}
                 onChange={handleFormInput}
                 options={dryCleaningInstruction}
             />
             <CareInstructionSelect
                 id="specialCases"
                 label="Special Instruction"
-                value={careDetailsData.specialCases}
+                value={careDetails.specialCases || ""}
                 onChange={handleFormInput}
                 options={specialCases}
             />

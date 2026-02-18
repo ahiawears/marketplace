@@ -9,7 +9,7 @@ interface ReturnPolicySwitchSectionProps {
     title: string;
     description: string;
     section: string;
-    options: { key: string; label: string; tooltip?: string }[];
+    options: { key: string; label: string; tooltip?: string, disabled?: boolean}[];
     data: Record<string, boolean>;
     onCheckedChange: (section: string, key: string, checked: boolean) => void;
 }
@@ -20,7 +20,7 @@ const ReturnPolicySwitchSection: FC<ReturnPolicySwitchSectionProps> = ({
     section,
     options,
     data,
-    onCheckedChange
+    onCheckedChange,
 }) => {
     return (
         <Card className="border-2 rounded-none">
@@ -52,6 +52,7 @@ const ReturnPolicySwitchSection: FC<ReturnPolicySwitchSectionProps> = ({
                             id={`${section}-${key}`}
                             checked={data[key]}
                             onCheckedChange={(checked) => onCheckedChange(section, key, checked)}
+                            disabled={options.find(option => option.key === key)?.disabled}
                         />
                     </div>
                 ))}

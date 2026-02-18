@@ -781,6 +781,7 @@ const PatternSection: FC<{ pattern?: string; onUpdate: (updates: Partial<Variant
             <div className="my-1">
                 <SearchableSelect
                     options={PATTERNS}
+                    value={pattern || ""}
                     getOptionLabel={(option) => option}
                     onSelect={handleSelect}
                 />
@@ -958,15 +959,6 @@ const AvailableDateSection: FC<{ availableDate: string; onUpdate: (updates: Part
                 className="max-w-md"
             />
         
-            {availableDate && (
-                <p className="text-sm text-green-600 mt-2">
-                    Selected: {new Date(availableDate).toLocaleDateString('en-UK', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                    })}
-                </p>
-            )}
         </div>
     );
 };
@@ -1058,6 +1050,7 @@ const TagSelectionSection: FC<TagSelectionSectionProps> = ({
                     </span>
                 ))}
             </div>
+            
         </div>
     );
 };

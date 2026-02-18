@@ -2,9 +2,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { MoneyInput } from "@/components/ui/money-input";
-import { DeliveryZoneKey, ProductMethodZoneConfig, ShippingConfigDataProps } from "@/lib/types";
+import { DeliveryZoneKey, ShippingConfigDataProps } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { ChangeEvent, FC, FormEvent, useState } from "react";
+import { ChangeEvent, FC, FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
 import { toast } from "sonner";
@@ -14,6 +14,7 @@ import { useShippingDetailsValidation } from "@/hooks/local-store/add-product/us
 interface ShippingDetailsPropss {
     currencySymbol: string;
     shippingConfig: ShippingConfigDataProps | null;
+    todayExchangeRate?: number;
 }
 interface ProductDimensions {
     length: number;
@@ -21,21 +22,8 @@ interface ProductDimensions {
     height: number;
 }
 
-interface ProductShippingDeliveryType {
-    methods?: {
-        standard?: Partial<Record<DeliveryZoneKey, ProductMethodZoneConfig>>;
-        express?: Partial<Record<DeliveryZoneKey, ProductMethodZoneConfig>>;
-        sameDay?: {
-            available?: boolean;
-            fee?: number;
-        };
-    }
-    weight: number;
-    dimensions: ProductDimensions;
-    measurementUnit: "Inch" | "Centimeter";
-}
 type ShippingDetailsErrors = Partial<Record<keyof ShippingDetailsSchemaType, string | number>>;
-const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippingConfig }) => {
+const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippingConfig, todayExchangeRate }) => {
     if (shippingConfig === null) {
         return (
             <Card className="my-4 border-2 rounded-none align-middle justify-center">   
@@ -63,12 +51,19 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
 
     const { shippingMethods, shippingZones } = shippingConfig;
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-    const [selectedShippingMethods, setSelectedShippingMethods] = useState<string[]>([]);
     const { productId, setShippingDetails, shippingDetails } = useProductFormStore();
     const [errors, setErrors] = useState<ShippingDetailsErrors>({}); 
     
-    // State to hold the fees the user enters for each method/zone
-    const [methodFees, setMethodFees] = useState<ProductShippingDeliveryType["methods"]>();
+    // Derive selected methods and fees from the Zustand store
+    const selectedShippingMethods = useMemo(() => {
+        const methods: string[] = [];
+        if (shippingDetails.methods?.sameDay) methods.push('sameDayDelivery');
+        if (shippingDetails.methods?.standard && Object.keys(shippingDetails.methods.standard).length > 0) methods.push('standardShipping');
+        if (shippingDetails.methods?.express && Object.keys(shippingDetails.methods.express).length > 0) methods.push('expressShipping');
+        return methods;
+    }, [shippingDetails.methods]);
+
+    const methodFees = shippingDetails.methods;
 
     const handleFieldValidation = async <TField extends keyof ShippingDetailsSchemaType>(
         name: TField,
@@ -161,86 +156,82 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
         zoneKey: DeliveryZoneKey | undefined,
         value: number
     ) => {
-        setMethodFees(prev => {
-            const newFees = JSON.parse(JSON.stringify(prev || {}));
-
-            // Handle Same Day Delivery
-            if (productMethodKey === 'sameDay') {
-                if (!newFees.sameDay) {
-                    newFees.sameDay = { available: shippingConfig?.shippingMethods.sameDayDelivery.available };
-                }
-                newFees.sameDay.fee = value;            
-            } else if (zoneKey && (productMethodKey === 'standard' || productMethodKey === 'express')) {
-                if (!newFees[productMethodKey]) {
-                    newFees[productMethodKey] = {};
-                }
-                if (!newFees[productMethodKey]![zoneKey]) {
-                    // Initialize from shippingConfig if not present for this specific zone
-                    const configMethodKey = productMethodKey === 'standard' ? 'standardShipping' : 'expressShipping';
-                    const methodAvailable = shippingConfig?.shippingMethods[configMethodKey]?.available;
-                    const currentZoneAvailable = shippingConfig?.shippingZones[zoneKey]?.available;
-                    newFees[productMethodKey]![zoneKey] = { available: methodAvailable && currentZoneAvailable };
-                }
-                newFees[productMethodKey]![zoneKey]!.fee = value;
+        setShippingDetails({
+            methods: {
+                ...shippingDetails.methods,
+                [productMethodKey]: productMethodKey === 'sameDay' 
+                    ? {
+                        ...shippingDetails.methods?.[productMethodKey],
+                        fee: value,
+                        available: true
+                    }
+                    : zoneKey 
+                    ? {
+                        ...shippingDetails.methods?.[productMethodKey],
+                        [zoneKey]: {
+                            ...shippingDetails.methods?.[productMethodKey]?.[zoneKey],
+                            fee: value,
+                            available: true
+                        }
+                    }
+                    : shippingDetails.methods?.[productMethodKey]
             }
-
-            return newFees;
         });
     };
 
     const handleMethodSelect = (method: string) => {
-        setSelectedShippingMethods(prev => {
-            // If the method is already selected, unselect it and remove from fees
-            if (prev.includes(method)) {
-                setMethodFees(prevFees => {
-                    const newFees = { ...prevFees };
-                    if (method === 'sameDayDelivery') {
-                        delete newFees.sameDay;
-                    } else if (method === 'standardShipping') {
-                        delete newFees.standard;
-                    } else if (method === 'expressShipping') {
-                        delete newFees.express;
-                    }
-                    return newFees;
-                });
-                return prev.filter(m => m !== method);
+        console.log('Method clicked:', method);
+        console.log('Currently selected methods:', selectedShippingMethods);
+        console.log('Current methods in store:', shippingDetails.methods);
+        
+        const currentMethods = shippingDetails.methods || {};
+        
+        if (method === 'sameDayDelivery') {
+            if (currentMethods.sameDay) {
+                delete currentMethods.sameDay;
+            } else if (shippingMethods.sameDayDelivery.available) {
+                currentMethods.sameDay = {
+                    available: true,
+                    fee: shippingMethods.sameDayDelivery.fee
+                };
             }
-            // If the method is not selected, select it and add default fees
-            else {
-                setMethodFees(prevFees => {
-                    const newFees = { ...prevFees };
-                    if (method === 'sameDayDelivery' && shippingMethods.sameDayDelivery.available) {
-                        newFees.sameDay = {
+        } 
+        else if (method === 'standardShipping') {
+            if (currentMethods.standard) {
+                delete currentMethods.standard;
+            } else if (shippingMethods.standardShipping.available) {
+                currentMethods.standard = {};
+                Object.entries(shippingZones).forEach(([zoneKey, zoneDetails]) => {
+                    if (zoneDetails.available) {
+                        currentMethods.standard![zoneKey as DeliveryZoneKey] = {
+                            fee: shippingMethods.standardShipping.estimatedDelivery?.[zoneKey as DeliveryZoneKey]?.fee || 0,
                             available: true,
-                            fee: shippingMethods.sameDayDelivery.fee
                         };
-                    } else if (method === 'standardShipping' && shippingMethods.standardShipping.available) {
-                        newFees.standard = {};
-                        Object.entries(shippingZones).forEach(([zoneKey, zoneDetails]) => {
-                            if (zoneDetails.available) {
-                                newFees.standard![zoneKey as DeliveryZoneKey] = {
-                                    fee: shippingMethods.standardShipping.estimatedDelivery?.[zoneKey as DeliveryZoneKey]?.fee,
-                                    available: true,
-                                };
-                            }
-                        });
-                    } else if (method === 'expressShipping' && shippingMethods.expressShipping.available) {
-                        newFees.express = {};
-                        Object.entries(shippingZones).forEach(([zoneKey, zoneDetails]) => {
-                            if (zoneDetails.available) {
-                                newFees.express![zoneKey as DeliveryZoneKey] = {
-                                    fee: shippingMethods.expressShipping.estimatedDelivery?.[zoneKey as DeliveryZoneKey]?.fee,
-                                    available: true,
-                                };
-                            }
-                        });
                     }
-                    return newFees;
                 });
-                return [...prev, method];
             }
-        });
+        } 
+        else if (method === 'expressShipping') {
+            if (currentMethods.express) {
+                delete currentMethods.express;
+            } else if (shippingMethods.expressShipping.available) {
+                currentMethods.express = {};
+                Object.entries(shippingZones).forEach(([zoneKey, zoneDetails]) => {
+                    if (zoneDetails.available) {
+                        currentMethods.express![zoneKey as DeliveryZoneKey] = {
+                            fee: shippingMethods.expressShipping.estimatedDelivery?.[zoneKey as DeliveryZoneKey]?.fee || 0,
+                            available: true,
+                        };
+                    }
+                });
+            }
+        }
+            
+            console.log('New methods after addition:', currentMethods);
+    setShippingDetails({ methods: currentMethods });
+        
     }
+
     const handleSave = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
@@ -282,6 +273,18 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
             setIsSubmitting(false);
         }
     }
+
+    const ApproxUSDDisplay = ({ fee }: { fee: number | undefined }) => {
+        if (currencySymbol !== 'USD' && todayExchangeRate && fee !== undefined && fee > 0) {
+            return (
+                <span className="ml-2 text-sm text-gray-600">
+                    (approx. USD {(fee / todayExchangeRate).toFixed(2)})
+                </span>
+            );
+        }
+        return null;
+    };
+
 
     return (
         <form onSubmit={handleSave}>
@@ -389,7 +392,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                     <Input
                                         type="checkbox"
                                         id="sameDayDelivery"
-                                        checked={selectedShippingMethods.includes('sameDayDelivery')}
+                                        checked={!!shippingDetails.methods?.sameDay}
                                         onChange={() => handleMethodSelect('sameDayDelivery')}
                                         className={cn(
                                             "h-4 w-4 border-2 p-2 text-black focus:ring-0 focus:ring-offset-0",
@@ -410,7 +413,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                     <Input
                                         type="checkbox"
                                         id="standardShipping"
-                                        checked={selectedShippingMethods.includes('standardShipping')}
+                                        checked={!!shippingDetails.methods?.standard}
                                         onChange={() => handleMethodSelect('standardShipping')}
                                         className={cn(
                                             "h-4 w-4 border-2 p-2 text-black focus:ring-0 focus:ring-offset-0",
@@ -431,7 +434,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                     <Input
                                         type="checkbox"
                                         id="expressShipping"
-                                        checked={selectedShippingMethods.includes('expressShipping')}
+                                        checked={!!shippingDetails.methods?.express}
                                         onChange={() => handleMethodSelect('expressShipping')}
                                         className={cn(
                                             "h-4 w-4 border-2 p-2 text-black focus:ring-0 focus:ring-offset-0",
@@ -483,6 +486,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                                 handleFeeChange('sameDay', undefined, value);
                                             }}
                                         />
+                                        <ApproxUSDDisplay fee={methodFees?.sameDay?.fee ?? shippingMethods.sameDayDelivery.fee} />
                                     </div>
                                     <p className="text-xs text-gray-500 my-1">
                                         Cut-off: {shippingMethods.sameDayDelivery.estimatedDelivery?.cutOffTime} ({shippingMethods.sameDayDelivery.estimatedDelivery?.timeZone})
@@ -531,6 +535,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                                         placeholder="0.00"
                                                         onBlur={handleBlur}
                                                     />
+                                                    <ApproxUSDDisplay fee={methodFees?.standard?.[zoneKey]?.fee ?? shippingMethods.standardShipping.estimatedDelivery[zoneKey]?.fee} />
                                                     {/* {errors.methods && typeof errors.methods === 'object' && } */}
                                                 </div>
                                                 <p className="text-xs text-gray-500 mt-1">
@@ -561,6 +566,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                                         placeholder="0.00"
                                                         onBlur={handleBlur}
                                                     />
+                                                    <ApproxUSDDisplay fee={methodFees?.express?.[zoneKey]?.fee ?? shippingMethods.expressShipping.estimatedDelivery[zoneKey]?.fee} />
                                                 </div>
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     Est. Delivery: {shippingMethods.expressShipping.estimatedDelivery[zoneKey]?.from}-{shippingMethods.expressShipping.estimatedDelivery[zoneKey]?.to} days

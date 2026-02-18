@@ -9,6 +9,7 @@ import { Check, X } from "lucide-react";
 interface SwitchProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     checked: boolean;
     onCheckedChange: (checked: boolean) => void;
+    disabled?: boolean;
 }
 
 const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
@@ -27,10 +28,12 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
                 aria-checked={checked}
                 data-state={checked ? 'checked' : 'unchecked'}
                 onClick={handleToggle}
+                disabled={props.disabled}
                 className={cn(
                     "relative inline-flex h-7 w-14 items-center transition-colors duration-200 ease-in-out",
                     "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black",
                     checked ? "bg-black" : "bg-gray-300 border-y-2 border-r-2",
+                    props.disabled && "opacity-30 cursor-not-allowed",
                     className
                 )}
             >

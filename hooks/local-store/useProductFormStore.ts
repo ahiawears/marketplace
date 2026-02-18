@@ -105,6 +105,20 @@ export const DEFAULT_VARIANT_DETAILS: VariantDetailsArraySchemaType = [{
 	craftmanshipTags: [],
 }];
 
+const methodConfigData = {
+	sameDay: {
+		fee: 0,
+		available: false
+	},
+	express: {
+		fee: 0,
+		available: false
+	},
+	standard: {
+		fee: 0,
+		available: false
+	}
+}
 const DEFAULT_SHIPPING_DETAILS: ShippingDetailsSchemaType = {
 	productId: "",
 	weight: 0,
@@ -158,8 +172,9 @@ const DEFAULT_RETURN_POLICY: ReturnPolicySchemaType = {
 	refundProcessingTimeDays: 1,
 	restockingFee: {
 		type: "percentage",
-		value: 0
-	}
+		value: 0,
+	},
+	returnInstruction: ""
 }
 
 interface ProductFormState {
@@ -289,19 +304,17 @@ export const useProductFormStore = create<ProductFormState>()(
 
 			setProductId: (id) => set({ productId: id }),
 
-			// In your Zustand store implementation, make sure the array operations are correct:
 			addVariant: (variant = {}) =>
 				set((state) => {
-					// Ensure variantDetails is always an array
 					const currentVariants = Array.isArray(state.variantDetails) ? state.variantDetails : [];
 					
 					return {
 						variantDetails: [
 							...currentVariants,
 							{
-							...DEFAULT_SINGLE_VARIANT,
-							...variant,
-							id: generateVariantId(),
+								...DEFAULT_SINGLE_VARIANT,
+								...variant,
+								id: generateVariantId(),
 							}
 						]
 					}

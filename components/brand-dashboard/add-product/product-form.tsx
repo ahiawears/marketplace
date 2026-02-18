@@ -51,6 +51,7 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
                     <ShippingDetailsForm
                         shippingConfig={shippingConfig}
                         currencySymbol={currencyCode}
+                        todayExchangeRate={todayExchangeRate}
                     />
                 ),
             },
@@ -61,7 +62,9 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
             {
                 title: "Return Policy",
                 content: (
-                    <ReturnPolicyDetailsForm currencySymbol={currencyCode} />
+                    <ReturnPolicyDetailsForm 
+                        currencySymbol={currencyCode} 
+                    />
                 ),
             },
         ],
