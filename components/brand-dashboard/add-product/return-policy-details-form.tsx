@@ -5,69 +5,81 @@ import { MoneyInput } from "@/components/ui/money-input";
 import { RefundSwitch } from "@/components/ui/refund-switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
-import { ChangeEvent, FC, FormEvent, useState } from "react";
+import { ChangeEvent, FC, FormEvent, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ReturnPolicySchemaType, validateReturnPolicy } from "@/lib/validation-logics/add-product-validation/product-schema";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
-import { ProductReturnPolicyInterface } from "@/lib/validation-logics/add-product-validation/product-return-policy-schema";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { submitFormData } from "@/lib/api-helpers";
+import { ReturnPolicy as GlobalReturnPolicy } from "@/lib/return-policy-validation";
 
 interface ReturnPolicyProps {
     currencySymbol: string;
+    globalReturnPolicy: GlobalReturnPolicy | null;
+    onSaveSuccess?: () => void;
 }
 export interface RestockingFee { 
     type: 'percentage' | 'fixed';
     value: number;
 }
 
-const defaultProductReturnPolicy: ProductReturnPolicyInterface ={
-    isReturnable: "non-returnable",
+const mapGlobalToProductReturnPolicy = (globalPolicy: GlobalReturnPolicy): ReturnPolicySchemaType => ({
+    productId: "",
+    isReturnable: globalPolicy.isActive ? "returnable" : "non-returnable",
     useProductSpecificReturnPolicy: false,
-    returnWindowDays: 7,
+    returnWindowDays: globalPolicy.returnWindowDays,
     conditionRequirements: {
-        unwornAndUnwashed: true,
-        originalPackagingAndTagsIntact: true,
-        notADiscountedItem: true,
-        notCustomMade: true,
+        unwornAndUnwashed: globalPolicy.conditionRequirements.unwornAndUnwashed,
+        originalPackagingAndTagsIntact: globalPolicy.conditionRequirements.originalPackaging,
+        notADiscountedItem: globalPolicy.conditionRequirements.notDiscounted,
+        notCustomMade: globalPolicy.conditionRequirements.notCustomMade,
         damagedItem: {
-            allowed: true,
-            imagesRequired: true,
+            allowed: globalPolicy.conditionRequirements.damagedItem.allowed,
+            imagesRequired: globalPolicy.conditionRequirements.damagedItem.imagesRequired,
         },
-        finalSaleItemsNotAllowed: true,
-        otherConditions: false,
+        finalSaleItemsNotAllowed: globalPolicy.conditionRequirements.finalSaleNotAllowed,
+        otherConditions: Boolean(globalPolicy.conditionRequirements.otherConditions),
     },
-    returnShippingResponsibility:{
-        brandPays: false,
-        customerPays: true,
-        dependsOnReason: false,
+    returnShippingResponsibility: {
+        brandPays: globalPolicy.returnShipping.responsibility === "brand",
+        customerPays: globalPolicy.returnShipping.responsibility === "customer",
+        dependsOnReason: globalPolicy.returnShipping.responsibility === "depends_on_reason",
     },
     refundMethods: {
-        fullRefund: true,
-        storeCredit: false,
-        exchange: false,
-        replace: false,
+        fullRefund: globalPolicy.refundMethods.includes("full_refund"),
+        storeCredit: globalPolicy.refundMethods.includes("store_credit"),
+        exchange: globalPolicy.refundMethods.includes("exchange"),
+        replace: globalPolicy.refundMethods.includes("replacement"),
     },
-    refundProcessingTimeDays: 7,
+    refundProcessingTimeDays: globalPolicy.refundProcessingTimeDays,
     restockingFee: {
-        type: 'fixed',
-        value: 0,
+        type: globalPolicy.restockingFee.type === "percentage" ? "percentage" : "fixed",
+        value: globalPolicy.restockingFee.type === "none" ? 0 : (globalPolicy.restockingFee.value ?? 0),
     },
-    returnInstructions: "",
-}
+    returnInstruction: globalPolicy.returnInstructions || "",
+});
 
-const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol }) => {
-    const [productReturnPolicy, setProductReturnPolicy] = useState<ProductReturnPolicyInterface>(defaultProductReturnPolicy);
-    
+const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol, globalReturnPolicy, onSaveSuccess }) => {
     const { productId, setReturnPolicy, returnPolicy } = useProductFormStore();
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [errors, setErrors] = useState<any>({});
+    const inheritedPolicy = useMemo(
+        () => globalReturnPolicy ? mapGlobalToProductReturnPolicy(globalReturnPolicy) : null,
+        [globalReturnPolicy]
+    );
 
     const validateForm = () => {
+        if (returnPolicy.isReturnable === "returnable" && !returnPolicy.useProductSpecificReturnPolicy && !inheritedPolicy) {
+            setErrors({
+                useProductSpecificReturnPolicy: ["No global return policy was found. Create one first or enable a product-specific policy."],
+            });
+            return false;
+        }
+
         const dataToValidate = {
-            ...productReturnPolicy,
+            ...(returnPolicy.useProductSpecificReturnPolicy ? returnPolicy : inheritedPolicy || returnPolicy),
             productId: productId,
         };
 
@@ -177,14 +189,15 @@ const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol }) => {
 		setIsSubmitting(true);
 		const toastId = toast.loading("Saving return policy...");
 		const finalProductReturnPolicy = {
-			...productReturnPolicy,
+			...(returnPolicy.useProductSpecificReturnPolicy ? returnPolicy : inheritedPolicy || returnPolicy),
 			productId: productId,
+            useProductSpecificReturnPolicy: returnPolicy.useProductSpecificReturnPolicy,
 		};
 
 		const formData = new FormData();
 		formData.append("returnPolicyData", JSON.stringify(finalProductReturnPolicy));
 
-		await submitFormData(
+		const result = await submitFormData(
 			'/api/products/upload-return-policy',
 			formData,
 			{
@@ -193,6 +206,10 @@ const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol }) => {
 				errorMessage: "Failed to save return policy.",
 			}
 		);
+
+        if (result) {
+            onSaveSuccess?.();
+        }
 		setIsSubmitting(false);
     }
 
@@ -248,17 +265,51 @@ const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol }) => {
 							<Switch
 								id="useCustomPolicy"
 								checked={returnPolicy.useProductSpecificReturnPolicy}
-								onCheckedChange={(checked) => 
+								onCheckedChange={(checked) => {
+                                    if (checked && inheritedPolicy) {
+                                        setReturnPolicy({
+                                            ...inheritedPolicy,
+                                            productId: productId,
+                                            isReturnable: returnPolicy.isReturnable,
+                                            useProductSpecificReturnPolicy: true,
+                                        });
+                                        return;
+                                    }
+
+                                    
                                     setReturnPolicy({
                                         ...returnPolicy,
                                         useProductSpecificReturnPolicy: checked,
                                     })
-								}
+								}}
 							/>
 						</>
 					)}
 				</div>                
             </div>
+
+            {returnPolicy.isReturnable === "returnable" && !returnPolicy.useProductSpecificReturnPolicy && (
+                <div className="rounded-none border-2 bg-gray-50 p-4 text-sm">
+                    {globalReturnPolicy ? (
+                        <div className="space-y-2">
+                            <p className="font-semibold">This product will inherit the brand global return policy.</p>
+                            <p>Return window: {globalReturnPolicy.returnWindowDays} days</p>
+                            <p>Refund methods: {globalReturnPolicy.refundMethods.join(", ").replaceAll("_", " ")}</p>
+                            <p>Shipping responsibility: {globalReturnPolicy.returnShipping.responsibility.replaceAll("_", " ")}</p>
+                            {globalReturnPolicy.returnInstructions && (
+                                <p>Instructions: {globalReturnPolicy.returnInstructions}</p>
+                            )}
+                        </div>
+                    ) : (
+                        <p className="text-red-600">
+                            No global return policy found. Create one first, or enable a product-specific policy for this product.
+                        </p>
+                    )}
+                    {errors?.useProductSpecificReturnPolicy?.[0] && (
+                        <p className="mt-2 text-xs text-red-500">{errors.useProductSpecificReturnPolicy[0]}</p>
+                    )}
+                </div>
+            )}
             
             {/* --- Conditional Product-Specific Policy Form Section (Indented) --- */}
             {returnPolicy.isReturnable === "returnable" && returnPolicy.useProductSpecificReturnPolicy && (

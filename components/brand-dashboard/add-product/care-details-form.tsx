@@ -7,17 +7,8 @@ import { bleachingInstruction, dryCleaningInstruction, dryingInstruction, ironin
 import { ChangeEvent, FC, FormEvent, useState } from "react";
 import { toast } from "sonner";
 
-interface CareInstructionInterface {
-    washingInstruction: string | null,
-    dryingInstruction: string | null,
-    bleachingInstruction: string | null,
-    ironingInstruction: string | null,
-    dryCleaningInstruction: string | null,
-    specialCases: string | null,
-}
-
 interface CareInstructionSelectProps {
-    id: keyof CareInstructionInterface;
+    id: keyof CareDetailsSchemaType;
     label: string;
     value: string | null;
     onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
@@ -40,23 +31,19 @@ const CareInstructionSelect: FC<CareInstructionSelectProps> = ({ id, label, valu
     </div>
 );
 
-const CareDetailsForm: FC = () => {
+interface CareDetailsFormProps {
+    onSaveSuccess?: () => void;
+}
+
+const CareDetailsForm: FC<CareDetailsFormProps> = ({ onSaveSuccess }) => {
     const { careDetails, setCareDetails } = useProductFormStore();
-    const [careDetailsData, setCareDetailsData] = useState<CareInstructionInterface>({
-        washingInstruction: "",
-        dryingInstruction: "",
-        bleachingInstruction: "",
-        ironingInstruction: "",
-        dryCleaningInstruction: "",
-        specialCases: "",
-    });
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [errors, setErrors] = useState<{ formError?: string }>({});
     const {productId} = useProductFormStore();
 
     const validateForm = () => {
         const dataToValidate = {
-            ...careDetailsData,
+            ...careDetails,
             productId: productId,
         };
         const result = CareDetailsValidationSchema.safeParse(dataToValidate);
@@ -69,18 +56,12 @@ const CareDetailsForm: FC = () => {
         return true;
     };
 
-    // const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    //     setCareDetailsData({
-    //         ...careDetailsData,
-    //         [e.target.name]: e.target.value,
-    //     })
-    // }
-
     const handleFormInput = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const {name, value} = e.target;
         const fieldName = name as keyof CareDetailsSchemaType
         setCareDetails({[fieldName]: value});
-    }
+    };
+
     const handleSave = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
@@ -92,14 +73,14 @@ const CareDetailsForm: FC = () => {
         setIsSubmitting(true);
 
         const finalCareDetails = {
-            ...careDetailsData,
+            ...careDetails,
             productId: productId
         };
 
         const formData = new FormData();
         formData.append('careDetails', JSON.stringify(finalCareDetails));
 
-        await submitFormData(
+        const result = await submitFormData(
             '/api/products/upload-care-instructions',
             formData,
             {
@@ -108,8 +89,12 @@ const CareDetailsForm: FC = () => {
             }
         );
 
+        if (result) {
+            onSaveSuccess?.();
+        }
+
         setIsSubmitting(false);
-    }
+    };
     return (
         <form onSubmit={handleSave}>
             {errors.formError && <p className="text-red-500 text-sm mb-4">{errors.formError}</p>}

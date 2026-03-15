@@ -185,6 +185,13 @@ interface ProductFormState {
 	careDetails: CareDetailsSchemaType;
 	returnPolicy: ReturnPolicySchemaType;
 	productId: string;
+	savedSteps: {
+		general: boolean;
+		variants: boolean;
+		shipping: boolean;
+		care: boolean;
+		returnPolicy: boolean;
+	};
 
 	// Setters
 	setGeneralDetails: (updates: Partial<GeneralDetailsSchemaType>) => void;
@@ -193,6 +200,8 @@ interface ProductFormState {
 	setCareDetails: (updates: Partial<CareDetailsSchemaType>) => void;
 	setReturnPolicy: (updates: Partial<ReturnPolicySchemaType>) => void;
 	setProductId: (newProductId: string) => void;
+	markStepSaved: (step: keyof ProductFormState["savedSteps"]) => void;
+	markStepUnsaved: (step: keyof ProductFormState["savedSteps"]) => void;
 
 	//variant details array operations
 	addVariant: (variant?: Partial<VariantDetailsSchemaType>) => void;
@@ -277,32 +286,92 @@ export const useProductFormStore = create<ProductFormState>()(
 			careDetails: DEFAULT_CARE_DETAILS,
 			returnPolicy: DEFAULT_RETURN_POLICY,
 			productId: "",
+			savedSteps: {
+				general: false,
+				variants: false,
+				shipping: false,
+				care: false,
+				returnPolicy: false,
+			},
 
 
 			setGeneralDetails: (updates) =>
 				set((state) => ({
 					generalDetails: deepMerge({ ...state.generalDetails }, updates),
+					savedSteps: {
+						...state.savedSteps,
+						general: false,
+					},
 				})),
 
 			setVariantDetails: (updates: VariantDetailsArraySchemaType) =>
-				set({ variantDetails: updates }),
+				set((state) => ({
+					variantDetails: updates,
+					savedSteps: {
+						...state.savedSteps,
+						variants: false,
+					},
+				})),
 
 			setShippingDetails: (updates) =>
 				set((state) => ({
 					shippingDetails: deepMerge({ ...state.shippingDetails }, updates),
+					savedSteps: {
+						...state.savedSteps,
+						shipping: false,
+					},
 				})),
 
 			setCareDetails: (updates) =>
 				set((state) => ({
 					careDetails: deepMerge({ ...state.careDetails }, updates),
+					savedSteps: {
+						...state.savedSteps,
+						care: false,
+					},
 				})),
 
 			setReturnPolicy: (updates) =>
 				set((state) => ({
 					returnPolicy: deepMerge({ ...state.returnPolicy }, updates),
+					savedSteps: {
+						...state.savedSteps,
+						returnPolicy: false,
+					},
 				})),
 
-			setProductId: (id) => set({ productId: id }),
+			setProductId: (id) =>
+				set((state) => ({
+					productId: id,
+					shippingDetails: {
+						...state.shippingDetails,
+						productId: id,
+					},
+					careDetails: {
+						...state.careDetails,
+						productId: id,
+					},
+					returnPolicy: {
+						...state.returnPolicy,
+						productId: id,
+					},
+				})),
+
+			markStepSaved: (step) =>
+				set((state) => ({
+					savedSteps: {
+						...state.savedSteps,
+						[step]: true,
+					},
+				})),
+
+			markStepUnsaved: (step) =>
+				set((state) => ({
+					savedSteps: {
+						...state.savedSteps,
+						[step]: false,
+					},
+				})),
 
 			addVariant: (variant = {}) =>
 				set((state) => {
@@ -316,7 +385,11 @@ export const useProductFormStore = create<ProductFormState>()(
 								...variant,
 								id: generateVariantId(),
 							}
-						]
+						],
+						savedSteps: {
+							...state.savedSteps,
+							variants: false,
+						},
 					}
 				}),
 
@@ -328,7 +401,11 @@ export const useProductFormStore = create<ProductFormState>()(
 					return {
 						variantDetails: currentVariants.map((variant, i) =>
 							i === index ? deepMerge(variant, updates) : variant
-						)
+						),
+						savedSteps: {
+							...state.savedSteps,
+							variants: false,
+						},
 					}
 				}),
 
@@ -338,7 +415,11 @@ export const useProductFormStore = create<ProductFormState>()(
 					const currentVariants = Array.isArray(state.variantDetails) ? state.variantDetails : [];
 					
 					return {
-						variantDetails: currentVariants.filter((_, i) => i !== index)
+						variantDetails: currentVariants.filter((_, i) => i !== index),
+						savedSteps: {
+							...state.savedSteps,
+							variants: false,
+						},
 					}
 				}),
 
@@ -347,7 +428,13 @@ export const useProductFormStore = create<ProductFormState>()(
 					const variants = [...state.variantDetails];
 					const [movedVariant] = variants.splice(fromIndex, 1);
 					variants.splice(toIndex, 0, movedVariant);
-					return { variantDetails: variants };
+					return {
+						variantDetails: variants,
+						savedSteps: {
+							...state.savedSteps,
+							variants: false,
+						},
+					};
 				}),
 
 
@@ -407,6 +494,13 @@ export const useProductFormStore = create<ProductFormState>()(
 					careDetails: DEFAULT_CARE_DETAILS,
 					returnPolicy: DEFAULT_RETURN_POLICY,
 					productId: "",
+					savedSteps: {
+						general: false,
+						variants: false,
+						shipping: false,
+						care: false,
+						returnPolicy: false,
+					},
 				});
 			},
 		}),
@@ -419,6 +513,7 @@ export const useProductFormStore = create<ProductFormState>()(
 				careDetails: state.careDetails,
 				returnPolicy: state.returnPolicy,
 				productId: state.productId,
+				savedSteps: state.savedSteps,
 			}),
 			version: 1,
 			migrate: (persistedState: any, version: number) => {

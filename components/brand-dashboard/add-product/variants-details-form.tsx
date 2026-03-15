@@ -31,6 +31,7 @@ type VariantFormErrors = Partial<Record<keyof VariantDetailsSchemaType | 'measur
 interface VariantDetailsFormProps {
     currencyCode: string;
     todayExchangeRate?: number;
+    onSaveSuccess?: () => void;
 }
 
 const generateSKU = (productName: string, color: string): string => {
@@ -75,7 +76,7 @@ async function imageUrlToFile(url: string, filename: string): Promise<File | nul
     }
 }
 
-const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayExchangeRate }) => {
+const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayExchangeRate, onSaveSuccess }) => {
     const { generalDetails, productId, updateVariant, addVariant, removeVariant } = useProductFormStore();
     const { variants, copyFromPreviousVariant } = useVariantManagement();
     
@@ -116,7 +117,7 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayE
         });
 
         if (result) {
-            console.log("The result is ", result);
+            onSaveSuccess?.();
         }
     };
 
@@ -127,6 +128,11 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayE
 
     return (
         <form>
+            {!productId && (
+                <div className="mb-4 rounded-md border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+                    Save the general product details first to create the product before adding variants.
+                </div>
+            )}
             {variants.map((variant, index) => (
                 <VariantForm
                     key={variant.id}
@@ -401,7 +407,7 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
                 <Button
                     type="button"
                     onClick={handleSaveButtonClick}
-                    disabled={isSaving}
+                    disabled={isSaving || !productId}
                 >
                     {isSaving ? "Saving..." : "Save Variant"}
                 </Button>

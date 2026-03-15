@@ -31,7 +31,7 @@ export async function createReturnPolicy(returnPolicyData: ReturnPolicySchemaTyp
             .from("product_return_policy")
             .insert({
                 product_id: returnPolicyData.productId,
-                use_global_policy: returnPolicyData.useProductSpecificReturnPolicy,
+                use_global_policy: !returnPolicyData.useProductSpecificReturnPolicy,
                 return_window_days: returnPolicyData.returnWindowDays,
                 refund_processing_time_days: returnPolicyData.refundProcessingTimeDays,
                 restocking_fee_type: returnPolicyData.restockingFee.type,

@@ -48,8 +48,7 @@ const AddProduct = async () => {
     if (shippingConfig.message === "Unauthorized") {
         redirect("/login-brand");
     }
-    //check if refund policy exists
-    //const returnPolicy = await getBrandGlobalReturnPolicy(brandId);
+    const globalReturnPolicy = await getBrandGlobalReturnPolicy(brandId);
 
     return (
         <div>
@@ -59,6 +58,7 @@ const AddProduct = async () => {
                         currencyCode={brandCurrency}
                         todayExchangeRate={todaysRate}
                         shippingConfig={shippingConfig.data}
+                        globalReturnPolicy={globalReturnPolicy.success ? globalReturnPolicy.data : null}
                     />
                 </div>
             </div>

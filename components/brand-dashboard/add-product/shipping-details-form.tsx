@@ -15,6 +15,7 @@ interface ShippingDetailsPropss {
     currencySymbol: string;
     shippingConfig: ShippingConfigDataProps | null;
     todayExchangeRate?: number;
+    onSaveSuccess?: () => void;
 }
 interface ProductDimensions {
     length: number;
@@ -23,7 +24,7 @@ interface ProductDimensions {
 }
 
 type ShippingDetailsErrors = Partial<Record<keyof ShippingDetailsSchemaType, string | number>>;
-const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippingConfig, todayExchangeRate }) => {
+const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippingConfig, todayExchangeRate, onSaveSuccess }) => {
     if (shippingConfig === null) {
         return (
             <Card className="my-4 border-2 rounded-none align-middle justify-center">   
@@ -262,6 +263,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
 
             if (response.ok && result.success) {
                 toast.success("Shipping details saved successfully!", { id: toastId });
+                onSaveSuccess?.();
             } else {
                 toast.error(result.message || "An unknown error occurred.", { id: toastId });
             }

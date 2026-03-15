@@ -25,7 +25,11 @@ const seasonTypes = [
     { name: "Pre-Fall", code: "PF" },
 ];
 
-const GeneralDetailsForm: FC = () => {
+interface GeneralDetailsFormProps {
+    onSaveSuccess?: (productUploadId: string) => void;
+}
+
+const GeneralDetailsForm: FC<GeneralDetailsFormProps> = ({ onSaveSuccess }) => {
     const { generalDetails, setGeneralDetails, setProductId } = useProductFormStore();
     const { validateField, validateStep } = useGeneralDetailsValidation();
     
@@ -173,6 +177,7 @@ const GeneralDetailsForm: FC = () => {
         if (result) {
             // Save the returned productUploadId to the Zustand store
             setProductId(result.productUploadId);
+            onSaveSuccess?.(result.productUploadId);
         }
 
         setIsSubmitting(false);
