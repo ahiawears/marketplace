@@ -1,6 +1,7 @@
 "use client";
 
 import { ChangeEvent, FC, FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Input } from "../ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { AlertCircle, Info } from "lucide-react";
@@ -121,25 +122,36 @@ const defaultPolicy: ReturnPolicy = {
     }
 }
 
+const serializePolicySnapshot = (policy: ReturnPolicy) => JSON.stringify(policy);
 
 const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, todayExchangeRate, data }) => {
     const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
     const formRef = useRef<HTMLFormElement | null>(null);
+    const router = useRouter();
 
     const [returnPolicy, setReturnPolicy] = useState<ReturnPolicy>(data || defaultPolicy);
     const [errors, setErrors] = useState<ZodFormattedError<ReturnPolicy> | null>(null);
     const [submissionIssues, setSubmissionIssues] = useState<string[]>([]);
     const [serverFieldErrors, setServerFieldErrors] = useState<Record<string, string[]>>({});
+    const [savedSnapshot, setSavedSnapshot] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         const basePolicy = data || defaultPolicy;
 
-        setReturnPolicy({
+        const hydratedPolicy = {
             ...basePolicy,
             brandId: userId, 
-        });
+        };
+
+        setReturnPolicy(hydratedPolicy);
+        setSavedSnapshot(serializePolicySnapshot(hydratedPolicy));
     }, [data, userId]);
+
+    const isDirty = useMemo(
+        () => serializePolicySnapshot(returnPolicy) !== savedSnapshot,
+        [returnPolicy, savedSnapshot]
+    );
 
     // Effect to clean up return methods when shipping responsibility changes
     useEffect(() => {
@@ -620,9 +632,11 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
             if (result.success) {
                 setSubmissionIssues([]);
                 setServerFieldErrors({});
+                setSavedSnapshot(serializePolicySnapshot(returnPolicy));
                 toast.success(successMessage, {
                     id: toastId,
                 });
+                router.refresh();
             } else {
                 const formattedIssues = collectServerIssues(result);
                 const mappedFieldErrors = formatServerIssues(result);
@@ -1524,7 +1538,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                     <Button type="button" variant="outline">
                         Cancel
                     </Button>
-                    <Button type="submit" disabled={isSubmitting}>
+                    <Button type="submit" disabled={isSubmitting || !isDirty}>
                         {isSubmitting ? "Saving..." : "Save Policy"}
                     </Button>
                 </div>
