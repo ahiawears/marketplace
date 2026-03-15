@@ -2,6 +2,7 @@ import { FC, useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, Info } from "lucide-react";
 import GeneralDetailsForm from "./general-details-form";
 import Accordion from "@/components/ui/Accordion";
+import type { AccordionItem } from "@/components/ui/Accordion";
 import { Button } from "@/components/ui/button";
 import VariantDetailsForm from "./variants-details-form";
 import ShippingDetailsForm from "./shipping-details-form";
@@ -73,7 +74,7 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
     ];
 
     // Accordion Item Definitions
-    const multiVariantItems = useMemo(() => 
+    const multiVariantItems = useMemo<AccordionItem[]>(() => 
         [
             {
                 title: "General Product Details",
