@@ -5,6 +5,26 @@ import { createClient } from "@/supabase/server";
 
 export async function updateBrandReturnPolicy(returnPolicyData: ReturnPolicy, brandId: string) {
     try {
+        const supabase = await createClient();
+        const {
+            data: { user },
+            error: authError,
+        } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return {
+                success: false,
+                message: "User not authenticated.",
+            };
+        }
+
+        if (user.id !== brandId) {
+            return {
+                success: false,
+                message: "You are not authorized to update this return policy.",
+            };
+        }
+
         // Validate the data first
         const validation = validateReturnPolicy(returnPolicyData);
         if (!validation.success) {
@@ -15,93 +35,43 @@ export async function updateBrandReturnPolicy(returnPolicyData: ReturnPolicy, br
             };
         }
 
-        const supabase = await createClient();
-
-        // Deactivate any existing active global policy for the brand
-        const { data: existingPolicy, error: fetchError } = await supabase
-            .from("return_policies") // Updated table name
-            .select("id, version")
-            .eq("brand_id", brandId)
-            .eq("is_active", true)
-            .eq("is_global", true)
-            .single();
-
-        let nextVersion = 1;
-
-        if (existingPolicy) {
-            nextVersion = existingPolicy.version + 1;
-            const { error: deactivateError } = await supabase
-                .from("return_policies")
-                .update({ 
-                    is_active: false,
-                    updated_at: new Date().toISOString()
-                })
-                .eq("id", existingPolicy.id);
-
-            if (deactivateError) {
-                console.error("Error deactivating old policy:", deactivateError);
-                return { success: false, message: "Failed to deactivate the previous policy." };
+        const { data: newPolicy, error: rpcError } = await supabase.rpc(
+            "replace_global_return_policy",
+            {
+                p_brand_id: brandId,
+                p_return_window_days: returnPolicyData.returnWindowDays,
+                p_refund_processing_time_days: returnPolicyData.refundProcessingTimeDays,
+                p_return_shipping_responsibility: returnPolicyData.returnShipping.responsibility,
+                p_paid_by_brand_reasons: returnPolicyData.returnShipping.paidByBrandReasons || [],
+                p_return_reasons: returnPolicyData.returnReasons,
+                p_condition_requirements: returnPolicyData.conditionRequirements,
+                p_return_methods: returnPolicyData.returnMethods,
+                p_refund_methods: returnPolicyData.refundMethods,
+                p_return_contact: returnPolicyData.returnContact,
+                p_return_address: returnPolicyData.returnAddress,
+                p_return_instructions: returnPolicyData.returnInstructions ?? null,
+                p_special_notes: returnPolicyData.specialNotes ?? null,
+                p_evidence_requirements: returnPolicyData.evidenceRequirements,
+                p_exchange_policy: returnPolicyData.exchangePolicy,
+                p_international_returns: returnPolicyData.internationalReturns,
+                p_return_submission_limits: returnPolicyData.returnSubmissionLimits,
+                p_restocking_fee_type: returnPolicyData.restockingFee.type,
+                p_restocking_fee_value: returnPolicyData.restockingFee.type === "none"
+                    ? null
+                    : returnPolicyData.restockingFee.value,
+                p_restocking_fee_usd_price: returnPolicyData.restockingFee.type === "fixed"
+                    ? (returnPolicyData.restockingFee.usdPrice ?? null)
+                    : null,
+                p_restocking_fee_applies_to: returnPolicyData.restockingFee.appliesTo || [],
             }
-        }
+        );
 
-        // Prepare the data for insertion
-        const policyData = {
-            brand_id: brandId,
-            version: nextVersion,
-            is_global: true,
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            
-            // Timeline
-            return_window_days: returnPolicyData.returnWindowDays,
-            refund_processing_time_days: returnPolicyData.refundProcessingTimeDays,
-            
-            // Shipping
-            return_shipping_responsibility: returnPolicyData.returnShipping.responsibility,
-            paid_by_brand_reasons: returnPolicyData.returnShipping.paidByBrandReasons || [],
-            
-            // Fees
-            restocking_fee_type: returnPolicyData.restockingFee.type,
-            restocking_fee_value: returnPolicyData.restockingFee.type === 'none' 
-                ? 0 
-                : returnPolicyData.restockingFee.value,
-            restocking_fee_usd_price: returnPolicyData.restockingFee.type === 'fixed' 
-                ? (returnPolicyData.restockingFee.usdPrice ?? 0)
-                : 0,
-            restocking_fee_applies_to: returnPolicyData.restockingFee.appliesTo || [],
-            
-            // Methods
-            return_methods: returnPolicyData.returnMethods,
-            refund_methods: returnPolicyData.refundMethods,
-            
-            // JSON structures
-            return_reasons: returnPolicyData.returnReasons,
-            condition_requirements: returnPolicyData.conditionRequirements,
-            return_address: returnPolicyData.returnAddress,
-            return_contact: returnPolicyData.returnContact,
-            
-            // New JSON structures
-            evidence_requirements: returnPolicyData.evidenceRequirements,
-            exchange_policy: returnPolicyData.exchangePolicy,
-            international_returns: returnPolicyData.internationalReturns,
-            return_submission_limits: returnPolicyData.returnSubmissionLimits,
-            
-            // Text fields
-            return_instructions: returnPolicyData.returnInstructions,
-            special_notes: returnPolicyData.specialNotes,
-        };
-
-        // Insert the new policy
-        const { data: newPolicy, error: insertError } = await supabase
-            .from("return_policies")
-            .insert(policyData)
-            .select()
-            .single();
-
-        if (insertError) {
-            console.error("Error inserting new policy:", insertError);
-            return { success: false, message: "Failed to save the new return policy." };
+        if (rpcError) {
+            console.error("Error replacing return policy via RPC:", rpcError);
+            return {
+                success: false,
+                message: "Failed to save the new return policy.",
+            };
         }
 
         return {
@@ -131,7 +101,9 @@ export async function getActiveReturnPolicy(brandId: string) {
             .eq("brand_id", brandId)
             .eq("is_active", true)
             .eq("is_global", true)
-            .single();
+            .order("version", { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
         if (error) {
             if (error.code === 'PGRST116') { // No rows returned

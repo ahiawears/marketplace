@@ -138,6 +138,7 @@ export async function getBrandGlobalReturnPolicy(brandId: string) {
             .eq('is_global', true)
             .eq('is_active', true)
             .order('version', { ascending: false })
+            .limit(1)
             .maybeSingle();
 
         if (error) throw error;

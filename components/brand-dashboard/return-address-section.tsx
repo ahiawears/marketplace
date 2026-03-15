@@ -24,6 +24,7 @@ interface ReturnAddress {
 interface ReturnAddressSectionProps {
     address: ReturnAddress;
     errors?: z.ZodFormattedError<ReturnAddress>;
+    serverErrors?: Partial<Record<keyof ReturnAddress, string>>;
     onStringChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
     onSelectChange: (e: ChangeEvent<HTMLSelectElement>) => void;
     onPhoneChange: (value: string | undefined) => void;
@@ -33,6 +34,7 @@ interface ReturnAddressSectionProps {
 const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
     address,
     errors,
+    serverErrors,
     onStringChange,
     onSelectChange,
     onPhoneChange,
@@ -58,7 +60,11 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             onChange={onStringChange}
                             onBlur={onBlur}
                             placeholder="John Doe"
+                            className={errors?.contactPerson?._errors.length || serverErrors?.contactPerson ? "border-red-500" : ""}
                         />
+                        {(errors?.contactPerson?._errors[0] || serverErrors?.contactPerson) && (
+                            <p className="text-red-500 text-xs mt-1">{errors?.contactPerson?._errors[0] || serverErrors?.contactPerson}</p>
+                        )}
                     </div>
 
                     <div>
@@ -74,26 +80,30 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                                 className={cn(
                                     "w-full",
                                     "flex h-12 rounded-none border-2 bg-background px-3 py-2 text-sm file:text-foreground placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2",
+                                    serverErrors?.phoneNumber ? "border-red-500" : ""
                                 )}
                                 placeholder="Enter phone number"
                             />
                         </div>
+                        {serverErrors?.phoneNumber && (
+                            <p className="text-red-500 text-xs mt-1">{serverErrors.phoneNumber}</p>
+                        )}
                     </div>
                 </div>
 
                 <div>
                     <Label htmlFor="returnAddress.addressLine">Address Line*</Label>
-                    <Input
-                        id="returnAddress.addressLine"
-                        name="returnAddress.addressLine"
-                        value={address.addressLine}
-                        onChange={onStringChange}
-                        onBlur={onBlur}
-                        placeholder="123 Main Street"
-                        className={errors?.addressLine?._errors.length ? "border-red-500" : ""}
-                    />
-                    {errors?.addressLine?._errors[0] && (
-                        <p className="text-red-500 text-xs mt-1">{errors.addressLine._errors[0]}</p>
+                        <Input
+                            id="returnAddress.addressLine"
+                            name="returnAddress.addressLine"
+                            value={address.addressLine}
+                            onChange={onStringChange}
+                            onBlur={onBlur}
+                            placeholder="123 Main Street"
+                            className={errors?.addressLine?._errors.length || serverErrors?.addressLine ? "border-red-500" : ""}
+                        />
+                    {(errors?.addressLine?._errors[0] || serverErrors?.addressLine) && (
+                        <p className="text-red-500 text-xs mt-1">{errors?.addressLine?._errors[0] || serverErrors?.addressLine}</p>
                     )}
                 </div>
 
@@ -107,10 +117,10 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             onChange={onStringChange}
                             onBlur={onBlur}
                             placeholder="New York"
-                            className={errors?.city?._errors.length ? "border-red-500" : ""}
+                            className={errors?.city?._errors.length || serverErrors?.city ? "border-red-500" : ""}
                         />
-                        {errors?.city?._errors[0] && (
-                            <p className="text-red-500 text-xs mt-1">{errors.city._errors[0]}</p>
+                        {(errors?.city?._errors[0] || serverErrors?.city) && (
+                            <p className="text-red-500 text-xs mt-1">{errors?.city?._errors[0] || serverErrors?.city}</p>
                         )}
                     </div>
 
@@ -123,7 +133,11 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             onChange={onStringChange}
                             onBlur={onBlur}
                             placeholder="NY"
+                            className={serverErrors?.region ? "border-red-500" : ""}
                         />
+                        {serverErrors?.region && (
+                            <p className="text-red-500 text-xs mt-1">{serverErrors.region}</p>
+                        )}
                     </div>
 
                     <div>
@@ -135,7 +149,11 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             onChange={onStringChange}
                             onBlur={onBlur}
                             placeholder="10001"
+                            className={serverErrors?.postalCode ? "border-red-500" : ""}
                         />
+                        {serverErrors?.postalCode && (
+                            <p className="text-red-500 text-xs mt-1">{serverErrors.postalCode}</p>
+                        )}
                     </div>
                 </div>
 
@@ -150,7 +168,7 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                                 onSelectChange(e);
                                 onBlur();
                             }}
-                            className="border-2"
+                            className={cn("border-2", serverErrors?.country ? "border-red-500" : "")}
                         >
                             <option value="">Select a country</option>
                             {CountryData.map((country) => (
@@ -159,8 +177,8 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                                 </option>
                             ))}
                         </Select>
-                        {errors?.country?._errors[0] && (
-                            <p className="text-red-500 text-xs mt-1">{errors.country._errors[0]}</p>
+                        {(errors?.country?._errors[0] || serverErrors?.country) && (
+                            <p className="text-red-500 text-xs mt-1">{errors?.country?._errors[0] || serverErrors?.country}</p>
                         )}
                     </div>
 
@@ -174,7 +192,11 @@ const ReturnAddressSection: FC<ReturnAddressSectionProps> = ({
                             onChange={onStringChange}
                             onBlur={onBlur}
                             placeholder="returns@yourcompany.com"
+                            className={serverErrors?.email ? "border-red-500" : ""}
                         />
+                        {serverErrors?.email && (
+                            <p className="text-red-500 text-xs mt-1">{serverErrors.email}</p>
+                        )}
                     </div>
                 </div>
             </CardContent>

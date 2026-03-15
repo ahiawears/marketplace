@@ -1,9 +1,9 @@
 "use client";
 
-import { ChangeEvent, FC, FormEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, FC, FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { Input } from "../ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
-import { Info } from "lucide-react";
+import { AlertCircle, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MoneyInput } from "../ui/money-input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
@@ -22,6 +22,7 @@ import PhoneInput from "react-phone-number-input";
 import { updateBrandReturnPolicy } from "@/actions/edit-brand-details/update-brand-return-policy";
 import { toast } from "sonner";
 import { Select } from "../ui/select";
+import { Alert, AlertDescription, AlertTitle } from "../ui/alert";
 
 type FixedRestockingFee = Extract<ReturnPolicy['restockingFee'], { type: 'fixed' }>;
 
@@ -123,9 +124,12 @@ const defaultPolicy: ReturnPolicy = {
 
 const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, todayExchangeRate, data }) => {
     const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+    const formRef = useRef<HTMLFormElement | null>(null);
 
     const [returnPolicy, setReturnPolicy] = useState<ReturnPolicy>(data || defaultPolicy);
     const [errors, setErrors] = useState<ZodFormattedError<ReturnPolicy> | null>(null);
+    const [submissionIssues, setSubmissionIssues] = useState<string[]>([]);
+    const [serverFieldErrors, setServerFieldErrors] = useState<Record<string, string[]>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -405,24 +409,147 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
         const result = validateReturnPolicy(returnPolicy);
         if (!result.success) {
             setErrors(result.error.format());
+            setServerFieldErrors({});
             return false;
         }
         setErrors(null);
+        setServerFieldErrors({});
         return true;
+    };
+
+    const formatServerIssues = (result: {
+        message?: string;
+        errors?: Array<{ path?: (string | number)[]; message?: string }>;
+    }) => {
+        const fieldErrors: Record<string, string[]> = {};
+
+        if (!Array.isArray(result.errors)) {
+            return fieldErrors;
+        }
+
+        result.errors.forEach((error) => {
+            if (!error?.message) {
+                return;
+            }
+
+            const path = Array.isArray(error.path) && error.path.length > 0
+                ? error.path.join(".")
+                : "_form";
+
+            fieldErrors[path] = [...(fieldErrors[path] || []), error.message];
+        });
+
+        return fieldErrors;
+    };
+
+    const collectServerIssues = (result: {
+        message?: string;
+        errors?: Array<{ path?: (string | number)[]; message?: string }>;
+    }) => {
+        const issues = new Set<string>();
+
+        if (Array.isArray(result.errors)) {
+            result.errors.forEach((error) => {
+                if (error?.message) {
+                    issues.add(error.message);
+                }
+            });
+        }
+
+        if (issues.size === 0 && result.message) {
+            issues.add(result.message);
+        }
+
+        return Array.from(issues);
+    };
+
+    const getServerFieldError = (...paths: string[]) => {
+        for (const path of paths) {
+            const message = serverFieldErrors[path]?.[0];
+            if (message) {
+                return message;
+            }
+        }
+        return undefined;
+    };
+
+    const flattenFormattedErrorPaths = (
+        currentErrors: z.ZodFormattedError<ReturnPolicy>,
+        prefix = ""
+    ): string[] => {
+        const paths: string[] = [];
+
+        Object.entries(currentErrors).forEach(([key, value]) => {
+            if (key === "_errors" || !value || typeof value !== "object") {
+                return;
+            }
+
+            const nextPath = prefix ? `${prefix}.${key}` : key;
+            const typedValue = value as { _errors?: string[] };
+
+            if (typedValue._errors && typedValue._errors.length > 0) {
+                paths.push(nextPath);
+            }
+
+            paths.push(...flattenFormattedErrorPaths(value as z.ZodFormattedError<ReturnPolicy>, nextPath));
+        });
+
+        return paths;
+    };
+
+    const getSectionIdForPath = (path: string) => {
+        if (path.startsWith("returnWindowDays")) return "core-policy-section";
+        if (path.startsWith("conditionRequirements")) return "conditions-section";
+        if (path.startsWith("evidenceRequirements")) return "evidence-section";
+        if (path.startsWith("returnShipping") || path.startsWith("returnMethods") || path === "_form") return "shipping-methods-section";
+        if (path.startsWith("returnReasons")) return "return-reasons-section";
+        if (path.startsWith("refundMethods")) return "refund-methods-section";
+        if (path.startsWith("restockingFee")) return "restocking-fee-section";
+        if (path.startsWith("exchangePolicy")) return "exchange-policy-section";
+        if (path.startsWith("internationalReturns")) return "international-returns-section";
+        if (path.startsWith("returnSubmissionLimits")) return "submission-limits-section";
+        if (path.startsWith("returnAddress")) return "return-address-section";
+        if (path.startsWith("returnContact")) return "return-contact-section";
+        return null;
+    };
+
+    const scrollToErrorLocation = (paths: string[]) => {
+        for (const path of paths) {
+            const exactField = document.querySelector(
+                `[name="${path}"], #${CSS.escape(path)}`
+            ) as HTMLElement | null;
+
+            if (exactField) {
+                exactField.scrollIntoView({ behavior: "smooth", block: "center" });
+                exactField.focus?.({ preventScroll: true });
+                return;
+            }
+
+            const sectionId = getSectionIdForPath(path);
+            if (sectionId) {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.scrollIntoView({ behavior: "smooth", block: "center" });
+                    return;
+                }
+            }
+        }
+    };
+
+    const scrollToRenderedError = () => {
+        const firstError = formRef.current?.querySelector("p.text-red-500") as HTMLElement | null;
+        if (!firstError) {
+            return;
+        }
+
+        const nearestSection = firstError.closest('[id$="-section"]') as HTMLElement | null;
+        const target = nearestSection || firstError;
+
+        target.scrollIntoView({ behavior: "smooth", block: "center" });
     };
 
     const handleBlur = (): void => {
         validateForm();
-    };
-
-    const findFirstError = (currentErrors: z.ZodFormattedError<ReturnPolicy>) => {
-        const errorKeys = Object.keys(currentErrors).filter(key => key !== '_errors');
-        for (const key of errorKeys) {
-            // Special handling for nested fields like returnAddress.addressLine
-            const selector = key.includes('.') ? `[name="${key}"]` : `[name="${key}"], [id^="${key}."]`;
-            return document.querySelector(selector);
-        }
-        return null;
     };
 
     // Helper to render return reasons badges in preview (simple mapping)
@@ -449,21 +576,22 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
         
         if (result.success) {
             setErrors(null);
+            setSubmissionIssues([]);
+            setServerFieldErrors({});
             console.log("Ready to submit:", returnPolicy);
             setIsConfirmationOpen(true);
         } else {
             const validationErrors = result.error.format();
             setErrors(validationErrors);
+            setSubmissionIssues([]);
+            setServerFieldErrors({});
             console.log("errors", validationErrors);
             toast.error("Please fix the errors before saving.", {
                 description: "Review the fields marked in red and try again.",
             });
             setTimeout(() => {
-                if (validationErrors) {
-                    const el = findFirstError(validationErrors);
-                    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    (el as HTMLElement)?.focus({ preventScroll: true });
-                }
+                scrollToErrorLocation(flattenFormattedErrorPaths(validationErrors));
+                scrollToRenderedError();
             }, 300);
         }
     };
@@ -471,6 +599,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
     const handleConfirmSubmit = async () => {
         setIsConfirmationOpen(false);
         if (!validateForm()) {
+            setSubmissionIssues([]);
             toast.error("Please fix the validation errors before submitting.");
             return;
         }
@@ -489,19 +618,40 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                 : "Failed to update return policy.";
 
             if (result.success) {
+                setSubmissionIssues([]);
+                setServerFieldErrors({});
                 toast.success(successMessage, {
                     id: toastId,
                 });
             } else {
+                const formattedIssues = collectServerIssues(result);
+                const mappedFieldErrors = formatServerIssues(result);
+                setSubmissionIssues(formattedIssues);
+                setServerFieldErrors(mappedFieldErrors);
                 toast.error(errorMessageFromResult, {
                     id: toastId,
+                    description: formattedIssues[0] && formattedIssues[0] !== errorMessageFromResult
+                        ? formattedIssues[0]
+                        : undefined,
                 });
+                const serverErrorPaths = Object.keys(mappedFieldErrors);
+                if (serverErrorPaths.length > 0) {
+                    setTimeout(() => {
+                        scrollToErrorLocation(serverErrorPaths);
+                        scrollToRenderedError();
+                    }, 100);
+                } else {
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                }
             }
 
         } catch (error) {
             console.error("Error saving policy:", error);
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+            setSubmissionIssues([errorMessage]);
+            setServerFieldErrors({});
             toast.error(`Error: ${errorMessage}`, { id: toastId });
+            window.scrollTo({ top: 0, behavior: "smooth" });
         } finally {
             setIsSubmitting(false);
         }
@@ -528,7 +678,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
     return (
         <>
             <p>Todays exchange rate is {todayExchangeRate.toFixed(2)}</p>
-            <form onSubmit={handleOpenConfirmation} className="max-w-6xl mx-auto p-6 space-y-6">
+            <form ref={formRef} onSubmit={handleOpenConfirmation} className="max-w-6xl mx-auto p-6 space-y-6">
                 <div className="space-y-2">
                     <h2 className="text-2xl font-bold">
                         Return Policy
@@ -538,8 +688,22 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                     </p>
                 </div>
 
+                {submissionIssues.length > 0 && (
+                    <Alert variant="destructive" className="border-2 rounded-none">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Could not save return policy</AlertTitle>
+                        <AlertDescription>
+                            <div className="space-y-1">
+                                {submissionIssues.map((issue) => (
+                                    <p key={issue}>{issue}</p>
+                                ))}
+                            </div>
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 {/* Core Policy Section */}
-                <Card className="border-2 rounded-none">
+                <Card id="core-policy-section" className="border-2 rounded-none">
                     <CardHeader>
                         <CardTitle>Core Policy</CardTitle>
                         <CardDescription>Set the main rules for your returns.</CardDescription>
@@ -570,15 +734,15 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                                 max={365}
                                 className="mt-2"
                             />
-                            {errors?.returnWindowDays?._errors[0] && (
-                                <p className="text-red-500 text-xs mt-1">{errors.returnWindowDays._errors[0]}</p>
+                            {(errors?.returnWindowDays?._errors[0] || getServerFieldError("returnWindowDays")) && (
+                                <p className="text-red-500 text-xs mt-1">{errors?.returnWindowDays?._errors[0] || getServerFieldError("returnWindowDays")}</p>
                             )}
                         </div>
                     </CardContent>
                 </Card>
 
                 {/* Condition Requirements */}
-                <Card className="border-2 rounded-none">
+                <Card id="conditions-section" className="border-2 rounded-none">
                     <CardHeader>
                         <CardTitle>Conditions</CardTitle>
                         <CardDescription>Item condition requirements for returns.</CardDescription>
@@ -636,7 +800,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                 </Card>
 
                 {/* EVIDENCE REQUIREMENTS */}
-                <Card className="border-2 rounded-none">
+                <Card id="evidence-section" className="border-2 rounded-none">
                     <CardHeader>
                         <CardTitle>Evidence Requirements</CardTitle>
                         <CardDescription>What proof customers must submit for returns (photos, serials, etc.).</CardDescription>
@@ -686,7 +850,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                 </Card>
 
                 {/* SHIPPING & METHODS */}
-                <Card className="border-2 rounded-none">
+                <Card id="shipping-methods-section" className="border-2 rounded-none">
                     <CardHeader>
                         <CardTitle>Shipping & Return Methods</CardTitle>
                         <CardDescription>Who pays for return shipping and how returns are performed.</CardDescription>
@@ -786,14 +950,16 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                                     disabled: returnPolicy.returnShipping.responsibility === 'customer' },
                             ]}
                         />
-                        {errors?._errors && errors._errors.length > 0 && (
-                            <p className="text-red-500 text-sm mt-2">{errors._errors.join(", ")}</p>
+                        {((errors?._errors && errors._errors.length > 0) || getServerFieldError("_form", "returnMethods", "returnShipping.responsibility", "returnShipping.paidByBrandReasons")) && (
+                            <p className="text-red-500 text-sm mt-2">
+                                {errors?._errors?.[0] || getServerFieldError("_form", "returnMethods", "returnShipping.responsibility", "returnShipping.paidByBrandReasons")}
+                            </p>
                         )}
                     </CardContent>
                 </Card>
 
                 {/* RETURN REASONS */}
-                <Card className="border-2 rounded-none">
+                <Card id="return-reasons-section" className="border-2 rounded-none">
                     <CardHeader>
                         <CardTitle>Accepted Return Reasons</CardTitle>
                         <CardDescription>Select allowed reasons for returns</CardDescription>
@@ -873,7 +1039,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                 </Card>
 
                 {/* REFUNDS & RESTOCKING */}
-                <Card className="border-2 rounded-none">
+                <Card id="refund-methods-section" className="border-2 rounded-none">
                     <CardHeader>
                         <CardTitle>Refunds & Restocking</CardTitle>
                         <CardDescription>Refund methods, processing time, and restocking fees.</CardDescription>
@@ -1023,14 +1189,20 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                         
                         {errors?.restockingFee && (
                             <>
-                                {errors.restockingFee.type?._errors[0] && (
-                                    <p className="text-red-500 text-sm mt-2">{errors.restockingFee.type._errors[0]}</p>
+                                {(errors.restockingFee.type?._errors[0] || getServerFieldError("restockingFee.type")) && (
+                                    <p className="text-red-500 text-sm mt-2">{errors.restockingFee.type?._errors[0] || getServerFieldError("restockingFee.type")}</p>
                                 )}
-                                {errors.restockingFee.value?._errors[0] && (
-                                    <p className="text-red-500 text-sm mt-2">{errors.restockingFee.value._errors[0]}</p>
+                                {(errors.restockingFee.value?._errors[0] || getServerFieldError("restockingFee.value")) && (
+                                    <p className="text-red-500 text-sm mt-2">{errors.restockingFee.value?._errors[0] || getServerFieldError("restockingFee.value")}</p>
                                 )}
-                                {(errors.restockingFee as ZodFormattedError<FixedRestockingFee>).usdPrice?._errors[0] && (
-                                    <p className="text-red-500 text-sm mt-2">{(errors.restockingFee as ZodFormattedError<FixedRestockingFee>).usdPrice?._errors[0]}</p>
+                                {(((errors.restockingFee as ZodFormattedError<FixedRestockingFee>).usdPrice?._errors[0]) || getServerFieldError("restockingFee.usdPrice")) && (
+                                    <p className="text-red-500 text-sm mt-2">{(errors.restockingFee as ZodFormattedError<FixedRestockingFee>).usdPrice?._errors[0] || getServerFieldError("restockingFee.usdPrice")}</p>
+                                )}
+                                {(errors.restockingFee.appliesTo?._errors[0] || getServerFieldError("restockingFee.appliesTo")) && (
+                                    <p className="text-red-500 text-sm mt-2">{errors.restockingFee.appliesTo?._errors[0] || getServerFieldError("restockingFee.appliesTo")}</p>
+                                )}
+                                {(errors.restockingFee._errors?.[0]) && (
+                                    <p className="text-red-500 text-sm mt-2">{errors.restockingFee._errors[0]}</p>
                                 )}
                             </>
                         )}
@@ -1115,7 +1287,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
 
                 {/* EXCHANGE POLICY */}
                 {returnPolicy.refundMethods.includes("exchange") && (
-                    <Card className="border-2 rounded-none">
+                    <Card id="exchange-policy-section" className="border-2 rounded-none">
                         <CardHeader>
                             <CardTitle>Exchange Policy</CardTitle>
                             <CardDescription>Rules for exchanges (size, color, price differences).</CardDescription>
@@ -1151,15 +1323,15 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                                     </Select>
                                 </div>
                             </div>
-                            {errors?.refundMethods?._errors[0] && (
-                                <p className="text-red-500 text-sm -mt-2">{errors.refundMethods._errors[0]}</p>
+                            {(errors?.refundMethods?._errors[0] || getServerFieldError("refundMethods", "exchangePolicy.priceDifferenceHandling")) && (
+                                <p className="text-red-500 text-sm -mt-2">{errors?.refundMethods?._errors[0] || getServerFieldError("refundMethods", "exchangePolicy.priceDifferenceHandling")}</p>
                             )}
                         </CardContent>
                     </Card>
                 )}
 
                 {/* INTERNATIONAL RETURNS */}
-                <Card className="border-2 rounded-none">
+                <Card id="international-returns-section" className="border-2 rounded-none">
                     <CardHeader>
                         <CardTitle>International Returns</CardTitle>
                         <CardDescription>Settings for cross-border return behavior.</CardDescription>
@@ -1191,7 +1363,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                 </Card>
 
                 {/* SUBMISSION LIMITS */}
-                <Card className="border-2 rounded-none">
+                <Card id="submission-limits-section" className="border-2 rounded-none">
                     <CardHeader>
                         <CardTitle>Submission Limits</CardTitle>
                         <CardDescription>Control how many return/exchange requests customers can open.</CardDescription>
@@ -1226,17 +1398,30 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                 </Card>
 
                 {/* RETURN ADDRESS */}
-                <ReturnAddressSection
-                    address={returnPolicy.returnAddress}
-                    errors={errors?.returnAddress}
-                    onStringChange={handleStringInputChange}
-                    onSelectChange={handleSelectChange}
-                    onPhoneChange={handlePhoneChange}
-                    onBlur={handleBlur}
-                />
+                <div id="return-address-section">
+                    <ReturnAddressSection
+                        address={returnPolicy.returnAddress}
+                        errors={errors?.returnAddress}
+                        serverErrors={{
+                            contactPerson: getServerFieldError("returnAddress.contactPerson"),
+                            addressLine: getServerFieldError("returnAddress.addressLine"),
+                            addressLine2: getServerFieldError("returnAddress.addressLine2"),
+                            city: getServerFieldError("returnAddress.city"),
+                            region: getServerFieldError("returnAddress.region"),
+                            postalCode: getServerFieldError("returnAddress.postalCode"),
+                            country: getServerFieldError("returnAddress.country"),
+                            phoneNumber: getServerFieldError("returnAddress.phoneNumber"),
+                            email: getServerFieldError("returnAddress.email"),
+                        }}
+                        onStringChange={handleStringInputChange}
+                        onSelectChange={handleSelectChange}
+                        onPhoneChange={handlePhoneChange}
+                        onBlur={handleBlur}
+                    />
+                </div>
 
                 {/* RETURN CONTACT */}
-                <Card className="border-2 rounded-none">
+                <Card id="return-contact-section" className="border-2 rounded-none">
                     <CardHeader>
                         <CardTitle>Return Contact</CardTitle>
                         <CardDescription>Contact customers should use for returns.</CardDescription>
@@ -1251,7 +1436,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                                 onChange={handleStringInputChange}
                                 onBlur={validateForm}
                             />
-                            {errors?.returnContact?.name?._errors[0] && <p className="text-red-500 text-xs mt-1">{errors.returnContact.name._errors[0]}</p>}
+                            {(errors?.returnContact?.name?._errors[0] || getServerFieldError("returnContact.name")) && <p className="text-red-500 text-xs mt-1">{errors?.returnContact?.name?._errors[0] || getServerFieldError("returnContact.name")}</p>}
                         </div>
 
                         <div>
@@ -1263,7 +1448,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
                                 onChange={handleStringInputChange}
                                 onBlur={validateForm}
                             />
-                            {errors?.returnContact?.email?._errors[0] && <p className="text-red-500 text-xs mt-1">{errors.returnContact.email._errors[0]}</p>}
+                            {(errors?.returnContact?.email?._errors[0] || getServerFieldError("returnContact.email")) && <p className="text-red-500 text-xs mt-1">{errors?.returnContact?.email?._errors[0] || getServerFieldError("returnContact.email")}</p>}
                         </div>
 
                         <div>
@@ -1348,7 +1533,7 @@ const ReturnPolicyForm: FC<ReturnPolicyFormProps> = ({ userId, currencyCode, tod
             {isConfirmationOpen && (
                 <ConfirmationModal
                     title="Confirm Save"
-                    description="Are you sure you want to save these return policy settings? To avoid affecting orders in progress, these changes will take effect in 48 hours."
+                    description="Are you sure you want to save these return policy settings? These changes will become active immediately for future return requests."
                     onConfirm={handleConfirmSubmit}
                     onCancel={() => setIsConfirmationOpen(false)}
                 />
