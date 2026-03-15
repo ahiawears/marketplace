@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import SizeSelect from './size-select';
-import addItemToUserCart from '@/actions/add-item-to-user-cart';
 import Image from 'next/image';
 import { Button } from './button';
 import SuccessModal from '../modals/success-modal';
 import ModalBackdrop from '../modals/modal-backdrop';
+import { checkVariantStock } from '@/actions/user-actions/userCartActions/checkVariantStock';
+import { upsertCart } from '@/actions/user-actions/userCartActions/upsertCart';
+import { strictSerialize } from '@/lib/serialization';
 
 interface ProductItemProps {
     productId: string;
@@ -20,11 +22,44 @@ interface Size {
     name: string;
 }
 
+interface ProductSizesResponse {
+    data?: {
+        sizes: Size[];
+    };
+}
+
 const ModalProductItem: React.FC<ProductItemProps> = ({ productId, productName, productPrice, mainImage, thumbnails }) => {
     const productImages = [mainImage, ...thumbnails];
     const [selectedImage, setSelectedImage] = useState(mainImage);
     const [selectedSize, setSelectedSize] = useState<Size | null>(null);
+    const [sizes, setSizes] = useState<Size[]>([]);
+    const [sizeError, setSizeError] = useState<string | null>(null);
     const [successModal, setSuccessModal] = useState(false);
+    const [isCartPending, startCartTransition] = useTransition();
+
+    useEffect(() => {
+        const fetchSizes = async () => {
+            try {
+                setSizeError(null);
+                const response = await fetch(`/api/getProductSizes/${productId}`);
+                const data: ProductSizesResponse = await response.json();
+
+                if (!response.ok) {
+                    throw new Error("Failed to fetch product sizes.");
+                }
+
+                setSizes(data.data?.sizes ?? []);
+            } catch (error) {
+                console.error("Error fetching sizes:", error);
+                setSizeError(error instanceof Error ? error.message : "Failed to fetch product sizes.");
+                setSizes([]);
+            }
+        };
+
+        if (productId) {
+            fetchSizes();
+        }
+    }, [productId]);
 
     const handleModalClose = async () => {
         setSuccessModal(false);
@@ -36,21 +71,54 @@ const ModalProductItem: React.FC<ProductItemProps> = ({ productId, productName, 
             return;
         }
 
-        const item = {
-            productId,
-            sizeId: selectedSize.size_id,
-            quantity: 1,
-            price: productPrice,
-            productName,
-        };
+        startCartTransition(async () => {
+            try {
+                const userResponse = await fetch('/api/getUserDetails');
+                const userPayload = await userResponse.json();
+                const user = userPayload?.data?.user;
 
-        try {
-            await addItemToUserCart(item);
-            setSuccessModal(true);
-        } catch (error) {
-            console.error("Error adding item to cart:", error);
-            alert("Failed to add item to cart. Please try again.");
-        }
+                if (!userResponse.ok || !user?.id) {
+                    throw new Error("Please log in to add items to your cart.");
+                }
+
+                const verifiedInput = strictSerialize({
+                    variantId: productId,
+                    size: selectedSize.name,
+                    quantity: 1,
+                });
+
+                const stockResult = await checkVariantStock(
+                    verifiedInput.variantId,
+                    verifiedInput.size,
+                    verifiedInput.quantity
+                );
+
+                const verifiedStock = strictSerialize(stockResult);
+                if (!verifiedStock.success || !verifiedStock.sizeId) {
+                    throw new Error(verifiedStock.error || "Unable to verify stock.");
+                }
+
+                const cartData = strictSerialize({
+                    variantId: productId,
+                    sizeId: verifiedStock.sizeId,
+                    quantity: 1,
+                    isAnonymous: false,
+                    userId: user.id,
+                });
+
+                const cartResult = await upsertCart(cartData);
+                const verifiedCart = strictSerialize(cartResult);
+
+                if (!verifiedCart.success) {
+                    throw new Error(verifiedCart.error || "Failed to add item to cart.");
+                }
+
+                setSuccessModal(true);
+            } catch (error) {
+                console.error("Error adding item to cart:", error);
+                alert(error instanceof Error ? error.message : "Failed to add item to cart. Please try again.");
+            }
+        });
     };
 
     return (
@@ -91,14 +159,19 @@ const ModalProductItem: React.FC<ProductItemProps> = ({ productId, productName, 
                     <div>
                         <h1 className="text-lg font-bold mb-2">{productName}</h1>
                         <p className="text-gray-600 mb-4">${productPrice}</p>
-                        <SizeSelect productId={productId} onSelectSize={setSelectedSize} />
+                        {sizeError ? (
+                            <p className="text-sm text-red-600 mb-4">{sizeError}</p>
+                        ) : (
+                            <SizeSelect sizes={sizes} onSelectSize={setSelectedSize} />
+                        )}
                     </div>
                     <div>
                         <Button
                             onClick={handleAddToCart}
+                            disabled={isCartPending || sizes.length === 0}
                             className="w-full py-2 px-4 text-white rounded-lg  transition"
                         >
-                            Add to Cart
+                            {isCartPending ? "Adding..." : "Add to Cart"}
                         </Button>
                     </div>
                 </div>

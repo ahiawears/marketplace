@@ -208,3 +208,56 @@ export const validateProductVariant = (variant: ProductVariantType, categoryName
 
     return { isValid, errors };
 };
+
+export const validateProductShippingDetails = (
+    selectedShippingMethods: string[],
+    methodFees: ProductShippingDeliveryType["methods"],
+    shippingConfig: ShippingConfigDataProps
+): { isValid: boolean; error: string } => {
+    if (!selectedShippingMethods.length) {
+        return { isValid: false, error: "Select at least one shipping method." };
+    }
+
+    if (selectedShippingMethods.includes("sameDayDelivery")) {
+        if (!shippingConfig?.shippingMethods?.sameDayDelivery?.available) {
+            return { isValid: false, error: "Same day delivery is not available in your shipping configuration." };
+        }
+
+        const fee = methodFees?.sameDay?.fee;
+        if (fee === undefined || fee === null || Number.isNaN(fee) || fee < 0) {
+            return { isValid: false, error: "Enter a valid same day delivery fee." };
+        }
+    }
+
+    for (const methodKey of ["standardShipping", "expressShipping"] as const) {
+        if (!selectedShippingMethods.includes(methodKey)) {
+            continue;
+        }
+
+        const productMethodKey = methodKey === "standardShipping" ? "standard" : "express";
+        const configMethod = shippingConfig?.shippingMethods?.[methodKey];
+
+        if (!configMethod?.available) {
+            return { isValid: false, error: `${methodKey === "standardShipping" ? "Standard" : "Express"} shipping is not available in your shipping configuration.` };
+        }
+
+        const zoneFees = methodFees?.[productMethodKey];
+        const availableZoneKeys = (Object.keys(shippingConfig?.shippingZones ?? {}) as DeliveryZoneKey[]).filter(
+            (zoneKey) => shippingConfig.shippingZones[zoneKey]?.available
+        );
+
+        const hasValidZone = availableZoneKeys.some((zoneKey) => {
+            const zoneConfig = zoneFees?.[zoneKey];
+            return zoneConfig?.available && zoneConfig.fee !== undefined && zoneConfig.fee !== null && !Number.isNaN(zoneConfig.fee) && zoneConfig.fee >= 0;
+        });
+
+        if (!hasValidZone) {
+            return {
+                isValid: false,
+                error: `Add at least one valid ${methodKey === "standardShipping" ? "standard" : "express"} shipping zone fee.`,
+            };
+        }
+    }
+
+    return { isValid: true, error: "" };
+};

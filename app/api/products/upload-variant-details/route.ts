@@ -1,7 +1,7 @@
 import { createClient } from "@/supabase/server";
 import { NextResponse } from "next/server";
 import { VariantDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
-import { VariantFormDetails } from "@/components/brand-dashboard/add-product/variants-details-form";
+//import { VariantFormDetails } from "@/components/brand-dashboard/add-product/variants-details-form";
 import { CountryData, CountryDataType } from "@/lib/country-data";
 import { GetBrandLegalDetails } from "@/actions/get-brand-details/get-brand-legal-details";
 import { GetExchangeRates } from "@/hooks/get-exchange-rate";
@@ -11,6 +11,9 @@ import { createVariantColors } from "@/actions/add-product/create-variant-colors
 import { createVariantMaterials } from "@/actions/add-product/create-variant-materials";
 import { createVariantTags } from "@/actions/add-product/create-variant-tags";
 import { createSizes } from "@/actions/add-product/create-sizes";
+import { z } from "zod";
+
+type VariantDetails = z.infer<typeof VariantDetailsValidationSchema>;
 
 
 function getCurrencyByIso2(iso2Code: string | undefined, countryData: CountryDataType[]): string | null {
@@ -40,7 +43,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ success: false, message: "Missing required form data." }, { status: 400 });
         }
 
-        let variantDetails: VariantFormDetails;
+        let variantDetails: VariantDetails;
         try {
             variantDetails = JSON.parse(variantDetailsRaw);
         } catch (error) {

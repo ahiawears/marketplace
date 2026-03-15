@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { createClient } from '@/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, CheckCircle, XCircle, Mail, Clock } from 'lucide-react';
+import { Loader2, CheckCircle, Mail, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 
-const ConfirmAuthEmailPage = () => {
+const ConfirmAuthEmailContent = () => {
     const [loading, setLoading] = useState(true);
     const [user, setUser] = useState<any>(null);
     const router = useRouter();
@@ -210,4 +210,19 @@ const ConfirmAuthEmailPage = () => {
     );
 };
 
-export default ConfirmAuthEmailPage;
+export default function ConfirmAuthEmailPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-50 flex items-center justify-center p-4">
+                    <div className="text-center">
+                        <Loader2 className="h-12 w-12 text-blue-600 animate-spin mx-auto mb-4" />
+                        <h2 className="text-xl font-semibold text-gray-800">Loading verification details...</h2>
+                    </div>
+                </div>
+            }
+        >
+            <ConfirmAuthEmailContent />
+        </Suspense>
+    );
+}
