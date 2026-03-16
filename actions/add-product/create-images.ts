@@ -2,8 +2,13 @@ export async function createImages(supabase: any, variantId: string, variantImag
     try {
         const imageUrls: string[] = [];
         const bucketName = "product-images";
-        
-        const uniqueFileName = `${variantId}/image-${index}.${variantImages.type.split("/")[1] || "png"}`;
+
+        const extension = variantImages.type.split("/")[1] || "png";
+        const uniqueToken =
+            typeof crypto !== "undefined" && "randomUUID" in crypto
+                ? crypto.randomUUID()
+                : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+        const uniqueFileName = `${variantId}/image-${index}-${uniqueToken}.${extension}`;
 
         // Upload to Supabase Storage
         const { data, error } = await supabase.storage

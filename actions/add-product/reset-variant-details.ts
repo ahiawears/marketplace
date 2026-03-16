@@ -1,4 +1,8 @@
-export async function resetVariantDetails(supabase: any, variantId: string) {
+export async function resetVariantDetails(
+    supabase: any,
+    variantId: string,
+    preservedImageUrls: string[] = []
+) {
     const bucketName = "product-images";
     const { data: existingImages, error: fetchImagesError } = await supabase
         .from("product_images")
@@ -9,7 +13,10 @@ export async function resetVariantDetails(supabase: any, variantId: string) {
         throw fetchImagesError;
     }
 
+    const preservedImageSet = new Set(preservedImageUrls);
+
     const storagePaths = (existingImages || [])
+        .filter((image: { image_url: string | null }) => image.image_url && !preservedImageSet.has(image.image_url))
         .map((image: { image_url: string | null }) => {
             if (!image.image_url) {
                 return null;

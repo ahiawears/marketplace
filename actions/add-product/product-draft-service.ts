@@ -198,10 +198,19 @@ export async function saveVariantDraft(
 ) {
     await assertBrandOwnsProduct(supabase, brandId, input.productId);
 
+    const incomingVariantDetails =
+        input.variantDetails && typeof input.variantDetails === "object"
+            ? input.variantDetails as Record<string, unknown>
+            : {};
+
+    const incomingImages = Array.isArray(incomingVariantDetails.images)
+        ? incomingVariantDetails.images.filter((image): image is string => typeof image === "string" && image.trim() !== "")
+        : [];
+
     const validatedData = requireParsedData(
         VariantDetailsValidationSchema.safeParse({
             ...input.variantDetails,
-            images: input.images.map((img) => img.name),
+            images: incomingImages,
             categoryName: input.categoryName,
         })
     );
@@ -252,12 +261,36 @@ export async function saveVariantDraft(
         imagesDescription: validatedData.imagesDescription || "",
     }, input.displayOrder);
 
-    await resetVariantDetails(supabase, newVariantId);
+    const preservedRemoteImages = validatedData.images.filter((image) => image.startsWith("http://") || image.startsWith("https://"));
+    await resetVariantDetails(supabase, newVariantId, preservedRemoteImages);
 
-    if (input.images.length > 0) {
-        await Promise.all(
-            input.images.map((image, index) => createImages(supabase, newVariantId, image, index))
-        );
+    let nextUploadedImageIndex = 0;
+
+    for (let index = 0; index < validatedData.images.length; index++) {
+        const imageSource = validatedData.images[index];
+
+        if (imageSource.startsWith("http://") || imageSource.startsWith("https://")) {
+            const { error: existingImageInsertError } = await supabase
+                .from("product_images")
+                .insert({
+                    product_variant_id: newVariantId,
+                    image_url: imageSource,
+                    is_main: index === 0,
+                });
+
+            if (existingImageInsertError) {
+                throw existingImageInsertError;
+            }
+            continue;
+        }
+
+        const nextFile = input.images[nextUploadedImageIndex];
+        if (!nextFile) {
+            continue;
+        }
+
+        await createImages(supabase, newVariantId, nextFile, index);
+        nextUploadedImageIndex += 1;
     }
 
     await createVariantColors(supabase, newVariantId, validatedData.colors);

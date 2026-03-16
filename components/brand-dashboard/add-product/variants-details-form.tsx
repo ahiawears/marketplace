@@ -66,6 +66,10 @@ async function imageSourceToFile(source: string, filename: string): Promise<File
         const blob = await response.blob();
         const originalFile = new File([blob], filename, { type: blob.type });
 
+        if (source.startsWith("http://") || source.startsWith("https://")) {
+            return originalFile;
+        }
+
         const options = {
             maxSizeMB: 2, // Target maximum size of 2MB
             maxWidthOrHeight: 1280, // Resize images to a max width/height of 1280px
@@ -111,6 +115,7 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayE
 
         // Convert all current image sources to File objects and append them.
         const imageUploadPromises = normalizedImages
+            .filter((imageUrl) => !(imageUrl.startsWith("http://") || imageUrl.startsWith("https://")))
             .map(async (imageUrl, i) => {
                 const imageFile = await imageSourceToFile(imageUrl, `variant-${index}-image-${i}.png`);
                 if (imageFile) {
