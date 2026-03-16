@@ -27,7 +27,7 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
     };
     return (
         <div className="overflow-x-auto border-2">
-            <table className="min-w-full bg-white rounded-lg shadow-md">
+            <table className="min-w-full bg-white rounded-none shadow-md">
                 <thead>
                     <tr className="bg-gray-100 text-left ">
                         <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Product Name</th>
@@ -42,7 +42,7 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
                     {products.map((product) => (
                         <Fragment key={product.id}>
                             <tr 
-                                className="hover:bg-gray-50"
+                                className="hover:bg-gray-50 cursor-pointer"
                                 onClick={() => toggleRow(product.id)}
                             >
                                 {/* Product Name */}
@@ -95,7 +95,7 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
                                             </div>
 
                                             {product.variants.length > 0 ? (
-                                                <div className="overflow-x-auto rounded-md border bg-white">
+                                                <div className="overflow-x-auto rounded-none border-2 bg-white">
                                                     <table className="min-w-full">
                                                         <thead className="bg-stone-50">
                                                             <tr className="text-left">
@@ -113,7 +113,7 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
                                                             {product.variants.map((variant) => (
                                                                 <tr key={variant.id} className="border-t align-top">
                                                                     <td className="px-4 py-3">
-                                                                        <div className="relative h-14 w-14 overflow-hidden rounded-md border bg-stone-100">
+                                                                        <div className="relative h-14 w-14 overflow-hidden rounded-none border-2 bg-stone-100">
                                                                             {variant.mainImageUrl ? (
                                                                                 <Image
                                                                                     src={variant.mainImageUrl}
@@ -141,10 +141,10 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
                                                                     <td className="px-4 py-3">{variant.price != null ? variant.price.toLocaleString() : "—"}</td>
                                                                     <td className="px-4 py-3">
                                                                         <span
-                                                                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                                                                            className={`inline-flex rounded-none px-2.5 py-1 text-xs font-medium ${
                                                                                 variant.status === "active"
-                                                                                    ? "bg-green-100 text-green-800"
-                                                                                    : "bg-gray-200 text-gray-700"
+                                                                                    ? "bg-green-100 text-green-800 border-2 border-green-300"
+                                                                                    : "bg-gray-200 text-gray-700 border-2 border-gray-300"
                                                                             }`}
                                                                         >
                                                                             {variant.status}

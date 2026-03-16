@@ -59,6 +59,7 @@ const AddProduct = async () => {
                         todayExchangeRate={todaysRate}
                         shippingConfig={shippingConfig.data}
                         globalReturnPolicy={globalReturnPolicy.success ? globalReturnPolicy.data : null}
+                        mode="create"
                     />
                 </div>
             </div>

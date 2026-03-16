@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CareDetailsSchemaType, GeneralDetailsSchemaType, ReturnPolicySchemaType, ShippingDetailsSchemaType, VariantDetailsArraySchemaType, VariantDetailsSchemaType } from '@/lib/validation-logics/add-product-validation/product-schema';
+import type { ProductEditorInitialData } from '@/actions/add-product/load-product-editor-data';
 import { imageStorage } from '../../lib/utils/imageStorage';
 
 const deepMerge = <T extends object>(target: T, source: Partial<T>): T => {
@@ -200,6 +201,7 @@ interface ProductFormState {
 	setCareDetails: (updates: Partial<CareDetailsSchemaType>) => void;
 	setReturnPolicy: (updates: Partial<ReturnPolicySchemaType>) => void;
 	setProductId: (newProductId: string) => void;
+	hydrateProductForm: (data: ProductEditorInitialData) => void;
 	markStepSaved: (step: keyof ProductFormState["savedSteps"]) => void;
 	markStepUnsaved: (step: keyof ProductFormState["savedSteps"]) => void;
 
@@ -355,6 +357,17 @@ export const useProductFormStore = create<ProductFormState>()(
 						...state.returnPolicy,
 						productId: id,
 					},
+				})),
+
+			hydrateProductForm: (data) =>
+				set(() => ({
+					generalDetails: data.generalDetails,
+					variantDetails: data.variantDetails.length > 0 ? data.variantDetails : DEFAULT_VARIANT_DETAILS,
+					shippingDetails: data.shippingDetails,
+					careDetails: data.careDetails,
+					returnPolicy: data.returnPolicy,
+					productId: data.productId,
+					savedSteps: data.savedSteps,
 				})),
 
 			markStepSaved: (step) =>

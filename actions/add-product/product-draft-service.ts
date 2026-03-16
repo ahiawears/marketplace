@@ -50,31 +50,29 @@ const slugify = (input: string) => {
         .replace(/-+/g, "-");
 };
 
-const generateUniqueSlug = async (supabase: any, baseSlug: string): Promise<string> => {
+const generateUniqueSlug = async (supabase: any, baseSlug: string, currentProductId?: string): Promise<string> => {
     let slug = baseSlug;
     let counter = 1;
-    let isUnique = false;
 
-    while (!isUnique) {
-        const { count, error } = await supabase
+    while (true) {
+        const { data, error } = await supabase
             .from("products_list")
-            .select("id", { count: "exact", head: true })
-            .eq("seo_metadata->>slug", slug);
+            .select("id, seo_metadata")
+            .filter("seo_metadata->>slug", "eq", slug);
 
         if (error) {
             console.error("Error checking slug uniqueness:", error);
             return `${baseSlug}-${Date.now()}`;
         }
 
-        if (count !== null && count > 0) {
-            counter++;
-            slug = `${baseSlug}-${counter}`;
-        } else {
-            isUnique = true;
+        const conflictingProduct = (data || []).find((row: { id: string }) => row.id !== currentProductId);
+        if (!conflictingProduct) {
+            return slug;
         }
-    }
 
-    return slug;
+        counter++;
+        slug = `${baseSlug}-${counter}`;
+    }
 };
 
 const generateUniqueVariantSlug = async (
@@ -134,14 +132,19 @@ function requireParsedData<T>(schemaResult: z.SafeParseReturnType<unknown, T>): 
 export async function saveGeneralDetailsDraft(
     supabase: any,
     brandId: string,
-    generalDetailsInput: unknown
+    generalDetailsInput: unknown,
+    currentProductId?: string
 ) {
+    if (currentProductId) {
+        await assertBrandOwnsProduct(supabase, brandId, currentProductId);
+    }
+
     const validatedData = requireParsedData(
         GeneralDetailsValidationSchema.safeParse(generalDetailsInput)
     );
 
     const baseSlug = slugify(validatedData.productName);
-    const uniqueSlug = await generateUniqueSlug(supabase, baseSlug);
+    const uniqueSlug = await generateUniqueSlug(supabase, baseSlug, currentProductId);
     const metaTitle = `${validatedData.productName} | ${validatedData.category}`;
     const metaDescription = validatedData.productDescription.substring(0, 160);
     const keywords = Array.from(
@@ -170,10 +173,11 @@ export async function saveGeneralDetailsDraft(
         uniqueSlug,
         metaTitle,
         metaDescription,
-        keywords
+        keywords,
+        currentProductId
     );
 
-    await createTags(validatedData.tags, productUploadId);
+    await createTags(validatedData.tags, productUploadId, supabase);
 
     return {
         productUploadId,

@@ -1,160 +1,76 @@
-"use client";
+import { redirect } from "next/navigation";
+import { createClient } from "@/supabase/server";
+import AddProductClient from "@/components/brand-dashboard/add-product/add-product-client";
+import { CountryData, CountryDataType } from "@/lib/country-data";
+import { GetBrandLegalDetails } from "@/actions/get-brand-details/get-brand-legal-details";
+import { GetShippingConfig } from "@/actions/get-brand-details/get-shipping-config";
+import { GetExchangeRates } from "@/hooks/get-exchange-rate";
+import { getBrandGlobalReturnPolicy } from "@/actions/return-policy/get-brand-global-return-policy";
+import { loadProductEditorData } from "@/actions/add-product/load-product-editor-data";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { NumericInput } from "@/components/ui/numeric-input";
-import { Textarea } from "@/components/ui/textarea";
-import { useGetProductDetails } from "@/hooks/use-get-product-details";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { useParams } from "next/navigation";
-import { useEffect } from "react";
-import { useEditProduct } from "@/hooks/use-edit-product";
-
-const formSchema = z.object({
-  name: z.string(),
-  description: z.string(),
-  price: z.number(),
-  weight: z.number(),
-  quantity: z.number(),
-});
-
-const Page = () => {
-  const params = useParams();
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-  });
-
-  const { mutate, isPending } = useEditProduct();
-
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    mutate({
-      ...data?.data,
-      id: params.id as string,
-      name: values!.name,
-      description: values.description,
-      price: values.price,
-      weight: values.weight,
-      quantity: values.quantity,
-    });
-  }
-
-  const { data, isLoading } = useGetProductDetails(params.id as string);
-
-  // useEffect(() => {
-  //   if (data) {
-  //     form.setValue("name", data.data?.name || "");
-  //     form.setValue("description", data.data?.description || "");
-  //     form.setValue("price", data.data?.price || 0);
-  //     form.setValue("weight", data.data?.weight || 0);
-  //     form.setValue("quantity", data.data?.quantity || 0);
-  //   }
-  // }, [data, form]);
-
-  // if (isLoading) {
-  //   return "loading...";
-  // }
-
-  return (
-    <section className="mt-10">
-      <h1 className="font-bold text-3xl mb-5">Edit Product</h1>
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="flex flex-col gap-4 max-w-sm"
-        >
-          <input type="hidden" name="id" value={data?.data.id} />
-
-          <FormField
-            name="name"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="T-shirt" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            name="description"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Description"
-                    className="resize-none"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            name="quantity"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Quantity</FormLabel>
-                <FormControl>
-                  <NumericInput {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            name="price"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Price</FormLabel>
-                <FormControl>
-                  <NumericInput {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            name="weight"
-            control={form.control}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Weight</FormLabel>
-                <FormControl>
-                  <NumericInput {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button type="submit" disabled={isPending}>
-            Save
-          </Button>
-        </form>
-      </Form>
-    </section>
-  );
+export const metadata = {
+    title: "Edit Product",
 };
 
-export default Page;
+function getCurrencyByIso2(iso2Code: string | undefined, countryData: CountryDataType[]): string | undefined {
+    return countryData.find((c) => c.iso2.toLowerCase() === iso2Code?.toLowerCase())?.currency;
+}
+
+interface EditProductPageProps {
+    params: Promise<{ id: string }>;
+}
+
+const EditProductPage = async ({ params }: EditProductPageProps) => {
+    const { id } = await params;
+    const supabase = await createClient();
+    const { data: user } = await supabase.auth.getUser();
+
+    if (!user.user) {
+        redirect("/login-brand");
+    }
+
+    const brandId = user.user.id;
+    const brandData = await GetBrandLegalDetails(brandId);
+
+    if (!brandData.success || !brandData.data) {
+        redirect("/login-brand");
+    }
+
+    const brandCountry = brandData.data.country_of_registration;
+    const brandCurrency = getCurrencyByIso2(brandCountry, CountryData);
+
+    if (!brandCurrency) {
+        redirect("/login-brand");
+    }
+
+    const todaysRate = brandCurrency === "USD"
+        ? 1
+        : await GetExchangeRates("USD", brandCurrency);
+
+    const shippingConfig = await GetShippingConfig();
+    if (shippingConfig.message === "Unauthorized") {
+        redirect("/login-brand");
+    }
+
+    const globalReturnPolicy = await getBrandGlobalReturnPolicy(brandId);
+    const initialProductData = await loadProductEditorData(supabase, brandId, id);
+
+    return (
+        <div>
+            <div className="mx-auto shadow-2xl">
+                <div className="mx-auto max-w-7xl border-2 p-4">
+                    <AddProductClient
+                        currencyCode={brandCurrency}
+                        todayExchangeRate={todaysRate}
+                        shippingConfig={shippingConfig.data}
+                        globalReturnPolicy={globalReturnPolicy.success ? globalReturnPolicy.data : null}
+                        mode="edit"
+                        initialProductData={initialProductData}
+                    />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default EditProductPage;

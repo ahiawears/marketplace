@@ -10,7 +10,8 @@ export async function createProduct(
     slug: string,
     metaTitle: string,
     metaDescription: string,
-    keywords: string[]
+    keywords: string[],
+    productId?: string
 ) {
     try {
         const seoMetadata = {
@@ -20,6 +21,7 @@ export async function createProduct(
             keywords
         }
         const productDataToUpsert: any = {
+            ...(productId ? { id: productId } : {}),
             name,
             product_description: description,
             category_id: categoryId,

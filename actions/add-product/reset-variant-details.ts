@@ -77,12 +77,4 @@ export async function resetVariantDetails(supabase: any, variantId: string) {
         throw deleteTagsError;
     }
 
-    const { error: deleteSizesError } = await supabase
-        .from("product_sizes")
-        .delete()
-        .eq("product_id", variantId);
-
-    if (deleteSizesError) {
-        throw deleteSizesError;
-    }
 }

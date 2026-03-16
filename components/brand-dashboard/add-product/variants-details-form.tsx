@@ -660,7 +660,7 @@ const ImageSection: FC<{ images: string[]; imagesDescription: string; onUpdate: 
                     } catch (error) {
                         console.error('Error loading image for display:', error);
                     }
-                } else if (image.startsWith('blob:') || image.startsWith('data:')) {
+                } else if (image.startsWith('blob:') || image.startsWith('data:') || image.startsWith('http')) {
                     // If it's already a blob or data URL, use it directly.
                     newDisplayImages[index] = image;
                 }

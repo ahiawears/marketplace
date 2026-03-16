@@ -1,8 +1,7 @@
 import { createClient } from "@/supabase/server";
 
-export async function createTags(tags: string[], productId: string) {
-
-    const supabase = await createClient();
+export async function createTags(tags: string[], productId: string, injectedSupabase?: any) {
+    const supabase = injectedSupabase ?? await createClient();
     try {
         // --- Step 1: Delete all existing product_tags for this productId ---
         const { error: deleteError } = await supabase

@@ -14,6 +14,7 @@ export async function POST (req: Request) {
         }
         const formData = await req.formData();
         const generalDetailsRaw = formData.get('generalDetails') as string;
+        const productId = formData.get("productId") as string | null;
 
         if (!generalDetailsRaw) {
             return NextResponse.json({ success: false, message: "Missing generalDetails data" }, { status: 400 });
@@ -25,7 +26,7 @@ export async function POST (req: Request) {
             return NextResponse.json({ success: false, message: "Invalid JSON format" }, { status: 400 });
         }
 
-        const result = await saveGeneralDetailsDraft(supabase, brandId, generalDetails);
+        const result = await saveGeneralDetailsDraft(supabase, brandId, generalDetails, productId || undefined);
 
         return NextResponse.json({
             success: true,

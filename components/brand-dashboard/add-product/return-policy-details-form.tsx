@@ -525,7 +525,7 @@ const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol, global
                         <div className="mt-2">
                             <Textarea
                                 id="returnInstructions"
-                                name="returnInstructions"
+                                name="returnInstruction"
                                 rows={4}
                                 value={returnPolicy.returnInstruction}
                                 onChange={handleStringInput}

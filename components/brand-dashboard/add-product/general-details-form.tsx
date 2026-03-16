@@ -27,10 +27,11 @@ const seasonTypes = [
 
 interface GeneralDetailsFormProps {
     onSaveSuccess?: (productUploadId: string) => void;
+    mode?: "create" | "edit";
 }
 
-const GeneralDetailsForm: FC<GeneralDetailsFormProps> = ({ onSaveSuccess }) => {
-    const { generalDetails, setGeneralDetails, setProductId } = useProductFormStore();
+const GeneralDetailsForm: FC<GeneralDetailsFormProps> = ({ onSaveSuccess, mode = "create" }) => {
+    const { generalDetails, setGeneralDetails, setProductId, productId } = useProductFormStore();
     const { validateField, validateStep } = useGeneralDetailsValidation();
     
     const selectedCategoryData = categoriesList.find(
@@ -44,6 +45,16 @@ const GeneralDetailsForm: FC<GeneralDetailsFormProps> = ({ onSaveSuccess }) => {
 
     const [errors, setErrors] = useState<GeneralDetailsErrors>({});
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (generalDetails.season && !seasonType && !seasonYear) {
+            const seasonMatch = generalDetails.season.match(/^([A-Z]{2})(\d{2})$/);
+            if (seasonMatch) {
+                setSeasonType(seasonMatch[1]);
+                setSeasonYear(`20${seasonMatch[2]}`);
+            }
+        }
+    }, [generalDetails.season, seasonType, seasonYear]);
 
     // const validateForm = () => {
     //     const result = GeneralDetailsValidationSchema.safeParse(generalDetails);
@@ -78,9 +89,6 @@ const GeneralDetailsForm: FC<GeneralDetailsFormProps> = ({ onSaveSuccess }) => {
         if (seasonYear.length === 4 && seasonType) {
             const seasonCode = `${seasonType}${seasonYear.slice(-2)}`;
             setGeneralDetails({ season: seasonCode });
-        } else if (generalDetails.season) {
-            // Clear season in store if inputs are incomplete
-            setGeneralDetails({ season: "" });
         }
     }, [seasonYear, seasonType, setGeneralDetails]);
 
@@ -164,13 +172,16 @@ const GeneralDetailsForm: FC<GeneralDetailsFormProps> = ({ onSaveSuccess }) => {
 
         const formData = new FormData();
         formData.append('generalDetails', JSON.stringify(generalDetails));
+        if (mode === "edit" && productId) {
+            formData.append("productId", productId);
+        }
 
         const result = await submitFormData<{ success: boolean; message: string; productUploadId: string }>(
             '/api/products/upload-general-details',
             formData,
             {
-                loadingMessage: "Saving general details...",
-                successMessage: "General details saved successfully!",
+                loadingMessage: mode === "edit" ? "Updating general details..." : "Saving general details...",
+                successMessage: mode === "edit" ? "General details updated successfully!" : "General details saved successfully!",
             }
         );
 

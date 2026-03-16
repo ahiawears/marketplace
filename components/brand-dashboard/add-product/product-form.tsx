@@ -19,8 +19,9 @@ interface ProductFormProps {
     todayExchangeRate?: number;
     shippingConfig: ShippingDetails | null;
     globalReturnPolicy: GlobalReturnPolicy | null;
+    mode?: "create" | "edit";
 }
-const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, shippingConfig, globalReturnPolicy }) => {
+const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, shippingConfig, globalReturnPolicy, mode = "create" }) => {
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
     const router = useRouter();
     const {
@@ -51,7 +52,7 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
 
         resetAll();
         setActiveIndex(0);
-        toast.success("Product setup completed.");
+        toast.success(mode === "edit" ? "Product changes saved." : "Product setup completed.");
         router.push("/dashboard/products-list");
     };
 
@@ -92,12 +93,12 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
         [
             {
                 title: "General Product Details",
-                description: "Create the product shell first. This unlocks every later step.",
+                description: mode === "edit" ? "Update the product shell and merchandising basics." : "Create the product shell first. This unlocks every later step.",
                 status: generalSaved ? "complete" : "current",
                 content: <GeneralDetailsForm onSaveSuccess={(newProductId) => {
                     setProductId(newProductId);
                     handleStepSaved("general");
-                }} />,
+                }} mode={mode} />,
             },
             {
                 title: "Variants Details",
@@ -160,6 +161,7 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
             shippingConfig,
             shippingReady,
             todayExchangeRate,
+            mode,
             variantsReady,
             variantsSaved,
         ]
@@ -194,9 +196,11 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
             <div className="mb-6 border-2 rounded-md bg-stone-50 p-4">
                 <div className="flex items-start justify-between gap-4">
                     <div>
-                        <p className="text-sm font-semibold text-gray-900">Guided upload flow</p>
+                        <p className="text-sm font-semibold text-gray-900">{mode === "edit" ? "Guided edit flow" : "Guided upload flow"}</p>
                         <p className="mt-1 text-sm text-gray-600">
-                            We&apos;ll move you step by step. Later sections unlock after the earlier ones are saved.
+                            {mode === "edit"
+                                ? "Update each section and resave only the parts you changed."
+                                : "We&apos;ll move you step by step. Later sections unlock after the earlier ones are saved."}
                         </p>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-amber-700">
@@ -251,7 +255,7 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
                     disabled={!fullyConfigured || !productId}
                     className="w-full md:w-auto"
                 >
-                    Finish Product
+                    {mode === "edit" ? "Save Changes" : "Finish Product"}
                 </Button>
             </div>
         </div>
