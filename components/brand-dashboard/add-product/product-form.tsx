@@ -1,5 +1,6 @@
 import { FC, useEffect, useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, Info } from "lucide-react";
+import { useRouter } from "next/navigation";
 import GeneralDetailsForm from "./general-details-form";
 import Accordion from "@/components/ui/Accordion";
 import type { AccordionItem } from "@/components/ui/Accordion";
@@ -21,6 +22,7 @@ interface ProductFormProps {
 }
 const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, shippingConfig, globalReturnPolicy }) => {
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
+    const router = useRouter();
     const {
         productId,
         savedSteps,
@@ -39,6 +41,18 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
         resetAll();
         setActiveIndex(0);
         toast.success("Store reset");
+    };
+
+    const handleFinishProduct = () => {
+        if (!fullyConfigured || !productId) {
+            toast.error("Save all sections before finishing this product.");
+            return;
+        }
+
+        resetAll();
+        setActiveIndex(0);
+        toast.success("Product setup completed.");
+        router.push("/dashboard/products-list");
     };
 
     const handleStepSaved = (step: keyof typeof savedSteps) => {
@@ -221,6 +235,25 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
                 activeIndex={activeIndex}
                 setActiveIndex={setActiveIndex}
             />
+
+            <div className="mt-8 flex flex-col gap-3 rounded-md border-2 bg-stone-50 p-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                    <p className="text-sm font-semibold text-gray-900">Complete product setup</p>
+                    <p className="mt-1 text-sm text-gray-600">
+                        {fullyConfigured
+                            ? "All required sections are saved. Finish this product and continue to your products list."
+                            : "Save all required sections to unlock the final product action."}
+                    </p>
+                </div>
+                <Button
+                    type="button"
+                    onClick={handleFinishProduct}
+                    disabled={!fullyConfigured || !productId}
+                    className="w-full md:w-auto"
+                >
+                    Finish Product
+                </Button>
+            </div>
         </div>
     );
 }

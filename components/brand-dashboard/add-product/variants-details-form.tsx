@@ -34,29 +34,35 @@ interface VariantDetailsFormProps {
     onSaveSuccess?: () => void;
 }
 
-const generateSKU = (productName: string, color: string): string => {
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
+const stableSuffix = (seed: string, length = 4) => {
+    const normalized = seed.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    return (normalized.slice(-length) || "0000").padStart(length, "0");
+};
+
+const generateSKU = (productName: string, color: string, variantId: string): string => {
     const namePart = productName.slice(0, 3).replace(/\s+/g, "").toUpperCase();
     const colorPart = color.slice(0, 3).toUpperCase();
-    return `${namePart}-${colorPart}-${randomNum}`;
+    return `${namePart}-${colorPart}-${stableSuffix(variantId)}`;
 };
   
-const generateProductCode = (productName: string): string => {
+const generateProductCode = (productName: string, variantId: string): string => {
     const namePart = productName.slice(0, 5).replace(/\s+/g, "").toUpperCase();
-    return `${namePart}-${Date.now().toString().slice(-5)}`;
+    return `${namePart}-${stableSuffix(variantId, 5)}`;
 };
 
-const generateSlug = (productName: string, colorName: string, pattern?: string) => {
-    const namePart = productName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const colorPart = colorName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-    const patternPart = pattern ? pattern.toLowerCase().replace(/[^a-z0-9]+/g, '-') : '';
-    const randomPart = Math.random().toString(36).substring(2, 7);
-    return [namePart, colorPart, patternPart, randomPart].filter(Boolean).join('-').replace(/-{2,}/g, '-');
-};
-
-async function imageUrlToFile(url: string, filename: string): Promise<File | null> {
+async function imageSourceToFile(source: string, filename: string): Promise<File | null> {
     try {
-        const response = await fetch(url);
+        let resolvedSource = source;
+
+        if (source.startsWith("variant-")) {
+            const blobUrl = await imageStorage.getImage(source);
+            if (!blobUrl) {
+                return null;
+            }
+            resolvedSource = blobUrl;
+        }
+
+        const response = await fetch(resolvedSource);
         const blob = await response.blob();
         const originalFile = new File([blob], filename, { type: blob.type });
 
@@ -71,7 +77,7 @@ async function imageUrlToFile(url: string, filename: string): Promise<File | nul
         console.log(`Original size: ${(originalFile.size / 1024).toFixed(2)} KB, Compressed size: ${(compressedFile.size / 1024).toFixed(2)} KB`);
         return compressedFile;
     } catch (error) {
-        console.error("Error converting and compressing image URL to File:", error);
+        console.error("Error converting and compressing image source to File:", error);
         return null;
     }
 }
@@ -92,31 +98,37 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({ currencyCode, todayE
         updateVariant(index, variantToSave);
         // Separate images from the rest of the details for FormData
         const { images, ...detailsForJson } = variantToSave;
-        // The JSON payload should not contain image data, as it's sent separately.
-        (detailsForJson as Partial<VariantDetailsSchemaType>).images = [];
+        const normalizedImages = images.filter((img) => img && img.trim() !== "");
+        // The backend validates images from uploaded files, so rebuild any locally stored
+        // image IDs/blob URLs into Files before submit.
+        (detailsForJson as Partial<VariantDetailsSchemaType>).images = normalizedImages;
 
         const formData = new FormData();
         formData.append('variantDetails', JSON.stringify(detailsForJson));
         formData.append('productId', productId);
         formData.append('categoryName', category);
+        formData.append('displayOrder', index.toString());
 
-        // Convert all valid image URLs (blob or data) to File objects and append them.
-        const imageUploadPromises = images
-            .filter(img => img && (img.startsWith("blob:") || img.startsWith("data:image")))
+        // Convert all current image sources to File objects and append them.
+        const imageUploadPromises = normalizedImages
             .map(async (imageUrl, i) => {
-                const imageFile = await imageUrlToFile(imageUrl, `variant-${index}-image-${i}.png`);
+                const imageFile = await imageSourceToFile(imageUrl, `variant-${index}-image-${i}.png`);
                 if (imageFile) {
                     formData.append('images', imageFile);
                 }
             });
         await Promise.all(imageUploadPromises);
 
-        const result = await submitFormData('/api/products/upload-variant-details', formData, {
+        const result = await submitFormData<{ success: boolean; variantId: string; slug: string }>(
+            '/api/products/upload-variant-details',
+            formData,
+            {
             loadingMessage: "Saving variant...",
             successMessage: "Variant saved successfully!",
         });
 
         if (result) {
+            updateVariant(index, { slug: result.slug });
             onSaveSuccess?.();
         }
     };
@@ -189,7 +201,7 @@ const useVariantManagement = () => {
                 variantName: "",
                 sku: "",
                 slug: "",
-                colors: [{ name: "", hexCode: "" }],
+                colors: [{ name: "", hexCode: "#000000" }],
                 colorDescription: "",
                 images: DEFAULT_SINGLE_VARIANT.images,
                 imagesDescription: DEFAULT_SINGLE_VARIANT.imagesDescription,
@@ -223,32 +235,85 @@ interface VariantFormProps {
     validateField: (fieldName: keyof VariantDetailsSchemaType, value: any) => { isValid: boolean; error?: string };
 }
 
-const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency, exchangeRate, onUpdate, onRemove, onSave, onCopyFromPrevious }) => {
+const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency, exchangeRate, onUpdate, onRemove, onSave, onCopyFromPrevious, validateField }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [isValid, setIsValid] = useState<boolean | null>(null);
     const [errors, setErrors] = useState<VariantFormErrors>({});
+    const [autoManagedFields, setAutoManagedFields] = useState({
+        sku: !variant.sku,
+        productCode: !variant.productCode,
+    });
     const { generalDetails } = useProductFormStore();
 
-    // const handleBlur = (fieldName: keyof VariantDetailsSchemaType, value: any) => {
-    //     const { isValid, error } = validateField(fieldName, value);
-    //     if (!isValid) {
-    //         setErrors(prev => ({ ...prev, [fieldName]: error }));
-    //     } else {
-    //         setErrors(prev => {
-    //             const newErrors = { ...prev };
-    //             delete newErrors[fieldName as keyof VariantFormErrors];
-    //             return newErrors;
-    //         });
-    //     }
-    // };
+    const updateAutoManagedField = useCallback((
+        field: "sku" | "productCode",
+        nextValue: string
+    ) => {
+        if (!nextValue || variant[field] === nextValue) {
+            return;
+        }
+
+        onUpdate({ [field]: nextValue });
+        setAutoManagedFields((prev) => ({ ...prev, [field]: true }));
+    }, [onUpdate, variant]);
+
+    const handleManualFieldChange = useCallback((updates: Partial<VariantDetailsSchemaType>) => {
+        onUpdate(updates);
+
+        if ("sku" in updates) {
+            setAutoManagedFields((prev) => ({ ...prev, sku: false }));
+        }
+
+        if ("productCode" in updates) {
+            setAutoManagedFields((prev) => ({ ...prev, productCode: false }));
+        }
+    }, [onUpdate]);
+
+    useEffect(() => {
+        if (generalDetails.productName && variant.colors[0]?.name && (!variant.sku || autoManagedFields.sku)) {
+            updateAutoManagedField("sku", generateSKU(generalDetails.productName, variant.colors[0].name, variant.id));
+        }
+    }, [
+        autoManagedFields.sku,
+        generalDetails.productName,
+        updateAutoManagedField,
+        variant.colors,
+        variant.sku,
+    ]);
+
+    useEffect(() => {
+        if (generalDetails.productName && (!variant.productCode || autoManagedFields.productCode)) {
+            updateAutoManagedField("productCode", generateProductCode(generalDetails.productName, variant.id));
+        }
+    }, [
+        autoManagedFields.productCode,
+        generalDetails.productName,
+        updateAutoManagedField,
+        variant.productCode,
+    ]);
+
+    const handleBlur = useCallback((fieldName: keyof VariantDetailsSchemaType, value: any) => {
+        const { isValid, error } = validateField(fieldName, value);
+
+        if (!isValid) {
+            setErrors((prev) => ({ ...prev, [fieldName]: error }));
+            return;
+        }
+
+        setErrors((prev) => {
+            const nextErrors = { ...prev };
+            delete nextErrors[fieldName as keyof VariantFormErrors];
+            return nextErrors;
+        });
+    }, [validateField]);
 
     const handleSaveButtonClick = async () => {
         let variantToSave = { ...variant };
         if (!variantToSave.sku && generalDetails.productName && variantToSave.colors.length > 0) {
-            variantToSave.sku = generateSKU(generalDetails.productName, variantToSave.colors[0].name);
+            variantToSave.sku = generateSKU(generalDetails.productName, variantToSave.colors[0].name, variantToSave.id);
         }
         if (!variantToSave.productCode && generalDetails.productName) {
-            variantToSave.productCode = generateProductCode(generalDetails.productName);
+            variantToSave.productCode = generateProductCode(generalDetails.productName, variantToSave.id);
         }
 
         // Full validation before saving
@@ -308,12 +373,13 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
             
             <VariantBasicInfo
                 variant={variant}
+                productName={generalDetails.productName}
                 currency={currency}
                 errors={errors}
                 exchangeRate={exchangeRate}
-                onUpdate={onUpdate}
-                // onBlur={handleBlur}
-                onBlur={() => console.log("hello blurred variant basic field")}
+                onUpdate={handleManualFieldChange}
+                onAutoGenerate={updateAutoManagedField}
+                onBlur={handleBlur}
             />
             
             <ImageSection
@@ -407,7 +473,7 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
                 <Button
                     type="button"
                     onClick={handleSaveButtonClick}
-                    disabled={isSaving || !productId}
+                    disabled={isSaving}
                 >
                     {isSaving ? "Saving..." : "Save Variant"}
                 </Button>
@@ -418,14 +484,32 @@ const VariantForm: FC<VariantFormProps> = ({ variant, index, category, currency,
 };
 
 // Sub-components
-const VariantBasicInfo: FC<{ variant: VariantDetailsSchemaType; currency: string; errors: VariantFormErrors; onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void; onBlur: (field: keyof VariantDetailsSchemaType, value: any) => void; exchangeRate?: number; }> = ({ variant, currency, errors, onUpdate, onBlur, exchangeRate }) => {
+const VariantBasicInfo: FC<{ variant: VariantDetailsSchemaType; productName: string; currency: string; errors: VariantFormErrors; onUpdate: (updates: Partial<VariantDetailsSchemaType>) => void; onAutoGenerate: (field: "sku" | "productCode", value: string) => void; onBlur: (field: keyof VariantDetailsSchemaType, value: any) => void; exchangeRate?: number; }> = ({ variant, productName, currency, errors, onUpdate, onAutoGenerate, onBlur, exchangeRate }) => {
     const handleInputChange = (field: keyof VariantDetailsSchemaType, value: string) => {
         onUpdate({ [field]: value });
     };
 
-    const handlePriceChange = (value: number | undefined) => {
-        onUpdate({ price: value ?? 0 });
-    };    
+    const handlePriceChange = (value: number) => {
+        onUpdate({ price: value });
+    };
+
+    const handleGenerateSku = () => {
+        if (!productName || !variant.colors[0]?.name) {
+            toast.error("Add the product name and at least one color first.");
+            return;
+        }
+
+        onAutoGenerate("sku", generateSKU(productName, variant.colors[0].name, variant.id));
+    };
+
+    const handleGenerateProductCode = () => {
+        if (!productName) {
+            toast.error("Add the product name first.");
+            return;
+        }
+
+        onAutoGenerate("productCode", generateProductCode(productName, variant.id));
+    };
 
     const usdPrice = useMemo(() => {
         if (!exchangeRate || currency === 'USD' || !variant.price) {
@@ -449,7 +533,7 @@ const VariantBasicInfo: FC<{ variant: VariantDetailsSchemaType; currency: string
                 {errors.variantName && <p className="text-red-500 text-xs mt-1">{errors.variantName}</p>}
             </div>
 
-            <div className="grid grid-cols-3 gap-4 my-4">
+            <div className="grid grid-cols-1 gap-4 my-4 md:grid-cols-2 xl:grid-cols-3">
                 <div>
                     <PriceInput 
                         value={variant.price} 
@@ -469,6 +553,8 @@ const VariantBasicInfo: FC<{ variant: VariantDetailsSchemaType; currency: string
                         onBlur={(value) => onBlur('sku', value)}
                         maxLength={100}
                         tooltip="A unique code to identify this specific variant for inventory tracking. Example: ABC-BLU-1234. Leave blank to auto-generate on save."
+                        actionLabel="Generate"
+                        onAction={handleGenerateSku}
                     />
                     {errors.sku && <p className="text-red-500 text-xs mt-1">{errors.sku}</p>}
                 </div>
@@ -480,6 +566,8 @@ const VariantBasicInfo: FC<{ variant: VariantDetailsSchemaType; currency: string
                         onBlur={(value) => onBlur('productCode', value)}
                         maxLength={100}
                         tooltip="An internal code for this variant, if different from the SKU. Example: ABC-98765. Leave blank to auto-generate on save."
+                        actionLabel="Generate"
+                        onAction={handleGenerateProductCode}
                     />
                     {errors.productCode && <p className="text-red-500 text-xs mt-1">{errors.productCode}</p>}
                 </div>
@@ -488,7 +576,7 @@ const VariantBasicInfo: FC<{ variant: VariantDetailsSchemaType; currency: string
     );
 };
 
-const PriceInput: FC<{ value: number; currencySymbol: string; onChange: (value: number | undefined) => void; onBlur: () => void; }> = ({ value, currencySymbol, onChange, onBlur }) => (
+const PriceInput: FC<{ value: number; currencySymbol: string; onChange: (value: number) => void; onBlur: () => void; }> = ({ value, currencySymbol, onChange, onBlur }) => (
     <div>
         <label className="block text-sm font-bold text-gray-900">Price:*</label>
         <div className="my-1 flex items-center">
@@ -514,7 +602,7 @@ const PriceInput: FC<{ value: number; currencySymbol: string; onChange: (value: 
     </div>
 );
 
-const TextInput: FC<{ label: string; value: string; onChange: (value: string) => void; onBlur: (value: string) => void; maxLength?: number; tooltip?: React.ReactNode; }> = ({ label, value, onChange, onBlur, maxLength, tooltip }) => (
+const TextInput: FC<{ label: string; value: string; onChange: (value: string) => void; onBlur: (value: string) => void; maxLength?: number; tooltip?: React.ReactNode; actionLabel?: string; onAction?: () => void; }> = ({ label, value, onChange, onBlur, maxLength, tooltip, actionLabel, onAction }) => (
     <div>
         <div className="flex items-center gap-1 mb-1">
             <label className="block text-sm font-bold text-gray-900">{label}</label>
@@ -531,13 +619,23 @@ const TextInput: FC<{ label: string; value: string; onChange: (value: string) =>
                 </TooltipProvider>
             )}
         </div>
-        <div>
+        <div className="space-y-2">
             <Input
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 onBlur={(e) => onBlur(e.target.value)}
                 maxLength={maxLength}
             />
+            {actionLabel && onAction && (
+                <Button
+                    type="button"
+                    variant="outline"
+                    className="border-2 text-xs uppercase tracking-wide"
+                    onClick={onAction}
+                >
+                    {actionLabel}
+                </Button>
+            )}
         </div>
     </div>
 );
@@ -669,7 +767,7 @@ const ColorSection: FC<{ colors: Color[]; colorDescription: string; onUpdate: (u
     // };
 
     const ensureNonEmpty = (arr: Color[]) => {
-        return arr.length > 0 ? arr : [{ name: "", hexCode: "" }];
+        return arr.length > 0 ? arr : [{ name: "", hexCode: "#000000" }];
     };
 
     const handleColorChange = (colorIndex: number, updates: Partial<Color>) => {
@@ -750,7 +848,7 @@ const ColorInput: FC<{ color: Color; onChange: (updates: Partial<Color>) => void
             <div className="flex items-center p-2">
                 <Input
                     type="color"
-                    value={color.hexCode}
+                    value={color.hexCode || "#000000"}
                     onChange={(e) => handleHexChange(e.target.value)}
                     className="w-8 h-8 p-0 border-2"
                     style={{ minWidth: '40px' }}

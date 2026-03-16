@@ -1,14 +1,16 @@
-import { createProductShippingDetails } from "@/actions/add-product/create-shipping-details";
-import { ProductShippingDeliveryType, ShippingConfigDataProps } from "@/lib/types";
-import { ShippingDetailsValidationSchema } from "@/lib/validation-logics/add-product-validation/product-schema";
+import { getProductWriteErrorStatus, requireAuthenticatedBrandUserId } from "@/actions/add-product/product-write-guards";
+import { ProductDraftServiceError, saveShippingDraft } from "@/actions/add-product/product-draft-service";
+import { ProductShippingDeliveryType } from "@/lib/types";
 import { createClient } from "@/supabase/server";
 import { NextResponse } from "next/server";
 
 export async function POST (req: Request) {
     try {
         const supabase = await createClient();
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+        let brandId: string;
+        try {
+            brandId = await requireAuthenticatedBrandUserId(supabase);
+        } catch {
             return NextResponse.json({ success: false, message: "User not authenticated" }, { status: 401 });
         }
         const formData = await req.formData();
@@ -27,31 +29,26 @@ export async function POST (req: Request) {
             }, { status: 400})
         }
 
-        // Server-side validation using the shared Zod schema
-        const validationResult = ShippingDetailsValidationSchema.safeParse(productShippingConfig);
-        if (!validationResult.success) {
-            return NextResponse.json({ 
-                success: false, 
-                message: "Validation failed",
-                errors: validationResult.error.flatten() 
-            }, { status: 400 });
-        }
-
-        // If valid, proceed to save the data
-        // Using validationResult.data is safer as it ensures only validated and expected properties are passed on.
-        const shippingDetailsId = await createProductShippingDetails(supabase, validationResult.data);
+        const result = await saveShippingDraft(supabase, brandId, productShippingConfig);
 
         return NextResponse.json({
             success: true,
             message: "Shipping details saved successfully!",
-            shippingDetailsId: shippingDetailsId
+            shippingDetailsId: result.shippingDetailsId
         });
 
     } catch (error) {
+        if (error instanceof ProductDraftServiceError) {
+            return NextResponse.json({
+                success: false,
+                message: error.message,
+                errors: error.errors,
+            }, { status: error.status });
+        }
         console.error("Error in POST /api/products/shipping", error instanceof Error ? error.message : error);
         return NextResponse.json({
             success: false,
             message: error instanceof Error ? error.message : "Internal server error"
-        }, { status: 500});
+        }, { status: getProductWriteErrorStatus(error)});
     }
 }

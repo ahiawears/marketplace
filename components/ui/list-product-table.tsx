@@ -2,8 +2,6 @@
 
 import Image from "next/image";
 import { FC, Fragment, useState } from "react";
-import { FaEyeSlash, FaEdit, FaTrash } from "react-icons/fa";
-import { VscPreview } from "react-icons/vsc"
 import { Button } from "./button";
 import { EyeOff, Pencil, ScanEye, Trash } from "lucide-react";
 import { ProductTableType } from "@/lib/types";
@@ -36,6 +34,7 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
                         <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Category</th>
                         <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Sub-Category</th>
                         <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Season</th>
+                        <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Variants</th>
                         <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Action</th>
                     </tr>
                 </thead>
@@ -65,6 +64,9 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
                                 <td className="px-6 py-4 text-sm text-gray-600">
                                     {product.season}
                                 </td>
+                                <td className="px-6 py-4 text-sm text-gray-600">
+                                    {product.variantCount}
+                                </td>
                                 {/* Action Icons */} 
                                 <td className="px-2 py-4">
                                     <div className="flex space-x-4 text-gray-500">
@@ -86,11 +88,78 @@ const ProductTable: FC<ProductTableProps> = ({ products, onHideProduct, onEditPr
 
                             {expandedRows.has(product.id) && (
                                 <tr className="bg-gray-50">
-                                    <td colSpan={5} className="px-6 py-4 text-sm text-gray-600 border-y-2">
-                                        {/* product variants  can go here */}
-                                        <div>
-                                            <p><strong>Product ID:</strong> {product.id}</p>
-                                            {/* Add more details as needed */}
+                                    <td colSpan={6} className="px-6 py-4 text-sm text-gray-600 border-y-2">
+                                        <div className="space-y-4">
+                                            <div>
+                                                <p><strong>Product ID:</strong> {product.id}</p>
+                                            </div>
+
+                                            {product.variants.length > 0 ? (
+                                                <div className="overflow-x-auto rounded-md border bg-white">
+                                                    <table className="min-w-full">
+                                                        <thead className="bg-stone-50">
+                                                            <tr className="text-left">
+                                                                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Image</th>
+                                                                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Variant</th>
+                                                                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">SKU</th>
+                                                                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Code</th>
+                                                                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Price</th>
+                                                                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
+                                                                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Colors</th>
+                                                                <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wide text-gray-500">Sizes</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            {product.variants.map((variant) => (
+                                                                <tr key={variant.id} className="border-t align-top">
+                                                                    <td className="px-4 py-3">
+                                                                        <div className="relative h-14 w-14 overflow-hidden rounded-md border bg-stone-100">
+                                                                            {variant.mainImageUrl ? (
+                                                                                <Image
+                                                                                    src={variant.mainImageUrl}
+                                                                                    alt={variant.name}
+                                                                                    fill
+                                                                                    className="object-cover"
+                                                                                />
+                                                                            ) : (
+                                                                                <div className="flex h-full items-center justify-center text-[10px] text-gray-400">
+                                                                                    No image
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3">
+                                                                        <div className="space-y-1">
+                                                                            <p className="font-medium text-gray-900">{variant.name}</p>
+                                                                            {variant.slug && (
+                                                                                <p className="text-xs text-gray-500">{variant.slug}</p>
+                                                                            )}
+                                                                        </div>
+                                                                    </td>
+                                                                    <td className="px-4 py-3">{variant.sku || "—"}</td>
+                                                                    <td className="px-4 py-3">{variant.productCode || "—"}</td>
+                                                                    <td className="px-4 py-3">{variant.price != null ? variant.price.toLocaleString() : "—"}</td>
+                                                                    <td className="px-4 py-3">
+                                                                        <span
+                                                                            className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                                                                                variant.status === "active"
+                                                                                    ? "bg-green-100 text-green-800"
+                                                                                    : "bg-gray-200 text-gray-700"
+                                                                            }`}
+                                                                        >
+                                                                            {variant.status}
+                                                                        </span>
+                                                                    </td>
+                                                                    <td className="px-4 py-3">{variant.colorSummary || "—"}</td>
+                                                                    <td className="px-4 py-3">{variant.sizeSummary || "—"}</td>
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm text-gray-500">No variants saved for this product yet.</p>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

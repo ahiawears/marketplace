@@ -65,32 +65,20 @@ export const useFetchAllProductsBrand = (brandId?: string): BrandProductsTableTy
             setError(null); // Clear previous errors
 
             try {
-                const response = await fetch(
-                    `${process.env.NEXT_PUBLIC_SUPABASE_FUNCTION_URL}/fetch-brand-products?brandId=${idToUse}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${userSession?.access_token ?? ""}`,
-                            'Content-Type': 'application/json',
-                        },
-                    }
-                );
+                const response = await fetch("/api/brandProductsList", {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                });
 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ message: "Failed to parse error response" }));
-                    throw new Error(errorData.message || `Error fetching shipping config: ${response.statusText}`);
+                    const errorData = await response.json().catch(() => ({ error: "Failed to parse error response" }));
+                    throw new Error(errorData.error || `Error fetching products: ${response.statusText}`);
                 }
 
                 const data = await response.json();
                 if (data.error) throw new Error(data.error);
-                const mappedProducts: ProductTableType[] = (data.data || []).map((item: any) => ({
-                    id: item.id,
-                    name: item.name,
-                    category_name: item.category_id.name,
-                    subCategory: item.subcategory_id.name,
-                    season: item.season_id.name,
-                }));
-
-                setProducts(mappedProducts);
+                setProducts((data.data || []) as ProductTableType[]);
             } catch (error) {
                 console.error("Error fetching products:", error);
                 setError(error instanceof Error ? error : new Error("An unexpected error occurred"));

@@ -7,11 +7,10 @@ import { useEffect, useState } from "react";
 import LoadContent from "@/app/load-content/page";
 import { Button } from "@/components/ui/button";
 import UploadProductSvg from "@/components/svg/upload-product-svg";
-import { useAuth } from "@/hooks/useAuth";
 import { useFetchAllProductsBrand } from "@/hooks/useFetchAllProductsBrand";
 
 const ProductsPage = () => { 
-	const { products: brandProducts, loading, error, resetError } = useFetchAllProductsBrand();
+	const { products: brandProducts, loading } = useFetchAllProductsBrand();
 	const router = useRouter();
 	//const [products, setProducts] = useState<ProductTableType[]>([]);
 	const [products, setProducts] = useState<ProductTableType[]>([]);
@@ -32,6 +31,7 @@ const ProductsPage = () => {
 
 	const handleOnPreviewProduct = (id: string) => {
 		console.log(`Preview product with id: , ${id}`);
+		router.push(`./product-details/${id}`);
 	}
 
 	useEffect(() => {
@@ -66,7 +66,7 @@ const ProductsPage = () => {
 
 							<div className="flex w-full flex-col md:flex-row mx-auto">
 								<div className="mx-auto">
-									<Button>
+									<Button onClick={() => router.push("./add-product")}>
 										Upload a product
 									</Button>
 								</div>

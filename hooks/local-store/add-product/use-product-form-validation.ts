@@ -86,27 +86,12 @@ export const useFormValidation = () => {
 						fieldSchema.parse({ [field]: value });
 					}
 					
-					// Now also validate that this wouldn't break any array-specific constraints
-					// For example, if you have array-level validations like .min(1) etc.
-					// We create a minimal valid array to test array-level constraints
-					const minimalValidArray = Array.from({ length: Math.max(1, variantIndex + 1) }, () => ({}));
-					schema.parse(minimalValidArray);
-					
 					return { isValid: true, error: '' };
 				} catch (error) {
 					if (error instanceof z.ZodError) {
-						// Check if this is an array-level error or field-level error
-						const fieldLevelError = error.errors.find(err => 
-							err.path.length > 1 && err.path[1] === field
-						);
-						
-						const arrayLevelError = error.errors.find(err => 
-							err.path.length === 0 || err.path.length === 1
-						);
-						
 						return { 
 							isValid: false, 
-							error: fieldLevelError?.message || arrayLevelError?.message || 'Invalid value' 
+							error: error.errors[0]?.message || 'Invalid value' 
 						};
 					}
 					return { isValid: false, error: 'Validation failed' };

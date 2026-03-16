@@ -58,7 +58,7 @@ export const DEFAULT_SINGLE_VARIANT: VariantDetailsSchemaType = {
 	imagesDescription: "",
 	colors: [{
 		name: "",
-		hexCode: ""
+		hexCode: "#000000"
 	}],
 	colorDescription: "",
 	pattern: "",
@@ -87,7 +87,7 @@ export const DEFAULT_VARIANT_DETAILS: VariantDetailsArraySchemaType = [{
 	imagesDescription: "",
 	colors: [{
 		name: "",
-		hexCode: ""
+		hexCode: "#000000"
 	}],
 	colorDescription: "",
 	pattern: "",

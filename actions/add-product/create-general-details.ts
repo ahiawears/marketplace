@@ -1,6 +1,6 @@
-import { createClient } from "@/supabase/server";
-
 export async function createProduct(
+    supabase: any,
+    brandId: string,
     categoryId: string,
     subCategoryId: string,
     description: string,
@@ -12,13 +12,7 @@ export async function createProduct(
     metaDescription: string,
     keywords: string[]
 ) {
-    const supabase = await createClient();
     try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError || !user) throw new Error("User not authenticated");
-
-        const brandId = user.id;
-
         const seoMetadata = {
             slug,
             metaTitle,

@@ -5,6 +5,20 @@ export interface ProductTableType {
   category_name: string;
   subCategory: string;
   season: string;
+  variantCount: number;
+  variants: {
+    id: string;
+    name: string;
+    sku: string;
+    productCode: string;
+    price: number | null;
+    status: string;
+    slug: string;
+    availableDate: string | null;
+    colorSummary: string;
+    sizeSummary: string;
+    mainImageUrl: string | null;
+  }[];
 }
 
 export type Customer = {

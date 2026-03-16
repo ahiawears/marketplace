@@ -18,7 +18,7 @@ export async function createProductCareInstruction(supabase: any, productCareIns
                 washing_instruction: productCareInstructions.washingInstruction,
                 bleaching_instruction: productCareInstructions.bleachingInstruction,
                 dry_cleaning_instruction: productCareInstructions.dryCleaningInstruction,
-                drying_instruction: productCareInstructions.dryCleaningInstruction,
+                drying_instruction: productCareInstructions.dryingInstruction,
                 ironing_instruction: productCareInstructions.ironingInstruction,
                 special_cases: productCareInstructions.specialCases,
             }, {

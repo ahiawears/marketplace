@@ -1,4 +1,4 @@
-import { MaterialComposition } from "@/components/brand-dashboard/add-product/variants-details-form";
+import { MaterialComposition } from "@/lib/validation-logics/add-product-validation/product-schema";
 
 /**
  * This action assumes you have:

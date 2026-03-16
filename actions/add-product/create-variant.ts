@@ -1,27 +1,32 @@
-import { VariantFormDetails } from "@/components/brand-dashboard/add-product/variants-details-form";
+import { VariantDetailsSchemaType } from "@/lib/validation-logics/add-product-validation/product-schema";
+
+type VariantWriteDetails = Pick<
+    VariantDetailsSchemaType,
+    | "id"
+    | "variantName"
+    | "sku"
+    | "price"
+    | "productCode"
+    | "slug"
+    | "status"
+    | "availableDate"
+    | "pattern"
+    | "colorDescription"
+    | "imagesDescription"
+>;
 
 export async function createVariant(
     supabase: any,
     mainProductId: string,
     baseCurrencyPrice: number,
-    variantDetails: Pick<
-        VariantFormDetails,
-        | 'variantName'
-        | 'sku'
-        | 'price'
-        | 'productCode'
-        | 'slug'
-        | 'status'
-        | 'availableDate' 
-        | 'pattern'
-        | 'colorDescription'
-        | 'imagesDescription'
-    >
+    variantDetails: VariantWriteDetails,
+    displayOrder: number
 ){
     try {
         const { data: variantDataInserted, error: variantError } = await supabase
             .from("product_variants")
-            .insert({
+            .upsert({
+                draft_variant_id: variantDetails.id,
                 name: variantDetails.variantName,
                 sku: variantDetails.sku, 
                 price: variantDetails.price,
@@ -34,6 +39,9 @@ export async function createVariant(
                 fabric_pattern: variantDetails.pattern,
                 color_description: variantDetails.colorDescription,
                 images_description: variantDetails.imagesDescription,
+                display_order: displayOrder,
+            }, {
+                onConflict: "main_product_id,draft_variant_id",
             })
             .select('id')
             .single();

@@ -187,7 +187,6 @@ const ReturnPolicyDetailsForm: FC<ReturnPolicyProps> = ({ currencySymbol, global
 		}
 
 		setIsSubmitting(true);
-		const toastId = toast.loading("Saving return policy...");
 		const finalProductReturnPolicy = {
 			...(returnPolicy.useProductSpecificReturnPolicy ? returnPolicy : inheritedPolicy || returnPolicy),
 			productId: productId,
