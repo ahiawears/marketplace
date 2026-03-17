@@ -194,55 +194,57 @@ export default function InventoryClient({ inventory }: InventoryClientProps) {
         </div>
       </section>
 
-      <section className="border-2 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
+      <section className="overflow-hidden border-2 bg-white p-4 shadow-sm">
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="min-w-0">
             <h1 className="text-2xl font-semibold text-slate-900">Inventory</h1>
             <p className="mt-1 text-sm text-slate-600">
               Keep an eye on size-level stock so you can restock before a variant disappears.
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <div className="relative min-w-[280px]">
+          <div className="mx-auto min-w-0 w-full max-w-4xl space-y-3">
+            <div className="relative min-w-0">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
               <Input
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search by product, variant, SKU, category"
-                className="pl-10"
+                className="w-full pl-10"
               />
             </div>
 
-            <Select
-              value={filterMode}
-              onChange={(event) => setFilterMode(event.target.value as FilterMode)}
-              className="h-12 min-w-[180px] rounded-none border-2 border-input bg-background px-3 text-sm"
-            >
-              <option value="all">All variants</option>
-              <option value="healthy">Healthy only</option>
-              <option value="low_stock">Low stock only</option>
-              <option value="out_of_stock">Out of stock only</option>
-            </Select>
+            <div className="grid min-w-0 gap-3 md:grid-cols-2">
+              <Select
+                value={filterMode}
+                onChange={(event) => setFilterMode(event.target.value as FilterMode)}
+                className="h-12 w-full min-w-0 rounded-none border-2 border-input bg-background px-3 text-sm"
+              >
+                <option value="all">All variants</option>
+                <option value="healthy">Healthy only</option>
+                <option value="low_stock">Low stock only</option>
+                <option value="out_of_stock">Out of stock only</option>
+              </Select>
 
-            <Select
-              value={sortMode}
-              onChange={(event) => setSortMode(event.target.value as SortMode)}
-              className="h-12 min-w-[200px] rounded-none border-2 border-input bg-background px-3 text-sm"
-            >
-              <option value="attention_first">Sort by lowest stock first</option>
-              <option value="product_name">Sort alphabetically</option>
-            </Select>
+              <Select
+                value={sortMode}
+                onChange={(event) => setSortMode(event.target.value as SortMode)}
+                className="h-12 w-full min-w-0 rounded-none border-2 border-input bg-background px-3 text-sm"
+              >
+                <option value="attention_first">Sort by lowest stock first</option>
+                <option value="product_name">Sort alphabetically</option>
+              </Select>
 
-            <Button
-              type="button"
-              variant={showAttentionOnly ? "default" : "outline"}
-              className="border-2"
-              onClick={() => setShowAttentionOnly((prev) => !prev)}
-            >
-              <ArrowDownUp className="size-4" />
-              {showAttentionOnly ? "Showing attention only" : "Only show attention"}
-            </Button>
+              <Button
+                type="button"
+                variant={showAttentionOnly ? "default" : "outline"}
+                className="h-auto min-h-12 w-full border-2 whitespace-normal px-4 py-3 text-left md:col-span-2"
+                onClick={() => setShowAttentionOnly((prev) => !prev)}
+              >
+                <ArrowDownUp className="size-4 shrink-0" />
+                {showAttentionOnly ? "Showing attention only" : "Only show attention"}
+              </Button>
+            </div>
           </div>
         </div>
       </section>
