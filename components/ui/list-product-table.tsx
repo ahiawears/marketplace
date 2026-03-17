@@ -3,17 +3,33 @@
 import Image from "next/image";
 import { FC, Fragment, useMemo, useState } from "react";
 import { Button } from "./button";
-import { Eye, EyeOff, Pencil, ScanEye, Trash } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, Pencil, ScanEye, Trash } from "lucide-react";
 import { ProductTableType } from "@/lib/types";
 import ProductVariantPreviewDialog, { ProductVariantPreviewSelection } from "@/components/ui/product-variant-preview-dialog";
 import { Input } from "./input";
 import { Select } from "./select";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+
+type DeleteTarget = {
+    productId: string;
+    productName: string;
+    variantId: string;
+    variantName: string;
+    variantStatus: string;
+};
 
 interface ProductTableProps {
     products: ProductTableType[];
     onHideProduct: (productId: string, variantId: string) => void;
     onEditProduct: (productId: string, variantId: string) => void;
-    onDeleteProduct: (productId: string, variantId: string) => void;
+    onDeleteProduct: (productId: string, variantId: string) => Promise<void>;
 }
 
 const ProductTable: FC<ProductTableProps> = ({
@@ -26,12 +42,42 @@ const ProductTable: FC<ProductTableProps> = ({
     const [previewSelection, setPreviewSelection] = useState<ProductVariantPreviewSelection>(null);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+    const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const toggleRow = (id: string) => {
         const newSet = new Set(expandedRows);
         if (newSet.has(id)) newSet.delete(id);
         else newSet.add(id);
         setExpandedRows(newSet);
+    };
+
+    const closeDeleteDialog = () => {
+        if (isDeleting) {
+            return;
+        }
+
+        setDeleteTarget(null);
+        setDeleteError(null);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteTarget) {
+            return;
+        }
+
+        setIsDeleting(true);
+        setDeleteError(null);
+
+        try {
+            await onDeleteProduct(deleteTarget.productId, deleteTarget.variantId);
+            setDeleteTarget(null);
+        } catch (error) {
+            setDeleteError(error instanceof Error ? error.message : "Failed to delete variant.");
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const filteredProducts = useMemo(() => {
@@ -253,13 +299,14 @@ const ProductTable: FC<ProductTableProps> = ({
                                                                                     type="button"
                                                                                     onClick={(event) => {
                                                                                         event.stopPropagation();
-                                                                                        const confirmed = window.confirm(
-                                                                                            "Delete this variant permanently? This only works when the variant has no order history."
-                                                                                        );
-                                                                                        if (!confirmed) {
-                                                                                            return;
-                                                                                        }
-                                                                                        onDeleteProduct(product.id, variant.id);
+                                                                                        setDeleteError(null);
+                                                                                        setDeleteTarget({
+                                                                                            productId: product.id,
+                                                                                            productName: product.name,
+                                                                                            variantId: variant.id,
+                                                                                            variantName: variant.name,
+                                                                                            variantStatus: variant.status,
+                                                                                        });
                                                                                     }}
                                                                                     title="Delete Variant"
                                                                                     className="bg-transparent hover:bg-gray-100"
@@ -302,6 +349,65 @@ const ProductTable: FC<ProductTableProps> = ({
                     }
                 }}
             />
+
+            <Dialog
+                open={!!deleteTarget}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        closeDeleteDialog();
+                    }
+                }}
+            >
+                <DialogContent className="sm:max-w-[560px] border-2">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-red-600" />
+                            Delete variant
+                        </DialogTitle>
+                        <DialogDescription className="text-left">
+                            This permanently removes the selected variant and its saved images, sizes, colors, materials, and tags.
+                            Variants with order history cannot be deleted and should be archived instead.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {deleteTarget && (
+                        <div className="space-y-3 border-2 bg-stone-50 p-4 text-sm">
+                            <div>
+                                <p className="font-semibold text-stone-900">{deleteTarget.variantName || "Untitled variant"}</p>
+                                <p className="text-stone-600">{deleteTarget.productName}</p>
+                            </div>
+                            <div className="flex flex-wrap gap-2 text-xs text-stone-700">
+                                <span className="border-2 bg-white px-2 py-1">
+                                    Status: {deleteTarget.variantStatus}
+                                </span>
+                                <span className="border-2  bg-white px-2 py-1">
+                                    Variant ID: {deleteTarget.variantId}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {deleteError && (
+                        <div className="border-2 border-red-500 bg-red-50 p-3 text-sm text-red-700">
+                            {deleteError}
+                        </div>
+                    )}
+
+                    <DialogFooter className="gap-2">
+                        <Button className="rounded-none border-2" type="button" variant="outline" onClick={closeDeleteDialog} disabled={isDeleting}>
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={handleConfirmDelete}
+                            disabled={isDeleting}
+                            className="rounded-none text-white hover:bg-red-700"
+                        >
+                            {isDeleting ? "Deleting..." : "Delete variant"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 };

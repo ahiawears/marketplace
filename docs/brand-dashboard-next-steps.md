@@ -143,7 +143,7 @@ Route:
 Why it can be done now:
 - The page exists, but it can better reflect the solid modules you now have.
 
-What can be improved now:
+What was improved:
 - inventory attention card
 - lookbook count
 - coupon count
@@ -152,6 +152,10 @@ What can be improved now:
 
 Priority:
 - High
+
+Current status:
+- Completed.
+- The dashboard home is now server-backed and already reflects live operational summaries for catalog, inventory attention, marketing assets, payouts, and quick links.
 
 ### 8. Products List Actions
 
@@ -162,8 +166,8 @@ Why it can be done now:
 - The page is already working and does not depend on customer actions.
 
 What can be improved now:
-- real archive/hide action
-- real delete action
+- replace browser `window.confirm` with a custom delete confirmation dialog/modal
+- improve delete flow UX and messaging for variants blocked by order history
 - better filters
 - status filter
 - bulk actions later
@@ -215,15 +219,14 @@ These areas are better left until customer activity creates meaningful real data
 
 If the goal is to finish as much of the brand dashboard as possible before switching to customer pages, this is the order I recommend:
 
-1. Dashboard Overview Polish
-2. Products List Real Actions
-3. Orders Page Shell Upgrade
-4. Reviews Page Shell
-5. Analytics Page Shell
-6. Finance / Payouts Page Shell
-7. Support Page
-8. Messages Page Shell Upgrade
-9. Lookbook Preview Polish
+1. Products List Real Actions
+2. Reviews Page Shell
+3. Analytics Page Shell
+4. Finance / Payouts Page Shell
+5. Support Page
+6. Orders Page Shell Upgrade
+7. Messages Page Shell Upgrade
+8. Lookbook Preview Polish
 
 ## Best Next Step
 
@@ -238,15 +241,6 @@ Reason:
 - reduces launch risk
 
 Specifically:
-- add real archive/hide action
-- add real delete action
-- add status filtering
-
-If you want a more “dashboard-complete” visual win first, then:
-
-### Dashboard Overview Polish
-
-Reason:
-- it ties together everything already built
-- it makes the dashboard feel finished faster
-
+- replace browser `window.confirm` with a custom delete confirmation dialog/modal
+- improve blocked-delete messaging when order history prevents hard delete
+- keep variant actions and filtering polished as the management surface matures

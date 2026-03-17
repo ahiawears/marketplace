@@ -76,20 +76,22 @@ const ProductsPage = () => {
 		
 	};
 	
-	const handleDeleteProduct = (productId: string, variantId: string) => {
+	const handleDeleteProduct = async (productId: string, variantId: string) => {
 		const loadingToast = toast.loading("Deleting variant...");
 
-		fetch(`/api/products/manage-variant?variantId=${variantId}`, {
-			method: "DELETE",
-		})
-			.then(async (response) => {
-				const result = await response.json();
-				if (!response.ok || !result.success) {
-					throw new Error(result.message || "Failed to delete variant.");
-				}
+		try {
+			const response = await fetch(`/api/products/manage-variant?variantId=${variantId}`, {
+				method: "DELETE",
+			});
+			const result = await response.json();
 
-				setProducts((prev) =>
-					prev.map((productEntry) =>
+			if (!response.ok || !result.success) {
+				throw new Error(result.message || "Failed to delete variant.");
+			}
+
+			setProducts((prev) =>
+				prev
+					.map((productEntry) =>
 						productEntry.id === productId
 							? {
 									...productEntry,
@@ -98,15 +100,17 @@ const ProductsPage = () => {
 							  }
 							: productEntry
 					)
-				);
+					.filter((productEntry) => productEntry.variants.length > 0)
+			);
 
-				toast.success("Variant deleted.", { id: loadingToast });
-			})
-			.catch((error) => {
-				toast.error(error instanceof Error ? error.message : "Failed to delete variant.", {
-					id: loadingToast,
-				});
+			toast.success("Variant deleted.", { id: loadingToast });
+		} catch (error) {
+			const message = error instanceof Error ? error.message : "Failed to delete variant.";
+			toast.error(message, {
+				id: loadingToast,
 			});
+			throw error instanceof Error ? error : new Error(message);
+		}
 	};
 
 	useEffect(() => {

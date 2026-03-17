@@ -42,15 +42,14 @@ This file maps the current brand dashboard menu, the route behind each item, the
 - Route: `/dashboard`
 - Page: [app/dashboard/page.tsx](/Users/apple/ahia/marketplace/app/dashboard/page.tsx)
 - Main UI:
-  - [components/brand-dashboard/card-metrics-grid.tsx](/Users/apple/ahia/marketplace/components/brand-dashboard/card-metrics-grid.tsx)
-  - chart components under `components/charts`
+  - server-backed overview page
 - Current status:
-  - Page exists and renders dashboard cards/charts.
-  - Uses client auth flow via `useAuth`.
-  - `TopProductsCarousel` is commented out.
+  - Real and server-backed.
+  - Pulls live operational summaries from products, inventory, coupons, lookbooks, and payout setup.
+  - Includes inventory attention, commerce asset summaries, quick links, catalog snapshot, and explicit coming-soon blocks for customer-dependent modules.
 - Recommendation:
-  - Convert to server-backed metrics when product/orders data is ready.
-  - Avoid calling `setState` during render in this page.
+  - Keep it focused on real operational signals.
+  - Add more summary cards only when the underlying customer-facing flows are genuinely live.
 
 ### 2. Products
 
@@ -90,9 +89,9 @@ This file maps the current brand dashboard menu, the route behind each item, the
   - Variant preview modal exists.
   - Variant-level actions are visible.
 - Still needed:
-  - real hide/archive action
-  - real delete action
-  - maybe add product status filters/search
+  - replace browser delete confirm with a custom confirmation dialog
+  - improve blocked-delete messaging when order history prevents deletion
+  - maybe bulk actions later
 
 #### 2c. Edit Product
 
@@ -372,9 +371,9 @@ This file maps the current brand dashboard menu, the route behind each item, the
 ### Tier 1: Finish high-value brand operations
 
 1. Products List actions
-   - real variant hide/archive
-   - real delete/archive
-   - filters and search
+   - custom delete confirmation dialog
+   - cleaner blocked-delete UX
+   - bulk actions later
 2. Orders
    - replace mock data with real order queries
    - order detail modal actions
@@ -395,12 +394,10 @@ This file maps the current brand dashboard menu, the route behind each item, the
 
 ### Tier 3: Build missing modules
 
-8. Inventory page
-   - stock table from product variants + sizes
-9. Reviews page
-10. Payouts page
-11. Analytics page
-12. Support page
+8. Reviews page
+9. Payouts page
+10. Analytics page
+11. Support page
 
 ### Tier 4: Clean navigation
 
