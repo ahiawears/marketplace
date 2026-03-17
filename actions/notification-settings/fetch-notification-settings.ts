@@ -19,6 +19,11 @@ export async function FetchNotificationSettings(
             throw new Error("User ID and role are required to fetch notification settings");
         }
 
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user || user.id !== userId) {
+            throw new Error("User not authenticated.");
+        }
+
         let dbTableName;
         let dbUserIdField;
         if (role === "brand") {
@@ -40,24 +45,21 @@ export async function FetchNotificationSettings(
             throw error;
         }
 
-        // If no data is found, return the default settings
-        if (!data || data.length === 0) {
-            return DEFAULT_BRAND_NOTIFICATION_SETTINGS;
-        }
-
-        // Transform the raw database data into the expected format
-        const formattedData: BrandNotificationSettingCheckboxTable[] = data.map(
-            (item: any) => ({
-                type: item.notification_type,
-                channels: {
+        const dbMap = new Map(
+            (data || []).map((item: any) => [
+                item.notification_type as BrandNotificationType,
+                {
                     email: item.email,
                     sms: item.sms,
                     in_app: item.in_app,
                 },
-            })
+            ])
         );
-        
-        return formattedData;
+
+        return DEFAULT_BRAND_NOTIFICATION_SETTINGS.map((defaultSetting) => ({
+            type: defaultSetting.type,
+            channels: dbMap.get(defaultSetting.type) || defaultSetting.channels,
+        }));
 
     } catch (error) {
         console.error("Error fetching notification settings:", error);

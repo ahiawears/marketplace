@@ -2,6 +2,7 @@
 
 import { createClient } from "@/supabase/server";
 import { BrandNotificationSettingCheckboxTable } from "../../lib/types";
+import { revalidatePath } from "next/cache";
 
 // Define the return type for better type safety
 interface ServerActionResponse {
@@ -22,6 +23,14 @@ export async function UpdateNotificationSettings(
             return {
                 success: false,
                 message: "User ID and role are required to update notification settings."
+            };
+        }
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user || user.id !== userId) {
+            return {
+                success: false,
+                message: "User not authenticated.",
             };
         }
 
@@ -55,6 +64,8 @@ export async function UpdateNotificationSettings(
                 console.error("Supabase insert error:", insertError);
                 return { success: false, message: insertError.message };
             }
+
+            revalidatePath('/dashboard/notifications');
 
             // Return success with the updated data
             return {
