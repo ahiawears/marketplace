@@ -1,6 +1,6 @@
 'use client';
 
-import { FC, useCallback } from "react";
+import { FC, MouseEvent, useCallback, useState } from "react";
 import { LookbookImage, LookbookProductTag } from "./lookbook-client";
 import { BrandProductListItem } from "@/actions/get-products-list/fetchBrandProducts";
 import { useDropzone, FileRejection } from 'react-dropzone';
@@ -68,19 +68,25 @@ interface LookbookImageManagerProps {
 interface SortableImageItemProps {
     image: LookbookImage;
     brandProducts: BrandProductListItem[];
+    activePlacementTagId: string | null;
     onRemove: (id: string) => void;
     onAddTag: (imageId: string) => void;
     onUpdateTag: (imageId: string, tagId: string, updates: Partial<LookbookProductTag>) => void;
     onRemoveTag: (imageId: string, tagId: string) => void;
+    onStartPlacement: (imageId: string, tagId: string) => void;
+    onPlaceTag: (imageId: string, tagId: string, x: number, y: number) => void;
 }
 
 const SortableImageItem: FC<SortableImageItemProps> = ({
     image,
     brandProducts,
+    activePlacementTagId,
     onRemove,
     onAddTag,
     onUpdateTag,
     onRemoveTag,
+    onStartPlacement,
+    onPlaceTag,
 }) => {
     const {
         attributes,
@@ -96,6 +102,17 @@ const SortableImageItem: FC<SortableImageItemProps> = ({
     };
 
     const tagProductOptions = brandProducts;
+    const isPlacementActive = activePlacementTagId !== null;
+
+    const handlePreviewClick = (event: MouseEvent<HTMLDivElement>) => {
+        if (!activePlacementTagId) return;
+
+        const bounds = event.currentTarget.getBoundingClientRect();
+        const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+        const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+
+        onPlaceTag(image.id, activePlacementTagId, x, y);
+    };
 
     return (
         <div ref={setNodeRef} style={style} className="space-y-4 bg-white border-2 rounded-md p-4 shadow-sm">
@@ -103,7 +120,12 @@ const SortableImageItem: FC<SortableImageItemProps> = ({
                 <button {...attributes} {...listeners} className="cursor-grab p-2 text-gray-500 hover:bg-gray-100 rounded-md touch-none">
                     <GripVertical className="h-5 w-5" />
                 </button>
-                <div className="relative w-20 h-20 rounded-md overflow-hidden bg-gray-100">
+                <div
+                    className={`relative h-32 w-32 overflow-hidden rounded-md bg-gray-100 ${
+                        isPlacementActive ? "cursor-crosshair ring-2 ring-black ring-offset-2" : ""
+                    }`}
+                    onClick={handlePreviewClick}
+                >
                     <Image
                         src={image.previewUrl}
                         alt="Lookbook page preview"
@@ -122,6 +144,11 @@ const SortableImageItem: FC<SortableImageItemProps> = ({
                     {image.isUploading && (
                         <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                             <p className="text-white text-sm font-bold">{image.uploadProgress}%</p>
+                        </div>
+                    )}
+                    {isPlacementActive && (
+                        <div className="absolute inset-x-0 bottom-0 bg-black/70 px-2 py-1 text-[10px] font-medium text-white">
+                            Click image to place marker
                         </div>
                     )}
                 </div>
@@ -242,9 +269,18 @@ const SortableImageItem: FC<SortableImageItemProps> = ({
                                     </div>
 
                                     <div className="flex items-end justify-end">
-                                        <Button type="button" variant="destructive" onClick={() => onRemoveTag(image.id, tag.id)}>
-                                            Remove Tag
-                                        </Button>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                type="button"
+                                                variant={activePlacementTagId === tag.id ? "default" : "outline"}
+                                                onClick={() => onStartPlacement(image.id, tag.id)}
+                                            >
+                                                {activePlacementTagId === tag.id ? "Placing..." : "Place on Image"}
+                                            </Button>
+                                            <Button type="button" variant="destructive" onClick={() => onRemoveTag(image.id, tag.id)}>
+                                                Remove Tag
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -257,6 +293,7 @@ const SortableImageItem: FC<SortableImageItemProps> = ({
 };
 
 const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesChange, brandProducts, userId }) => {
+    const [activePlacement, setActivePlacement] = useState<{ imageId: string; tagId: string } | null>(null);
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -334,6 +371,7 @@ const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesC
         if (imageToRemove?.previewUrl) URL.revokeObjectURL(imageToRemove.previewUrl);
         // TODO: Add logic to delete from Supabase storage if already uploaded
         onImagesChange(prevImages => prevImages.filter(img => img.id !== idToRemove));
+        setActivePlacement((prev) => (prev?.imageId === idToRemove ? null : prev));
         toast.info("Image removed.");
     };
 
@@ -350,6 +388,7 @@ const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesC
     };
 
     const handleAddTag = (imageId: string) => {
+        const newTagId = uuidv4();
         onImagesChange((prevImages) =>
             prevImages.map((image) =>
                 image.id === imageId
@@ -358,7 +397,7 @@ const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesC
                           tags: [
                               ...image.tags,
                               {
-                                  id: uuidv4(),
+                                  id: newTagId,
                                   productId: "",
                                   productVariantId: "",
                                   label: "",
@@ -372,6 +411,7 @@ const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesC
                     : image
             )
         );
+        setActivePlacement({ imageId, tagId: newTagId });
     };
 
     const handleUpdateTag = (imageId: string, tagId: string, updates: Partial<LookbookProductTag>) => {
@@ -413,6 +453,19 @@ const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesC
                     : image
             )
         );
+        setActivePlacement((prev) => (prev?.tagId === tagId ? null : prev));
+    };
+
+    const handleStartPlacement = (imageId: string, tagId: string) => {
+        setActivePlacement({ imageId, tagId });
+    };
+
+    const handlePlaceTag = (imageId: string, tagId: string, x: number, y: number) => {
+        handleUpdateTag(imageId, tagId, {
+            x_position: x,
+            y_position: y,
+        });
+        setActivePlacement(null);
     };
 
     return (
@@ -435,10 +488,13 @@ const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesC
                                     key={image.id}
                                     image={image}
                                     brandProducts={brandProducts}
+                                    activePlacementTagId={activePlacement?.imageId === image.id ? activePlacement.tagId : null}
                                     onRemove={handleRemoveImage}
                                     onAddTag={handleAddTag}
                                     onUpdateTag={handleUpdateTag}
                                     onRemoveTag={handleRemoveTag}
+                                    onStartPlacement={handleStartPlacement}
+                                    onPlaceTag={handlePlaceTag}
                                 />
                             ))}
                         </SortableContext>
