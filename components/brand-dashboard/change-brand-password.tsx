@@ -32,9 +32,8 @@ const ChangeBrandPassword = () => {
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setIsSubmitting(true);
-        setStatusMessage("Updating password...");
         setErrors({});
+        setStatusMessage("");
 
         const form = e.currentTarget;
         const formData = new FormData(form);
@@ -54,6 +53,14 @@ const ChangeBrandPassword = () => {
         }
 
         setErrors(newErrors);
+        if (Object.keys(newErrors).length > 0) {
+            toast.error("Please fix the password form errors before submitting.");
+            return;
+        }
+
+        setIsSubmitting(true);
+        setStatusMessage("Updating password...");
+
         try {
             const result = await UpdatePassword(formData, "brand");
 
@@ -67,6 +74,13 @@ const ChangeBrandPassword = () => {
             } else {
                 toast.error(result.message || "An error occurred.");
                 setStatusMessage(result.message || "An error occurred.");
+                if (result.errors) {
+                    setErrors({
+                        currentPassword: result.errors.currentPassword?.[0],
+                        newPassword: result.errors.newPassword?.[0],
+                        confirmPassword: result.errors.confirmPassword?.[0],
+                    });
+                }
             }
         } catch (error) {
             toast.error("Failed to change password. Please try again.");
@@ -117,7 +131,7 @@ const ChangeBrandPassword = () => {
                                 }}
                                 className="block w-full border-2 py-1.5 ring-1 ring-inset ring-gray-300 sm:text-sm/6 "
                             />
-                            {errors.currentPassword && <p className="text-red-500 text-sm mt-1">{errors.currentPassword[0]}</p>}
+                            {errors.currentPassword && <p className="text-red-500 text-sm mt-1">{errors.currentPassword}</p>}
                         </div>
                     </div>
 
@@ -143,14 +157,14 @@ const ChangeBrandPassword = () => {
                             <p className="text-sm text-gray-600 my-1 font-bold">
                                 *Password must include uppercase, lowercase, numbers, and symbols*
                             </p>
-                                <p className="text-sm text-gray-600 my-1">
+                            <p className="text-sm text-gray-600 my-1">
                                 Strength: <span className={
                                     passwordStrength === 'Strong' ? 'text-green-500 font-bold' :
                                     passwordStrength === 'Weak' ? 'text-yellow-500 font-bold' :
                                     'text-gray-600'
                                 }>{passwordStrength}</span>
                             </p>
-                            {errors.newPassword && <p className="text-red-500 text-sm mt-1">{errors.newPassword[0]}</p>}
+                            {errors.newPassword && <p className="text-red-500 text-sm mt-1">{errors.newPassword}</p>}
                         </div>
                     </div>
 
@@ -170,7 +184,7 @@ const ChangeBrandPassword = () => {
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 className="block w-full border-2 py-1.5 ring-1 ring-inset ring-gray-300 sm:text-sm/6 "
                             />
-                            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword[0]}</p>}
+                            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
                         </div>
                     </div>
 
@@ -185,6 +199,10 @@ const ChangeBrandPassword = () => {
                     </div>
 
                 </form>
+
+                {statusMessage && (
+                    <p className="mt-4 text-sm text-slate-600">{statusMessage}</p>
+                )}
             </div>
         </div>
     )

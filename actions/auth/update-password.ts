@@ -6,7 +6,11 @@ import { revalidatePath } from "next/cache";
 // Define a schema for validation, including the current password
 const passwordSchema = z.object({
     currentPassword: z.string().min(1, "Current password is required."),
-    newPassword: z.string().min(8, "Password must be at least 8 characters long.")
+    newPassword: z.string().min(8, "Password must be at least 8 characters long."),
+    confirmPassword: z.string().min(1, "Please confirm your new password."),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords do not match.",
+    path: ["confirmPassword"],
 });
 
 export async function UpdatePassword(formData: FormData, role?: string){
@@ -51,6 +55,7 @@ export async function UpdatePassword(formData: FormData, role?: string){
 
         // Revalidate the path to ensure the session is updated
         if (role === "brand") {
+            revalidatePath("/dashboard/brand-account-settings")
             revalidatePath("/dashboard/brand-profile-management")
             return { success: true, message: "Password updated successfully!" };
         } else {

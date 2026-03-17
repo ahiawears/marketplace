@@ -1,70 +1,26 @@
-"use client"
-import BrandBasicDetails from "@/components/brand-dashboard/brand-basic-details";
-import ChangeBrandPassword from "@/components/brand-dashboard/change-brand-password";
-import { Button } from "@/components/ui/button";
-import { PasswordInput } from "@/components/ui/password-input";
-import { useEffect, useState } from "react";
-import validator from 'validator';
+import { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { createClient } from "@/supabase/server";
+import { BrandAccountSettings } from "@/components/brand-dashboard/brand-account-settings";
 
-type BrandPasswordAuthDetails = {
-    currentPassword: string;
-    newPassword: string;
-    confirmPassword: string;
-}
-interface BrandSccountSettingsProps {
-    userId: string;
-    accessToken: string;
-}
+export const metadata: Metadata = {
+  title: "Brand Account Settings",
+};
 
-interface Errors {
-    currentPassword?: string;
-    newPassword?: string;
-    confirmNewPassword?: string;
-}
+export default async function BrandAccountSettingsPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-export const BrandAccountSettings: React.FC<BrandSccountSettingsProps> = ({userId, accessToken}) => {
-    const [changePasswordErrors, setChangePasswordErrors] = useState<Errors>({});
+  if (error || !user) {
+    redirect("/login-brand");
+  }
 
-    const [passwordStrength, setPasswordStrength] = useState('');
-    const [passwordMatch, setPasswordMatch] = useState(true);
-    const [currentPassword, setCurrentPassword] = useState('');
-    const [newPassword, setNewPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-
-    const [passwordAuthDetails, setPasswordAuthDetails] = useState<BrandPasswordAuthDetails> ({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-    });
-
-    const onPasswordChange = (password: string) => {
-        setNewPassword(password);
-        setPasswordStrength(validatePasswordStrength(password));
-        setPasswordMatch(password === confirmPassword);
-    }
-
-    const onConfirmPasswordChange = (confirmPassword: string) => {
-        setConfirmPassword(confirmPassword);
-        setPasswordMatch(newPassword === confirmPassword);
-    }
-    
-    const validatePasswordStrength = (password: string) => {
-        if (!password) return '';
-        if (password.length < 8) return 'Too short';
-        if (validator.isStrongPassword(password, { minSymbols: 1 })) return 'Strong';
-        return 'Weak';
-    };
-
-    const updateBrandPassword = async () => {
-
-        console.log(currentPassword, newPassword, confirmPassword)
-    }
-    return (
-        <div>
-            {/* <BrandBasicDetails /> */}
-            <>
-                <ChangeBrandPassword/>
-            </>
-        </div>
-    );
+  return (
+    <div className="p-4 md:p-6">
+      <BrandAccountSettings userId={user.id} />
+    </div>
+  );
 }

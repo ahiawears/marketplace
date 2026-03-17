@@ -3,6 +3,7 @@
 
 import { createClient } from "@/supabase/server";
 import { revalidatePath } from "next/cache";
+import validator from "validator";
 
 export async function UpdateAuthEmail(formData: FormData, role?: string) {
     const supabase = await createClient();
@@ -18,6 +19,20 @@ export async function UpdateAuthEmail(formData: FormData, role?: string) {
         }
         
         const newEmail = formData.get("newEmail") as string;
+        if (!newEmail || !validator.isEmail(newEmail)) {
+            return {
+                success: false,
+                message: "Please enter a valid email address.",
+            };
+        }
+
+        if (newEmail.toLowerCase() === user.email?.toLowerCase()) {
+            return {
+                success: false,
+                message: "Please use a different email address from your current one.",
+            };
+        }
+
         const baseUrl = process.env.NEXT_PUBLIC_SITE_URL;
         
         if (!baseUrl) {
@@ -44,6 +59,7 @@ export async function UpdateAuthEmail(formData: FormData, role?: string) {
         }
 
         if (role === "brand") {
+            revalidatePath('/dashboard/brand-account-settings')
             revalidatePath('/dashboard/brand-profile-management')
         }
 

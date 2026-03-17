@@ -5,7 +5,6 @@ import { Button } from "../ui/button";
 import validator from "validator";
 import { toast } from "sonner";
 import { UpdateAuthEmail } from "@/actions/auth/update-auth-email";
-import { useRouter } from "next/navigation";
 
 interface Errors {
     newEmail?: string;
@@ -15,10 +14,8 @@ const ChangeAuthEmail = () => {
     const [newEmail, setNewEmail] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState<Errors>({});
-    const router = useRouter();
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        setIsSubmitting(true);
         setErrors({});
 
         const form = e.currentTarget;
@@ -32,6 +29,11 @@ const ChangeAuthEmail = () => {
         }
 
         setErrors(newErrors);
+        if (Object.keys(newErrors).length > 0) {
+            return;
+        }
+
+        setIsSubmitting(true);
 
         try {
             const result = await UpdateAuthEmail(formData, "brand");
@@ -46,6 +48,7 @@ const ChangeAuthEmail = () => {
                         },
                     }
                 });
+                setNewEmail("");
             } else {
                 toast.error(result.message)
             }
@@ -93,7 +96,7 @@ const ChangeAuthEmail = () => {
                                 }}
                                 className="block w-full border-2 py-1.5 ring-1 ring-inset ring-gray-300 sm:text-sm/6 "
                             />
-                            {errors.newEmail && <p className="text-red-500 text-sm mt-1">{errors.newEmail[0]}</p>}
+                            {errors.newEmail && <p className="text-red-500 text-sm mt-1">{errors.newEmail}</p>}
                         </div>
                     </div>
                     <div className="text-sm">
