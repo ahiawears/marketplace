@@ -10,6 +10,8 @@ type ComponentItems = "addBank" | "banksList";
 interface PaymentSettingsClientProps {
     userId: string;
     currency: string;
+    bankCountryCode: string;
+    bankFetchError: string | null;
     bankList: {
         id: number;
         name: string;
@@ -30,6 +32,8 @@ interface PaymentSettingsClientProps {
 const PaymentSettingsClient: React.FC<PaymentSettingsClientProps> = ({
     userId,
     currency,
+    bankCountryCode,
+    bankFetchError,
     bankList,
     beneficiaryData
 }) => {
@@ -46,8 +50,10 @@ const PaymentSettingsClient: React.FC<PaymentSettingsClientProps> = ({
             })
             const data = await response.json();
             if (response.ok) {
-                setBeneficiaryList(data);
-            } 
+                setBeneficiaryList(Array.isArray(data) ? data : []);
+            } else {
+                toast.error("Failed to refresh payment accounts.");
+            }
         } catch(error) {
             let errorMessage;
             if (error instanceof Error) {
@@ -108,6 +114,8 @@ const PaymentSettingsClient: React.FC<PaymentSettingsClientProps> = ({
                     }}
                     currency={currency}
                     bankList={bankList}
+                    bankCountryCode={bankCountryCode}
+                    bankFetchError={bankFetchError}
                 />
             );
         }
@@ -129,6 +137,12 @@ const PaymentSettingsClient: React.FC<PaymentSettingsClientProps> = ({
 
     return (
         <div>
+            {bankFetchError && (
+                <div className="mb-4 border-2 border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+                    We could not load Flutterwave banks for `{bankCountryCode}`. You can still review existing payout
+                    accounts, but adding a new one may be unavailable until bank support is confirmed.
+                </div>
+            )}
             {renderComponent()}
 
             {isModalOpen && (
@@ -139,15 +153,6 @@ const PaymentSettingsClient: React.FC<PaymentSettingsClientProps> = ({
                     onCancel={cancelDeletion}
                 />
             )}
-        </div>
-    );
-
-
-    return (
-        <div>
-            <div className='p-4'>
-                {renderComponent()}
-            </div>
         </div>
     );
 };

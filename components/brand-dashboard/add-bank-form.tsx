@@ -11,6 +11,8 @@ import validator from 'validator';
 interface AddBankFormProps {
     onBack: () => void;
     currency: string;
+    bankCountryCode: string;
+    bankFetchError: string | null;
     bankList: { name: string; code: string, id: number }[];
 }
 
@@ -22,7 +24,7 @@ interface BeneficiaryAccountType {
     bank_name: string;
 }
 
-const AddBankForm = ({ onBack, currency, bankList }: AddBankFormProps) => {
+const AddBankForm = ({ onBack, currency, bankCountryCode, bankFetchError, bankList }: AddBankFormProps) => {
     const initialBankFormData: BeneficiaryAccountType = {
         account_bank: "",
         account_number: "",
@@ -41,6 +43,7 @@ const AddBankForm = ({ onBack, currency, bankList }: AddBankFormProps) => {
 
     const isFormValid = () => {
         return (
+            bankList.length > 0 &&
             validator.isNumeric(bankFormData.account_number) &&
             validator.trim(bankFormData.beneficiary_name).length > 0 &&
             validator.trim(bankFormData.account_bank).length > 0 &&
@@ -94,6 +97,20 @@ const AddBankForm = ({ onBack, currency, bankList }: AddBankFormProps) => {
 
             <CardContent className="py-4">
                 <form className='space-y-6' onSubmit={handleSubmit}>
+                    <div className="border-2 bg-slate-50 p-4 text-sm text-slate-700">
+                        <p>
+                            Bank market: <span className="font-semibold">{bankCountryCode}</span>
+                        </p>
+                        <p className="mt-1">
+                            Payout currency: <span className="font-semibold">{currency}</span>
+                        </p>
+                        {bankFetchError && (
+                            <p className="mt-2 text-amber-700">
+                                {bankFetchError}
+                            </p>
+                        )}
+                    </div>
+
                     {/* Bank Details Section */}
                     <div className="space-y-4">
                         <h3 className="text-xl font-semibold text-gray-800 border-b-2 pb-2">Bank Details</h3>
@@ -110,6 +127,7 @@ const AddBankForm = ({ onBack, currency, bankList }: AddBankFormProps) => {
                                             bank_name: selectedBank.name,
                                         }));
                                     }}
+                                    placeholder={bankList.length > 0 ? "Select a bank" : "No supported banks available"}
                                 />                                
                             </div>
                             <div>

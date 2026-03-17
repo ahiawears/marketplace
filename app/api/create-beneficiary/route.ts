@@ -7,11 +7,11 @@ export async function POST(req: Request) {
     const supabase = await createClient();
     const { data: user, error } = await supabase.auth.getUser();
 
-    if (error) {
+    if (error || !user.user) {
         return NextResponse.json({
             success: false, 
-            message: error.message
-        }, {status: 400})
+            message: error?.message || "User not authenticated."
+        }, {status: 401})
     }
     const userId = user.user.id;
     try {   
@@ -21,6 +21,35 @@ export async function POST(req: Request) {
         const beneficiary_name = formData.beneficiary_name;
         const currency = formData.currency;
         const bank_name = formData.bank_name;
+
+        if (!account_number || !account_bank || !beneficiary_name || !currency || !bank_name) {
+            return NextResponse.json({
+                success: false,
+                message: "All beneficiary fields are required."
+            }, { status: 400 });
+        }
+
+        const { data: existingBeneficiary, error: existingBeneficiaryError } = await supabase
+            .from('brand_beneficiary_account_details')
+            .select('id')
+            .eq('brand_id', userId)
+            .eq('account_number', account_number)
+            .eq('bank_code', account_bank)
+            .maybeSingle();
+
+        if (existingBeneficiaryError) {
+            return NextResponse.json({
+                success: false,
+                message: existingBeneficiaryError.message
+            }, { status: 500 });
+        }
+
+        if (existingBeneficiary) {
+            return NextResponse.json({
+                success: false,
+                message: "This bank account has already been added to your payout settings."
+            }, { status: 400 });
+        }
 
         const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
         if (!FLUTTERWAVE_SECRET_KEY) {

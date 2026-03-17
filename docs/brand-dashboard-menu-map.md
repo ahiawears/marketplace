@@ -269,6 +269,9 @@ This file maps the current brand dashboard menu, the route behind each item, the
 - Current status:
   - Real page exists.
   - Needs verification for whether persistence is fully wired.
+- Planned next:
+  - low-stock email alerts
+  - low-stock in-app alerts
 - Later to add:
   - low-stock email alerts
   - low-stock in-app alerts
@@ -388,6 +391,7 @@ This file maps the current brand dashboard menu, the route behind each item, the
    - `brand-settings-page`
    - `brand-socials-links` if redundant
 15. Remove or fix sidebar links to missing routes
+16. Add low-stock email and in-app alert controls under Notifications
 16. Add low-stock notification rules under Notifications
 
 ## Suggested Final Sidebar Structure

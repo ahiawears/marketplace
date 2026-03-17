@@ -33,6 +33,10 @@ const ClientFormattedDate = ({ dateString }: { dateString: string }) => {
 
 
 const AccountsList = ({ onAddBankDetails, data, onDeleteBeneficiary }: AccountsListProps) => {
+    const maskAccountNumber = (accountNumber: string) => {
+        if (accountNumber.length <= 4) return accountNumber;
+        return `${"*".repeat(Math.max(accountNumber.length - 4, 0))}${accountNumber.slice(-4)}`;
+    };
 
     return (
         <div className="container mx-auto border-2 p-4 sm:p-6 lg:p-8">
@@ -58,7 +62,7 @@ const AccountsList = ({ onAddBankDetails, data, onDeleteBeneficiary }: AccountsL
                                     <span className="truncate">{beneficiary.bank_name}</span>
                                 </CardTitle>
                                 <CardDescription className="text-sm text-gray-600">
-                                    Account Number: <span className="font-mono">{beneficiary.account_number}</span>
+                                    Account Number: <span className="font-mono">{maskAccountNumber(beneficiary.account_number)}</span>
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="p-4">

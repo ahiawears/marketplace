@@ -28,6 +28,11 @@ interface BeneficiaryData {
     created_at: string;
 }
 
+function getCountryInfoByIso2(iso2Code: string | undefined) {
+    if (!iso2Code) return null;
+    return CountryData.find((country) => country.iso2.toLowerCase() === iso2Code.toLowerCase()) || null;
+}
+
 export default async function PaymentSettings() {
     const supabase = await createClient();
     
@@ -57,19 +62,30 @@ export default async function PaymentSettings() {
         }
 
         const beneficiaryData = await GetBrandBeneficiaryDetails(userId);
-        const beneficiaryList = beneficiaryData.data as BeneficiaryData[];
-        console.log("The beneficiaryList is:", beneficiaryList);
+        const beneficiaryList = (beneficiaryData.data || []) as BeneficiaryData[];
 
-        const bankList = await FetchFlutterwaveBanks("NG") as BankListType[];
+        const country = getCountryInfoByIso2(userCountry);
+        const bankCountryCode = userCountry.toUpperCase();
+        let bankList: BankListType[] = [];
+        let bankFetchError: string | null = null;
 
-        const country = CountryData.find(c => c.iso2 === "NG")
-        const currency = country?.currency;
+        try {
+            bankList = await FetchFlutterwaveBanks(bankCountryCode) as BankListType[];
+        } catch (error) {
+            bankFetchError = error instanceof Error
+                ? error.message
+                : "We could not load supported banks for this brand country yet.";
+        }
+
+        const currency = country?.currency || "USD";
         return (
             <PaymentSettingsClient 
                 userId={user.id}
-                currency={currency!}
+                currency={currency}
                 bankList={bankList}
-                beneficiaryData={beneficiaryList!}
+                beneficiaryData={beneficiaryList}
+                bankCountryCode={bankCountryCode}
+                bankFetchError={bankFetchError}
             />
         );
         

@@ -21,6 +21,16 @@ export async function GetBrandBeneficiaryDetails(brandId: string): Promise<Brand
     const supabase = await createClient();
 
     try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user || user.id !== brandId) {
+            return {
+                success: false,
+                message: "User not authenticated.",
+                data: null
+            }
+        }
+
         const { data, error } = await supabase
             .from('brand_beneficiary_account_details')
             .select('*')
