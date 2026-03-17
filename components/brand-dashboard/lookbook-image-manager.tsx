@@ -118,7 +118,7 @@ const SortableImageItem: FC<SortableImageItemProps> = ({
         <div ref={setNodeRef} style={style} className="space-y-4 bg-white border-2 rounded-md p-4 shadow-sm">
             <div className="flex items-center gap-4">
                 <button {...attributes} {...listeners} className="cursor-grab p-2 text-gray-500 hover:bg-gray-100 rounded-md touch-none">
-                    <GripVertical className="h-5 w-5" />
+                    <GripVertical className="h-5 w-5 outline-2" />
                 </button>
                 <div
                     className={`relative h-32 w-32 overflow-hidden rounded-md bg-gray-100 ${
@@ -163,17 +163,17 @@ const SortableImageItem: FC<SortableImageItemProps> = ({
                     )}
                 </div>
                 <Button size="icon" variant="ghost" className="text-gray-500 hover:text-red-600" onClick={() => onRemove(image.id)}>
-                    <Trash2 className="h-5 w-5" />
+                    <Trash2 className="h-5 w-5 outline-2 outline-black" />
                 </Button>
             </div>
 
-            <div className="space-y-3 border-t pt-4">
+            <div className="space-y-3 border-t-2 pt-4">
                 <div className="flex items-center justify-between">
                     <div>
                         <p className="text-sm font-semibold text-gray-900">Tagged products</p>
                         <p className="text-xs text-gray-500">Attach products to this page and position their marker.</p>
                     </div>
-                    <Button type="button" variant="outline" onClick={() => onAddTag(image.id)}>
+                    <Button className="border-2" type="button" variant="outline" onClick={() => onAddTag(image.id)}>
                         Add Product Tag
                     </Button>
                 </div>
@@ -187,10 +187,11 @@ const SortableImageItem: FC<SortableImageItemProps> = ({
                             const variants = selectedProduct?.variants || [];
 
                             return (
-                                <div key={tag.id} className="grid gap-3 border bg-gray-50 p-3 md:grid-cols-2">
+                                <div key={tag.id} className="grid gap-3 border-2 bg-gray-50 p-3 md:grid-cols-2">
                                     <div className="space-y-2">
                                         <Label>Product</Label>
                                         <Select
+                                            className="border-2"
                                             value={tag.productId}
                                             onChange={(event) => {
                                                 const nextProductId = event.target.value;
@@ -214,6 +215,7 @@ const SortableImageItem: FC<SortableImageItemProps> = ({
                                     <div className="space-y-2">
                                         <Label>Variant</Label>
                                         <Select
+                                            className="border-2"
                                             value={tag.productVariantId || ""}
                                             onChange={(event) =>
                                                 onUpdateTag(image.id, tag.id, { productVariantId: event.target.value || undefined })
@@ -272,12 +274,13 @@ const SortableImageItem: FC<SortableImageItemProps> = ({
                                         <div className="flex gap-2">
                                             <Button
                                                 type="button"
+                                                className="border-2 rounded-none"
                                                 variant={activePlacementTagId === tag.id ? "default" : "outline"}
                                                 onClick={() => onStartPlacement(image.id, tag.id)}
                                             >
                                                 {activePlacementTagId === tag.id ? "Placing..." : "Place on Image"}
                                             </Button>
-                                            <Button type="button" variant="destructive" onClick={() => onRemoveTag(image.id, tag.id)}>
+                                            <Button className="rounded-none" type="button" variant="destructive" onClick={() => onRemoveTag(image.id, tag.id)}>
                                                 Remove Tag
                                             </Button>
                                         </div>

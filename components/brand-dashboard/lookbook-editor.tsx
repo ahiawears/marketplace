@@ -89,7 +89,7 @@ const LookbookEditor: FC<LookbookEditorProps> = ({
                         {isEditMode ? 'Update the details for your lookbook.' : 'Build a new lookbook to showcase your products.'}
                     </CardDescription>
                 </div>
-                <Button onClick={onBack} variant="outline">
+                <Button onClick={onBack} variant="outline" className="border-2 rounded-none">
                     Back to List
                 </Button>
             </CardHeader>

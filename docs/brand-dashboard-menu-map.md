@@ -14,25 +14,22 @@ This file maps the current brand dashboard menu, the route behind each item, the
   - Add Product
   - Edit Product
   - Products List
+  - Inventory
+  - Lookbook
   - Coupons
   - Shipping Configuration
   - Return Policy
   - Payment Settings
   - Notifications
   - Brand Profile Management
+  - Brand Account Settings
 
 - Exists but looks partial / placeholder:
-  - Lookbook
   - Orders
   - Messages
-  - Brand Account Settings
-  - Settings
+  - Settings redirect pages
 
 - In sidebar but no real route/page found yet:
-  - `/dashboard/products`
-  - `/dashboard/inventory`
-  - `/dashboard/reviews`
-  - `/dashboard/marketing`
   - `/dashboard/analytics`
   - `/dashboard/payouts`
   - `/dashboard/support`
@@ -58,12 +55,11 @@ This file maps the current brand dashboard menu, the route behind each item, the
 ### 2. Products
 
 - Sidebar parent: `Products`
-- Parent URL: `/dashboard/products`
+- Parent URL: `/dashboard/products-list`
 - Current status:
-  - No page found for this parent route.
-  - Sidebar currently links to a non-existent route.
+  - Parent now points to the real products list route.
 - Recommendation:
-  - Either add a landing page for Products or change the parent item to be non-clickable.
+  - Keep product management centered around the list page.
 
 #### 2a. Add Product
 
@@ -112,11 +108,17 @@ This file maps the current brand dashboard menu, the route behind each item, the
 
 #### 2d. Inventory
 
-- Route in sidebar: `/dashboard/inventory`
+- Route: `/dashboard/inventory`
+- Page: [app/dashboard/inventory/page.tsx](/Users/apple/ahia/marketplace/app/dashboard/inventory/page.tsx)
+- Main UI:
+  - [components/brand-dashboard/inventory-client.tsx](/Users/apple/ahia/marketplace/components/brand-dashboard/inventory-client.tsx)
+- Data:
+  - [actions/get-brand-inventory.ts](/Users/apple/ahia/marketplace/actions/get-brand-inventory.ts)
+  - [app/api/inventory/update-quantity/route.ts](/Users/apple/ahia/marketplace/app/api/inventory/update-quantity/route.ts)
 - Current status:
-  - No route found.
-- Recommendation:
-  - Likely should become stock/variant quantity management based on `product_sizes.quantity`.
+  - Real inventory page exists.
+  - Variant and size-level stock data is live.
+  - Low stock and out of stock attention states are implemented.
 
 #### 2e. Lookbook
 
@@ -127,11 +129,11 @@ This file maps the current brand dashboard menu, the route behind each item, the
   - [components/brand-dashboard/lookbook-editor.tsx](/Users/apple/ahia/marketplace/components/brand-dashboard/lookbook-editor.tsx)
   - [components/brand-dashboard/lookbook-list.tsx](/Users/apple/ahia/marketplace/components/brand-dashboard/lookbook-list.tsx)
 - Current status:
-  - UI exists.
-  - Page currently uses a temporary `GetLookbooks()` with sample data.
-  - Not fully backend-backed yet.
+  - Real DB-backed CRUD exists.
+  - Pages upload to storage and save in order.
+  - Product tagging and hotspot placement are implemented.
 - Recommendation:
-  - Needs real database model and CRUD before considering complete.
+  - Next polish could be customer-facing/public lookbook rendering.
 
 ### 3. Orders & Customers
 
@@ -171,9 +173,9 @@ This file maps the current brand dashboard menu, the route behind each item, the
 ### 4. Marketing
 
 - Sidebar parent: `Marketing`
-- Parent URL: `/dashboard/marketing`
+- Parent URL: `/dashboard/coupons`
 - Current status:
-  - No parent route found.
+  - Parent now points to the real coupons page.
 
 #### 4a. Coupons
 
@@ -190,14 +192,6 @@ This file maps the current brand dashboard menu, the route behind each item, the
 - Current status:
   - One of the more complete dashboard modules.
   - Fetches products and coupons, supports create/edit.
-
-#### 4b. Lookbook
-
-- Same as Products > Lookbook
-- Note:
-  - Sidebar duplicates this feature under two sections.
-- Recommendation:
-  - Keep only one navigation location, or make one a shortcut with clear intent.
 
 ### 5. Analytics
 
@@ -258,6 +252,25 @@ This file maps the current brand dashboard menu, the route behind each item, the
 - Current status:
   - Real data loading exists.
   - Supports adding beneficiary/bank accounts.
+
+#### 6e. Brand Account Settings
+
+- Route: `/dashboard/brand-account-settings`
+- Page: [app/dashboard/brand-account-settings/page.tsx](/Users/apple/ahia/marketplace/app/dashboard/brand-account-settings/page.tsx)
+- Main UI:
+  - [components/brand-dashboard/brand-account-settings.tsx](/Users/apple/ahia/marketplace/components/brand-dashboard/brand-account-settings.tsx)
+- Current status:
+  - Real standalone settings page exists.
+  - Password and auth email updates are wired.
+
+#### 6f. Legacy Settings Redirects
+
+- Routes:
+  - `/dashboard/settings`
+  - `/dashboard/brand-settings-page`
+- Current status:
+  - Both now redirect into the real profile management page.
+  - This keeps old links working while removing duplicate settings UIs.
 - Planned next:
   - webhook/reconciliation audit for payout-related events
   - better handling for unsupported Flutterwave bank markets

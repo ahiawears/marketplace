@@ -1,18 +1,18 @@
 import {
   ArrowLeft,
-  BarChart,
   BookImage,
-  HelpCircle,
   Home,
   ListOrdered,
   MessageCircle,
   Settings,
   ShoppingBasket,
-  Star,
   TicketPercent,
-  UserPenIcon,
   Wallet,
+  BarChart3,
+  HelpCircle,
+  Star,
 } from "lucide-react";
+import Link from "next/link";
 
 import {
   Sidebar,
@@ -22,22 +22,29 @@ import {
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar";
-import Link from "next/link";
 
-type SibarMenuItem = {
+type SidebarSubitem = {
   title: string;
   url: string;
-  icon?: React.ElementType;
-  subitems?: SibarMenuItem[];
 };
 
-const items: SibarMenuItem[] = [
+type SidebarItem = {
+  title: string;
+  url?: string;
+  icon: React.ElementType;
+  subitems?: SidebarSubitem[];
+  disabled?: boolean;
+  badge?: string;
+};
+
+const activeItems: SidebarItem[] = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -45,7 +52,7 @@ const items: SibarMenuItem[] = [
   },
   {
     title: "Products",
-    url: "/dashboard/products",
+    url: "/dashboard/products-list",
     icon: ShoppingBasket,
     subitems: [
       { title: "Add Product", url: "/dashboard/add-product" },
@@ -55,85 +62,109 @@ const items: SibarMenuItem[] = [
     ],
   },
   {
-    title: "Orders & Customers",
-    url: "/dashboard/orders",
-    icon: ListOrdered,
-    subitems: [
-      { title: "Orders", url: "/dashboard/orders" },
-      { title: "Messages", url: "/dashboard/messages" },
-      { title: "Reviews", url: "/dashboard/reviews" },
-    ],
-  },
-  {
     title: "Marketing",
-    url: "/dashboard/marketing",
+    url: "/dashboard/coupons",
     icon: TicketPercent,
-    subitems: [
-      { title: "Coupons", url: "/dashboard/coupons" },
-      { title: "Lookbook", url: "/dashboard/lookbook" }, // optional if relevant here too
-    ],
-  },
-  {
-    title: "Analytics",
-    url: "/dashboard/analytics",
-    icon: BarChart,
+    subitems: [{ title: "Coupons", url: "/dashboard/coupons" }],
   },
   {
     title: "Brand Settings",
-    url: "/dashboard/settings",
+    url: "/dashboard/brand-profile-management",
     icon: Settings,
     subitems: [
       { title: "Brand Profile", url: "/dashboard/brand-profile-management" },
+      { title: "Account Settings", url: "/dashboard/brand-account-settings" },
       { title: "Shipping Configuration", url: "/dashboard/shipping-configuration" },
       { title: "Return Policy", url: "/dashboard/return-policy" },
       { title: "Payment Settings", url: "/dashboard/payment-settings" },
       { title: "Notifications", url: "/dashboard/notifications" },
     ],
   },
+];
+
+const comingSoonItems: SidebarItem[] = [
+  {
+    title: "Orders",
+    icon: ListOrdered,
+    disabled: true,
+    badge: "Soon",
+  },
+  {
+    title: "Messages",
+    icon: MessageCircle,
+    disabled: true,
+    badge: "Soon",
+  },
+  {
+    title: "Reviews",
+    icon: Star,
+    disabled: true,
+    badge: "Soon",
+  },
+  {
+    title: "Analytics",
+    icon: BarChart3,
+    disabled: true,
+    badge: "Soon",
+  },
   {
     title: "Finance",
-    url: "/dashboard/payouts",
     icon: Wallet,
-    subitems: [
-      { title: "Payouts", url: "/dashboard/payouts" },
-    ],
+    disabled: true,
+    badge: "Soon",
   },
   {
     title: "Support",
-    url: "/dashboard/support",
     icon: HelpCircle,
+    disabled: true,
+    badge: "Soon",
   },
 ];
-
 
 export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>ahịa</SidebarGroupLabel>
+          <SidebarGroupLabel>ahia</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {activeItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
-                    <Link href={item.url}>
-                      {item.icon && <item.icon />}
+                    <Link href={item.url || "/dashboard"}>
+                      <item.icon />
                       <span>{item.title}</span>
                     </Link>
                   </SidebarMenuButton>
-                  {item.subitems?.map((subitem, i) => (
-                    <SidebarMenuSub key={i}>
+                  {item.subitems?.map((subitem) => (
+                    <SidebarMenuSub key={subitem.url}>
                       <SidebarMenuSubItem>
                         <SidebarMenuSubButton asChild>
                           <Link href={subitem.url}>
-                            {subitem.icon && <subitem.icon />}
                             <span>{subitem.title}</span>
                           </Link>
                         </SidebarMenuSubButton>
                       </SidebarMenuSubItem>
                     </SidebarMenuSub>
                   ))}
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Coming Soon</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {comingSoonItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton disabled>
+                    <item.icon />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                  {item.badge ? <SidebarMenuBadge>{item.badge}</SidebarMenuBadge> : null}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
