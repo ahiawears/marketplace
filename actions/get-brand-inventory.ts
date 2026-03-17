@@ -1,6 +1,7 @@
 import { createClient } from "@/supabase/server";
 
 export type InventorySizeRow = {
+  id: string;
   sizeName: string;
   quantity: number;
   stockState: "out_of_stock" | "low_stock" | "healthy";
@@ -53,6 +54,7 @@ type ImageRow = {
 };
 
 type ProductSizeRow = {
+  id: string;
   product_id: string;
   quantity: number | null;
   size_id: { name: string | null } | null;
@@ -140,7 +142,7 @@ export async function getBrandInventory(brandId: string): Promise<InventoryProdu
     variantIds.length > 0
       ? supabase
           .from("product_sizes")
-          .select("product_id, quantity, size_id(name)")
+          .select("id, product_id, quantity, size_id(name)")
           .in("product_id", variantIds)
       : Promise.resolve({ data: [], error: null }),
   ]);
@@ -175,6 +177,7 @@ export async function getBrandInventory(brandId: string): Promise<InventoryProdu
     const quantity = size.quantity ?? 0;
     const current = sizeRowsByVariant.get(size.product_id) || [];
     current.push({
+      id: size.id,
       sizeName,
       quantity,
       stockState: getSizeStockState(quantity),

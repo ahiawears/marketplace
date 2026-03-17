@@ -2,28 +2,33 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Boxes, PackageX, Search } from "lucide-react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { AlertTriangle, ArrowDownUp, Boxes, PackageX, Search } from "lucide-react";
+import { toast } from "sonner";
 import type { InventoryProductGroup } from "@/actions/get-brand-inventory";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Select } from "../ui/select";
 
 interface InventoryClientProps {
   inventory: InventoryProductGroup[];
 }
 
 type FilterMode = "all" | "healthy" | "low_stock" | "out_of_stock";
+type SortMode = "attention_first" | "product_name";
 
 function getStockBadgeClasses(state: FilterMode) {
   switch (state) {
     case "out_of_stock":
-      return "border-red-300 bg-red-50 text-red-700";
+      return "border-red-300 border-2 bg-red-50 text-red-700";
     case "low_stock":
-      return "border-amber-300 bg-amber-50 text-amber-800";
+      return "border-amber-300 border-2 bg-amber-50 text-amber-800";
     case "healthy":
-      return "border-emerald-300 bg-emerald-50 text-emerald-700";
+      return "border-emerald-300 border-2 bg-emerald-50 text-emerald-700";
     default:
-      return "border-slate-300 bg-slate-50 text-slate-700";
+      return "border-slate-300 border-2 bg-slate-50 text-slate-700";
   }
 }
 
@@ -34,9 +39,20 @@ function formatStockState(state: FilterMode) {
   return "All";
 }
 
+function getAttentionScore(stockState: FilterMode, totalStock: number) {
+  if (stockState === "out_of_stock") return -1000;
+  if (stockState === "low_stock") return totalStock;
+  return 100000 + totalStock;
+}
+
 export default function InventoryClient({ inventory }: InventoryClientProps) {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterMode, setFilterMode] = useState<FilterMode>("all");
+  const [sortMode, setSortMode] = useState<SortMode>("attention_first");
+  const [showAttentionOnly, setShowAttentionOnly] = useState(false);
+  const [draftQuantities, setDraftQuantities] = useState<Record<string, string>>({});
+  const [savingSizeIds, setSavingSizeIds] = useState<Record<string, boolean>>({});
 
   const totalVariants = inventory.reduce((sum, product) => sum + product.variantCount, 0);
   const outOfStockVariants = inventory.reduce((sum, product) => sum + product.outOfStockVariants, 0);
@@ -50,6 +66,7 @@ export default function InventoryClient({ inventory }: InventoryClientProps) {
       .map((product) => {
         const variants = product.variants.filter((variant) => {
           const matchesFilter = filterMode === "all" || variant.stockState === filterMode;
+          const matchesAttention = !showAttentionOnly || variant.stockState !== "healthy";
           const matchesQuery =
             query.length === 0 ||
             product.name.toLowerCase().includes(query) ||
@@ -57,7 +74,18 @@ export default function InventoryClient({ inventory }: InventoryClientProps) {
             variant.name.toLowerCase().includes(query) ||
             variant.sku.toLowerCase().includes(query);
 
-          return matchesFilter && matchesQuery;
+          return matchesFilter && matchesAttention && matchesQuery;
+        }).sort((a, b) => {
+          if (sortMode === "product_name") {
+            return a.name.localeCompare(b.name);
+          }
+
+          const scoreDiff =
+            getAttentionScore(a.stockState, a.totalStock) -
+            getAttentionScore(b.stockState, b.totalStock);
+
+          if (scoreDiff !== 0) return scoreDiff;
+          return a.name.localeCompare(b.name);
         });
 
         return {
@@ -65,25 +93,102 @@ export default function InventoryClient({ inventory }: InventoryClientProps) {
           variants,
         };
       })
+      .sort((a, b) => {
+        if (sortMode === "product_name") {
+          return a.name.localeCompare(b.name);
+        }
+
+        const aScore = Math.min(
+          ...a.variants.map((variant) => getAttentionScore(variant.stockState, variant.totalStock)),
+          100000
+        );
+        const bScore = Math.min(
+          ...b.variants.map((variant) => getAttentionScore(variant.stockState, variant.totalStock)),
+          100000
+        );
+
+        if (aScore !== bScore) return aScore - bScore;
+        return a.name.localeCompare(b.name);
+      })
       .filter((product) => product.variants.length > 0);
-  }, [filterMode, inventory, searchQuery]);
+  }, [filterMode, inventory, searchQuery, showAttentionOnly, sortMode]);
+
+  const handleQuantityDraftChange = (productSizeId: string, value: string) => {
+    if (value !== "" && !/^\d+$/.test(value)) {
+      return;
+    }
+
+    setDraftQuantities((prev) => ({
+      ...prev,
+      [productSizeId]: value,
+    }));
+  };
+
+  const getDisplayedQuantity = (productSizeId: string, fallbackQuantity: number) => {
+    return draftQuantities[productSizeId] ?? String(fallbackQuantity);
+  };
+
+  const handleSaveQuantity = async (productSizeId: string, fallbackQuantity: number) => {
+    const draftValue = draftQuantities[productSizeId];
+    const parsedQuantity =
+      draftValue === undefined || draftValue === "" ? fallbackQuantity : Number.parseInt(draftValue, 10);
+
+    if (!Number.isInteger(parsedQuantity) || parsedQuantity < 0) {
+      toast.error("Quantity must be 0 or more.");
+      return;
+    }
+
+    setSavingSizeIds((prev) => ({ ...prev, [productSizeId]: true }));
+
+    try {
+      const response = await fetch("/api/inventory/update-quantity", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productSizeId,
+          quantity: parsedQuantity,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || "Failed to update quantity.");
+      }
+
+      setDraftQuantities((prev) => {
+        const next = { ...prev };
+        delete next[productSizeId];
+        return next;
+      });
+
+      toast.success("Stock quantity updated.");
+      router.refresh();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update quantity.");
+    } finally {
+      setSavingSizeIds((prev) => ({ ...prev, [productSizeId]: false }));
+    }
+  };
 
   return (
     <div className="space-y-8">
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="border-2 bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">Tracked Units</p>
+          <p className="text-sm">Tracked Units</p>
           <p className="mt-3 text-3xl font-semibold text-slate-900">{totalUnits}</p>
         </div>
         <div className="border-2 bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">Tracked Variants</p>
+          <p className="text-sm">Tracked Variants</p>
           <p className="mt-3 text-3xl font-semibold text-slate-900">{totalVariants}</p>
         </div>
-        <div className="border-2 bg-amber-50 p-5 shadow-sm">
+        <div className="border-2 p-5 shadow-sm">
           <p className="text-sm text-amber-800">Low-Stock Variants</p>
           <p className="mt-3 text-3xl font-semibold text-amber-900">{lowStockVariants}</p>
         </div>
-        <div className="border-2 bg-red-50 p-5 shadow-sm">
+        <div className="border-2 p-5 shadow-sm">
           <p className="text-sm text-red-700">Out-of-Stock Variants</p>
           <p className="mt-3 text-3xl font-semibold text-red-900">{outOfStockVariants}</p>
         </div>
@@ -109,7 +214,7 @@ export default function InventoryClient({ inventory }: InventoryClientProps) {
               />
             </div>
 
-            <select
+            <Select
               value={filterMode}
               onChange={(event) => setFilterMode(event.target.value as FilterMode)}
               className="h-12 min-w-[180px] rounded-none border-2 border-input bg-background px-3 text-sm"
@@ -118,7 +223,26 @@ export default function InventoryClient({ inventory }: InventoryClientProps) {
               <option value="healthy">Healthy only</option>
               <option value="low_stock">Low stock only</option>
               <option value="out_of_stock">Out of stock only</option>
-            </select>
+            </Select>
+
+            <Select
+              value={sortMode}
+              onChange={(event) => setSortMode(event.target.value as SortMode)}
+              className="h-12 min-w-[200px] rounded-none border-2 border-input bg-background px-3 text-sm"
+            >
+              <option value="attention_first">Sort by lowest stock first</option>
+              <option value="product_name">Sort alphabetically</option>
+            </Select>
+
+            <Button
+              type="button"
+              variant={showAttentionOnly ? "default" : "outline"}
+              className="border-2"
+              onClick={() => setShowAttentionOnly((prev) => !prev)}
+            >
+              <ArrowDownUp className="size-4" />
+              {showAttentionOnly ? "Showing attention only" : "Only show attention"}
+            </Button>
           </div>
         </div>
       </section>
@@ -186,11 +310,12 @@ export default function InventoryClient({ inventory }: InventoryClientProps) {
                       <div className="flex gap-4">
                         <div className="flex h-24 w-24 shrink-0 items-center justify-center border-2 bg-slate-50">
                           {variant.mainImageUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <Image
                               src={variant.mainImageUrl}
                               alt={variant.name}
-                              className="h-full w-full object-contain"
+                              width={96}
+                              height={96}
+                              className="h-full w-full object-cover"
                             />
                           ) : (
                             <PackageX className="size-8 text-slate-400" />
@@ -214,25 +339,43 @@ export default function InventoryClient({ inventory }: InventoryClientProps) {
                             </p>
                           </div>
 
-                          <div className="flex flex-wrap gap-2">
+                          <div className="flex flex-col gap-2">
                             {variant.sizeRows.map((sizeRow) => (
                               <div
-                                key={`${variant.id}-${sizeRow.sizeName}`}
-                                className="border-2 bg-slate-50 px-3 py-2 text-sm text-slate-700"
+                                key={sizeRow.id}
+                                className="flex flex-col gap-3 border-2 bg-slate-50 px-3 py-3 text-sm text-slate-700 md:flex-row md:items-center md:justify-between"
                               >
-                                <span className="font-medium">{sizeRow.sizeName}</span>
-                                <span className="ml-2">{sizeRow.quantity}</span>
-                                {sizeRow.stockState !== "healthy" && (
-                                  <span
-                                    className={
-                                      sizeRow.stockState === "out_of_stock"
-                                        ? "ml-2 text-red-700"
-                                        : "ml-2 text-amber-700"
+                                <div className="flex items-center gap-3">
+                                  <span className="font-medium">{sizeRow.sizeName}</span>
+                                  <Badge variant="outline" className={getStockBadgeClasses(sizeRow.stockState)}>
+                                    {sizeRow.stockState === "out_of_stock"
+                                      ? "Out of Stock"
+                                      : sizeRow.stockState === "low_stock"
+                                        ? "Low Stock"
+                                        : "Healthy"}
+                                  </Badge>
+                                </div>
+
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                  <Input
+                                    type="text"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
+                                    value={getDisplayedQuantity(sizeRow.id, sizeRow.quantity)}
+                                    onChange={(event) =>
+                                      handleQuantityDraftChange(sizeRow.id, event.target.value)
                                     }
+                                    className="h-11 w-full min-w-[110px] bg-white sm:w-[120px]"
+                                  />
+                                  <Button
+                                    type="button"
+                                    className="border-2"
+                                    disabled={savingSizeIds[sizeRow.id]}
+                                    onClick={() => handleSaveQuantity(sizeRow.id, sizeRow.quantity)}
                                   >
-                                    {sizeRow.stockState === "out_of_stock" ? "Out" : "Low"}
-                                  </span>
-                                )}
+                                    {savingSizeIds[sizeRow.id] ? "Saving..." : "Save Qty"}
+                                  </Button>
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -247,7 +390,7 @@ export default function InventoryClient({ inventory }: InventoryClientProps) {
                           </p>
                         )}
                         <div className="flex flex-wrap gap-3">
-                          <Button variant="outline" asChild>
+                          <Button variant="outline" asChild className="border-2">
                             <Link href={`/dashboard/edit-product/${product.id}`}>Edit Variant Stock</Link>
                           </Button>
                         </div>
