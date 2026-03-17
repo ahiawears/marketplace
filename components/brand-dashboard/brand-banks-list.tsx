@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Trash2, Edit, BanknoteIcon } from 'lucide-react';
+import { Trash2, BanknoteIcon, CheckCircle2 } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 
 interface AccountsListProps {
@@ -14,8 +14,10 @@ interface AccountsListProps {
         account_number: string;
         currency: string;
         created_at: string;
+        is_default: boolean;
     }[];
     onDeleteBeneficiary: (beneficiaryId: number) => void;
+    onSetDefaultBeneficiary: (beneficiaryId: number) => void;
 
 }
 
@@ -32,7 +34,7 @@ const ClientFormattedDate = ({ dateString }: { dateString: string }) => {
 };
 
 
-const AccountsList = ({ onAddBankDetails, data, onDeleteBeneficiary }: AccountsListProps) => {
+const AccountsList = ({ onAddBankDetails, data, onDeleteBeneficiary, onSetDefaultBeneficiary }: AccountsListProps) => {
     const maskAccountNumber = (accountNumber: string) => {
         if (accountNumber.length <= 4) return accountNumber;
         return `${"*".repeat(Math.max(accountNumber.length - 4, 0))}${accountNumber.slice(-4)}`;
@@ -68,7 +70,15 @@ const AccountsList = ({ onAddBankDetails, data, onDeleteBeneficiary }: AccountsL
                             <CardContent className="p-4">
                                 <div className="text-sm text-gray-700">
                                     <p className="mt-1 font-semibold">{beneficiary.beneficiary_name}</p>
-                                    <span className="ml-auto text-sm font-medium text-gray-500">{beneficiary.currency}</span>
+                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                        <span className="text-sm font-medium text-gray-500">{beneficiary.currency}</span>
+                                        {beneficiary.is_default && (
+                                            <span className="inline-flex items-center gap-1 border-2 border-emerald-300 bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                                                <CheckCircle2 className="h-4 w-4" />
+                                                Default payout account
+                                            </span>
+                                        )}
+                                    </div>
 
                                 </div>
                                 <div className="text-sm text-gray-500 mt-4">
@@ -78,6 +88,15 @@ const AccountsList = ({ onAddBankDetails, data, onDeleteBeneficiary }: AccountsL
 
                             {/* Action Buttons */}
                             <div className="absolute top-0 right-0 p-2 flex space-x-2 transition-opacity duration-300">
+                                {!beneficiary.is_default && (
+                                    <Button
+                                        variant="ghost"
+                                        className="hover:text-emerald-700"
+                                        onClick={() => onSetDefaultBeneficiary(beneficiary.beneficiary_id)}
+                                    >
+                                        Make Default
+                                    </Button>
+                                )}
                                 
                                 <Button size="icon" variant="ghost" className="hover:text-gray-500" onClick={() => onDeleteBeneficiary(beneficiary.beneficiary_id)}>
                                     <Trash2 className="h-12 w-12" size={24}/>

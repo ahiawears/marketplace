@@ -26,6 +26,7 @@ interface PaymentSettingsClientProps {
         account_number: string;
         currency: string;
         created_at: string;
+        is_default: boolean;
     }[];
 }
 
@@ -93,6 +94,27 @@ const PaymentSettingsClient: React.FC<PaymentSettingsClientProps> = ({
             setBeneficiaryToDelete(null);
         }
     };
+
+    const handleSetDefaultBeneficiary = async (beneficiaryId: number) => {
+        const updateToastId = toast.loading("Updating default payout account...");
+        try {
+            const response = await fetch('/api/set-default-beneficiary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ beneficiaryId }),
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                toast.success(result.message, { id: updateToastId });
+                fetchBeneficiaries();
+            } else {
+                toast.error(result.message || "Failed to update default payout account.", { id: updateToastId });
+            }
+        } catch (error) {
+            toast.error("An unexpected error occurred while updating the default payout account.", { id: updateToastId });
+        }
+    };
     
     const cancelDeletion = () => {
         setIsModalOpen(false);
@@ -126,6 +148,7 @@ const PaymentSettingsClient: React.FC<PaymentSettingsClientProps> = ({
                     onAddBankDetails={() => setCurrentComponent("addBank")}
                     data={beneficiaryList}
                     onDeleteBeneficiary={handleDeleteBeneficiary}
+                    onSetDefaultBeneficiary={handleSetDefaultBeneficiary}
                 />
             );
         }

@@ -51,6 +51,18 @@ export async function POST(req: Request) {
             }, { status: 400 });
         }
 
+        const { count: existingAccountsCount, error: existingAccountsCountError } = await supabase
+            .from('brand_beneficiary_account_details')
+            .select('id', { count: 'exact', head: true })
+            .eq('brand_id', userId);
+
+        if (existingAccountsCountError) {
+            return NextResponse.json({
+                success: false,
+                message: existingAccountsCountError.message
+            }, { status: 500 });
+        }
+
         const FLUTTERWAVE_SECRET_KEY = process.env.FLUTTERWAVE_SECRET_KEY;
         if (!FLUTTERWAVE_SECRET_KEY) {
             return NextResponse.json({
@@ -125,7 +137,8 @@ export async function POST(req: Request) {
             account_number: beneficiaryData.data.account_number,
             bank_name: beneficiaryData.data.bank_name,
             beneficiary_id: beneficiaryData.data.id,
-            currency: currency
+            currency: currency,
+            is_default: (existingAccountsCount ?? 0) === 0
         }
 
         const { error: dbError } = await supabase  

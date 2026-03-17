@@ -9,6 +9,7 @@ interface BeneficiaryData {
     account_number: string;
     currency: string;
     created_at: string;
+    is_default: boolean;
 }
 
 interface BrandBeneficiaryResponse {
@@ -53,6 +54,7 @@ export async function GetBrandBeneficiaryDetails(brandId: string): Promise<Brand
             account_number: item.account_number,
             currency: item.currency,
             created_at: item.created_at,
+            is_default: item.is_default ?? false,
         }));
 
         return {

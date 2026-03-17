@@ -26,6 +26,7 @@ interface BeneficiaryData {
     account_number: string;
     currency: string;
     created_at: string;
+    is_default: boolean;
 }
 
 function getCountryInfoByIso2(iso2Code: string | undefined) {
