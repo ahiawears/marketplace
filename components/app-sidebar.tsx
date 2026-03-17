@@ -68,6 +68,11 @@ const activeItems: SidebarItem[] = [
     subitems: [{ title: "Coupons", url: "/dashboard/coupons" }],
   },
   {
+    title: "Reviews",
+    url: "/dashboard/reviews",
+    icon: Star,
+  },
+  {
     title: "Brand Settings",
     url: "/dashboard/brand-profile-management",
     icon: Settings,
@@ -92,12 +97,6 @@ const comingSoonItems: SidebarItem[] = [
   {
     title: "Messages",
     icon: MessageCircle,
-    disabled: true,
-    badge: "Soon",
-  },
-  {
-    title: "Reviews",
-    icon: Star,
     disabled: true,
     badge: "Soon",
   },

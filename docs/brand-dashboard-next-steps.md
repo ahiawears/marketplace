@@ -74,6 +74,10 @@ What should wait:
 Priority:
 - Medium
 
+Current status:
+- Completed as a shell page.
+- The route now exists and gives brands a real moderation/insight placeholder without inventing fake review data.
+
 ### 4. Analytics Page
 
 Route:
@@ -220,13 +224,12 @@ These areas are better left until customer activity creates meaningful real data
 If the goal is to finish as much of the brand dashboard as possible before switching to customer pages, this is the order I recommend:
 
 1. Products List Real Actions
-2. Reviews Page Shell
-3. Analytics Page Shell
-4. Finance / Payouts Page Shell
-5. Support Page
-6. Orders Page Shell Upgrade
-7. Messages Page Shell Upgrade
-8. Lookbook Preview Polish
+2. Analytics Page Shell
+3. Finance / Payouts Page Shell
+4. Support Page
+5. Orders Page Shell Upgrade
+6. Messages Page Shell Upgrade
+7. Lookbook Preview Polish
 
 ## Best Next Step
 

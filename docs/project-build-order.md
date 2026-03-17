@@ -98,13 +98,12 @@ Building in slices reduces that churn.
 ### Option A. Best for finishing the dashboard first
 
 1. products list custom delete dialog
-2. reviews page shell
-3. analytics page shell
-4. finance/payouts page shell
-5. support page shell
-6. orders page shell polish
-7. messages page shell polish
-8. then switch to customer funnel
+2. analytics page shell
+3. finance/payouts page shell
+4. support page shell
+5. orders page shell polish
+6. messages page shell polish
+7. then switch to customer funnel
 
 ### Option B. Best for getting to a testable marketplace faster
 
@@ -144,7 +143,7 @@ That is the balance point where:
   - because it removes a UX debt on a high-traffic management page
 
 - `/dashboard/reviews`
-  - because it removes a dead route and gives you a clean placeholder
+  - done as a real shell page
 
 - `/dashboard/analytics`
   - because it removes a dead route and gives the dashboard a more complete structure

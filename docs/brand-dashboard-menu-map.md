@@ -165,9 +165,10 @@ This file maps the current brand dashboard menu, the route behind each item, the
 
 - Route in sidebar: `/dashboard/reviews`
 - Current status:
-  - No route found.
+  - Route now exists as a shell page.
+  - Useful as a moderation and insight placeholder without pretending review records already exist.
 - Recommendation:
-  - Add only if review system exists on storefront/backend.
+  - Keep as a shell until verified customer review submission is built on the storefront.
 
 ### 4. Marketing
 
