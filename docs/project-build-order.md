@@ -98,11 +98,10 @@ Building in slices reduces that churn.
 ### Option A. Best for finishing the dashboard first
 
 1. products list custom delete dialog
-2. finance/payouts page shell
-3. support page shell
-4. orders page shell polish
-5. messages page shell polish
-6. then switch to customer funnel
+2. support page shell
+3. orders page shell polish
+4. messages page shell polish
+5. then switch to customer funnel
 
 ### Option B. Best for getting to a testable marketplace faster
 
@@ -148,7 +147,7 @@ That is the balance point where:
   - done as a real shell page
 
 - `/dashboard/payouts`
-  - because payment settings are already strong enough to support a finance shell
+  - done as a real shell page
 
 - `/dashboard/support`
   - because it is simple, useful, and completes the dashboard navigation

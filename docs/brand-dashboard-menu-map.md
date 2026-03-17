@@ -339,10 +339,11 @@ This file maps the current brand dashboard menu, the route behind each item, the
 - Sidebar parent: `Finance`
 - Parent URL: `/dashboard/payouts`
 - Current status:
-  - No payout route found.
-  - Payment settings exists, but payout history/settlements page does not.
+  - Route now exists as a shell page.
+  - Grounded in real payout account readiness from payment settings.
+  - Settlement and payout-history layers are still intentionally deferred.
 - Recommendation:
-  - Later build around payout records, beneficiary accounts, settlement status.
+  - Later build around payout records, beneficiary accounts, settlement status, and reconciliation history.
 
 ### 8. Support
 

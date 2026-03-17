@@ -78,6 +78,11 @@ const activeItems: SidebarItem[] = [
     icon: BarChart3,
   },
   {
+    title: "Finance",
+    url: "/dashboard/payouts",
+    icon: Wallet,
+  },
+  {
     title: "Brand Settings",
     url: "/dashboard/brand-profile-management",
     icon: Settings,
@@ -102,12 +107,6 @@ const comingSoonItems: SidebarItem[] = [
   {
     title: "Messages",
     icon: MessageCircle,
-    disabled: true,
-    badge: "Soon",
-  },
-  {
-    title: "Finance",
-    icon: Wallet,
     disabled: true,
     badge: "Soon",
   },

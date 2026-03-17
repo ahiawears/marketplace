@@ -126,6 +126,10 @@ What should wait:
 Priority:
 - Medium
 
+Current status:
+- Completed as a shell page.
+- The route now exists and is grounded in real payout-account readiness, while leaving settlement history for when payout events are live.
+
 ### 6. Support Page
 
 Route:
@@ -228,11 +232,10 @@ These areas are better left until customer activity creates meaningful real data
 If the goal is to finish as much of the brand dashboard as possible before switching to customer pages, this is the order I recommend:
 
 1. Products List Real Actions
-2. Finance / Payouts Page Shell
-3. Support Page
-4. Orders Page Shell Upgrade
-5. Messages Page Shell Upgrade
-6. Lookbook Preview Polish
+2. Support Page
+3. Orders Page Shell Upgrade
+4. Messages Page Shell Upgrade
+5. Lookbook Preview Polish
 
 ## Best Next Step
 
