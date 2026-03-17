@@ -42,8 +42,8 @@ const LookbookList: FC<LookbookListProps> = ({
                                     <Image
                                         src={lookbook.cover_image_url}
                                         alt={lookbook.title}
-                                        layout="fill"
-                                        objectFit="cover"
+                                        fill
+                                        className="object-cover"
                                     />
                                 ) : (
                                     <div className="flex items-center justify-center h-full">

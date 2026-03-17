@@ -2,6 +2,7 @@
 export interface ProductTableType {
   id: string;
   name: string;
+  description: string;
   category_name: string;
   subCategory: string;
   season: string;
@@ -16,7 +17,10 @@ export interface ProductTableType {
     slug: string;
     availableDate: string | null;
     colorSummary: string;
+    colorHexes: string[];
     sizeSummary: string;
+    measurements: Record<string, Record<string, number>>;
+    images: string[];
     mainImageUrl: string | null;
   }[];
 }

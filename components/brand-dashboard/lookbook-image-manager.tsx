@@ -13,30 +13,53 @@ import { GripVertical, Trash2, UploadCloud } from "lucide-react";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { Progress } from "../ui/progress";
+import { createClient } from "@/supabase/client";
 
-// TODO: Create this server action to upload to Supabase Storage
-async function uploadLookbookImage(file: File, onProgress: (progress: number) => void): Promise<{ success: boolean, path?: string, message: string }> {
-    // Simulate upload for now
-    console.log(`Uploading ${file.name}`);
-    return new Promise(resolve => {
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 10;
-            onProgress(progress);
-            if (progress >= 100) {
-                clearInterval(interval);
-                const randomPath = `lookbooks/image_${Date.now()}_${file.name}`;
-                console.log(`Uploaded ${file.name} to ${randomPath}`);
-                resolve({ success: true, path: randomPath, message: "Upload successful" });
-            }
-        }, 200);
-    });
+const LOOKBOOK_BUCKET = "lookbook-images";
+
+async function uploadLookbookImage(
+    userId: string,
+    file: File,
+    onProgress: (progress: number) => void
+): Promise<{ success: boolean; path?: string; publicUrl?: string; message: string }> {
+    const supabase = createClient();
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
+    const storagePath = `lookbooks/${userId}/${uuidv4()}-${safeName}`;
+
+    onProgress(15);
+
+    const { error } = await supabase.storage
+        .from(LOOKBOOK_BUCKET)
+        .upload(storagePath, file, {
+            upsert: false,
+            contentType: file.type,
+        });
+
+    if (error) {
+        return { success: false, message: error.message };
+    }
+
+    onProgress(85);
+
+    const { data: publicUrlData } = supabase.storage
+        .from(LOOKBOOK_BUCKET)
+        .getPublicUrl(storagePath);
+
+    onProgress(100);
+
+    return {
+        success: true,
+        path: storagePath,
+        publicUrl: publicUrlData.publicUrl,
+        message: "Upload successful",
+    };
 }
 
 interface LookbookImageManagerProps {
     images: LookbookImage[];
     onImagesChange: (updater: (prevImages: LookbookImage[]) => LookbookImage[]) => void;
     brandProducts: BrandProductListItem[];
+    userId: string;
 }
 
 interface SortableImageItemProps {
@@ -64,7 +87,12 @@ const SortableImageItem: FC<SortableImageItemProps> = ({ image, onRemove }) => {
                 <GripVertical className="h-5 w-5" />
             </button>
             <div className="relative w-20 h-20 rounded-md overflow-hidden bg-gray-100">
-                <Image src={image.previewUrl} alt="Lookbook page preview" layout="fill" objectFit="cover" />
+                <Image
+                    src={image.previewUrl}
+                    alt="Lookbook page preview"
+                    fill
+                    className="object-cover"
+                />
                 {image.isUploading && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                         <p className="text-white text-sm font-bold">{image.uploadProgress}%</p>
@@ -88,7 +116,7 @@ const SortableImageItem: FC<SortableImageItemProps> = ({ image, onRemove }) => {
     );
 }
 
-const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesChange, brandProducts }) => {
+const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesChange, brandProducts: _brandProducts, userId }) => {
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -100,15 +128,25 @@ const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesC
         onImagesChange(prevImages => prevImages.map(img => img.id === tempId ? { ...img, isUploading: true } : img));
         
         try {
-            const result = await uploadLookbookImage(file, (progress) => {
+            const result = await uploadLookbookImage(userId, file, (progress) => {
                 onImagesChange(prevImages => prevImages.map(img =>
                     img.id === tempId ? { ...img, uploadProgress: progress } : img
                 ));
             });
 
-            if (result.success && result.path) {
+            if (result.success && result.path && result.publicUrl) {
+                const uploadedPath = result.path;
+                const uploadedUrl = result.publicUrl;
                 onImagesChange(prevImages => prevImages.map(img =>
-                    img.id === tempId ? { ...img, isUploading: false, storagePath: result.path, file: undefined } : img
+                    img.id === tempId
+                        ? {
+                            ...img,
+                            isUploading: false,
+                            storagePath: uploadedPath,
+                            previewUrl: uploadedUrl,
+                            file: undefined,
+                          }
+                        : img
                 ));
             } else {
                 throw new Error(result.message);

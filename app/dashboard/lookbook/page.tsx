@@ -3,32 +3,10 @@ import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { FetchBrandProducts } from "@/actions/get-products-list/fetchBrandProducts";
 import LookbookClient, { LookbookListItem } from "@/components/brand-dashboard/lookbook-client";
+import { getBrandLookbooks } from "@/actions/lookbooks/get-brand-lookbooks";
 
 export const metadata: Metadata = {
     title: "Lookbooks",
-}
-
-// TODO: Implement this server action to fetch lookbooks for the brand
-async function GetLookbooks(): Promise<{ success: boolean, data?: LookbookListItem[], message?: string }> {
-    const sampleLookbooks: LookbookListItem[] = [
-        {
-            id: '1',
-            title: 'Summer 2024 Collection',
-            is_published: true,
-            created_at: new Date().toISOString(),
-            cover_image_url: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=2070&auto=format&fit=crop',
-            item_count: 12,
-        },
-        {
-            id: '2',
-            title: 'Autumn Essentials (Draft)',
-            is_published: false,
-            created_at: new Date().toISOString(),
-            cover_image_url: 'https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=2070&auto=format&fit=crop',
-            item_count: 8,
-        }
-    ];
-    return { success: true, data: sampleLookbooks };
 }
 
 export default async function LookbooksPage () {
@@ -71,7 +49,7 @@ export default async function LookbooksPage () {
         const products = brandProductsResult.data;
 
         // Fetch existing lookbooks for the brand
-        const lookbooksResult = await GetLookbooks();
+        const lookbooksResult = await getBrandLookbooks(userId);
         if (!lookbooksResult.success) {
             throw new Error(lookbooksResult.message);
         }

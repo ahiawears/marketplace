@@ -166,7 +166,7 @@ const BrandNotificationSettingsTable: FC<BrandNotificationTableProps> = ({ userI
                                                 type="checkbox"
                                                 checked={setting.channels[channel]}
                                                 onChange={() => toggleChannel(setting.type, channel)}
-                                                className="h-5 w-5 accent-primary border-2"
+                                                className="h-5 w-5 accent-primary rounded-none border-2"
                                             />
                                         </label>
                                     ))}

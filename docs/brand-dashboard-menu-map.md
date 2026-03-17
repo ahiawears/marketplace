@@ -258,6 +258,11 @@ This file maps the current brand dashboard menu, the route behind each item, the
 - Current status:
   - Real data loading exists.
   - Supports adding beneficiary/bank accounts.
+- Planned next:
+  - webhook/reconciliation audit for payout-related events
+  - better handling for unsupported Flutterwave bank markets
+  - optional replace payout account flow instead of only add/delete
+  - audit logging for payout-account changes for stronger ops/security tracking
   - Good candidate for completion and polish.
 
 #### 6e. Notifications

@@ -1,6 +1,8 @@
 import {
     CareDetailsSchemaType,
+    Color,
     GeneralDetailsSchemaType,
+    MaterialComposition,
     ReturnPolicySchemaType,
     ShippingDetailsSchemaType,
     VariantDetailsSchemaType,
@@ -129,6 +131,14 @@ type ProductReturnPolicyRow = {
     } | null;
     is_returnable: boolean | null;
 };
+
+function ensureNonEmptyArray<T>(items: T[] | undefined, fallback: T): [T, ...T[]] {
+    if (items && items.length > 0) {
+        return [items[0], ...items.slice(1)];
+    }
+
+    return [fallback];
+}
 
 export async function loadProductEditorData(
     supabase: any,
@@ -261,10 +271,10 @@ export async function loadProductEditorData(
         .map((tag) => tag.tag_id?.name || "")
         .filter(Boolean);
 
-    const colorsByVariant = new Map<string, VariantDetailsSchemaType["colors"]>();
+    const colorsByVariant = new Map<string, Color[]>();
     for (const row of (colorData || []) as VariantColorRow[]) {
         if (!row.product_variant_id) continue;
-        const current = colorsByVariant.get(row.product_variant_id) || [];
+        const current: Color[] = colorsByVariant.get(row.product_variant_id) || [];
         current.push({
             name: row.color_id?.name || "",
             hexCode: row.color_id?.hex_code || "#000000",
@@ -272,10 +282,10 @@ export async function loadProductEditorData(
         colorsByVariant.set(row.product_variant_id, current);
     }
 
-    const materialsByVariant = new Map<string, VariantDetailsSchemaType["materialComposition"]>();
+    const materialsByVariant = new Map<string, MaterialComposition[]>();
     for (const row of (materialData || []) as VariantMaterialRow[]) {
         if (!row.product_variant_id) continue;
-        const current = materialsByVariant.get(row.product_variant_id) || [];
+        const current: MaterialComposition[] = materialsByVariant.get(row.product_variant_id) || [];
         current.push({
             name: row.material_id?.name || "",
             percentage: row.percentage || 0,
@@ -306,12 +316,12 @@ export async function loadProductEditorData(
         measurementsBySize.set(row.product_size_id, current);
     }
 
-    const sizeMapByVariant = new Map<string, Record<string, Record<string, number>>>();
+    const sizeMapByVariant = new Map<string, VariantDetailsSchemaType["measurements"]>();
     for (const size of sizes) {
         const sizeName = size.size_id?.name;
         if (!sizeName) continue;
-        const current = sizeMapByVariant.get(size.product_id) || {};
-        const sizeMeasurements: Record<string, number> = {
+        const current: VariantDetailsSchemaType["measurements"] = sizeMapByVariant.get(size.product_id) || {};
+        const sizeMeasurements: VariantDetailsSchemaType["measurements"][string] = {
             quantity: size.quantity || 0,
         };
 
@@ -367,10 +377,10 @@ export async function loadProductEditorData(
             productCode: variant.product_code || "",
             images: imageList.length > 0 ? imageList : ["", "", "", ""],
             imagesDescription: variant.images_description || "",
-            colors: colorsByVariant.get(variant.id) || [{ name: "", hexCode: "#000000" }],
+            colors: ensureNonEmptyArray(colorsByVariant.get(variant.id), { name: "", hexCode: "#000000" }),
             colorDescription: variant.color_description || "",
             pattern: variant.fabric_pattern || "",
-            materialComposition: materialsByVariant.get(variant.id) || [{ name: "", percentage: 0 }],
+            materialComposition: ensureNonEmptyArray(materialsByVariant.get(variant.id), { name: "", percentage: 0 }),
             measurementUnit: "Inch",
             measurements: sizeMapByVariant.get(variant.id) || {},
             availableDate: variant.available_date || "",

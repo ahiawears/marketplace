@@ -1,3 +1,5 @@
+"use client";
+
 import { FC, useState } from "react";
 import { LookbookEditorDetails } from "./lookbook-client";
 import { BrandProductListItem } from "@/actions/get-products-list/fetchBrandProducts";
@@ -13,12 +15,20 @@ interface LookbookEditorProps {
     onBack: () => void;
     initialData: LookbookEditorDetails;
     brandProducts: BrandProductListItem[];
+    userId: string;
+}
+
+interface LookbookSaveResponse {
+    success: boolean;
+    message?: string;
+    id?: string;
 }
 
 const LookbookEditor: FC<LookbookEditorProps> = ({
     onBack,
     initialData,
     brandProducts,
+    userId,
 }) => {
     const [formData, setFormData] = useState<LookbookEditorDetails>(initialData);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,9 +40,18 @@ const LookbookEditor: FC<LookbookEditorProps> = ({
         const toastId = toast.loading(isEditMode ? "Updating lookbook..." : "Creating lookbook...");
 
         try {
-            // TODO: Implement server action for creating/updating lookbook
-            console.log("Submitting lookbook data:", formData);
-            await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+            const response = await fetch("/api/lookbooks", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+            });
+            const result: LookbookSaveResponse = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || "Failed to save lookbook.");
+            }
 
             toast.success(`Lookbook ${isEditMode ? 'updated' : 'created'} successfully!`, { id: toastId });
             onBack();
@@ -97,9 +116,10 @@ const LookbookEditor: FC<LookbookEditorProps> = ({
                         <LookbookImageManager
                             images={formData.images}
                             onImagesChange={(updater) => {
-                                setFormData(prev => ({ ...prev, images: updater(prev.images) }));
+                                setFormData((prev) => ({ ...prev, images: updater(prev.images) }));
                             }}
                             brandProducts={brandProducts}
+                            userId={userId}
                         />
                     </div>
 

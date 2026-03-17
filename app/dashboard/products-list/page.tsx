@@ -15,23 +15,18 @@ const ProductsPage = () => {
 	//const [products, setProducts] = useState<ProductTableType[]>([]);
 	const [products, setProducts] = useState<ProductTableType[]>([]);
 
-	const handleHideProduct = (id: string) => {
-		console.log(`Hide product with id: ${id}`);
+	const handleHideProduct = (productId: string, variantId: string) => {
+		console.log(`Hide variant ${variantId} for product ${productId}`);
 	};
 	
-	const handleEditProduct = (id: string) => {
-		console.log(`Edit product with id: ${id}`);
-		router.push(`./edit-product/${id}`);
+	const handleEditProduct = (productId: string, variantId: string) => {
+		console.log(`Edit product ${productId} from variant ${variantId}`);
+		router.push(`./edit-product/${productId}`);
 		
 	};
 	
-	const handleDeleteProduct = (id: string) => {
-		console.log(`Delete product with id: ${id}`); 
-	};
-
-	const handleOnPreviewProduct = (id: string) => {
-		console.log(`Preview product with id: , ${id}`);
-		router.push(`./product-details/${id}`);
+	const handleDeleteProduct = (productId: string, variantId: string) => {
+		console.log(`Delete variant ${variantId} from product ${productId}`); 
 	}
 
 	useEffect(() => {
@@ -53,7 +48,6 @@ const ProductsPage = () => {
 							onHideProduct={handleHideProduct}
 							onEditProduct={handleEditProduct}
 							onDeleteProduct={handleDeleteProduct}
-							onPreviewProduct={handleOnPreviewProduct}
 						/>
 					</div>
 				</div>

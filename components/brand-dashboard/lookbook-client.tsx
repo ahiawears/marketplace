@@ -1,5 +1,6 @@
 'use client';
 import { FC, useState } from "react";
+import { useRouter } from "next/navigation";
 import { BrandProductListItem } from "@/actions/get-products-list/fetchBrandProducts";
 import LookbookList from "./lookbook-list";
 import LookbookEditor from "./lookbook-editor";
@@ -35,6 +36,17 @@ export interface LookbookEditorDetails {
     images: LookbookImage[];
 }
 
+interface LookbookDetailsResponse {
+    success: boolean;
+    message?: string;
+    data?: LookbookEditorDetails | null;
+}
+
+interface LookbookDeleteResponse {
+    success: boolean;
+    message?: string;
+}
+
 export interface LookbookClientProps {
     userId: string;
     lookbookList: LookbookListItem[];
@@ -46,56 +58,68 @@ const LookbookClient: FC<LookbookClientProps> = ({
     lookbookList,
     brandProducts,
 }) => {
+    const router = useRouter();
     const [view, setView] = useState<ViewMode>("list");
     const [lookbooks, setLookbooks] = useState<LookbookListItem[]>(lookbookList);
     const [lookbookToEdit, setLookbookToEdit] = useState<LookbookEditorDetails | null>(null);
-
-    // TODO: Implement fetching lookbooks from the server
-    const fetchLookbooks = async () => {
-        // This function will be used to refresh the list after an action
-        console.log("Refreshing lookbooks...");
-        toast.info("Refreshing lookbooks list...");
-    };
 
     const handleCreateNew = () => {
         setLookbookToEdit(null); // Start with a blank slate
         setView("editor");
     };
 
-    const handleEdit = (lookbookId: string) => {
-        // TODO: Fetch full lookbook details for editing
-        const lookbook = lookbooks.find(lb => lb.id === lookbookId);
-        if (lookbook) {
-            setLookbookToEdit({
-                id: lookbook.id,
-                title: lookbook.title,
-                description: `Description for ${lookbook.title}`,
-                is_published: lookbook.is_published,
-                images: [], // TODO: Fetch full lookbook details including images
-            });
+    const handleEdit = async (lookbookId: string) => {
+        const loadingToast = toast.loading("Loading lookbook...");
+        try {
+            const response = await fetch(`/api/lookbooks/${lookbookId}`, { cache: "no-store" });
+            const result: LookbookDetailsResponse = await response.json();
+
+            if (!response.ok || !result.success || !result.data) {
+                throw new Error(result.message || "Failed to load lookbook.");
+            }
+
+            setLookbookToEdit(result.data);
             setView("editor");
+            toast.dismiss(loadingToast);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to load lookbook.", { id: loadingToast });
         }
     };
 
-    const handleDelete = (lookbookId: string) => {
-        // TODO: Implement delete functionality with a confirmation modal
-        console.log("Deleting lookbook:", lookbookId);
-        toast.warning("Delete functionality not yet implemented.");
+    const handleDelete = async (lookbookId: string) => {
+        const loadingToast = toast.loading("Deleting lookbook...");
+        try {
+            const response = await fetch(`/api/lookbooks/${lookbookId}`, {
+                method: "DELETE",
+            });
+            const result: LookbookDeleteResponse = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || "Failed to delete lookbook.");
+            }
+
+            setLookbooks((prev) => prev.filter((lookbook) => lookbook.id !== lookbookId));
+            toast.success(result.message || "Lookbook deleted successfully.", { id: loadingToast });
+            router.refresh();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to delete lookbook.", { id: loadingToast });
+        }
     };
 
     const handleBackToList = () => {
         setLookbookToEdit(null);
         setView("list");
-        fetchLookbooks();
+        router.refresh();
     };
 
     return (
         <div>
             {view === 'editor' ? (
-                <LookbookEditor 
+                <LookbookEditor
                     onBack={handleBackToList}
                     initialData={lookbookToEdit || { title: "", description: "", is_published: false, images: [] }}
                     brandProducts={brandProducts}
+                    userId={userId}
                 />
             ) : (
                 <LookbookList
@@ -107,6 +131,6 @@ const LookbookClient: FC<LookbookClientProps> = ({
             )}
         </div>
     );
-}
+};
 
 export default LookbookClient;

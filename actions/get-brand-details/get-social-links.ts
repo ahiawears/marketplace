@@ -48,16 +48,28 @@ export async function GetBrandSocialLinks(brandId: string): Promise<BrandSocialL
             };
         }
 
+        const safeSocialLinks = socialLinks || {
+            instagram: "",
+            facebook: "",
+            twitter: "",
+            website: "",
+            tiktok: "",
+            brand_contact_details: {
+                brand_email: "",
+                phone_number: "",
+            },
+        };
+
         const mappedSocialLinks: BrandSocialLinks = {
             brand_contact_details: {
-                brand_email: socialLinks.brand_contact_details?.brand_email || "",
-                phone_number: socialLinks.brand_contact_details?.phone_number || ""
+                brand_email: safeSocialLinks.brand_contact_details?.brand_email || "",
+                phone_number: safeSocialLinks.brand_contact_details?.phone_number || ""
             },
-            facebook: socialLinks.facebook || "",
-            instagram: socialLinks.instagram || "",
-            twitter: socialLinks.twitter || "",
-            tiktok: socialLinks.tiktok || "",
-            website: socialLinks.website || ""
+            facebook: safeSocialLinks.facebook || "",
+            instagram: safeSocialLinks.instagram || "",
+            twitter: safeSocialLinks.twitter || "",
+            tiktok: safeSocialLinks.tiktok || "",
+            website: safeSocialLinks.website || ""
         };
 
         return { success: true, message: "Social links fetched successfully", data: mappedSocialLinks };

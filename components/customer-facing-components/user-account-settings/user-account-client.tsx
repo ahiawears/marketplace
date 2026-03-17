@@ -5,9 +5,9 @@ import ChangePassword from "@/components/customer-facing-components/user-account
 import MyOrders from "@/components/customer-facing-components/user-account-settings/my-account-comps/my-orders";
 import Userdetails from "@/components/customer-facing-components/user-account-settings/my-account-comps/userdetails";
 import { Button } from "@/components/ui/button";
-import { useMemo, useState } from "react";
+import { ReactElement, useMemo, useState } from "react";
 
-type MenuItem = "details" | "changePassword" | "myOrders" | "addressBook" | "paymentMethods";
+type MenuItem = "details" | "changePassword" | "myOrders" | "addressBook";
 
 interface MyAccountClientProps {
     userDetailsData: UserDetailsProps;
@@ -40,7 +40,7 @@ interface UserAddressDetails {
 const MyAccountClient: React.FC<MyAccountClientProps> = ({ userDetailsData, userAddressData }) => {
     const [activeComponent, setActiveComponent] = useState<MenuItem | null>(null);
 
-    const componentMap: Record<MenuItem, JSX.Element> = useMemo(() => {
+    const componentMap: Record<MenuItem, ReactElement> = useMemo(() => {
         return {
             details: <Userdetails 
                         userDetails={userDetailsData} 
@@ -50,9 +50,8 @@ const MyAccountClient: React.FC<MyAccountClientProps> = ({ userDetailsData, user
             addressBook: <AddressBook 
                         userAddressData={userAddressData}
                     />,
-            paymentMethods: <
         };
-    }, [userDetailsData]);
+    }, [userAddressData, userDetailsData]);
 
     const renderComponent = activeComponent ? componentMap[activeComponent] : null;
 

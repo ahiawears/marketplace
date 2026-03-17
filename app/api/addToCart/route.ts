@@ -41,6 +41,14 @@ export async function POST(req: NextRequest) {
             }, { status: 400 });
         }
 
+        if (!sizeId) {
+            return NextResponse.json({
+                success: false,
+                message: 'Selected size is invalid.',
+                data: null
+            }, { status: 400 });
+        }
+
         const { success, cartId, newTotal } = await upsertCart({
             variantId,
             sizeId,

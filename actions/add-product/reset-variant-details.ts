@@ -36,7 +36,7 @@ export async function resetVariantDetails(
                 return null;
             }
         })
-        .filter((path): path is string => Boolean(path));
+        .filter((path: string | null): path is string => Boolean(path));
 
     if (storagePaths.length > 0) {
         const { error: storageDeleteError } = await supabase.storage

@@ -209,7 +209,7 @@ export async function saveVariantDraft(
 
     const validatedData = requireParsedData(
         VariantDetailsValidationSchema.safeParse({
-            ...input.variantDetails,
+            ...incomingVariantDetails,
             images: incomingImages,
             categoryName: input.categoryName,
         })
