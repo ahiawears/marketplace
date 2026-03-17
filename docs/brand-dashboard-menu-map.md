@@ -197,9 +197,10 @@ This file maps the current brand dashboard menu, the route behind each item, the
 
 - Route in sidebar: `/dashboard/analytics`
 - Current status:
-  - No route found.
+  - Route now exists as a shell page.
+  - Gives the dashboard a dedicated future home for reporting without faking real performance data yet.
 - Recommendation:
-  - Could later become a dedicated page extracted from dashboard metrics/charts.
+  - Keep it as a shell until storefront traffic, cart, checkout, and orders are stable enough to power real metrics.
 
 ### 6. Brand Settings
 

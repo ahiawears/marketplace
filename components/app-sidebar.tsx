@@ -73,6 +73,11 @@ const activeItems: SidebarItem[] = [
     icon: Star,
   },
   {
+    title: "Analytics",
+    url: "/dashboard/analytics",
+    icon: BarChart3,
+  },
+  {
     title: "Brand Settings",
     url: "/dashboard/brand-profile-management",
     icon: Settings,
@@ -97,12 +102,6 @@ const comingSoonItems: SidebarItem[] = [
   {
     title: "Messages",
     icon: MessageCircle,
-    disabled: true,
-    badge: "Soon",
-  },
-  {
-    title: "Analytics",
-    icon: BarChart3,
     disabled: true,
     badge: "Soon",
   },
