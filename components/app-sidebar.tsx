@@ -62,6 +62,11 @@ const activeItems: SidebarItem[] = [
     ],
   },
   {
+    title: "Orders",
+    url: "/dashboard/orders",
+    icon: ListOrdered,
+  },
+  {
     title: "Marketing",
     url: "/dashboard/coupons",
     icon: TicketPercent,
@@ -103,12 +108,6 @@ const activeItems: SidebarItem[] = [
 ];
 
 const comingSoonItems: SidebarItem[] = [
-  {
-    title: "Orders",
-    icon: ListOrdered,
-    disabled: true,
-    badge: "Soon",
-  },
   {
     title: "Messages",
     icon: MessageCircle,

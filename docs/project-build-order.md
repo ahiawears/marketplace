@@ -98,9 +98,8 @@ Building in slices reduces that churn.
 ### Option A. Best for finishing the dashboard first
 
 1. products list custom delete dialog
-2. orders page shell polish
-3. messages page shell polish
-4. then switch to customer funnel
+2. messages page shell polish
+3. then switch to customer funnel
 
 ### Option B. Best for getting to a testable marketplace faster
 
@@ -122,7 +121,7 @@ For **speed plus correctness**, I recommend:
 Specifically:
 
 1. finish products list modal cleanup
-2. create clean shells for reviews/analytics/finance/support
+2. create clean shells for reviews/analytics/finance/support/orders
 3. stop polishing dashboard
 4. move to customer commerce flow
 

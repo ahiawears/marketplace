@@ -144,12 +144,11 @@ This file maps the current brand dashboard menu, the route behind each item, the
 - Route: `/dashboard/orders`
 - Page: [app/dashboard/orders/page.tsx](/Users/apple/ahia/marketplace/app/dashboard/orders/page.tsx)
 - Main UI:
-  - likely [components/ui/order-list-table.tsx](/Users/apple/ahia/marketplace/components/ui/order-list-table.tsx)
-  - [components/brand-dashboard/order-details-modal.tsx](/Users/apple/ahia/marketplace/components/brand-dashboard/order-details-modal.tsx)
+  - server-rendered orders shell page
 - Current status:
-  - Page exists.
-  - Looks heavily sample/mock-data driven.
-  - Useful shell, but not yet a finished live order management page.
+  - Route exists as a proper shell page.
+  - Mock order rows are removed.
+  - Ready to receive real order queries once the customer checkout flow is stable.
 
 #### 3b. Messages
 
