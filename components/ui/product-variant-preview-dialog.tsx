@@ -57,13 +57,13 @@ const ProductVariantPreviewDialog: FC<ProductVariantPreviewDialogProps> = ({
 
                         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
                             <div className="space-y-4">
-                                <div className="relative flex min-h-[420px] items-center justify-center overflow-hidden rounded-md border bg-stone-50 p-6">
+                                <div className="relative flex min-h-[420px] items-center justify-center overflow-hidden rounded-none border-2 bg-stone-50 p-6">
                                     {selectedImage ? (
                                         <Image
                                             src={selectedImage}
                                             alt={activeVariant.name}
                                             fill
-                                            className="object-contain p-4"
+                                            className="object-contain px-4"
                                         />
                                     ) : (
                                         <div className="text-sm text-gray-400">No image available</div>
@@ -76,7 +76,7 @@ const ProductVariantPreviewDialog: FC<ProductVariantPreviewDialogProps> = ({
                                             <button
                                                 key={`${image}-${index}`}
                                                 type="button"
-                                                className={`relative h-20 w-20 overflow-hidden rounded-md border bg-stone-50 ${
+                                                className={`relative h-20 w-20 overflow-hidden rounded-none bg-stone-50 ${
                                                     selectedImage === image ? "ring-2 ring-black" : ""
                                                 }`}
                                                 onClick={() => setSelectedImage(image)}
@@ -85,7 +85,7 @@ const ProductVariantPreviewDialog: FC<ProductVariantPreviewDialogProps> = ({
                                                     src={image}
                                                     alt={`${activeVariant.name} thumbnail ${index + 1}`}
                                                     fill
-                                                    className="object-contain p-1"
+                                                    className="object-cover"
                                                 />
                                             </button>
                                         ))}
@@ -104,19 +104,19 @@ const ProductVariantPreviewDialog: FC<ProductVariantPreviewDialogProps> = ({
                                                         setActiveVariantId(variant.id);
                                                         setSelectedImage(variant.mainImageUrl || variant.images[0] || null);
                                                     }}
-                                                    className={`flex items-center gap-3 rounded-md border p-3 text-left transition ${
+                                                    className={`flex items-center gap-3 rounded-none border-2 p-3 text-left transition ${
                                                         variant.id === activeVariant.id
                                                             ? "border-black bg-stone-100"
                                                             : "border-gray-200 hover:border-gray-400"
                                                     }`}
                                                 >
-                                                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md border bg-stone-50">
+                                                    <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-none bg-stone-50">
                                                         {variant.mainImageUrl ? (
                                                             <Image
                                                                 src={variant.mainImageUrl}
                                                                 alt={variant.name}
                                                                 fill
-                                                                className="object-contain p-1"
+                                                                className="object-cover border-2 rounded-none"
                                                             />
                                                         ) : (
                                                             <div className="flex h-full items-center justify-center text-[10px] text-gray-400">
@@ -160,7 +160,7 @@ const ProductVariantPreviewDialog: FC<ProductVariantPreviewDialogProps> = ({
                                             {activeVariant.colorHexes.map((hex) => (
                                                 <span
                                                     key={hex}
-                                                    className="h-8 w-8 rounded-full border"
+                                                    className="h-8 w-8 rounded-none border-2"
                                                     style={{ backgroundColor: hex }}
                                                     title={hex}
                                                 />
@@ -179,8 +179,8 @@ const ProductVariantPreviewDialog: FC<ProductVariantPreviewDialogProps> = ({
                                 {measurementSizes.length > 0 && (
                                     <div className="space-y-3">
                                         <p className="text-sm font-semibold text-gray-900">Size & Measurements</p>
-                                        <div className="overflow-x-auto rounded-md border">
-                                            <table className="min-w-full bg-white text-sm">
+                                        <div className="overflow-x-auto rounded-none">
+                                            <table className="min-w-full bg-white text-sm border-2 rounded-none">
                                                 <thead className="bg-stone-50">
                                                     <tr>
                                                         <th className="px-4 py-3 text-left font-medium text-gray-600">Size</th>
@@ -194,7 +194,7 @@ const ProductVariantPreviewDialog: FC<ProductVariantPreviewDialogProps> = ({
                                                             <td className="px-4 py-3 text-gray-600">
                                                                 <div className="flex flex-wrap gap-2">
                                                                     {Object.entries(activeVariant.measurements[size] || {}).map(([key, value]) => (
-                                                                        <span key={`${size}-${key}`} className="rounded-full border bg-stone-50 px-2.5 py-1 text-xs">
+                                                                        <span key={`${size}-${key}`} className="rounded-none border-2 bg-stone-50 px-2.5 py-1 text-xs">
                                                                             {key}: {value}
                                                                         </span>
                                                                     ))}

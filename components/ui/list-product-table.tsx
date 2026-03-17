@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { FC, Fragment, useMemo, useState } from "react";
 import { Button } from "./button";
-import { EyeOff, Pencil, ScanEye, Trash } from "lucide-react";
+import { Eye, EyeOff, Pencil, ScanEye, Trash } from "lucide-react";
 import { ProductTableType } from "@/lib/types";
 import ProductVariantPreviewDialog, { ProductVariantPreviewSelection } from "@/components/ui/product-variant-preview-dialog";
 import { Input } from "./input";
@@ -85,7 +85,7 @@ const ProductTable: FC<ProductTableProps> = ({
                     <Select
                         value={statusFilter}
                         onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "inactive")}
-                        className="w-full"
+                        className="w-full border-2"
                     >
                         <option value="all">All statuses</option>
                         <option value="active">Active variants</option>
@@ -171,7 +171,7 @@ const ProductTable: FC<ProductTableProps> = ({
                                                                 {product.variants.map((variant) => (
                                                                     <tr key={variant.id} className="border-t align-top">
                                                                         <td className="px-4 py-3">
-                                                                            <div className="relative h-14 w-14 overflow-hidden rounded-md border bg-stone-100">
+                                                                            <div className="relative h-14 w-14 overflow-hidden rounded-none border-2 bg-stone-100">
                                                                                 {variant.mainImageUrl ? (
                                                                                     <Image
                                                                                         src={variant.mainImageUrl}
@@ -199,10 +199,10 @@ const ProductTable: FC<ProductTableProps> = ({
                                                                         <td className="px-4 py-3">{variant.price != null ? variant.price.toLocaleString() : "—"}</td>
                                                                         <td className="px-4 py-3">
                                                                             <span
-                                                                                className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                                                                                className={`inline-flex rounded-none px-2.5 py-1 text-xs font-medium ${
                                                                                     variant.status === "active"
-                                                                                        ? "bg-green-100 text-green-800"
-                                                                                        : "bg-gray-200 text-gray-700"
+                                                                                        ? "bg-green-100 text-green-800 border-2 border-green-800"
+                                                                                        : "bg-gray-200 text-gray-700 border-2 border-gray-800"
                                                                                 }`}
                                                                             >
                                                                                 {variant.status}
@@ -218,10 +218,14 @@ const ProductTable: FC<ProductTableProps> = ({
                                                                                         event.stopPropagation();
                                                                                         onHideProduct(product.id, variant.id);
                                                                                     }}
-                                                                                    title="Hide Variant"
+                                                                                    title={variant.status === "active" ? "Archive Variant" : "Reactivate Variant"}
                                                                                     className="bg-transparent hover:bg-gray-100"
                                                                                 >
-                                                                                    <EyeOff className="w-5 h-5 hover:text-gray-700" color="#000000" />
+                                                                                    {variant.status === "active" ? (
+                                                                                        <EyeOff className="w-5 h-5 hover:text-gray-700" color="#000000" />
+                                                                                    ) : (
+                                                                                        <Eye className="w-5 h-5 hover:text-gray-700" color="#000000" />
+                                                                                    )}
                                                                                 </Button>
                                                                                 <Button
                                                                                     type="button"
@@ -249,6 +253,12 @@ const ProductTable: FC<ProductTableProps> = ({
                                                                                     type="button"
                                                                                     onClick={(event) => {
                                                                                         event.stopPropagation();
+                                                                                        const confirmed = window.confirm(
+                                                                                            "Delete this variant permanently? This only works when the variant has no order history."
+                                                                                        );
+                                                                                        if (!confirmed) {
+                                                                                            return;
+                                                                                        }
                                                                                         onDeleteProduct(product.id, variant.id);
                                                                                     }}
                                                                                     title="Delete Variant"

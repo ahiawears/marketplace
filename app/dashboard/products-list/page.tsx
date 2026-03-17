@@ -8,6 +8,7 @@ import LoadContent from "@/app/load-content/page";
 import { Button } from "@/components/ui/button";
 import UploadProductSvg from "@/components/svg/upload-product-svg";
 import { useFetchAllProductsBrand } from "@/hooks/useFetchAllProductsBrand";
+import { toast } from "sonner";
 
 const ProductsPage = () => { 
 	const { products: brandProducts, loading } = useFetchAllProductsBrand();
@@ -16,7 +17,57 @@ const ProductsPage = () => {
 	const [products, setProducts] = useState<ProductTableType[]>([]);
 
 	const handleHideProduct = (productId: string, variantId: string) => {
-		console.log(`Hide variant ${variantId} for product ${productId}`);
+		const product = products.find((entry) => entry.id === productId);
+		const variant = product?.variants.find((entry) => entry.id === variantId);
+		if (!variant) {
+			toast.error("Variant not found.");
+			return;
+		}
+
+		const nextStatus = variant.status === "active" ? "inactive" : "active";
+		const loadingToast = toast.loading(nextStatus === "inactive" ? "Archiving variant..." : "Reactivating variant...");
+
+		fetch("/api/products/manage-variant", {
+			method: "PATCH",
+			headers: {
+				"Content-Type": "application/json",
+			},
+			body: JSON.stringify({
+				variantId,
+				status: nextStatus,
+			}),
+		})
+			.then(async (response) => {
+				const result = await response.json();
+				if (!response.ok || !result.success) {
+					throw new Error(result.message || "Failed to update variant status.");
+				}
+
+				setProducts((prev) =>
+					prev.map((productEntry) =>
+						productEntry.id === productId
+							? {
+									...productEntry,
+									variants: productEntry.variants.map((variantEntry) =>
+										variantEntry.id === variantId
+											? { ...variantEntry, status: nextStatus }
+											: variantEntry
+									),
+							  }
+							: productEntry
+					)
+				);
+
+				toast.success(
+					nextStatus === "inactive" ? "Variant archived." : "Variant reactivated.",
+					{ id: loadingToast }
+				);
+			})
+			.catch((error) => {
+				toast.error(error instanceof Error ? error.message : "Failed to update variant status.", {
+					id: loadingToast,
+				});
+			});
 	};
 	
 	const handleEditProduct = (productId: string, variantId: string) => {
@@ -26,8 +77,37 @@ const ProductsPage = () => {
 	};
 	
 	const handleDeleteProduct = (productId: string, variantId: string) => {
-		console.log(`Delete variant ${variantId} from product ${productId}`); 
-	}
+		const loadingToast = toast.loading("Deleting variant...");
+
+		fetch(`/api/products/manage-variant?variantId=${variantId}`, {
+			method: "DELETE",
+		})
+			.then(async (response) => {
+				const result = await response.json();
+				if (!response.ok || !result.success) {
+					throw new Error(result.message || "Failed to delete variant.");
+				}
+
+				setProducts((prev) =>
+					prev.map((productEntry) =>
+						productEntry.id === productId
+							? {
+									...productEntry,
+									variantCount: Math.max(0, productEntry.variantCount - 1),
+									variants: productEntry.variants.filter((variantEntry) => variantEntry.id !== variantId),
+							  }
+							: productEntry
+					)
+				);
+
+				toast.success("Variant deleted.", { id: loadingToast });
+			})
+			.catch((error) => {
+				toast.error(error instanceof Error ? error.message : "Failed to delete variant.", {
+					id: loadingToast,
+				});
+			});
+	};
 
 	useEffect(() => {
 		if (brandProducts && loading === false) {
