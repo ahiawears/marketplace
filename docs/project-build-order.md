@@ -98,10 +98,9 @@ Building in slices reduces that churn.
 ### Option A. Best for finishing the dashboard first
 
 1. products list custom delete dialog
-2. support page shell
-3. orders page shell polish
-4. messages page shell polish
-5. then switch to customer funnel
+2. orders page shell polish
+3. messages page shell polish
+4. then switch to customer funnel
 
 ### Option B. Best for getting to a testable marketplace faster
 
@@ -150,7 +149,7 @@ That is the balance point where:
   - done as a real shell page
 
 - `/dashboard/support`
-  - because it is simple, useful, and completes the dashboard navigation
+  - done as a real support hub
 
 ### Build Right After That
 

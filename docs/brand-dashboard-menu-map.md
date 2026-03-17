@@ -349,9 +349,10 @@ This file maps the current brand dashboard menu, the route behind each item, the
 
 - Route in sidebar: `/dashboard/support`
 - Current status:
-  - No route found.
+  - Route now exists as a real support hub page.
+  - Useful as a central navigation and guidance page for the modules that are already live.
 - Recommendation:
-  - Add a simple help/support page or remove until needed.
+  - Later expand it into deeper support resources, ticketing links, and troubleshooting flows once more customer-facing activity is live.
 
 ## Duplicate / Stale / Odd Items
 

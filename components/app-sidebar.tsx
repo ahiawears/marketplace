@@ -83,6 +83,11 @@ const activeItems: SidebarItem[] = [
     icon: Wallet,
   },
   {
+    title: "Support",
+    url: "/dashboard/support",
+    icon: HelpCircle,
+  },
+  {
     title: "Brand Settings",
     url: "/dashboard/brand-profile-management",
     icon: Settings,
@@ -107,12 +112,6 @@ const comingSoonItems: SidebarItem[] = [
   {
     title: "Messages",
     icon: MessageCircle,
-    disabled: true,
-    badge: "Soon",
-  },
-  {
-    title: "Support",
-    icon: HelpCircle,
     disabled: true,
     badge: "Soon",
   },

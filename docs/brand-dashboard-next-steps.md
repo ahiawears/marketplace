@@ -147,6 +147,10 @@ What can be built now:
 Priority:
 - Medium
 
+Current status:
+- Completed as a real support hub page.
+- The route now exists and points brands toward the live operational modules they can already use.
+
 ### 7. Dashboard Overview Polish
 
 Route:
@@ -232,10 +236,9 @@ These areas are better left until customer activity creates meaningful real data
 If the goal is to finish as much of the brand dashboard as possible before switching to customer pages, this is the order I recommend:
 
 1. Products List Real Actions
-2. Support Page
-3. Orders Page Shell Upgrade
-4. Messages Page Shell Upgrade
-5. Lookbook Preview Polish
+2. Orders Page Shell Upgrade
+3. Messages Page Shell Upgrade
+4. Lookbook Preview Polish
 
 ## Best Next Step
 
