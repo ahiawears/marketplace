@@ -39,10 +39,10 @@ const ProductsPage = () => {
 		return <LoadContent />; 
 	}
 	return (
-		<div className="mx-auto">
+		<div className="mx-auto min-w-0 max-w-full overflow-x-hidden">
 			{products.length > 0 ? (
-				<div className="">
-					<div className="p-0">
+				<div className="min-w-0 max-w-full">
+					<div className="min-w-0 p-0">
 						<ProductTable
 							products={products}
 							onHideProduct={handleHideProduct}
@@ -52,7 +52,7 @@ const ProductsPage = () => {
 					</div>
 				</div>
 			) : (
-				<div className="mx-auto max-w-2xl lg:max-w-7xl w-full">
+				<div className="mx-auto w-full max-w-2xl lg:max-w-7xl">
 					<div className="w-full p-8 text-center transform transition-all relative"> 
 						<div className="mx-auto">
 							<UploadProductSvg className="w-64 h-64 mx-auto" width={256} height={256} />

@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { FC, Fragment, useState } from "react";
+import { FC, Fragment, useMemo, useState } from "react";
 import { Button } from "./button";
 import { EyeOff, Pencil, ScanEye, Trash } from "lucide-react";
 import { ProductTableType } from "@/lib/types";
 import ProductVariantPreviewDialog, { ProductVariantPreviewSelection } from "@/components/ui/product-variant-preview-dialog";
+import { Input } from "./input";
+import { Select } from "./select";
 
 interface ProductTableProps {
     products: ProductTableType[];
@@ -22,6 +24,8 @@ const ProductTable: FC<ProductTableProps> = ({
 }) => {
     const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
     const [previewSelection, setPreviewSelection] = useState<ProductVariantPreviewSelection>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
     const toggleRow = (id: string) => {
         const newSet = new Set(expandedRows);
@@ -30,10 +34,86 @@ const ProductTable: FC<ProductTableProps> = ({
         setExpandedRows(newSet);
     };
 
+    const filteredProducts = useMemo(() => {
+        const normalizedQuery = searchQuery.trim().toLowerCase();
+
+        return products.filter((product) => {
+            const matchesStatus =
+                statusFilter === "all" ||
+                product.variants.some((variant) => variant.status === statusFilter);
+
+            if (!normalizedQuery) {
+                return matchesStatus;
+            }
+
+            const productMatches =
+                product.name.toLowerCase().includes(normalizedQuery) ||
+                product.category_name.toLowerCase().includes(normalizedQuery) ||
+                product.subCategory.toLowerCase().includes(normalizedQuery) ||
+                product.season.toLowerCase().includes(normalizedQuery);
+
+            const variantMatches = product.variants.some((variant) =>
+                [
+                    variant.name,
+                    variant.sku,
+                    variant.productCode,
+                    variant.slug,
+                    variant.colorSummary,
+                    variant.sizeSummary,
+                ]
+                    .filter(Boolean)
+                    .some((value) => value.toLowerCase().includes(normalizedQuery))
+            );
+
+            return matchesStatus && (productMatches || variantMatches);
+        });
+    }, [products, searchQuery, statusFilter]);
+
     return (
         <>
-            <div className="overflow-x-auto border-2">
-                <table className="min-w-full bg-white rounded-lg shadow-md">
+            <div className="mb-4 grid gap-3 rounded-none border-2 bg-white p-4 md:grid-cols-[minmax(0,1fr)_220px] xl:grid-cols-[minmax(0,1fr)_220px_auto]">
+                <div className="min-w-0">
+                    <Input
+                        value={searchQuery}
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder="Search products, variants, SKU, product code, color, or size"
+                        className="w-full"
+                    />
+                </div>
+
+                <div className="min-w-0">
+                    <Select
+                        value={statusFilter}
+                        onChange={(event) => setStatusFilter(event.target.value as "all" | "active" | "inactive")}
+                        className="w-full"
+                    >
+                        <option value="all">All statuses</option>
+                        <option value="active">Active variants</option>
+                        <option value="inactive">Inactive variants</option>
+                    </Select>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 text-sm text-gray-500 xl:justify-end">
+                    <span>
+                        Showing {filteredProducts.length} of {products.length} products
+                    </span>
+                    {(searchQuery || statusFilter !== "all") && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => {
+                                setSearchQuery("");
+                                setStatusFilter("all");
+                            }}
+                        >
+                            Clear
+                        </Button>
+                    )}
+                </div>
+            </div>
+
+            <div className="min-w-0 max-w-full overflow-x-auto border-2 bg-white">
+                <table className="min-w-[980px] w-full bg-white rounded-lg shadow-md">
                     <thead>
                         <tr className="bg-gray-100 text-left ">
                             <th className="px-6 py-4 text-sm font-medium text-gray-700 border-b">Product Name</th>
@@ -45,7 +125,7 @@ const ProductTable: FC<ProductTableProps> = ({
                         </tr>
                     </thead>
                     <tbody>
-                        {products.map((product) => (
+                        {filteredProducts.map((product) => (
                             <Fragment key={product.id}>
                                 <tr className="hover:bg-gray-50" onClick={() => toggleRow(product.id)}>
                                     <td className="px-6 py-4 text-sm text-gray-600">{product.name}</td>
@@ -192,6 +272,14 @@ const ProductTable: FC<ProductTableProps> = ({
                                 )}
                             </Fragment>
                         ))}
+
+                        {filteredProducts.length === 0 && (
+                            <tr>
+                                <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">
+                                    No products match the current filters.
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
