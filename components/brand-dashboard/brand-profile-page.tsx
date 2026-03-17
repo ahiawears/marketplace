@@ -1,6 +1,6 @@
 "use client";
 
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { EditBrandProfileHero } from "./edit-brand-profile-hero";
 import { EditBrandLogo } from "./edit-brand-logo";
 import { Input } from "../ui/input";
@@ -11,6 +11,7 @@ import { UploadBrandLogo } from "@/actions/edit-brand-details/upload-brand-logo"
 import { toast } from "sonner";
 import { UpdateBrandDescription } from "@/actions/edit-brand-details/update-brand-description";
 import validator from 'validator';
+import { useRouter } from "next/navigation";
 
 interface BrandProfileData {
     name: string;
@@ -31,6 +32,8 @@ const dataURLtoBlob = async (dataUrl: string): Promise<Blob> => {
 };
 
 const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
+    const router = useRouter();
+    const [savedData, setSavedData] = useState(data);
     const [bannerImage, setBannerImage] = useState(data.banner);
     const [logoImage, setLogoImage] = useState(data.logo);
     const [description, setDescription] = useState(data.description);
@@ -38,6 +41,16 @@ const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
     const [isLogoChanged, setIsLogoChanged] = useState<boolean>(false);
     const [isDescriptionChanged, setIsDescriptionChanged] = useState<boolean>(false);
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        setSavedData(data);
+        setBannerImage(data.banner);
+        setLogoImage(data.logo);
+        setDescription(data.description);
+        setIsBannerChanged(false);
+        setIsLogoChanged(false);
+        setIsDescriptionChanged(false);
+    }, [data]);
 
 
     const handleSave = async () => {
@@ -71,18 +84,25 @@ const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
             });
 
             if (allSuccessful) {
+                const nextSavedData = {
+                    ...savedData,
+                    banner: isBannerChanged ? bannerImage : savedData.banner,
+                    logo: isLogoChanged ? logoImage : savedData.logo,
+                    description: isDescriptionChanged ? validator.trim(description) : savedData.description,
+                };
+                setSavedData(nextSavedData);
                 toast.success("Brand profile updated successfully!");
-                // Reset states on success
                 setIsBannerChanged(false);
                 setIsLogoChanged(false);
                 setIsDescriptionChanged(false);
+                router.refresh();
             } else {
-                // Revert to original state on failure
-                setBannerImage(data.banner);
-                setLogoImage(data.logo);
-                setDescription(data.description);
+                setBannerImage(savedData.banner);
+                setLogoImage(savedData.logo);
+                setDescription(savedData.description);
                 setIsBannerChanged(false);
                 setIsLogoChanged(false);
+                setIsDescriptionChanged(false);
             }
 
         } catch (error) {
@@ -91,21 +111,21 @@ const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
                 errorMessage = error.message;
             }
             toast.error(errorMessage);
-            // Revert to original state on unexpected error
-            setBannerImage(data.banner);
-            setLogoImage(data.logo);
-            setDescription(data.description);
+            setBannerImage(savedData.banner);
+            setLogoImage(savedData.logo);
+            setDescription(savedData.description);
             setIsBannerChanged(false);
             setIsLogoChanged(false);
+            setIsDescriptionChanged(false);
         } finally {
             setIsSaving(false);
         }
     };
 
     const handleCancel = () => {
-        setBannerImage(data.banner);
-        setLogoImage(data.logo);
-        setDescription(data.description);
+        setBannerImage(savedData.banner);
+        setLogoImage(savedData.logo);
+        setDescription(savedData.description);
         setIsBannerChanged(false);
         setIsLogoChanged(false);
         setIsDescriptionChanged(false);
@@ -145,7 +165,7 @@ const BrandProfile: FC<BrandProfileProps> = ({ userId, data }) => {
                         className="border-2"
                         type="text"
                         disabled
-                        value={data.name}
+                        value={savedData.name}
                     />
                 </div>
                 <div className="space-y-2 my-4">

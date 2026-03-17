@@ -24,14 +24,21 @@ const BrandProfileManagemennt = async () => {
     if (!brandProfileData.success || brandProfileData.data === null) {
         redirect("/login-brand");
     }
-    if (!brandSocialLinks.success || brandSocialLinks.data === null) {
-        redirect("/login-brand");
-    }
     return (
         <BrandProfileClient 
             userId={userId} 
             brandData={brandProfileData.data} 
-            socialLinks={brandSocialLinks.data} 
+            socialLinks={brandSocialLinks.data || {
+                brand_contact_details: {
+                    brand_email: "",
+                    phone_number: "",
+                },
+                facebook: "",
+                instagram: "",
+                twitter: "",
+                tiktok: "",
+                website: "",
+            }} 
         />
     );
 }

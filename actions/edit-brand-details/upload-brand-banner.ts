@@ -17,6 +17,16 @@ interface UploadResponse {
 export async function UploadBrandBanner(userId: string, blob: Blob): Promise<UploadResponse> {
     const supabase = await createClient();
     try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return { success: false, message: "User not authenticated." };
+        }
+
+        if (user.id !== userId) {
+            return { success: false, message: "You are not allowed to update this brand." };
+        }
+
         const bucketName = "brand-banner";
         const uniqueFileName = `${userId}/banner.png`;
 

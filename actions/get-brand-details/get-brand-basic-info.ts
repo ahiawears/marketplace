@@ -1,5 +1,10 @@
 import { createClient } from "@/supabase/server";
 
+const DEFAULT_BRAND_BANNER =
+    "https://placehold.co/1200x400.png?text=Add+Brand+Banner";
+const DEFAULT_BRAND_LOGO =
+    "https://placehold.co/160x160.png?text=Logo";
+
 export async function GetBrandProfile(brandId: string) {
     const supabase = await createClient();
 
@@ -8,9 +13,9 @@ export async function GetBrandProfile(brandId: string) {
             .from('brands_list')
             .select('name, description')
             .eq('id', brandId)
-            .single();
+            .maybeSingle();
 
-        if (error) {
+        if (error || !basicData) {
             throw error;
         }
 
@@ -18,27 +23,19 @@ export async function GetBrandProfile(brandId: string) {
             .from('brand_banner')
             .select('banner_url')
             .eq('id', brandId)
-            .single();
-
-        if (bannerUrlError) {
-            throw bannerUrlError;
-        }
+            .maybeSingle();
 
          const {data: logoURL, error: logoURLError} = await supabase
             .from('brand_logo')
             .select('logo_url')
             .eq('id', brandId)
-            .single();
-
-        if (logoURLError) {
-            throw logoURLError;
-        }
+            .maybeSingle();
 
         const dataToReturn  = {
             name: basicData.name,
-            description: basicData.description,
-            banner: bannerUrl.banner_url,
-            logo: logoURL.logo_url
+            description: basicData.description || "",
+            banner: !bannerUrlError && bannerUrl?.banner_url ? bannerUrl.banner_url : DEFAULT_BRAND_BANNER,
+            logo: !logoURLError && logoURL?.logo_url ? logoURL.logo_url : DEFAULT_BRAND_LOGO
         }
 
         return {

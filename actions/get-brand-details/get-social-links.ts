@@ -38,20 +38,12 @@ export async function GetBrandSocialLinks(brandId: string): Promise<BrandSocialL
             .from('brand_social_links')
             .select('instagram, facebook, twitter, website, tiktok, brand_contact_details:id(brand_email, phone_number)')
             .eq('id', brandId)
-            .single<SupabaseSocialLinksData>(); 
+            .maybeSingle<SupabaseSocialLinksData>(); 
 
         if (socialLinksError) {
             return {
                 success: false,
                 message: socialLinksError.message,
-                data: null
-            };
-        }
-
-        if (!socialLinks) {
-            return {
-                success: false,
-                message: "No links found for the user.",
                 data: null
             };
         }

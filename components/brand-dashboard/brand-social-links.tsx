@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { BrandOnboarding } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import PhoneInput, { isValidPhoneNumber } from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
 import { toast } from "sonner";
@@ -44,6 +45,7 @@ interface SocialLinksErrors {
 }
 
 const BrandSocialLinks: React.FC<BrandSocialLinksProps> = ({ userId, data }) => {
+    const router = useRouter();
     const [socialData, setSocialData] = useState<BrandSocialLinks>(data);
     const [socialErrors, setSocialErrors] = useState<SocialLinksErrors>({});
     const [errorMessage, setErrorMessage] = useState("");
@@ -164,7 +166,10 @@ const BrandSocialLinks: React.FC<BrandSocialLinksProps> = ({ userId, data }) => 
             const response = await updateBrandContactDetails(dataToUpload, userId, "brandSocialLinks");
             if (response.success) {
                 toast.success("Contact details has been updated successfully.");
-                setIsFormDirty(false); 
+                setIsFormDirty(false);
+                router.refresh();
+            } else {
+                throw new Error(response.message || "Failed to update contact details.");
             }
         } catch (error) {
             console.error("Error updating contact details:", error);

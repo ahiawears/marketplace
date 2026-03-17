@@ -6,6 +6,24 @@ import { revalidatePath } from 'next/cache';
 export const updateBrandContactDetails = async (data: BrandOnboarding["contactInformation"], userId: string, path?: string) => {
     const supabase = await createClient();
     try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return {
+                success: false,
+                message: "User not authenticated.",
+                data: null
+            }
+        }
+
+        if (user.id !== userId) {
+            return {
+                success: false,
+                message: "You are not allowed to update this brand.",
+                data: null
+            }
+        }
+
         const {data: basicContactData, error: basicContactDataError} = await supabase
             .from("brands_contact_details")
             .upsert({
