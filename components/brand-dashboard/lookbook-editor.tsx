@@ -10,9 +10,12 @@ import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import LookbookImageManager from "./lookbook-image-manager";
+import { Switch } from "../ui/switch";
+import { LookbookSaveSummary } from "./lookbook-client";
 
 interface LookbookEditorProps {
     onBack: () => void;
+    onSaved: (savedLookbook: LookbookSaveSummary, savedDetails: LookbookEditorDetails) => void;
     initialData: LookbookEditorDetails;
     brandProducts: BrandProductListItem[];
     userId: string;
@@ -22,10 +25,12 @@ interface LookbookSaveResponse {
     success: boolean;
     message?: string;
     id?: string;
+    lookbook?: LookbookSaveSummary;
 }
 
 const LookbookEditor: FC<LookbookEditorProps> = ({
     onBack,
+    onSaved,
     initialData,
     brandProducts,
     userId,
@@ -54,7 +59,17 @@ const LookbookEditor: FC<LookbookEditorProps> = ({
             }
 
             toast.success(`Lookbook ${isEditMode ? 'updated' : 'created'} successfully!`, { id: toastId });
-            onBack();
+            if (!result.lookbook) {
+                throw new Error("Lookbook was saved but the updated summary was not returned.");
+            }
+
+            onSaved(
+                result.lookbook,
+                {
+                    ...formData,
+                    id: result.lookbook.id,
+                }
+            );
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
             toast.error(`Error: ${errorMessage}`, { id: toastId });
@@ -104,6 +119,20 @@ const LookbookEditor: FC<LookbookEditorProps> = ({
                                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                                 placeholder="A short description of your lookbook's theme or story."
                                 className="border-2 min-h-[100px]"
+                            />
+                        </div>
+                        <div className="flex items-center justify-between border-2 p-4">
+                            <div className="space-y-1">
+                                <p className="text-sm font-semibold text-gray-900">Publish lookbook</p>
+                                <p className="text-sm text-gray-600">
+                                    Turn this on if the lookbook should go live immediately.
+                                </p>
+                            </div>
+                            <Switch
+                                checked={formData.is_published}
+                                onCheckedChange={(checked) =>
+                                    setFormData((prev) => ({ ...prev, is_published: checked }))
+                                }
                             />
                         </div>
                     </div>

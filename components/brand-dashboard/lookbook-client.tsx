@@ -1,5 +1,5 @@
 'use client';
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BrandProductListItem } from "@/actions/get-products-list/fetchBrandProducts";
 import LookbookList from "./lookbook-list";
@@ -26,6 +26,18 @@ export interface LookbookImage {
     isUploading?: boolean;
     error?: string;
     sort_order: number;
+    tags: LookbookProductTag[];
+}
+
+export interface LookbookProductTag {
+    id: string;
+    productId: string;
+    productVariantId?: string;
+    label: string;
+    x_position: number;
+    y_position: number;
+    width?: number | null;
+    height?: number | null;
 }
 
 export interface LookbookEditorDetails {
@@ -47,6 +59,22 @@ interface LookbookDeleteResponse {
     message?: string;
 }
 
+export interface LookbookSaveSummary {
+    id: string;
+    title: string;
+    is_published: boolean;
+    created_at: string;
+    cover_image_url?: string;
+    item_count: number;
+}
+
+interface LookbookSaveResponse {
+    success: boolean;
+    message?: string;
+    id?: string;
+    lookbook?: LookbookSaveSummary;
+}
+
 export interface LookbookClientProps {
     userId: string;
     lookbookList: LookbookListItem[];
@@ -62,6 +90,10 @@ const LookbookClient: FC<LookbookClientProps> = ({
     const [view, setView] = useState<ViewMode>("list");
     const [lookbooks, setLookbooks] = useState<LookbookListItem[]>(lookbookList);
     const [lookbookToEdit, setLookbookToEdit] = useState<LookbookEditorDetails | null>(null);
+
+    useEffect(() => {
+        setLookbooks(lookbookList);
+    }, [lookbookList]);
 
     const handleCreateNew = () => {
         setLookbookToEdit(null); // Start with a blank slate
@@ -112,11 +144,22 @@ const LookbookClient: FC<LookbookClientProps> = ({
         router.refresh();
     };
 
+    const handleSaved = (savedLookbook: LookbookSaveSummary, savedDetails: LookbookEditorDetails) => {
+        setLookbooks((prev) => {
+            const next = prev.filter((lookbook) => lookbook.id !== savedLookbook.id);
+            return [savedLookbook, ...next];
+        });
+        setLookbookToEdit(savedDetails);
+        setView("list");
+        router.refresh();
+    };
+
     return (
         <div>
             {view === 'editor' ? (
                 <LookbookEditor
                     onBack={handleBackToList}
+                    onSaved={handleSaved}
                     initialData={lookbookToEdit || { title: "", description: "", is_published: false, images: [] }}
                     brandProducts={brandProducts}
                     userId={userId}

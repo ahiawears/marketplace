@@ -1,14 +1,26 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/supabase/server";
-import { LookbookEditorDetails } from "@/components/brand-dashboard/lookbook-client";
+import { LookbookEditorDetails, LookbookSaveSummary } from "@/components/brand-dashboard/lookbook-client";
 
 const LOOKBOOK_BUCKET = "lookbook-images";
+
+interface LookbookTagInput {
+  id?: string;
+  productId?: string;
+  productVariantId?: string;
+  label?: string;
+  x_position?: number;
+  y_position?: number;
+  width?: number | null;
+  height?: number | null;
+}
 
 interface LookbookPageInput {
   id?: string;
   previewUrl?: string;
   storagePath?: string;
   sort_order?: number;
+  tags?: LookbookTagInput[];
 }
 
 interface ExistingLookbookPageRow {
@@ -58,6 +70,22 @@ export async function POST(req: Request) {
       image_url: typeof image.previewUrl === "string" ? image.previewUrl : "",
       storage_path: typeof image.storagePath === "string" ? image.storagePath : "",
       sort_order: typeof image.sort_order === "number" ? image.sort_order : index,
+      tags: Array.isArray(image.tags)
+        ? image.tags
+            .map((tag) => ({
+              product_id: typeof tag.productId === "string" ? tag.productId : "",
+              product_variant_id:
+                typeof tag.productVariantId === "string" && tag.productVariantId.trim() !== ""
+                  ? tag.productVariantId
+                  : null,
+              label: typeof tag.label === "string" ? tag.label : "",
+              x_position: typeof tag.x_position === "number" ? Math.max(0, Math.min(100, tag.x_position)) : 50,
+              y_position: typeof tag.y_position === "number" ? Math.max(0, Math.min(100, tag.y_position)) : 50,
+              width: typeof tag.width === "number" ? tag.width : null,
+              height: typeof tag.height === "number" ? tag.height : null,
+            }))
+            .filter((tag) => tag.product_id)
+        : [],
     }));
 
     if (normalizedImages.some((image) => !image.image_url || !image.storage_path)) {
@@ -68,6 +96,7 @@ export async function POST(req: Request) {
     const slug = lookbookId ? baseSlug : `${baseSlug}-${Date.now().toString().slice(-6)}`;
 
     let activeLookbookId = lookbookId;
+    let lookbookCreatedAt = new Date().toISOString();
     const coverImageUrl = normalizedImages
       .slice()
       .sort((a, b) => a.sort_order - b.sort_order)[0]?.image_url || null;
@@ -75,7 +104,7 @@ export async function POST(req: Request) {
     if (lookbookId) {
       const { data: existingLookbook, error: existingLookbookError } = await supabase
         .from("brand_lookbooks")
-        .select("id")
+        .select("id, created_at")
         .eq("id", lookbookId)
         .eq("brand_id", user.id)
         .maybeSingle();
@@ -83,6 +112,8 @@ export async function POST(req: Request) {
       if (existingLookbookError || !existingLookbook) {
         return NextResponse.json({ success: false, message: existingLookbookError?.message || "Lookbook not found." }, { status: 404 });
       }
+
+      lookbookCreatedAt = existingLookbook.created_at;
 
       const { data: existingPages, error: existingPagesError } = await supabase
         .from("brand_lookbook_pages")
@@ -139,7 +170,7 @@ export async function POST(req: Request) {
           published_at: isPublished ? new Date().toISOString() : null,
           cover_image_url: coverImageUrl,
         })
-        .select("id")
+        .select("id, created_at")
         .single();
 
       if (createError || !createdLookbook) {
@@ -147,16 +178,18 @@ export async function POST(req: Request) {
       }
 
       activeLookbookId = createdLookbook.id;
+      lookbookCreatedAt = createdLookbook.created_at;
     }
 
     if (!activeLookbookId) {
       return NextResponse.json({ success: false, message: "Failed to resolve lookbook id." }, { status: 500 });
     }
 
-    const pagesToInsert = normalizedImages
+    const orderedImages = normalizedImages
       .slice()
-      .sort((a, b) => a.sort_order - b.sort_order)
-      .map((image, index) => ({
+      .sort((a, b) => a.sort_order - b.sort_order);
+
+    const pagesToInsert = orderedImages.map((image, index) => ({
         lookbook_id: activeLookbookId,
         image_url: image.image_url,
         storage_path: image.storage_path,
@@ -167,7 +200,7 @@ export async function POST(req: Request) {
     const { data: insertedPages, error: insertPagesError } = await supabase
       .from("brand_lookbook_pages")
       .insert(pagesToInsert)
-      .select("id");
+      .select("id, created_at");
 
     if (insertPagesError) {
       return NextResponse.json({ success: false, message: insertPagesError.message }, { status: 500 });
@@ -182,7 +215,42 @@ export async function POST(req: Request) {
         .eq("brand_id", user.id);
     }
 
-    return NextResponse.json({ success: true, id: activeLookbookId }, { status: 200 });
+    const tagsToInsert = orderedImages.flatMap((image, index) => {
+      const pageId = insertedPages?.[index]?.id;
+      if (!pageId) return [];
+
+      return image.tags.map((tag) => ({
+        lookbook_page_id: pageId,
+        product_id: tag.product_id,
+        product_variant_id: tag.product_variant_id,
+        label: tag.label,
+        x_position: tag.x_position,
+        y_position: tag.y_position,
+        width: tag.width,
+        height: tag.height,
+      }));
+    });
+
+    if (tagsToInsert.length > 0) {
+      const { error: insertTagsError } = await supabase
+        .from("brand_lookbook_product_tags")
+        .insert(tagsToInsert);
+
+      if (insertTagsError) {
+        return NextResponse.json({ success: false, message: insertTagsError.message }, { status: 500 });
+      }
+    }
+
+    const lookbookSummary: LookbookSaveSummary = {
+      id: activeLookbookId,
+      title,
+      is_published: isPublished,
+      created_at: lookbookCreatedAt,
+      cover_image_url: coverImageUrl || undefined,
+      item_count: orderedImages.length,
+    };
+
+    return NextResponse.json({ success: true, id: activeLookbookId, lookbook: lookbookSummary }, { status: 200 });
   } catch (error) {
     console.error("Error in POST /api/lookbooks:", error);
     return NextResponse.json({ success: false, message: "An unexpected error occurred while saving the lookbook." }, { status: 500 });

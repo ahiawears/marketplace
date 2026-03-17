@@ -1,7 +1,7 @@
 'use client';
 
 import { FC, useCallback } from "react";
-import { LookbookImage } from "./lookbook-client";
+import { LookbookImage, LookbookProductTag } from "./lookbook-client";
 import { BrandProductListItem } from "@/actions/get-products-list/fetchBrandProducts";
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -14,6 +14,9 @@ import Image from "next/image";
 import { Button } from "../ui/button";
 import { Progress } from "../ui/progress";
 import { createClient } from "@/supabase/client";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Select } from "../ui/select";
 
 const LOOKBOOK_BUCKET = "lookbook-images";
 
@@ -64,10 +67,21 @@ interface LookbookImageManagerProps {
 
 interface SortableImageItemProps {
     image: LookbookImage;
+    brandProducts: BrandProductListItem[];
     onRemove: (id: string) => void;
+    onAddTag: (imageId: string) => void;
+    onUpdateTag: (imageId: string, tagId: string, updates: Partial<LookbookProductTag>) => void;
+    onRemoveTag: (imageId: string, tagId: string) => void;
 }
 
-const SortableImageItem: FC<SortableImageItemProps> = ({ image, onRemove }) => {
+const SortableImageItem: FC<SortableImageItemProps> = ({
+    image,
+    brandProducts,
+    onRemove,
+    onAddTag,
+    onUpdateTag,
+    onRemoveTag,
+}) => {
     const {
         attributes,
         listeners,
@@ -81,42 +95,168 @@ const SortableImageItem: FC<SortableImageItemProps> = ({ image, onRemove }) => {
         transition,
     };
 
+    const tagProductOptions = brandProducts;
+
     return (
-        <div ref={setNodeRef} style={style} className="flex items-center gap-4 p-3 bg-white border-2 rounded-md shadow-sm">
-            <button {...attributes} {...listeners} className="cursor-grab p-2 text-gray-500 hover:bg-gray-100 rounded-md touch-none">
-                <GripVertical className="h-5 w-5" />
-            </button>
-            <div className="relative w-20 h-20 rounded-md overflow-hidden bg-gray-100">
-                <Image
-                    src={image.previewUrl}
-                    alt="Lookbook page preview"
-                    fill
-                    className="object-cover"
-                />
-                {image.isUploading && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <p className="text-white text-sm font-bold">{image.uploadProgress}%</p>
+        <div ref={setNodeRef} style={style} className="space-y-4 bg-white border-2 rounded-md p-4 shadow-sm">
+            <div className="flex items-center gap-4">
+                <button {...attributes} {...listeners} className="cursor-grab p-2 text-gray-500 hover:bg-gray-100 rounded-md touch-none">
+                    <GripVertical className="h-5 w-5" />
+                </button>
+                <div className="relative w-20 h-20 rounded-md overflow-hidden bg-gray-100">
+                    <Image
+                        src={image.previewUrl}
+                        alt="Lookbook page preview"
+                        fill
+                        className="object-cover"
+                    />
+                    {image.tags.map((tag, index) => (
+                        <span
+                            key={tag.id}
+                            className="absolute flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black text-[10px] font-semibold text-white"
+                            style={{ left: `${tag.x_position}%`, top: `${tag.y_position}%` }}
+                        >
+                            {index + 1}
+                        </span>
+                    ))}
+                    {image.isUploading && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                            <p className="text-white text-sm font-bold">{image.uploadProgress}%</p>
+                        </div>
+                    )}
+                </div>
+                <div className="flex-1 space-y-2">
+                    <p className="text-sm font-medium text-gray-800 truncate">{image.file?.name || 'Uploaded Image'}</p>
+                    {image.isUploading ? (
+                        <Progress value={image.uploadProgress} className="h-2" />
+                    ) : image.error ? (
+                        <p className="text-xs text-red-600">{image.error}</p>
+                    ) : (
+                        <p className="text-xs text-green-600">Ready</p>
+                    )}
+                </div>
+                <Button size="icon" variant="ghost" className="text-gray-500 hover:text-red-600" onClick={() => onRemove(image.id)}>
+                    <Trash2 className="h-5 w-5" />
+                </Button>
+            </div>
+
+            <div className="space-y-3 border-t pt-4">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <p className="text-sm font-semibold text-gray-900">Tagged products</p>
+                        <p className="text-xs text-gray-500">Attach products to this page and position their marker.</p>
+                    </div>
+                    <Button type="button" variant="outline" onClick={() => onAddTag(image.id)}>
+                        Add Product Tag
+                    </Button>
+                </div>
+
+                {image.tags.length === 0 ? (
+                    <p className="text-sm text-gray-500">No products tagged on this page yet.</p>
+                ) : (
+                    <div className="space-y-3">
+                        {image.tags.map((tag) => {
+                            const selectedProduct = tagProductOptions.find((product) => product.id === tag.productId);
+                            const variants = selectedProduct?.variants || [];
+
+                            return (
+                                <div key={tag.id} className="grid gap-3 border bg-gray-50 p-3 md:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <Label>Product</Label>
+                                        <Select
+                                            value={tag.productId}
+                                            onChange={(event) => {
+                                                const nextProductId = event.target.value;
+                                                const nextProduct = tagProductOptions.find((product) => product.id === nextProductId);
+                                                onUpdateTag(image.id, tag.id, {
+                                                    productId: nextProductId,
+                                                    productVariantId: "",
+                                                    label: nextProduct?.name || tag.label,
+                                                })
+                                            }}
+                                        >
+                                            <option value="">Select product</option>
+                                            {tagProductOptions.map((product) => (
+                                                <option key={product.id} value={product.id}>
+                                                    {product.name}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Variant</Label>
+                                        <Select
+                                            value={tag.productVariantId || ""}
+                                            onChange={(event) =>
+                                                onUpdateTag(image.id, tag.id, { productVariantId: event.target.value || undefined })
+                                            }
+                                            disabled={!selectedProduct || variants.length === 0}
+                                        >
+                                            <option value="">All variants</option>
+                                            {variants.map((variant) => (
+                                                <option key={variant.id} value={variant.id}>
+                                                    {variant.name || variant.sku || "Variant"}
+                                                </option>
+                                            ))}
+                                        </Select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Label</Label>
+                                        <Input
+                                            value={tag.label}
+                                            onChange={(event) => onUpdateTag(image.id, tag.id, { label: event.target.value })}
+                                            placeholder="Optional label shown on the page"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>X position (%)</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={tag.x_position}
+                                            onChange={(event) =>
+                                                onUpdateTag(image.id, tag.id, {
+                                                    x_position: Number(event.target.value),
+                                                })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label>Y position (%)</Label>
+                                        <Input
+                                            type="number"
+                                            min="0"
+                                            max="100"
+                                            value={tag.y_position}
+                                            onChange={(event) =>
+                                                onUpdateTag(image.id, tag.id, {
+                                                    y_position: Number(event.target.value),
+                                                })
+                                            }
+                                        />
+                                    </div>
+
+                                    <div className="flex items-end justify-end">
+                                        <Button type="button" variant="destructive" onClick={() => onRemoveTag(image.id, tag.id)}>
+                                            Remove Tag
+                                        </Button>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
-            <div className="flex-1 space-y-2">
-                <p className="text-sm font-medium text-gray-800 truncate">{image.file?.name || 'Uploaded Image'}</p>
-                {image.isUploading ? (
-                    <Progress value={image.uploadProgress} className="h-2" />
-                ) : image.error ? (
-                    <p className="text-xs text-red-600">{image.error}</p>
-                ) : (
-                    <p className="text-xs text-green-600">Ready</p>
-                )}
-            </div>
-            <Button size="icon" variant="ghost" className="text-gray-500 hover:text-red-600" onClick={() => onRemove(image.id)}>
-                <Trash2 className="h-5 w-5" />
-            </Button>
         </div>
     );
-}
+};
 
-const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesChange, brandProducts: _brandProducts, userId }) => {
+const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesChange, brandProducts, userId }) => {
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -172,6 +312,7 @@ const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesC
             isUploading: false,
             uploadProgress: 0,
             sort_order: 0, // Placeholder, will be set in the updater
+            tags: [],
         }));
 
         onImagesChange(prevImages => {
@@ -208,6 +349,72 @@ const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesC
         }
     };
 
+    const handleAddTag = (imageId: string) => {
+        onImagesChange((prevImages) =>
+            prevImages.map((image) =>
+                image.id === imageId
+                    ? {
+                          ...image,
+                          tags: [
+                              ...image.tags,
+                              {
+                                  id: uuidv4(),
+                                  productId: "",
+                                  productVariantId: "",
+                                  label: "",
+                                  x_position: 50,
+                                  y_position: 50,
+                                  width: null,
+                                  height: null,
+                              },
+                          ],
+                      }
+                    : image
+            )
+        );
+    };
+
+    const handleUpdateTag = (imageId: string, tagId: string, updates: Partial<LookbookProductTag>) => {
+        onImagesChange((prevImages) =>
+            prevImages.map((image) =>
+                image.id === imageId
+                    ? {
+                          ...image,
+                          tags: image.tags.map((tag) =>
+                              tag.id === tagId
+                                  ? {
+                                        ...tag,
+                                        ...updates,
+                                        x_position:
+                                            updates.x_position !== undefined
+                                                ? Math.max(0, Math.min(100, updates.x_position))
+                                                : tag.x_position,
+                                        y_position:
+                                            updates.y_position !== undefined
+                                                ? Math.max(0, Math.min(100, updates.y_position))
+                                                : tag.y_position,
+                                    }
+                                  : tag
+                          ),
+                      }
+                    : image
+            )
+        );
+    };
+
+    const handleRemoveTag = (imageId: string, tagId: string) => {
+        onImagesChange((prevImages) =>
+            prevImages.map((image) =>
+                image.id === imageId
+                    ? {
+                          ...image,
+                          tags: image.tags.filter((tag) => tag.id !== tagId),
+                      }
+                    : image
+            )
+        );
+    };
+
     return (
         <div className="space-y-4">
             <div {...getRootProps()} className={`p-6 border-2 border-dashed rounded-md text-center cursor-pointer transition-colors ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'}`}>
@@ -223,7 +430,17 @@ const LookbookImageManager: FC<LookbookImageManagerProps> = ({ images, onImagesC
                 <div className="space-y-3">
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={images.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                            {images.map(image => <SortableImageItem key={image.id} image={image} onRemove={handleRemoveImage} />)}
+                            {images.map((image) => (
+                                <SortableImageItem
+                                    key={image.id}
+                                    image={image}
+                                    brandProducts={brandProducts}
+                                    onRemove={handleRemoveImage}
+                                    onAddTag={handleAddTag}
+                                    onUpdateTag={handleUpdateTag}
+                                    onRemoveTag={handleRemoveTag}
+                                />
+                            ))}
                         </SortableContext>
                     </DndContext>
                 </div>
