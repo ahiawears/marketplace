@@ -95,7 +95,6 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({
 }) => {
     const { generalDetails, productId, updateVariant, addVariant, removeVariant } = useProductFormStore();
     const { variants, copyFromPreviousVariant } = useVariantManagement();
-    const [savedVariantDraftIds, setSavedVariantDraftIds] = useState<Set<string>>(new Set());
     
     // The useEffect for loading images has been removed from here.
     // Image loading will now be handled directly within the ImageSection component.
@@ -141,12 +140,14 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({
 
         if (result) {
             updateVariant(index, { slug: result.slug });
-            setSavedVariantDraftIds((prev) => new Set(prev).add(variantToSave.id));
             onSaveSuccess?.();
         }
     };
 
-    const canAddAnotherVariant = mode === "edit" || savedVariantDraftIds.has(variants[variants.length - 1]?.id);
+    const lastVariant = variants[variants.length - 1];
+    const canAddAnotherVariant =
+        mode === "edit" ||
+        Boolean(lastVariant?.slug && lastVariant.slug.trim().length > 0);
 
     const addVariantClick = () => {
         if (!canAddAnotherVariant) {
@@ -173,14 +174,7 @@ const ProductVariantsForm: FC<VariantDetailsFormProps> = ({
                     currency={currencyCode}
                     exchangeRate={todayExchangeRate}
                     onUpdate={(updates) => updateVariant(index, updates)}
-                    onRemove={() => {
-                        setSavedVariantDraftIds((prev) => {
-                            const next = new Set(prev);
-                            next.delete(variant.id);
-                            return next;
-                        });
-                        removeVariant(index);
-                    }}
+                    onRemove={() => removeVariant(index)}
                     onSave={(variantToSave) => handleSaveVariant(index, variantToSave)}
                     onCopyFromPrevious={() => copyFromPreviousVariant(index)} 
                     validateField={(fieldName, value) => validateField(index, fieldName, value)}

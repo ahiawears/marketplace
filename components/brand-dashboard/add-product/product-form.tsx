@@ -65,6 +65,11 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
 
     const handleStepSaved = (step: keyof typeof savedSteps) => {
         markStepSaved(step);
+
+        if (step === "variants") {
+            return;
+        }
+
         const stepOrder: Array<keyof typeof savedSteps> = [
             "general",
             "variants",

@@ -26,6 +26,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const anonymousId = userId ? null : await getServerAnonymousId();
   const serverUserIdentifier = userId || anonymousId || "";
   const isAnonymous = !userId;
+  
 
   const [products, savedListResult] = await Promise.all([
     getStorefrontProducts({ query, category, gender }),

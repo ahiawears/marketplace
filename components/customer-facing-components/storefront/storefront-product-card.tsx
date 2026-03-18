@@ -2,9 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, ShoppingBag } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import { Heart, ShoppingCart } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { StorefrontProductCardData } from "@/components/customer-facing-components/storefront/types";
 
@@ -65,7 +63,7 @@ export function StorefrontProductCard({
               <Heart className={cn("h-5 w-5", isSaved && "fill-current text-red-500")} />
             </button>
             <button type="button" onClick={() => onQuickAdd(product)} className="gap-2">
-              <ShoppingBag className="h-5 w-5" />
+              <ShoppingCart className="h-5 w-5" />
             </button>
           </div>
         </div>

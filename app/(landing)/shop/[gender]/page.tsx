@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-
 import { getStorefrontNavigation } from "@/actions/storefront/get-storefront-navigation";
 import { BestBrandsPlaceholder } from "@/components/customer-facing-components/storefront/best-brands-placeholder";
 import { Button } from "@/components/ui/button";

@@ -19,7 +19,7 @@ export const GeneralDetailsValidationSchema = z.object({
         .array(z.string().trim())
         .min(1, "At least one tag is required.")
         .max(5, "You can select up to 5 tags."),
-    gender: z.enum(["Male", "Female", "Unisex"], {
+    gender: z.enum(["Men", "Women", "Unisex"], {
         invalid_type_error: "Gender is required.",
     }),
     season: z.string().trim().optional(),
