@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter, Heart, ShoppingCart } from "lucide-react";
+import { Filter, Heart, Menu, ShoppingCart, User } from "lucide-react";
 import { Button } from "./ui/button";
 import { Logo } from "./ui/logo";
 import {
@@ -21,8 +21,9 @@ import { SearchInput } from "./ui/search-input";
 
 
 export const HeaderNew = ({ user }: { user: any }) => {
-    const [searchQuery, setSearchQuery] = useState("");  
+    const [searchQuery, setSearchQuery] = useState("");
     const [isSearchVisible, setIsSearchVisible] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const router = useRouter();
 
     const handleSearch = () => {
@@ -54,7 +55,7 @@ export const HeaderNew = ({ user }: { user: any }) => {
                     {!isSearchVisible && (
                         <div className="lg:hidden md:hidden flex items-center">
                             <Button 
-                                className="bg-white"
+                                className="bg-white hover:bg-gray-100"
                                 onClick={toggleSearch}
                             >
                                 <svg 
@@ -86,22 +87,53 @@ export const HeaderNew = ({ user }: { user: any }) => {
                     {/* Mobile Menu Icon */}
                     {!isSearchVisible && (
                         <div className="lg:hidden md:hidden flex items-center">
-                            <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="24"
-                                height="24"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                className="lucide lucide-menu"
-                            >
-                                <line x1="4" x2="20" y1="12" y2="12" />
-                                <line x1="4" x2="20" y1="6" y2="6" />
-                                <line x1="4" x2="20" y1="18" y2="18" />
-                            </svg>
+                            {user ? (
+                                <UserActionsDropdownMobile
+                                    user={user}
+                                    trigger={
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="border-0"
+                                        >
+                                            <span className="sr-only">Open user menu</span>
+                                            <Menu className="h-5 w-5" />
+                                        </Button>
+                                    }
+                                />
+                            ) : (
+                                <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                                    <SheetTrigger asChild>
+                                        <Button variant="outline" size="icon" className="border-2">
+                                            <span className="sr-only">Open menu</span>
+                                            <Menu className="h-5 w-5" />
+                                        </Button>
+                                    </SheetTrigger>
+                                    <SheetContent className="flex flex-col px-0" side={"left"}>
+                                        <SheetTitle className="sr-only">Account menu</SheetTitle>
+                                        <div className="flex-1 px-4 pt-12">
+                                            <div className="space-y-3 border-b-2 border-border pb-6">
+                                                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
+                                                    Welcome
+                                                </p>
+                                                <p className="text-sm leading-6 text-foreground/80">
+                                                    Sign in to save products, manage your account, and check out faster.
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <SheetFooter className="border-t-2 border-border pt-4 px-3">
+                                            <div className="grid grid-cols-2 gap-4 w-full">
+                                                <Button asChild variant={"outline"} size={"lg"} className="border-2">
+                                                    <Link href={"/log-in"}>Login</Link>
+                                                </Button>
+                                                <Button asChild size={"lg"} className="border-2">
+                                                    <Link href={"/signup"}>Get Started</Link>
+                                                </Button>
+                                            </div>
+                                        </SheetFooter>
+                                    </SheetContent>
+                                </Sheet>
+                            )}
                         </div>
                     )} 
  
@@ -110,12 +142,12 @@ export const HeaderNew = ({ user }: { user: any }) => {
                         <div className="lg:hidden md:hidden flex items-center w-full gap-2">
                             <SearchInput
                                 placeholder="Search products"
-                                className="grow h-10 cursor-auto"
+                                className="grow h-10 cursor-auto border-2 rounded-none"
                                 name="searchValue"
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onSearch={handleSearch}
                             />
-                            <Button variant="outline" onClick={toggleSearch}>
+                            <Button variant="outline" onClick={toggleSearch} className="border-2 rounded-none">
                                 Cancel
                             </Button>
                         </div>
@@ -170,7 +202,15 @@ export const HeaderNew = ({ user }: { user: any }) => {
                                             </Button>
                                         </div>
                                     ) : (
-                                        <UserActionsDropdownMobile user={user} />
+                                        <UserActionsDropdownMobile
+                                            user={user}
+                                            trigger={
+                                                <Button variant="outline" className="w-full justify-center border-2">
+                                                    <User className="h-4 w-4" />
+                                                    <span className="ml-2">{user.user_metadata.first_name}</span>
+                                                </Button>
+                                            }
+                                        />
                                     )}
                                     </SheetFooter>
                                 </SheetContent>

@@ -11,10 +11,11 @@ import {
 import { User } from "@supabase/supabase-js"; 
 import { User as UserIcon } from "lucide-react";
 import Link from "next/link";
-import { Fragment } from "react";
+import { Fragment, ReactNode } from "react";
 
 type Props = {
   user: User;
+  trigger?: ReactNode;
 };
 
 const menuItems: {
@@ -68,15 +69,17 @@ export function UserActionsDropdownDesktop({ user }: Props) {
     </DropdownMenu>
   );
 }
-export function UserActionsDropdownMobile({ user }: Props) {
+export function UserActionsDropdownMobile({ user, trigger }: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild className="md:hidden">
-        <Button variant="outline">
-          <span className="sr-only">Open menu</span>
-          <UserIcon />
-          <span className="ml-2">{user.user_metadata.first_name}</span>
-        </Button>
+        {trigger ?? (
+          <Button variant="outline">
+            <span className="sr-only">Open menu</span>
+            <UserIcon />
+            <span className="ml-2">{user.user_metadata.first_name}</span>
+          </Button>
+        )}
       </DropdownMenuTrigger>
 
       <DropdownMenuContent className="">

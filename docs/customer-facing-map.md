@@ -55,17 +55,18 @@ Page:
 - [app/products/page.tsx](/Users/apple/ahia/marketplace/app/products/page.tsx)
 
 Main UI:
-- [components/ui/productsList.tsx](/Users/apple/ahia/marketplace/components/ui/productsList.tsx)
+- [components/customer-facing-components/storefront/storefront-products-client.tsx](/Users/apple/ahia/marketplace/components/customer-facing-components/storefront/storefront-products-client.tsx)
 
 Current status:
-- Real product fetching is wired
-- likes/saved flow exists
-- add-to-cart modal exists
+- Real storefront variant fetching is wired
+- saved-items flow now matches the newer variant-based model
+- quick add dialog exists from the listing page
+- product cards now use the real `/product/[id]` route
+- homepage and gender landing pages now have a clearer storefront direction
 
 Important issues:
-- it still uses `img`, not `next/image`
-- it navigates to `/product-detail/${id}`, but your actual product route is `/product/[id]`
-- product list page still feels older than the newer dashboard work
+- still needs a fuller filter/sort system once the storefront funnel is further along
+- should get a QA pass together with product detail and cart behavior
 
 Priority:
 - High
@@ -302,4 +303,3 @@ If you want to move into the customer side after enough dashboard work is done, 
 - it builds the actual purchase funnel first
 - it gives you something real to test end to end
 - once that works, orders/reviews/messages become much easier to implement correctly
-

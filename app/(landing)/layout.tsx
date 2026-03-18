@@ -1,15 +1,13 @@
 import { Footer } from "@/components/footer";
 import { ServerHeader } from "@/components/headerServerComponent";
-import { Navbar } from "@/components/navbar";
-import Navbarn from "@/components/navbarn";
+import { LandingRouteNav } from "@/components/landing-route-nav";
 
 export default function LandingLayout ({ children }: { children: React.ReactNode }) {
 	return (
 		<>
 			<div className="flex flex-col">
 				<ServerHeader /> 
-				{/* <Navbar /> */}
-				<Navbarn />
+				<LandingRouteNav />
 				<main className="flex-grow">{children}</main>
 				<Footer />
 			</div>

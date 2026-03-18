@@ -101,7 +101,7 @@ export const saveProduct = async ({
         //revalidate path
         switch (path) {
             case "productsPage":
-                revalidatePath(`/products/${variantId}`);
+                revalidatePath(`/products`);
                 break;
             case "savedPage":
                 revalidatePath(`/saved-list`)
