@@ -372,6 +372,8 @@ export async function publishProductDraft(
         productId: string;
         publishMode: "now" | "later";
         releaseDate?: string;
+        releaseDateIso?: string;
+        releaseTimezone?: string;
     }
 ) {
     await assertBrandOwnsProduct(supabase, brandId, input.productId);
@@ -379,26 +381,30 @@ export async function publishProductDraft(
     const updatePayload: {
         is_published: boolean;
         release_date: string | null;
+        release_timezone: string | null;
     } = {
         is_published: false,
         release_date: null,
+        release_timezone: null,
     };
 
     if (input.publishMode === "now") {
         updatePayload.is_published = true;
         updatePayload.release_date = new Date().toISOString();
+        updatePayload.release_timezone = input.releaseTimezone || "UTC";
     } else {
-        if (!input.releaseDate) {
+        if (!input.releaseDate || !input.releaseDateIso) {
             throw new ProductDraftServiceError("Please choose a release date for later publishing.", 400);
         }
 
-        const scheduledRelease = new Date(`${input.releaseDate}T00:00:00`);
+        const scheduledRelease = new Date(input.releaseDateIso);
         if (Number.isNaN(scheduledRelease.getTime())) {
             throw new ProductDraftServiceError("The selected release date is invalid.", 400);
         }
 
         updatePayload.is_published = false;
         updatePayload.release_date = scheduledRelease.toISOString();
+        updatePayload.release_timezone = input.releaseTimezone || "UTC";
     }
 
     const { error } = await supabase

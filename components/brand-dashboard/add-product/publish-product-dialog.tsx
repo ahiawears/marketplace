@@ -33,6 +33,10 @@ export function PublishProductDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const minReleaseDate = useMemo(() => new Date().toISOString().split("T")[0], []);
+  const releaseTimezone = useMemo(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+    []
+  );
 
   const handleConfirm = async () => {
     if (publishMode === "later" && !releaseDate) {
@@ -52,6 +56,11 @@ export function PublishProductDialog({
           productId,
           publishMode,
           releaseDate: publishMode === "later" ? releaseDate : null,
+          releaseDateIso:
+            publishMode === "later" && releaseDate
+              ? new Date(`${releaseDate}T00:00:00`).toISOString()
+              : null,
+          releaseTimezone,
         }),
       });
 
@@ -133,6 +142,9 @@ export function PublishProductDialog({
                       onChange={(event) => setReleaseDate(event.target.value)}
                       className="border-2"
                     />
+                    <p className="mt-2 text-xs text-stone-500">
+                      Scheduled using your local timezone: {releaseTimezone}
+                    </p>
                   </div>
                 ) : null}
               </div>

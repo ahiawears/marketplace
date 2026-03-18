@@ -14,6 +14,8 @@ export async function POST(req: Request) {
       productId: body.productId,
       publishMode: body.publishMode,
       releaseDate: body.releaseDate,
+      releaseDateIso: body.releaseDateIso,
+      releaseTimezone: body.releaseTimezone,
     });
 
     return NextResponse.json({

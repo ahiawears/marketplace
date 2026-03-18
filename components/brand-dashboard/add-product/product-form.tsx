@@ -116,6 +116,7 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
                     <VariantDetailsForm
                         currencyCode={currencyCode}
                         todayExchangeRate={todayExchangeRate}
+                        mode={mode}
                         onSaveSuccess={() => handleStepSaved("variants")}
                     />
                 ),
