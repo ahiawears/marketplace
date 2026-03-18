@@ -1,4 +1,5 @@
 import { createClient } from "@/supabase/server";
+import { toStoredGenderScope } from "@/lib/product-gender";
 
 export interface StorefrontProductCardData {
   variantId: string;
@@ -33,6 +34,7 @@ type ProductRow = {
   id: string;
   name: string | null;
   product_description: string | null;
+  release_date: string | null;
   category_id:
     | {
         name: string | null;
@@ -143,6 +145,7 @@ export async function getStorefrontProducts(
       id,
       name,
       product_description,
+      release_date,
       category_id(name),
       gender_id(name),
       product_variants(
@@ -164,7 +167,7 @@ export async function getStorefrontProducts(
 
   const normalizedQuery = filters.query?.trim().toLowerCase() || "";
   const normalizedCategory = filters.category?.trim().toLowerCase() || "";
-  const normalizedGender = filters.gender?.trim().toLowerCase() || "";
+  const normalizedGender = toStoredGenderScope(filters.gender);
   const now = new Date();
 
   const productRows = (data || []) as ProductRow[];
@@ -203,6 +206,16 @@ export async function getStorefrontProducts(
     const description = product.product_description || "";
     const categoryName = readRelationName(product.category_id);
     const genderName = readRelationName(product.gender_id);
+    const releaseDate = product.release_date ? new Date(product.release_date) : null;
+
+    const isReleased =
+      !releaseDate ||
+      Number.isNaN(releaseDate.getTime()) ||
+      releaseDate <= now;
+
+    if (!isReleased) {
+      return [];
+    }
 
     return (product.product_variants || [])
       .filter((variant) => {
@@ -284,6 +297,7 @@ export async function getStorefrontProducts(
       const productValue = product.productName.toLowerCase();
       const variantValue = product.variantName.toLowerCase();
       const genderValue = product.genderName.toLowerCase();
+      
 
       const matchesCategory =
         !normalizedCategory || categoryValue === normalizedCategory;

@@ -10,6 +10,7 @@ import ShippingDetailsForm from "./shipping-details-form";
 import { ShippingDetails } from '@/lib/types';
 import CareDetailsForm from "./care-details-form";
 import ReturnPolicyDetailsForm from "./return-policy-details-form";
+import { PublishProductDialog } from "./publish-product-dialog";
 import { useProductFormStore } from "@/hooks/local-store/useProductFormStore";
 import { toast } from "sonner";
 import { ReturnPolicy as GlobalReturnPolicy } from "@/lib/return-policy-validation";
@@ -23,6 +24,7 @@ interface ProductFormProps {
 }
 const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, shippingConfig, globalReturnPolicy, mode = "create" }) => {
     const [activeIndex, setActiveIndex] = useState<number | null>(0);
+    const [isPublishDialogOpen, setIsPublishDialogOpen] = useState(false);
     const router = useRouter();
     const {
         productId,
@@ -50,9 +52,14 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
             return;
         }
 
+        if (mode === "create") {
+            setIsPublishDialogOpen(true);
+            return;
+        }
+
         resetAll();
         setActiveIndex(0);
-        toast.success(mode === "edit" ? "Product changes saved." : "Product setup completed.");
+        toast.success("Product changes saved.");
         router.push("/dashboard/products-list");
     };
 
@@ -245,7 +252,9 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
                     <p className="text-sm font-semibold text-gray-900">Complete product setup</p>
                     <p className="mt-1 text-sm text-gray-600">
                         {fullyConfigured
-                            ? "All required sections are saved. Finish this product and continue to your products list."
+                            ? mode === "edit"
+                                ? "All required sections are saved. Save changes to return to your products list."
+                                : "All required sections are saved. Publish now or schedule the product for later."
                             : "Save all required sections to unlock the final product action."}
                     </p>
                 </div>
@@ -255,9 +264,22 @@ const ProductForm: FC<ProductFormProps> = ({ currencyCode, todayExchangeRate, sh
                     disabled={!fullyConfigured || !productId}
                     className="w-full md:w-auto"
                 >
-                    {mode === "edit" ? "Save Changes" : "Finish Product"}
+                    {mode === "edit" ? "Save Changes" : "Publish Product"}
                 </Button>
             </div>
+
+            {productId ? (
+                <PublishProductDialog
+                    open={isPublishDialogOpen}
+                    onOpenChange={setIsPublishDialogOpen}
+                    productId={productId}
+                    onPublishSuccess={() => {
+                        resetAll();
+                        setActiveIndex(0);
+                        router.push("/dashboard/products-list");
+                    }}
+                />
+            ) : null}
         </div>
     );
 }

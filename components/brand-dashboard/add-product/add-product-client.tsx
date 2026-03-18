@@ -24,12 +24,18 @@ const AddProductClient:FC<AddProductClientProps> = ({
     initialProductData = null,
 }) => {
     const hydrateProductForm = useProductFormStore((state) => state.hydrateProductForm);
+    const resetAll = useProductFormStore((state) => state.resetAll);
 
     useEffect(() => {
+        if (mode === "create") {
+            resetAll();
+            return;
+        }
+
         if (mode === "edit" && initialProductData) {
             hydrateProductForm(initialProductData);
         }
-    }, [hydrateProductForm, initialProductData, mode]);
+    }, [hydrateProductForm, initialProductData, mode, resetAll]);
 
     return (
         <div className="container mx-auto">

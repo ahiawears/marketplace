@@ -1,12 +1,14 @@
 import { createClient } from "@/supabase/server";
+import { toStoredProductGender, type ProductGenderDisplay } from "@/lib/product-gender";
 
 export async function createGender( gender: string) {
     const supabase = await createClient();
     try {
+        const storedGender = toStoredProductGender(gender as ProductGenderDisplay);
         const { data: genderData, error: genderError } = await supabase
             .from("product_gender")
             .upsert({
-                name: gender
+                name: storedGender
             }, {
                 onConflict: 'name'
             })

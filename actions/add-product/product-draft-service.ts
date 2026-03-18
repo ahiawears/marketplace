@@ -364,3 +364,54 @@ export async function saveReturnPolicyDraft(
         returnPolicy: createdPolicy,
     };
 }
+
+export async function publishProductDraft(
+    supabase: any,
+    brandId: string,
+    input: {
+        productId: string;
+        publishMode: "now" | "later";
+        releaseDate?: string;
+    }
+) {
+    await assertBrandOwnsProduct(supabase, brandId, input.productId);
+
+    const updatePayload: {
+        is_published: boolean;
+        release_date: string | null;
+    } = {
+        is_published: false,
+        release_date: null,
+    };
+
+    if (input.publishMode === "now") {
+        updatePayload.is_published = true;
+        updatePayload.release_date = new Date().toISOString();
+    } else {
+        if (!input.releaseDate) {
+            throw new ProductDraftServiceError("Please choose a release date for later publishing.", 400);
+        }
+
+        const scheduledRelease = new Date(`${input.releaseDate}T00:00:00`);
+        if (Number.isNaN(scheduledRelease.getTime())) {
+            throw new ProductDraftServiceError("The selected release date is invalid.", 400);
+        }
+
+        updatePayload.is_published = false;
+        updatePayload.release_date = scheduledRelease.toISOString();
+    }
+
+    const { error } = await supabase
+        .from("products_list")
+        .update(updatePayload)
+        .eq("id", input.productId);
+
+    if (error) {
+        throw error;
+    }
+
+    return {
+        productId: input.productId,
+        ...updatePayload,
+    };
+}

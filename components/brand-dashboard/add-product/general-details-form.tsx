@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 type GeneralDetailsErrors = Partial<Record<keyof GeneralDetailsSchemaType, string>>;
 
-const gender = ["Male", "Female", "Unisex"];
+const gender = ["Men", "Women", "Unisex"];
 
 const seasonTypes = [
     { name: "Spring/Summer", code: "SS" },
@@ -55,23 +55,6 @@ const GeneralDetailsForm: FC<GeneralDetailsFormProps> = ({ onSaveSuccess, mode =
             }
         }
     }, [generalDetails.season, seasonType, seasonYear]);
-
-    // const validateForm = () => {
-    //     const result = GeneralDetailsValidationSchema.safeParse(generalDetails);
-    //     if (!result.success) {
-    //         // Zod's .flatten() method provides a convenient error object structure.
-    //         const newErrors: GeneralDetailsErrors = {};
-    //         for (const key in result.error.flatten().fieldErrors) {
-    //             if (Object.prototype.hasOwnProperty.call(result.error.flatten().fieldErrors, key)) {
-    //                 newErrors[key as keyof GeneralDetailsSchemaType] = result.error.flatten().fieldErrors[key as keyof GeneralDetailsSchemaType]?.[0];
-    //             }
-    //         }
-    //         setErrors(newErrors);
-    //         return false;
-    //     }
-    //     setErrors({});
-    //     return true;
-    // };
 
     const validateForm = () => {
         // Use the hook's validateStep for type-safe validation

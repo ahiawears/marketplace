@@ -12,6 +12,7 @@ import {
     MarketingAndExclusivityTags,
     SustainabilityTags,
 } from "@/lib/variantTags";
+import { toDisplayProductGender } from "@/lib/product-gender";
 
 export interface ProductEditorInitialData {
     productId: string;
@@ -403,7 +404,7 @@ export async function loadProductEditorData(
             category: product.category_id?.name || "",
             subCategory: product.subcategory_id?.name || "",
             tags,
-            gender: (product.gender_id?.name as GeneralDetailsSchemaType["gender"]) || "Unisex",
+            gender: toDisplayProductGender(product.gender_id?.name),
             season: product.season_id?.name || "",
         },
         variantDetails: mappedVariants.length > 0 ? mappedVariants : [],
