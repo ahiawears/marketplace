@@ -23,6 +23,12 @@ interface StorefrontProductFilters {
   gender?: string;
 }
 
+export interface StorefrontProductSearchResult {
+  products: StorefrontProductCardData[];
+  matchedCategories: string[];
+  exactCategoryMatch: string | null;
+}
+
 type ProductRow = {
   id: string;
   name: string | null;
@@ -52,22 +58,26 @@ type ProductRow = {
         price: number | null;
         status: string | null;
         available_date: string | null;
-        color_id:
-          | {
-              name: string | null;
-              hex_code: string | null;
-            }
-          | {
-              name: string | null;
-              hex_code: string | null;
-            }[]
-          | null;
         product_images:
           | {
               image_url: string | null;
               is_main: boolean | null;
             }[]
           | null;
+      }[]
+    | null;
+};
+
+type VariantColorRow = {
+  product_variant_id: string | null;
+  color_id:
+    | {
+        name: string | null;
+        hex_code: string | null;
+      }
+    | {
+        name: string | null;
+        hex_code: string | null;
       }[]
     | null;
 };
@@ -124,7 +134,7 @@ function readColor(
 
 export async function getStorefrontProducts(
   filters: StorefrontProductFilters = {}
-): Promise<StorefrontProductCardData[]> {
+): Promise<StorefrontProductSearchResult> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -143,7 +153,6 @@ export async function getStorefrontProducts(
         price,
         status,
         available_date,
-        color_id(name, hex_code),
         product_images(image_url, is_main)
       )
     `)
@@ -158,7 +167,38 @@ export async function getStorefrontProducts(
   const normalizedGender = filters.gender?.trim().toLowerCase() || "";
   const now = new Date();
 
-  const flattened = ((data || []) as ProductRow[]).flatMap((product) => {
+  const productRows = (data || []) as ProductRow[];
+  const variantIds = productRows.flatMap((product) =>
+    (product.product_variants || []).map((variant) => variant.id)
+  );
+
+  const { data: colorData, error: colorError } =
+    variantIds.length > 0
+      ? await supabase
+          .from("product_variant_colors")
+          .select("product_variant_id, color_id(name, hex_code)")
+          .in("product_variant_id", variantIds)
+      : { data: [], error: null };
+
+  if (colorError) {
+    throw new Error(colorError.message || "Failed to load storefront variant colors.");
+  }
+
+  const colorsByVariant = new Map<string, ReturnType<typeof readColor>>();
+  for (const row of (colorData || []) as VariantColorRow[]) {
+    if (!row.product_variant_id) {
+      continue;
+    }
+
+    const existing = colorsByVariant.get(row.product_variant_id);
+    if (existing?.name) {
+      continue;
+    }
+
+    colorsByVariant.set(row.product_variant_id, readColor(row.color_id));
+  }
+
+  const flattened = productRows.flatMap((product) => {
     const productName = product.name || "Untitled Product";
     const description = product.product_description || "";
     const categoryName = readRelationName(product.category_id);
@@ -190,7 +230,7 @@ export async function getStorefrontProducts(
           (variant.product_images || []).find((image) => image.is_main)?.image_url ||
           images[0] ||
           null;
-        const color = readColor(variant.color_id);
+        const color = colorsByVariant.get(variant.id) || { name: "", hex: "" };
 
         return {
           variantId: variant.id,
@@ -211,39 +251,115 @@ export async function getStorefrontProducts(
       });
   });
 
-  return flattened
+  const availableCategories = Array.from(
+    new Set(
+      flattened
+        .map((product) => product.categoryName.trim())
+        .filter(Boolean)
+    )
+  ).sort((a, b) => a.localeCompare(b));
+
+  const matchedCategories = normalizedQuery
+    ? availableCategories.filter((categoryName) =>
+        categoryName.toLowerCase().includes(normalizedQuery)
+      )
+    : normalizedCategory
+      ? availableCategories.filter(
+          (categoryName) => categoryName.toLowerCase() === normalizedCategory
+        )
+      : [];
+
+  const exactCategoryMatch =
+    matchedCategories.find(
+      (categoryName) => categoryName.toLowerCase() === normalizedQuery
+    ) ||
+    availableCategories.find(
+      (categoryName) => categoryName.toLowerCase() === normalizedCategory
+    ) ||
+    null;
+
+  const scored = flattened
     .filter((product) => {
+      const categoryValue = product.categoryName.toLowerCase();
+      const productValue = product.productName.toLowerCase();
+      const variantValue = product.variantName.toLowerCase();
+      const genderValue = product.genderName.toLowerCase();
+
       const matchesCategory =
-        !normalizedCategory ||
-        product.categoryName.toLowerCase() === normalizedCategory;
+        !normalizedCategory || categoryValue === normalizedCategory;
 
       const matchesGender =
-        !normalizedGender ||
-        product.genderName.toLowerCase() === normalizedGender;
+        !normalizedGender || genderValue === normalizedGender;
 
       const matchesQuery =
         !normalizedQuery ||
         [
-          product.productName,
-          product.variantName,
-          product.categoryName,
-          product.genderName,
-          product.colorName,
-          product.sku,
-          product.productCode,
-          product.description,
-        ]
-          .filter(Boolean)
-          .some((value) => value.toLowerCase().includes(normalizedQuery));
+          productValue,
+          variantValue,
+          categoryValue,
+          genderValue,
+          product.colorName.toLowerCase(),
+          product.sku.toLowerCase(),
+          product.productCode.toLowerCase(),
+          product.description.toLowerCase(),
+        ].some((value) => value.includes(normalizedQuery));
 
       return matchesCategory && matchesGender && matchesQuery;
     })
+    .map((product) => {
+      const productValue = product.productName.toLowerCase();
+      const variantValue = product.variantName.toLowerCase();
+      const categoryValue = product.categoryName.toLowerCase();
+      const colorValue = product.colorName.toLowerCase();
+      const descriptionValue = product.description.toLowerCase();
+      const skuValue = product.sku.toLowerCase();
+      const productCodeValue = product.productCode.toLowerCase();
+
+      let score = 0;
+
+      if (normalizedCategory && categoryValue === normalizedCategory) {
+        score += 180;
+      }
+
+      if (normalizedQuery) {
+        if (categoryValue === normalizedQuery) score += 160;
+        else if (categoryValue.startsWith(normalizedQuery)) score += 110;
+        else if (categoryValue.includes(normalizedQuery)) score += 80;
+
+        if (productValue === normalizedQuery) score += 150;
+        else if (productValue.startsWith(normalizedQuery)) score += 120;
+        else if (productValue.includes(normalizedQuery)) score += 95;
+
+        if (variantValue === normalizedQuery) score += 140;
+        else if (variantValue.startsWith(normalizedQuery)) score += 105;
+        else if (variantValue.includes(normalizedQuery)) score += 85;
+
+        if (colorValue.includes(normalizedQuery)) score += 35;
+        if (skuValue.includes(normalizedQuery)) score += 25;
+        if (productCodeValue.includes(normalizedQuery)) score += 25;
+        if (descriptionValue.includes(normalizedQuery)) score += 10;
+      }
+
+      return { product, score };
+    })
     .sort((a, b) => {
-      const productCompare = a.productName.localeCompare(b.productName);
+      if (b.score !== a.score) {
+        return b.score - a.score;
+      }
+
+      const productCompare = a.product.productName.localeCompare(b.product.productName);
       if (productCompare !== 0) {
         return productCompare;
       }
 
-      return a.variantName.localeCompare(b.variantName);
+      return a.product.variantName.localeCompare(b.product.variantName);
     });
+
+  const products = scored.map((entry) => entry.product);
+
+  return {
+    products,
+    matchedCategories,
+    exactCategoryMatch,
+  };
 }

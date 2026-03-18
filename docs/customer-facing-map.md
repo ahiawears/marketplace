@@ -258,6 +258,9 @@ Priority:
 
 ### Critical
 
+- add a clear `Save as draft / Publish product` control to the shared add/edit product flow so storefront visibility matches the real `products_list.is_published` gate
+- show publish state clearly in products list and allow controlled publish/unpublish from management views
+- keep storefront search/listing logic tied to `is_published`, active variant status, and valid release timing
 - Finish checkout on `/place-order`
 - Make `/products` route consistent with `/product/[id]`
 - Verify add-to-cart works end to end from listing and product detail

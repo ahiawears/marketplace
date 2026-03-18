@@ -12,6 +12,8 @@ import { StorefrontProductCardData } from "@/components/customer-facing-componen
 
 interface StorefrontProductsClientProps {
   initialProducts: StorefrontProductCardData[];
+  matchedCategories: string[];
+  exactCategoryMatch: string | null;
   initialSavedVariantIds: string[];
   initialQuery: string;
   initialCategory: string;
@@ -22,6 +24,8 @@ interface StorefrontProductsClientProps {
 
 export function StorefrontProductsClient({
   initialProducts,
+  matchedCategories,
+  exactCategoryMatch,
   initialSavedVariantIds,
   initialQuery,
   initialCategory,
@@ -34,12 +38,16 @@ export function StorefrontProductsClient({
   const [, startSavingTransition] = useTransition();
 
   const resultsLabel = useMemo(() => {
-    if (initialQuery) {
-      return `Showing results for "${initialQuery}"`;
-    }
-
     if (initialCategory) {
       return `Browsing ${initialCategory}`;
+    }
+
+    if (initialQuery && exactCategoryMatch) {
+      return `Showing results for "${initialQuery}" across ${exactCategoryMatch}`;
+    }
+
+    if (initialQuery) {
+      return `Showing results for "${initialQuery}"`;
     }
 
     if (initialGender) {
@@ -47,7 +55,7 @@ export function StorefrontProductsClient({
     }
 
     return "Browse the catalog";
-  }, [initialCategory, initialGender, initialQuery]);
+  }, [exactCategoryMatch, initialCategory, initialGender, initialQuery]);
 
   const handleToggleSaved = (variantId: string) => {
     const currentlySaved = savedVariantIds.includes(variantId);
@@ -80,13 +88,38 @@ export function StorefrontProductsClient({
     <>
       <div className="space-y-8">
         <section className="border-2 bg-white p-6 sm:p-8">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-3xl space-y-2">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl space-y-3">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">Storefront</p>
               <h1 className="text-3xl font-semibold tracking-tight text-stone-900">Products</h1>
               <p className="text-sm leading-6 text-stone-600 sm:text-base">
                 {resultsLabel}. Explore live variants, open the full product detail page, or add a size directly to your cart.
               </p>
+              {matchedCategories.length > 0 && !initialCategory ? (
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <span className="self-center text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
+                    Matched categories
+                  </span>
+                  {matchedCategories.slice(0, 6).map((category) => {
+                    const params = new URLSearchParams();
+                    params.set("cat", category);
+                    if (initialGender) {
+                      params.set("gender", initialGender);
+                    }
+
+                    return (
+                      <Button
+                        key={category}
+                        asChild
+                        variant="outline"
+                        className="h-auto rounded-none border-2 px-3 py-2 text-xs uppercase tracking-[0.18em]"
+                      >
+                        <Link href={`/products?${params.toString()}`}>{category}</Link>
+                      </Button>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
 
             {(initialQuery || initialCategory || initialGender) && (

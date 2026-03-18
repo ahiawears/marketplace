@@ -7,7 +7,7 @@ export type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
 };
 
 const SearchInput = React.forwardRef<HTMLInputElement, InputProps>(
-    ({ className, type, onSearch, ...props }, ref) => {
+    ({ className, type, onSearch, onKeyDown, ...props }, ref) => {
         return (
             <div className="relative w-11/12">
                 <input
@@ -17,6 +17,14 @@ const SearchInput = React.forwardRef<HTMLInputElement, InputProps>(
                         className
                     )}
                     ref={ref}
+                    onKeyDown={(event) => {
+                        onKeyDown?.(event);
+
+                        if (!event.defaultPrevented && event.key === "Enter") {
+                            event.preventDefault();
+                            onSearch?.();
+                        }
+                    }}
                     {...props}
                 />
 

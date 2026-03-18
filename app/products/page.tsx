@@ -1,10 +1,7 @@
 import { createClient } from "@/supabase/server";
 import { getServerAnonymousId } from "@/lib/anon_user/server";
 import { getStorefrontProducts } from "@/actions/storefront/get-storefront-products";
-import { getStorefrontNavigation } from "@/actions/storefront/get-storefront-navigation";
 import { StorefrontProductsClient } from "@/components/customer-facing-components/storefront/storefront-products-client";
-import { StorefrontHeader } from "@/components/customer-facing-components/storefront/storefront-header";
-import { StorefrontFooter } from "@/components/customer-facing-components/storefront/storefront-footer";
 
 interface ProductsPageProps {
   searchParams?: Promise<{
@@ -30,9 +27,8 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const serverUserIdentifier = userId || anonymousId || "";
   const isAnonymous = !userId;
 
-  const [products, categories, savedListResult] = await Promise.all([
+  const [products, savedListResult] = await Promise.all([
     getStorefrontProducts({ query, category, gender }),
-    getStorefrontNavigation(),
     serverUserIdentifier
       ? supabase
           .from("saved_list")
@@ -50,10 +46,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <StorefrontHeader genderContext={gender === "men" || gender === "women" ? gender : undefined} />
       <div className="mx-auto w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-8">
         <StorefrontProductsClient
-          initialProducts={products}
+          initialProducts={products.products}
+          matchedCategories={products.matchedCategories}
+          exactCategoryMatch={products.exactCategoryMatch}
           initialSavedVariantIds={savedVariantIds}
           initialQuery={query}
           initialCategory={category}
@@ -62,7 +59,6 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           isAnonymous={isAnonymous}
         />
       </div>
-      <StorefrontFooter categoryLinks={categories} />
     </div>
   );
 }

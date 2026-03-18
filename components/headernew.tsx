@@ -16,7 +16,7 @@ import {
   UserActionsDropdownMobile,
 } from "./user-actions-dropdown";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SearchInput } from "./ui/search-input";
 
 
@@ -25,12 +25,26 @@ export const HeaderNew = ({ user }: { user: any }) => {
     const [isSearchVisible, setIsSearchVisible] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const router = useRouter();
+    const pathname = usePathname();
+    const searchParams = useSearchParams();
 
     const handleSearch = () => {
+        const trimmedQuery = searchQuery.trim();
 
-    if (searchQuery.trim()) 
-        {
-            router.push(`/products?query=${encodeURIComponent(searchQuery)}`);
+        if (trimmedQuery) {
+            const params = new URLSearchParams({ query: trimmedQuery });
+            const scopedGender =
+                pathname.includes("/shop/women")
+                    ? "women"
+                    : pathname.includes("/shop/men")
+                      ? "men"
+                      : searchParams.get("gender");
+
+            if (scopedGender === "women" || scopedGender === "men") {
+                params.set("gender", scopedGender);
+            }
+
+            router.push(`/products?${params.toString()}`);
         }
     };
 

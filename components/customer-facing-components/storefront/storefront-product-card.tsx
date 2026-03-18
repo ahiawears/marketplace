@@ -37,7 +37,7 @@ export function StorefrontProductCard({
             src={product.imageUrl}
             alt={product.variantName}
             fill
-            className="object-cover transition duration-300 group-hover:scale-[1.02]"
+            className="object-cover transition duration-300 group-hover:scale-[1.02] border-b-2"
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
           />
         ) : (
@@ -47,55 +47,31 @@ export function StorefrontProductCard({
         )}
       </Link>
 
-      <div className="flex flex-1 flex-col gap-4 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
-              {product.categoryName || "Catalog"}
-            </p>
-            <div className="space-y-1">
-              <Link href={`/product/${product.variantId}`} className="block">
-                <h2 className="text-base font-semibold leading-6 text-stone-900">
-                  {product.variantName}
-                </h2>
-              </Link>
-              {product.variantName !== product.productName && (
-                <p className="text-sm text-stone-500">{product.productName}</p>
-              )}
-            </div>
+      <div className="flex flex-1 flex-col gap-2 py-2 px-3">
+        <div className="flex items-center justify-between gap-3">
+          <Link href={`/product/${product.variantId}`} className="block min-w-0 flex-1">
+            <h2 className="line-clamp-2 text-base font-semibold leading-6 text-stone-900">
+              {product.variantName}
+            </h2>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => onToggleSaved(product.variantId)}
+              className="px-2 transition hover:border-stone-900"
+              aria-label={isSaved ? "Remove from saved items" : "Save item"}
+            >
+              <Heart className={cn("h-5 w-5", isSaved && "fill-current text-red-500")} />
+            </button>
+            <button type="button" onClick={() => onQuickAdd(product)} className="gap-2">
+              <ShoppingBag className="h-5 w-5" />
+            </button>
           </div>
-
-          <button
-            type="button"
-            onClick={() => onToggleSaved(product.variantId)}
-            className="rounded-none border-2 border-stone-300 p-2 text-stone-900 transition hover:border-stone-900"
-            aria-label={isSaved ? "Remove from saved items" : "Save item"}
-          >
-            <Heart className={cn("h-4 w-4", isSaved && "fill-current text-red-500")} />
-          </button>
         </div>
 
-        <div className="flex items-center gap-2 text-sm text-stone-600">
-          {product.colorHex ? (
-            <span
-              className="h-3.5 w-3.5 border border-stone-300"
-              style={{ backgroundColor: product.colorHex }}
-              aria-hidden="true"
-            />
-          ) : null}
-          <span>{product.colorName || "Variant color"}</span>
-        </div>
-
-        <p className="line-clamp-2 text-sm leading-6 text-stone-600">
-          {product.description || "Explore this item and view full sizing, images, and purchase details."}
-        </p>
-
-        <div className="mt-auto flex items-center justify-between gap-3">
-          <p className="text-lg font-semibold text-stone-900">{formatPrice(product.price)}</p>
-          <Button type="button" onClick={() => onQuickAdd(product)} className="gap-2 rounded-none border-2">
-            <ShoppingBag className="h-4 w-4" />
-            Quick add
-          </Button>
+        <div>
+          <p className="text-md font-medium text-stone-900">{formatPrice(product.price)}</p>
         </div>
       </div>
     </article>
