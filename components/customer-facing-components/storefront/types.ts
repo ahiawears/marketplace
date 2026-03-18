@@ -1,5 +1,6 @@
 export interface StorefrontProductCardData {
   variantId: string;
+  variantSlug: string;
   productId: string;
   productName: string;
   variantName: string;

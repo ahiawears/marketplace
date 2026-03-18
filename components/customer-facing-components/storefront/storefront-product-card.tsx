@@ -29,7 +29,7 @@ export function StorefrontProductCard({
 }: StorefrontProductCardProps) {
   return (
     <article className="group flex h-full flex-col overflow-hidden border-2 bg-white">
-      <Link href={`/product/${product.variantId}`} className="relative block aspect-[4/5] overflow-hidden bg-stone-100">
+      <Link href={`/product/${product.variantSlug}`} className="relative block aspect-[4/5] overflow-hidden bg-stone-100">
         {product.imageUrl ? (
           <Image
             src={product.imageUrl}
@@ -47,7 +47,7 @@ export function StorefrontProductCard({
 
       <div className="flex flex-1 flex-col gap-2 py-2 px-3">
         <div className="flex items-center justify-between gap-3">
-          <Link href={`/product/${product.variantId}`} className="block min-w-0 flex-1">
+          <Link href={`/product/${product.variantSlug}`} className="block min-w-0 flex-1">
             <h2 className="line-clamp-2 text-base font-semibold leading-6 text-stone-900">
               {product.variantName}
             </h2>

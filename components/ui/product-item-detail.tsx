@@ -41,7 +41,7 @@ interface VariantData {
   id: string;
   main_product_id: string;
   name: string;
-  color_id: Color;
+  color_id: Color | null;
   sku: string;
   price: number;
   base_currency_price: number;
@@ -233,7 +233,7 @@ const ProductItem: React.FC<ProductItemProps> = ({
                         {processedVariantData.product_images.map((image) => (
                             <div
                                 key={image.id}
-                                className={`flex-shrink-0 cursor-pointer border-2 rounded-md overflow-hidden relative h-[80px] w-[80px] ${
+                                className={`flex-shrink-0 cursor-pointer border-2 overflow-hidden relative h-[80px] w-[80px] ${
                                 selectedImage === image.image_url 
                                     ? 'border-2' 
                                     : 'border-transparent hover:border-gray-400'
@@ -264,13 +264,13 @@ const ProductItem: React.FC<ProductItemProps> = ({
                                     width={500}
                                     priority
                                     style={{ objectFit: "contain" }}
-                                    className="rounded-lg border-2"
+                                    className="border-2"
                                     sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
                                     unoptimized={true}
                                 />
                             </div>
                         ) : (
-                            <div className="w-full aspect-square flex items-center justify-center bg-gray-100 rounded-lg">
+                            <div className="w-full aspect-square flex items-center justify-center bg-gray-100">
                                 <span>No image available</span>
                             </div>
                         )}
@@ -278,7 +278,7 @@ const ProductItem: React.FC<ProductItemProps> = ({
                 </div>
 
                 <div className="w-full lg:w-2/5">
-                    <div className="px-6 bg-white rounded-lg shadow-lg py-4 border-2">
+                    <div className="px-6 bg-white shadow-lg py-4 border-2">
                         <h1 className="text-2xl font-bold mb-4">{processedVariantData.name}</h1>
                         
                         <div className="mb-4">
@@ -334,7 +334,7 @@ const ProductItem: React.FC<ProductItemProps> = ({
                             <button 
                                 onClick={handleLikeClicked}
                                 disabled={isLikePending}
-                                className="w-[28px] flex justify-center py-2 hover:cursor-pointer transition-colors duration-300 ease-in-out rounded-full" 
+                                className="w-[28px] flex justify-center py-2 hover:cursor-pointer transition-colors duration-300 ease-in-out" 
                             >
                                 {isSaved ? (
                                     <AiFillHeart size={26} className="text-black outline-2 hover:opacity-100"/>

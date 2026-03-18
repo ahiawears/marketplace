@@ -3,6 +3,7 @@ import { toStoredGenderScope } from "@/lib/product-gender";
 
 export interface StorefrontProductCardData {
   variantId: string;
+  variantSlug: string;
   productId: string;
   productName: string;
   variantName: string;
@@ -57,6 +58,7 @@ type ProductRow = {
         name: string | null;
         sku: string | null;
         product_code: string | null;
+        slug: string | null;
         price: number | null;
         status: string | null;
         available_date: string | null;
@@ -153,6 +155,7 @@ export async function getStorefrontProducts(
         name,
         sku,
         product_code,
+        slug,
         price,
         status,
         available_date,
@@ -247,6 +250,7 @@ export async function getStorefrontProducts(
 
         return {
           variantId: variant.id,
+          variantSlug: variant.slug || variant.id,
           productId: product.id,
           productName,
           variantName: variant.name || productName,
