@@ -1,6 +1,9 @@
 "use server";
 
 import { createClient } from "@/supabase/server";
+import { getPreferredStorefrontCurrency } from "@/lib/storefront-currency.server";
+import { GetExchangeRates } from "@/hooks/get-exchange-rate";
+import { convertBaseCurrencyPrice } from "@/lib/storefront-pricing";
 
 // Define a more specific type for the input data
 interface CartItemData {
@@ -23,10 +26,12 @@ export const upsertCart = async (data: CartItemData): Promise<CartResult> => {
   const supabase = await createClient();
 
   try {
+    const selectedCurrency = await getPreferredStorefrontCurrency();
+
     // Step 1: Get or create cart
     const { data: cartData, error: cartError } = await supabase
       .from('carts')
-      .select('id, total_price')
+      .select('id, total_price, currency_code, exchange_rate_used, subtotal_base, subtotal_customer_currency')
       .eq(data.isAnonymous ? 'anonymous_id' : 'user_id', data.userId)
       .maybeSingle();
 
@@ -35,7 +40,13 @@ export const upsertCart = async (data: CartItemData): Promise<CartResult> => {
       return { success: false, error: "Error fetching cart: " + cartError.message };
     }
     let cartId = cartData?.id;
-    let currentTotal = cartData?.total_price || 0;
+    let currentTotal = Number(cartData?.total_price || 0);
+    let currentSubtotalBase = Number(cartData?.subtotal_base || 0);
+    let cartCurrencyCode = cartData?.currency_code || selectedCurrency;
+    let cartExchangeRate = Number(
+      cartData?.exchange_rate_used ||
+      (cartCurrencyCode === "USD" ? 1 : await GetExchangeRates("USD", cartCurrencyCode))
+    );
 
     // Create new cart if it doesn't exist
     if (!cartId) {
@@ -43,9 +54,13 @@ export const upsertCart = async (data: CartItemData): Promise<CartResult> => {
         .from('carts')
         .insert({
           [data.isAnonymous ? 'anonymous_id' : 'user_id']: data.userId,
-          total_price: 0
+          total_price: 0,
+          currency_code: cartCurrencyCode,
+          exchange_rate_used: cartExchangeRate,
+          subtotal_base: 0,
+          subtotal_customer_currency: 0,
         })
-        .select('id, total_price')
+        .select('id, total_price, currency_code, exchange_rate_used, subtotal_base, subtotal_customer_currency')
         .single();
 
       if (newCartError) {
@@ -54,12 +69,22 @@ export const upsertCart = async (data: CartItemData): Promise<CartResult> => {
       }
       cartId = newCart.id;
       currentTotal = 0;
+      currentSubtotalBase = 0;
+      cartCurrencyCode = newCart.currency_code || cartCurrencyCode;
+      cartExchangeRate = Number(newCart.exchange_rate_used || cartExchangeRate);
     }
 
-    // Step 2: Get product price
+    // Step 2: Get product + snapshot details
     const { data: productData, error: productError } = await supabase
       .from('product_variants')
-      .select('price, base_currency_price')
+      .select(`
+        id,
+        name,
+        sku,
+        base_currency_price,
+        main_product_id(name),
+        product_images(image_url, is_main)
+      `)
       .eq('id', data.variantId)
       .single();
 
@@ -67,8 +92,34 @@ export const upsertCart = async (data: CartItemData): Promise<CartResult> => {
       console.error("Supabase Error (product price):", productError.message);
       return { success: false, error: "Error fetching product data: " + productError.message };
     }
-    const price = productData.base_currency_price || 0;
+
+    const { data: sizeData, error: sizeError } = await supabase
+      .from("product_sizes")
+      .select("id, size_id(name)")
+      .eq("id", data.sizeId)
+      .single();
+
+    if (sizeError || !sizeData) {
+      console.error("Supabase Error (size snapshot):", sizeError?.message);
+      return { success: false, error: "Error fetching size details: " + (sizeError?.message || "Size not found.") };
+    }
+
+    const normalizedProductName = Array.isArray(productData.main_product_id)
+      ? productData.main_product_id[0]?.name
+      : productData.main_product_id?.name;
+    const normalizedSizeName = Array.isArray(sizeData.size_id)
+      ? sizeData.size_id[0]?.name
+      : sizeData.size_id?.name;
+    const mainImage =
+      (productData.product_images || []).find((image: { image_url: string | null; is_main: boolean | null }) => image.is_main)?.image_url ||
+      productData.product_images?.[0]?.image_url ||
+      null;
+
+    const unitPriceBase = Number(productData.base_currency_price || 0);
+    const unitPriceCustomerCurrency = convertBaseCurrencyPrice(unitPriceBase, cartExchangeRate) || 0;
+    const price = unitPriceCustomerCurrency;
     const priceChange = price * data.quantity;
+    const basePriceChange = unitPriceBase * data.quantity;
 
     // Step 3: Check for existing cart item
     const { data: existingItem, error: itemError } = await supabase
@@ -92,6 +143,16 @@ export const upsertCart = async (data: CartItemData): Promise<CartResult> => {
         .from('cart_items')
         .update({
           quantity: existingItem.quantity + data.quantity,
+          price,
+          unit_price_base: unitPriceBase,
+          unit_price_customer_currency: unitPriceCustomerCurrency,
+          customer_currency: cartCurrencyCode,
+          exchange_rate_used: cartExchangeRate,
+          product_name_snapshot: normalizedProductName || null,
+          variant_name_snapshot: productData.name || null,
+          sku_snapshot: productData.sku || null,
+          size_name_snapshot: normalizedSizeName || null,
+          image_url_snapshot: mainImage,
           updated_at: now
         })
         .eq('id', existingItem.id);
@@ -108,6 +169,15 @@ export const upsertCart = async (data: CartItemData): Promise<CartResult> => {
           size_id: data.sizeId,
           quantity: data.quantity,
           price,
+          unit_price_base: unitPriceBase,
+          unit_price_customer_currency: unitPriceCustomerCurrency,
+          customer_currency: cartCurrencyCode,
+          exchange_rate_used: cartExchangeRate,
+          product_name_snapshot: normalizedProductName || null,
+          variant_name_snapshot: productData.name || null,
+          sku_snapshot: productData.sku || null,
+          size_name_snapshot: normalizedSizeName || null,
+          image_url_snapshot: mainImage,
           cart_id: cartId,
           created_at: now
         });
@@ -120,10 +190,15 @@ export const upsertCart = async (data: CartItemData): Promise<CartResult> => {
 
     // Step 5: Update cart total
     const newTotal = currentTotal + priceChange;
+    const newSubtotalBase = currentSubtotalBase + basePriceChange;
     const { error: updateCartError } = await supabase
       .from('carts')
       .update({
         total_price: newTotal,
+        currency_code: cartCurrencyCode,
+        exchange_rate_used: cartExchangeRate,
+        subtotal_base: newSubtotalBase,
+        subtotal_customer_currency: newTotal,
         updated_at: now
       })
       .eq('id', cartId);

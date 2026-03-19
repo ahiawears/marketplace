@@ -33,7 +33,7 @@ export const getCartItems = async (isAnonymous: boolean, userId: string) => {
         // Fetch cart items and nested product/size info.
         const { data: cartItems, error: cartItemsError } = await supabase
             .from('cart_items')
-            .select('quantity, size_id(name), price, product_id(id, name), id')
+            .select('quantity, price, product_name_snapshot, variant_name_snapshot, size_name_snapshot, image_url_snapshot, product_id(id, name), id, size_id(id, size_id(name))')
             .eq('cart_id', cartId);
 
         if (cartItemsError) {
@@ -85,11 +85,19 @@ export const getCartItems = async (isAnonymous: boolean, userId: string) => {
         // Map the cart items with their corresponding main images and colors.
         const productsWithImages = cartItems.map((item: any) => {
             const variantId = item.product_id.id;
+            const resolvedSizeRelation = Array.isArray(item.size_id)
+                ? item.size_id[0]
+                : item.size_id;
+            const resolvedSizeName = Array.isArray(resolvedSizeRelation?.size_id)
+                ? resolvedSizeRelation?.size_id[0]?.name
+                : resolvedSizeRelation?.size_id?.name;
+
             return {
                 ...item,
-                product_name: item.product_id.name,
-                main_image_url: imageMap.get(variantId) || null,
+                product_name: item.variant_name_snapshot || item.product_name_snapshot || item.product_id.name,
+                main_image_url: item.image_url_snapshot || imageMap.get(variantId) || null,
                 variant_color: colorMap.get(variantId) || null, // <-- ADDED: Getting the color object from the new map
+                size_name: item.size_name_snapshot || resolvedSizeName || "Unknown",
             };
         });
 

@@ -27,9 +27,7 @@ interface CartItemData {
         name: string;
         hex: string;
     };
-    size_id: {
-        name: string;
-    };
+    size_name: string;
     quantity: number;
     price: number;
 }
@@ -304,4 +302,3 @@ export default async function CartPage() {
 //         </div>
 //     );
 // };
-

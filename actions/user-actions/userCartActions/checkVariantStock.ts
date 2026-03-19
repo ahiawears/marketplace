@@ -35,7 +35,7 @@ export const checkVariantStock = async (
     // Check stock
     const { data: variantData, error: variantError } = await supabase
       .from('product_sizes')
-      .select('quantity')
+      .select('id, quantity')
       .eq('product_id', variantId)
       .eq('size_id', sizeData.id)
       .single();
@@ -49,7 +49,7 @@ export const checkVariantStock = async (
       return { success: false, sizeId: null, error: "Insufficient stock." };
     }
 
-    return { success: true, sizeId: sizeData.id };
+    return { success: true, sizeId: variantData.id };
     
   } catch (error) {
     console.error("Internal server error in checkVariantStock:", error);

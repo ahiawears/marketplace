@@ -16,7 +16,7 @@ export const updateCartItemQuantity = async (
         // 1. Get the cart with explicit type
         const { data: cart, error: cartError } = await supabase
             .from('carts')
-            .select('id, total_price')
+            .select('id, total_price, subtotal_base, subtotal_customer_currency')
             .eq(isAnonymous ? 'anonymous_id' : 'user_id', userId)
             .single();
 
@@ -27,7 +27,7 @@ export const updateCartItemQuantity = async (
         // 2. Get current item details - now we expect price to be unit price
         const { data: item, error: itemError } = await supabase
             .from('cart_items')
-            .select('quantity, price')
+            .select('quantity, price, unit_price_base, unit_price_customer_currency')
             .eq('id', cartItemId)
             .eq('cart_id', cart.id)
             .single();
@@ -37,11 +37,16 @@ export const updateCartItemQuantity = async (
         }
 
         // 3. Calculate new values - simpler now since price is unit price
-        const unitPrice = item.price; // Now price is already the unit price
+        const unitPrice = Number(item.unit_price_customer_currency || item.price || 0);
+        const unitPriceBase = Number(item.unit_price_base || 0);
         const previousItemTotal = unitPrice * item.quantity;
         const newItemTotal = unitPrice * qty;
         const totalDifference = newItemTotal - previousItemTotal;
-        const newCartTotal = (cart.total_price || 0) + totalDifference;
+        const previousItemTotalBase = unitPriceBase * item.quantity;
+        const newItemTotalBase = unitPriceBase * qty;
+        const totalDifferenceBase = newItemTotalBase - previousItemTotalBase;
+        const newCartTotal = Number(cart.total_price || 0) + totalDifference;
+        const newSubtotalBase = Number(cart.subtotal_base || 0) + totalDifferenceBase;
 
         // 4. Update only quantity (price remains the unit price)
         const { error: updateError } = await supabase
@@ -59,6 +64,8 @@ export const updateCartItemQuantity = async (
             .from('carts')
             .update({
                 total_price: newCartTotal,
+                subtotal_customer_currency: newCartTotal,
+                subtotal_base: newSubtotalBase,
                 updated_at: new Date().toISOString()
             })
             .eq('id', cart.id);
@@ -91,7 +98,7 @@ export const deleteCartItem = async ( id: string, userId: string, isAnonymous: b
         //fetch the price, quantity and the cart id of the cart item
         const { data: itemData, error: itemDataError } = await supabase
             .from('cart_items')
-            .select('quantity, price, cart_id')
+            .select('quantity, price, unit_price_base, unit_price_customer_currency, cart_id')
             .eq('id', id)
             .single();
 
@@ -109,7 +116,7 @@ export const deleteCartItem = async ( id: string, userId: string, isAnonymous: b
         //get the cart total price
         const {data: cartTotalPrice, error: cartTotalPriceError} = await supabase
             .from('carts')
-            .select('total_price')
+            .select('total_price, subtotal_base, subtotal_customer_currency')
             .eq('id', cart_id)
             .eq(isAnonymous ? 'anonymous_id' : 'user_id', userId)
             .single();
@@ -124,10 +131,12 @@ export const deleteCartItem = async ( id: string, userId: string, isAnonymous: b
             throw new Error("Failed to get the ccart total price");
         }
 
-        const totalPrice = cartTotalPrice.total_price;
+        const totalPrice = Number(cartTotalPrice.total_price || 0);
+        const subtotalBase = Number(cartTotalPrice.subtotal_base || 0);
 
         //calculate how much the item cost in the main cart
-        const itemTotalCost = price * quantity;
+        const itemTotalCost = Number(itemData.unit_price_customer_currency || price || 0) * quantity;
+        const itemTotalCostBase = Number(itemData.unit_price_base || 0) * quantity;
 
         //delete the item from cart_items
         const { error: deleteError } = await supabase
@@ -148,6 +157,8 @@ export const deleteCartItem = async ( id: string, userId: string, isAnonymous: b
             .from('carts')
             .update({
                 total_price: newTotal,
+                subtotal_customer_currency: newTotal,
+                subtotal_base: subtotalBase - itemTotalCostBase,
                 updated_at: new Date().toISOString()
             })
             .eq('id', cart_id)
@@ -171,4 +182,3 @@ export const deleteCartItem = async ( id: string, userId: string, isAnonymous: b
         };
     } 
 };
-

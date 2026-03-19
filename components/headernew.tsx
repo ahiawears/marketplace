@@ -245,10 +245,10 @@ export const HeaderNew = ({ user, selectedCurrency }: { user: any; selectedCurre
                     </div>
                     {!user ? (
                         <div className="md:flex items-center gap-4 hidden">
-                            <Button variant={"outline"} asChild size={"lg"}>
+                            <Button variant={"outline"} asChild size={"lg"} className="border-2 rounded-none">
                                 <Link href={"/log-in"}>Login</Link>
                             </Button>
-                            <Button size={"lg"}>
+                            <Button size={"lg"} className="border-2 rounded-none">
                                 <Link href={"/signup"}>Get Started</Link>
                             </Button>
                         </div>

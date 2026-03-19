@@ -21,9 +21,7 @@ interface CartItemData {
         name: string;
         hex: string;
     };
-    size_id: {
-        name: string;
-    };
+    size_name: string;
     quantity: number;
     price: number;
 }
@@ -48,7 +46,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, serverUserIdentifier, isAnony
         }
         startQuantityTransition(async () => {
             try {
-                const stockCheck = await checkVariantStock(item.product_id.id, item.size_id.name, qty);
+                const stockCheck = await checkVariantStock(item.product_id.id, item.size_name, qty);
                 if (!stockCheck.success) {
                     console.error("Failed to check variant stock:", stockCheck.error);
                 }
@@ -119,7 +117,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, serverUserIdentifier, isAnony
                     {/* Size */}
                     <div className="mt-1">
                         <span className="text-sm text-gray-600 mr-2">Size:</span>
-                        <span className="text-sm">{item.size_id.name}</span>
+                        <span className="text-sm">{item.size_name}</span>
                     </div>
                 </div>
 
