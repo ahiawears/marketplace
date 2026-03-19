@@ -38,6 +38,13 @@ interface Tag {
   };
 }
 
+interface RelatedVariant {
+  id: string;
+  slug: string;
+  name: string;
+  image_url: string | null;
+}
+
 type TagRow = {
   tag_id:
     | {
@@ -66,6 +73,7 @@ interface VariantRow {
 interface VariantResponseData extends VariantRow {
   color_id: Color | null;
   relatedVariantIds: string[];
+  relatedVariants: RelatedVariant[];
   tags: Tag[] | null;
   sizes: Record<string, SizeDetails>;
 }
@@ -79,6 +87,12 @@ interface VariantResponse {
 type VariantLookupField = "id" | "slug";
 type VariantColorRow = {
   color_id: Color | null;
+};
+type RelatedVariantRow = {
+  id: string;
+  slug: string | null;
+  name: string;
+  product_images?: ProductImage[] | null;
 };
 
 const errorResponse = (message: string): VariantResponse =>
@@ -128,7 +142,12 @@ async function getVariantByField(field: VariantLookupField, value: string): Prom
         .maybeSingle(),
       supabase
         .from("product_variants")
-        .select("id")
+        .select(`
+          id,
+          slug,
+          name,
+          product_images(id, image_url, is_main)
+        `)
         .eq("main_product_id", variant.main_product_id)
         .neq("id", variant.id),
       supabase
@@ -152,6 +171,21 @@ async function getVariantByField(field: VariantLookupField, value: string): Prom
 
     const typedSizes = (sizes || []) as unknown as SizeData[];
     const variantColor = (colorData as VariantColorRow | null)?.color_id || null;
+    const normalizedRelatedVariants = ((relatedVariants || []) as RelatedVariantRow[])
+      .filter((relatedVariant) => relatedVariant.slug)
+      .map((relatedVariant) => {
+        const mainImage =
+          relatedVariant.product_images?.find((image) => image.is_main) ||
+          relatedVariant.product_images?.[0] ||
+          null;
+
+        return {
+          id: relatedVariant.id,
+          slug: relatedVariant.slug as string,
+          name: relatedVariant.name,
+          image_url: mainImage?.image_url || null,
+        } satisfies RelatedVariant;
+      });
     const normalizedTags = ((tagData || []) as TagRow[])
       .map((tag) => {
         if (!tag.tag_id) {
@@ -188,7 +222,8 @@ async function getVariantByField(field: VariantLookupField, value: string): Prom
     return successResponse({
       ...variant,
       color_id: variantColor,
-      relatedVariantIds: relatedVariants?.map((relatedVariant) => relatedVariant.id) || [],
+      relatedVariantIds: normalizedRelatedVariants.map((relatedVariant) => relatedVariant.id),
+      relatedVariants: normalizedRelatedVariants,
       tags: normalizedTags.length > 0 ? normalizedTags : null,
       sizes: sizesStructured,
     });

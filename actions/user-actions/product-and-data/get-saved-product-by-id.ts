@@ -13,7 +13,7 @@ export const getSavedProductById = async (
     variantId: string,
     userId: string,
     isAnonymous: boolean,
-    size?: string // Make size optional for the initial check on the server component
+    size?: string
 ): Promise<SavedProductResponse> => {
     const supabase = await createClient();
 
@@ -26,10 +26,8 @@ export const getSavedProductById = async (
             .single();
 
         if (userSavedError && userSavedError.code !== 'PGRST116') {
-            console.error("Supabase Error (saved_list fetch):", userSavedError.message);
             return { success: false, error: "Error fetching saved list: " + userSavedError.message, id: null, isSaved: false };
         }
-        console.log("The userSaved is: ", userSaved?.id);
         
         if (!userSaved?.id) {
             return { success: true, error: null, id: variantId, isSaved: false };
@@ -51,7 +49,6 @@ export const getSavedProductById = async (
         const { data: savedItem, error: savedItemError } = await query.maybeSingle();
 
         if (savedItemError && savedItemError.code !== 'PGRST116') {
-            console.error("Supabase Error (saved_list_items fetch):", savedItemError.message);
             return { success: false, error: "Error fetching saved item: " + savedItemError.message, id: null, isSaved: false };
         }
         
@@ -60,7 +57,6 @@ export const getSavedProductById = async (
         return { success: true, error: null, id: variantId, isSaved };
 
     } catch (error) {
-        console.error("Unexpected error in getSavedProductById:", error);
         return { success: false, error: error instanceof Error ? error.message : "Unknown error occurred", id: null, isSaved: false };
     }
 };

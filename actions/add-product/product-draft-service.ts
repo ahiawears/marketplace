@@ -252,6 +252,7 @@ export async function saveVariantDraft(
         variantName: validatedData.variantName,
         sku: validatedData.sku,
         price: validatedData.price,
+        priceCurrency: brandCurrency,
         productCode: validatedData.productCode,
         slug: uniqueVariantSlug,
         status: validatedData.status,

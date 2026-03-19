@@ -18,9 +18,10 @@ import {
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SearchInput } from "./ui/search-input";
+import { StorefrontCurrencySelector } from "./customer-facing-components/storefront/storefront-currency-selector";
 
 
-export const HeaderNew = ({ user }: { user: any }) => {
+export const HeaderNew = ({ user, selectedCurrency }: { user: any; selectedCurrency: string }) => {
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearchVisible, setIsSearchVisible] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -57,7 +58,7 @@ export const HeaderNew = ({ user }: { user: any }) => {
     }
 
     const toggleSearch = () => {
-        setIsSearchVisible(!isSearchVisible); // Toggle search input visibility
+        setIsSearchVisible(!isSearchVisible);
     };
 
     return (
@@ -104,6 +105,7 @@ export const HeaderNew = ({ user }: { user: any }) => {
                             {user ? (
                                 <UserActionsDropdownMobile
                                     user={user}
+                                    selectedCurrency={selectedCurrency}
                                     trigger={
                                         <Button
                                             variant="outline"
@@ -133,6 +135,12 @@ export const HeaderNew = ({ user }: { user: any }) => {
                                                 <p className="text-sm leading-6 text-foreground/80">
                                                     Sign in to save products, manage your account, and check out faster.
                                                 </p>
+                                            </div>
+                                            <div className="pt-6">
+                                                <StorefrontCurrencySelector
+                                                    selectedCurrency={selectedCurrency}
+                                                    className="w-full"
+                                                />
                                             </div>
                                         </div>
                                         <SheetFooter className="border-t-2 border-border pt-4 px-3">
@@ -168,32 +176,36 @@ export const HeaderNew = ({ user }: { user: any }) => {
                     )}
                     
                     <div className="hidden lg:flex md:flex items-center gap-4 grow w-full">
-                            <SearchInput 
-                                placeholder="Search products" 
-                                className="grow h-10 cursor-auto border-2" 
-                                name="searchValue" 
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                onSearch={handleSearch}
-                            /> 
+                        <SearchInput 
+                            placeholder="Search products" 
+                            className="grow h-10 cursor-auto border-2" 
+                            name="searchValue" 
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onSearch={handleSearch}
+                        /> 
+
+                        <StorefrontCurrencySelector selectedCurrency={selectedCurrency} />
                         
-                        <div className="hidden md:flex lg:flex gap-4">
-                            <Button 
-                                size={"icon"} 
-                                variant="outline" 
-                                onClick={goToFavorited}
-                                className="border-2"
-                            >
-                                <Heart />
-                            </Button>
-                            <Button 
-                                size={"icon"} 
-                                variant="outline" 
-                                className="border-2"
-                                onClick={goToCart}
-                            >
-                                <ShoppingCart />
-                            </Button>
-                        </div>
+                        {user ? (
+                            <div className="hidden md:flex lg:flex gap-4">
+                                <Button 
+                                    size={"icon"} 
+                                    variant="outline" 
+                                    onClick={goToFavorited}
+                                    className="border-2"
+                                >
+                                    <Heart />
+                                </Button>
+                                <Button 
+                                    size={"icon"} 
+                                    variant="outline" 
+                                    className="border-2"
+                                    onClick={goToCart}
+                                >
+                                    <ShoppingCart />
+                                </Button>
+                            </div>
+                        ) : null}
                         
                         <div className="md:hidden">
                             <Sheet>
@@ -246,6 +258,7 @@ export const HeaderNew = ({ user }: { user: any }) => {
                         </div>
                     )}
                 </div>
+
             </div>
             
         </header>

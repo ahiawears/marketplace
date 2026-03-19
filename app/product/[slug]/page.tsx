@@ -4,20 +4,20 @@ import { createClient } from '@/supabase/server';
 import { getServerAnonymousId } from '@/lib/anon_user/server';
 import { getSavedProductById } from '@/actions/user-actions/product-and-data/get-saved-product-by-id';
 import { notFound } from 'next/navigation';
-import { Metadata, ResolvingMetadata } from 'next';
+import { Metadata } from 'next';
 import { cache } from 'react';
 
 interface Props {
-    params: Promise<{ id: string }>
+    params: Promise<{ slug: string }>
 }
 
-const getProduct = cache(async (id: string) => {
-    return await getVariantBySlug(id);
+const getProduct = cache(async (slug: string) => {
+    return await getVariantBySlug(slug);
 });
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-    const { id } = await params;
-    const variantData = await getProduct(id); // Same call
+    const { slug } = await params;
+    const variantData = await getProduct(slug);
     
     if (!variantData.success || !variantData.data) {
         return { title: "Product Not Found" };
@@ -26,18 +26,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: variantData.data.name };
 }
 
-
-
 export default async function ProductDetail({ params }: Props) {
-    const { id } = await params;
+    const { slug } = await params;
     const supabase = await createClient();
     const { data: user } = await supabase.auth.getUser();
     const userId = user.user?.id;
     const userIdentifier = userId || await getServerAnonymousId();
     const isAnonymous = !userId;
 
-
-    const variantData = await getProduct(id);
+    const variantData = await getProduct(slug);
     
     if (!variantData.success || !variantData.data) {
         notFound();

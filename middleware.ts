@@ -1,14 +1,13 @@
-// middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getServerAnonymousId } from './lib/anon_user/server';
+import { updateSession } from './supabase/middleware';
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
+  const response = await updateSession(request);
   
   // Set anonymous ID if missing
   if (!request.cookies.has('anon_id')) {
-    const anonId = await getServerAnonymousId();
+    const anonId = crypto.randomUUID();
     response.cookies.set('anon_id', anonId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',

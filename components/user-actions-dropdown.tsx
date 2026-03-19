@@ -1,5 +1,6 @@
 import { signout } from "@/actions/signout";
 import { Button } from "@/components/ui/button";
+import { StorefrontCurrencySelector } from "@/components/customer-facing-components/storefront/storefront-currency-selector";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ import { Fragment, ReactNode } from "react";
 type Props = {
   user: User;
   trigger?: ReactNode;
+  selectedCurrency?: string;
 };
 
 const menuItems: {
@@ -69,7 +71,7 @@ export function UserActionsDropdownDesktop({ user }: Props) {
     </DropdownMenu>
   );
 }
-export function UserActionsDropdownMobile({ user, trigger }: Props) {
+export function UserActionsDropdownMobile({ user, trigger, selectedCurrency }: Props) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild className="md:hidden">
@@ -82,8 +84,19 @@ export function UserActionsDropdownMobile({ user, trigger }: Props) {
         )}
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="">
+      <DropdownMenuContent className="w-64">
         <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+        {selectedCurrency ? (
+          <>
+            <div className="px-2 py-2">
+              <StorefrontCurrencySelector
+                selectedCurrency={selectedCurrency}
+                className="w-full"
+              />
+            </div>
+            <DropdownMenuSeparator />
+          </>
+        ) : null}
         {menuItems.map((item) => (
           <Fragment key={item.label}>
             <DropdownMenuItem asChild>

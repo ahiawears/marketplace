@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useTransition, useMemo } from 'react';
+import Link from 'next/link';
 import SizeSelect from "./size-select";
 import Image from 'next/image';
 import { Button } from './button';
@@ -37,6 +38,13 @@ interface Tag {
   };
 }
 
+interface RelatedVariant {
+  id: string;
+  slug: string;
+  name: string;
+  image_url: string | null;
+}
+
 interface VariantData {
   id: string;
   main_product_id: string;
@@ -50,6 +58,7 @@ interface VariantData {
   images_description: string;
   product_images: ProductImage[];
   relatedVariantIds: string[];
+  relatedVariants: RelatedVariant[];
   sizes: Record<string, SizeDetails>;
   tags: Tag[] | null;
 }
@@ -299,6 +308,44 @@ const ProductItem: React.FC<ProductItemProps> = ({
                                     title={processedVariantData.color_id.name}
                                 />
                                 <span className="ml-2">{processedVariantData.color_id.name}</span>
+                            </div>
+                        )}
+
+                        {processedVariantData.relatedVariants.length > 0 && (
+                            <div className="mb-5">
+                                <p className="mb-3 text-sm font-medium uppercase tracking-[0.18em] text-gray-500">
+                                    Other variants
+                                </p>
+                                {/* Use flex-wrap instead of grid to keep items strictly 80px */}
+                                <div className="flex flex-wrap gap-3">
+                                    {processedVariantData.relatedVariants.map((relatedVariant) => (
+                                        <Link
+                                            key={relatedVariant.id}
+                                            href={`/product/${relatedVariant.slug}`}
+                                            /* Force the Link to be exactly 80x80 */
+                                            className="group block h-[110px] w-[85px] overflow-hidden transition hover:border-black flex-shrink-0"
+                                        >
+                                            <div className="relative h-full w-full bg-gray-100">
+                                                {relatedVariant.image_url ? (
+                                                    <Image
+                                                        src={relatedVariant.image_url}
+                                                        alt={relatedVariant.name}
+                                                        fill
+                                                        /* use object-contain to see the whole product, 
+                                                        or object-cover to fill the 80px square completely */
+                                                        className="object-contain border-2" 
+                                                        sizes="(max-width: 640px) 50vw, 160px"
+                                                        unoptimized={true}
+                                                    />
+                                                ) : (
+                                                    <div className="flex h-full items-center justify-center text-[10px] text-gray-500 text-center p-1">
+                                                        No image
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
                             </div>
                         )}
 

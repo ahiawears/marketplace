@@ -15,11 +15,15 @@ type VariantWriteDetails = Pick<
     | "imagesDescription"
 >;
 
+type VariantWriteDetailsWithCurrency = VariantWriteDetails & {
+    priceCurrency: string;
+};
+
 export async function createVariant(
     supabase: any,
     mainProductId: string,
     baseCurrencyPrice: number,
-    variantDetails: VariantWriteDetails,
+    variantDetails: VariantWriteDetailsWithCurrency,
     displayOrder: number
 ){
     try {
@@ -30,6 +34,7 @@ export async function createVariant(
                 name: variantDetails.variantName,
                 sku: variantDetails.sku, 
                 price: variantDetails.price,
+                price_currency: variantDetails.priceCurrency,
                 product_code: variantDetails.productCode,
                 main_product_id: mainProductId,
                 base_currency_price: baseCurrencyPrice,
