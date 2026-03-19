@@ -24,6 +24,8 @@ interface CartItemData {
     size_name: string;
     quantity: number;
     price: number;
+    currency_code?: string;
+    formatted_price?: string;
 }
 
 interface CartItemProps {
@@ -143,7 +145,7 @@ const CartItem: React.FC<CartItemProps> = ({ item, serverUserIdentifier, isAnony
 
                 {/* Price and Delete */}
                 <div className="flex flex-col items-end justify-between">
-                    <p className="text-lg font-semibold">${item.price.toFixed(2)}</p>
+                    <p className="text-lg font-semibold">{item.formatted_price || `${item.currency_code || "USD"} ${item.price.toFixed(2)}`}</p>
                     <button 
                         onClick={() => handleItemDelete(item.id)} 
                         className={`text-gray-500 hover:text-black hover:shadow-lg transition-colors ${isHovering ? 'opacity-150' : 'opacity-0 sm:opacity-100'} bg-transparent`}

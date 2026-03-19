@@ -30,10 +30,16 @@ interface CartItemData {
     size_name: string;
     quantity: number;
     price: number;
+    currency_code?: string;
+    formatted_price?: string;
 }
 interface CartData {
     productsWithImages: CartItemData[];
     totalPrice: number;
+    currencyCode: string;
+    formattedTotalPrice: string;
+    subtotalBase: number;
+    subtotalCustomerCurrency: number;
 }
 export default async function CartPage() {
     const supabase = await createClient();
@@ -43,7 +49,6 @@ export default async function CartPage() {
     const isAnonymous = !userId;
 
     const cartItems = await getCartItems(isAnonymous, userIdentifier);
-    console.log("The cart items are ", cartItems);
 
     return (
         <div className="container mx-auto">
@@ -70,6 +75,8 @@ export default async function CartPage() {
                         <div className="w-full md:w-1/3">
                             <OrderSummary 
                                 totalPrice={cartItems.totalPrice}
+                                formattedTotalPrice={cartItems.formattedTotalPrice}
+                                currencyCode={cartItems.currencyCode}
                                 serverUserIdentifier={userIdentifier}
                                 isAnonymous={isAnonymous}
                             />

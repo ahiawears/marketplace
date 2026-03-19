@@ -20,10 +20,16 @@ interface CartItemData {
     size_name: string;
     quantity: number;
     price: number;
+    currency_code?: string;
+    formatted_price?: string;
 }
 interface CartData {
     productsWithImages: CartItemData[];
     totalPrice: number;
+    currencyCode: string;
+    formattedTotalPrice: string;
+    subtotalBase: number;
+    subtotalCustomerCurrency: number;
 }
 
 export const useGetCartItems = () => {

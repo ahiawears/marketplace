@@ -8,11 +8,13 @@ import { useRouter } from 'next/navigation';
 
 interface OrderSummaryProps {
     totalPrice: number;
+    formattedTotalPrice: string;
+    currencyCode: string;
     serverUserIdentifier: string;
     isAnonymous: boolean;
 }
 
-const OrderSummary: React.FC<OrderSummaryProps> = ({ totalPrice, serverUserIdentifier,  isAnonymous}) => {  
+const OrderSummary: React.FC<OrderSummaryProps> = ({ totalPrice, formattedTotalPrice, currencyCode, serverUserIdentifier,  isAnonymous}) => {  
     const [ checkoutPending, startCheckoutTransition ] = useTransition();
     const { userId } = useAuth();
     const router = useRouter();
@@ -30,7 +32,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({ totalPrice, serverUserIdent
             <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
             <div className="flex justify-between mb-4">
                 <span>Sub Total:</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                <span>{formattedTotalPrice}</span>
             </div>
             <Button
                 onClick={onCheckout}
