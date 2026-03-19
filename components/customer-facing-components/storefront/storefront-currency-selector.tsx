@@ -33,7 +33,7 @@ export function StorefrontCurrencySelector({
 			>
 				{STOREFRONT_CURRENCY_OPTIONS.map((option) => (
 					<option key={option.code} value={option.code}>
-						{option.code}
+						{option.symbol} - {option.name}
 					</option>
 				))}
 			</Select>

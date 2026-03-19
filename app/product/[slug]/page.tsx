@@ -6,6 +6,9 @@ import { getSavedProductById } from '@/actions/user-actions/product-and-data/get
 import { notFound } from 'next/navigation';
 import { Metadata } from 'next';
 import { cache } from 'react';
+import { getPreferredStorefrontCurrency } from '@/lib/storefront-currency.server';
+import { GetExchangeRates } from '@/hooks/get-exchange-rate';
+import { convertBaseCurrencyPrice, formatStorefrontPrice } from '@/lib/storefront-pricing';
 
 interface Props {
     params: Promise<{ slug: string }>
@@ -40,12 +43,25 @@ export default async function ProductDetail({ params }: Props) {
         notFound();
     }
 
+    const selectedCurrency = await getPreferredStorefrontCurrency();
+    const exchangeRate =
+        selectedCurrency === "USD"
+            ? 1
+            : await GetExchangeRates("USD", selectedCurrency);
+    const displayPrice = convertBaseCurrencyPrice(
+        variantData.data.base_currency_price,
+        exchangeRate
+    );
+    const displayPriceFormatted = formatStorefrontPrice(displayPrice, selectedCurrency);
+
     const savedData = await getSavedProductById(variantData.data.id, userIdentifier, isAnonymous);
 
     return (
         <div className="">
             <ProductItem
                 variantData={variantData.data}
+                displayPriceFormatted={displayPriceFormatted}
+                selectedCurrency={selectedCurrency}
                 initialIsSaved={savedData.isSaved}
                 serverUserIdentifier={userIdentifier}
                 isAnonymous={isAnonymous}

@@ -7,7 +7,10 @@ export interface StorefrontProductCardData {
   categoryName: string;
   genderName: string;
   description: string;
-  price: number | null;
+  baseCurrencyPrice: number | null;
+  displayPrice: number | null;
+  displayPriceFormatted: string;
+  displayCurrency: string;
   sku: string;
   productCode: string;
   colorName: string;

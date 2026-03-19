@@ -205,7 +205,7 @@ export function StorefrontQuickAddDialog({
                     ) : null}
                   </div>
                   <p className="text-2xl font-semibold text-stone-900">
-                    {product.price != null ? `$${product.price.toFixed(2)}` : "Price unavailable"}
+                    {product.displayPriceFormatted}
                   </p>
                   <p className="text-sm leading-6 text-stone-600">
                     {product.description || "Open the product page for more details, measurements, and related variants."}

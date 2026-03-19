@@ -2,6 +2,7 @@ import { createClient } from "@/supabase/server";
 import { getServerAnonymousId } from "@/lib/anon_user/server";
 import { getStorefrontProducts } from "@/actions/storefront/get-storefront-products";
 import { StorefrontProductsClient } from "@/components/customer-facing-components/storefront/storefront-products-client";
+import { getPreferredStorefrontCurrency } from "@/lib/storefront-currency.server";
 
 interface ProductsPageProps {
   searchParams?: Promise<{
@@ -16,6 +17,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   const query = resolvedSearchParams.query || "";
   const category = resolvedSearchParams.cat || "";
   const gender = resolvedSearchParams.gender || "";
+  const selectedCurrency = await getPreferredStorefrontCurrency();
 
   const supabase = await createClient();
   const {
@@ -29,7 +31,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   
 
   const [products, savedListResult] = await Promise.all([
-    getStorefrontProducts({ query, category, gender }),
+    getStorefrontProducts({ query, category, gender, currencyCode: selectedCurrency }),
     serverUserIdentifier
       ? supabase
           .from("saved_list")
@@ -56,6 +58,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
           initialQuery={query}
           initialCategory={category}
           initialGender={gender}
+          selectedCurrency={selectedCurrency}
           serverUserIdentifier={serverUserIdentifier}
           isAnonymous={isAnonymous}
         />

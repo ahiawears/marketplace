@@ -13,14 +13,6 @@ interface StorefrontProductCardProps {
   onQuickAdd: (product: StorefrontProductCardData) => void;
 }
 
-function formatPrice(price: number | null) {
-  if (price == null) {
-    return "Price unavailable";
-  }
-
-  return `$${price.toFixed(2)}`;
-}
-
 export function StorefrontProductCard({
   product,
   isSaved,
@@ -69,7 +61,7 @@ export function StorefrontProductCard({
         </div>
 
         <div>
-          <p className="text-md font-medium text-stone-900">{formatPrice(product.price)}</p>
+          <p className="text-md font-medium text-stone-900">{product.displayPriceFormatted}</p>
         </div>
       </div>
     </article>

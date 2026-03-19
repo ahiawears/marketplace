@@ -65,6 +65,8 @@ interface VariantData {
 
 interface ProductItemProps {
     variantData: VariantData;
+    displayPriceFormatted: string;
+    selectedCurrency: string;
     initialIsSaved: boolean;
     serverUserIdentifier: string;
     isAnonymous: boolean;
@@ -95,6 +97,8 @@ function deserializeVariantData(data: VariantData): VariantData {
 
 const ProductItem: React.FC<ProductItemProps> = ({ 
     variantData, 
+    displayPriceFormatted,
+    selectedCurrency,
     initialIsSaved,
     serverUserIdentifier,
     isAnonymous
@@ -291,12 +295,7 @@ const ProductItem: React.FC<ProductItemProps> = ({
                         <h1 className="text-2xl font-bold mb-4">{processedVariantData.name}</h1>
                         
                         <div className="mb-4">
-                            <span className="text-2xl font-semibold">${processedVariantData.price.toFixed(2)}</span>
-                            {processedVariantData.base_currency_price && (
-                                <span className="text-sm text-gray-500 ml-2">
-                                    (≈ ${processedVariantData.base_currency_price.toFixed(2)})
-                                </span>
-                            )}
+                            <span className="text-2xl font-semibold">{displayPriceFormatted}</span>
                         </div>
 
                         {processedVariantData.color_id && (
@@ -331,8 +330,6 @@ const ProductItem: React.FC<ProductItemProps> = ({
                                                         src={relatedVariant.image_url}
                                                         alt={relatedVariant.name}
                                                         fill
-                                                        /* use object-contain to see the whole product, 
-                                                        or object-cover to fill the 80px square completely */
                                                         className="object-contain border-2" 
                                                         sizes="(max-width: 640px) 50vw, 160px"
                                                         unoptimized={true}

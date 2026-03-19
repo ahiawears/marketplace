@@ -18,6 +18,7 @@ interface StorefrontProductsClientProps {
   initialQuery: string;
   initialCategory: string;
   initialGender: string;
+  selectedCurrency: string;
   serverUserIdentifier: string;
   isAnonymous: boolean;
 }
@@ -30,6 +31,7 @@ export function StorefrontProductsClient({
   initialQuery,
   initialCategory,
   initialGender,
+  selectedCurrency,
   serverUserIdentifier,
   isAnonymous,
 }: StorefrontProductsClientProps) {
@@ -94,6 +96,9 @@ export function StorefrontProductsClient({
               <h1 className="text-3xl font-semibold tracking-tight text-stone-900">Products</h1>
               <p className="text-sm leading-6 text-stone-600 sm:text-base">
                 {resultsLabel}. Explore live variants, open the full product detail page, or add a size directly to your cart.
+              </p>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
+                Prices shown in {selectedCurrency}
               </p>
               {matchedCategories.length > 0 && !initialCategory ? (
                 <div className="flex flex-wrap gap-2 pt-1">

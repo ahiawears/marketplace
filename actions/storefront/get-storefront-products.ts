@@ -1,5 +1,10 @@
 import { createClient } from "@/supabase/server";
 import { toStoredGenderScope } from "@/lib/product-gender";
+import { GetExchangeRates } from "@/hooks/get-exchange-rate";
+import {
+  convertBaseCurrencyPrice,
+  formatStorefrontPrice,
+} from "@/lib/storefront-pricing";
 
 export interface StorefrontProductCardData {
   variantId: string;
@@ -10,7 +15,10 @@ export interface StorefrontProductCardData {
   categoryName: string;
   genderName: string;
   description: string;
-  price: number | null;
+  baseCurrencyPrice: number | null;
+  displayPrice: number | null;
+  displayPriceFormatted: string;
+  displayCurrency: string;
   sku: string;
   productCode: string;
   colorName: string;
@@ -23,6 +31,7 @@ interface StorefrontProductFilters {
   query?: string;
   category?: string;
   gender?: string;
+  currencyCode?: string;
 }
 
 export interface StorefrontProductSearchResult {
@@ -59,7 +68,7 @@ type ProductRow = {
         sku: string | null;
         product_code: string | null;
         slug: string | null;
-        price: number | null;
+        base_currency_price: number | null;
         status: string | null;
         available_date: string | null;
         product_images:
@@ -156,7 +165,7 @@ export async function getStorefrontProducts(
         sku,
         product_code,
         slug,
-        price,
+        base_currency_price,
         status,
         available_date,
         product_images(image_url, is_main)
@@ -171,7 +180,12 @@ export async function getStorefrontProducts(
   const normalizedQuery = filters.query?.trim().toLowerCase() || "";
   const normalizedCategory = filters.category?.trim().toLowerCase() || "";
   const normalizedGender = toStoredGenderScope(filters.gender);
+  const selectedCurrency = filters.currencyCode || "USD";
   const now = new Date();
+  const exchangeRate =
+    selectedCurrency === "USD"
+      ? 1
+      : await GetExchangeRates("USD", selectedCurrency);
 
   const productRows = (data || []) as ProductRow[];
   const variantIds = productRows.flatMap((product) =>
@@ -247,6 +261,10 @@ export async function getStorefrontProducts(
           images[0] ||
           null;
         const color = colorsByVariant.get(variant.id) || { name: "", hex: "" };
+        const displayPrice = convertBaseCurrencyPrice(
+          variant.base_currency_price,
+          exchangeRate
+        );
 
         return {
           variantId: variant.id,
@@ -257,7 +275,10 @@ export async function getStorefrontProducts(
           categoryName,
           genderName,
           description,
-          price: variant.price,
+          baseCurrencyPrice: variant.base_currency_price,
+          displayPrice,
+          displayPriceFormatted: formatStorefrontPrice(displayPrice, selectedCurrency),
+          displayCurrency: selectedCurrency,
           sku: variant.sku || "",
           productCode: variant.product_code || "",
           colorName: color.name,
