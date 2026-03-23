@@ -53,6 +53,14 @@ export default async function ProductDetail({ params }: Props) {
         exchangeRate
     );
     const displayPriceFormatted = formatStorefrontPrice(displayPrice, selectedCurrency);
+    const shippingEstimate = convertBaseCurrencyPrice(
+        variantData.data.shippingSummary?.minimum_base_fee ?? null,
+        exchangeRate
+    );
+    const shippingEstimateFormatted =
+        shippingEstimate == null
+            ? null
+            : formatStorefrontPrice(shippingEstimate, selectedCurrency);
 
     const savedData = await getSavedProductById(variantData.data.id, userIdentifier, isAnonymous);
 
@@ -61,6 +69,7 @@ export default async function ProductDetail({ params }: Props) {
             <ProductItem
                 variantData={variantData.data}
                 displayPriceFormatted={displayPriceFormatted}
+                shippingEstimateFormatted={shippingEstimateFormatted}
                 selectedCurrency={selectedCurrency}
                 initialIsSaved={savedData.isSaved}
                 serverUserIdentifier={userIdentifier}

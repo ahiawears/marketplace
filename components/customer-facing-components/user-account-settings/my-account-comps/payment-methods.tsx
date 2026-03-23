@@ -1,10 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import PaymentMethodsList from "../payment-methods-list";
-import PaymentMethodForm from "./payment-method-form";
-
-type ComponentItems = "paymentMethodsList" | "addPaymentMethod";
 
 // Update the interface to include the cardholderName
 interface DbPaymentMethodDetails {
@@ -23,47 +19,6 @@ interface PartialMethodsProps {
 }
 
 const PaymentMethods: React.FC<PartialMethodsProps> = ({ dbPaymentMethod }) => {
-    const [currentComponent, setCurrentComponent] = useState<ComponentItems>("paymentMethodsList");
-    
-    const [paymentMethods, setPaymentMethods] = useState<DbPaymentMethodDetails[]>(dbPaymentMethod);
-
-
-    const fetchAllPaymentMethods = async () => {
-        try {
-            const response = await fetch('/api/get-db-card-details', {
-                cache: 'no-store',
-            });
-            const data = await response.json();
-            if (response.ok) {
-                setPaymentMethods(data);
-            }
-        } catch (error) {
-            console.error("Error fetching payment methods:", error);
-        }
-    };
-
-    const renderComponent = () => {
-        if (currentComponent === "paymentMethodsList") {
-            return (
-                <PaymentMethodsList 
-                    paymentMethods={paymentMethods}
-                    onAddPaymentMethod={() => setCurrentComponent("addPaymentMethod")}
-                    onPaymentMethodDeleted={fetchAllPaymentMethods}
-                />
-            );
-        } else if (currentComponent === "addPaymentMethod") {
-            return (
-                <PaymentMethodForm 
-                    onBack={() => setCurrentComponent("paymentMethodsList")}
-                    onPaymentMethodAdded={() => {
-                        fetchAllPaymentMethods();
-                        setCurrentComponent("paymentMethodsList");
-                    }}
-                />
-            );
-        }
-    };
-
     return (
         <div>
             <div className="p-4">
@@ -87,7 +42,17 @@ const PaymentMethods: React.FC<PartialMethodsProps> = ({ dbPaymentMethod }) => {
                     </svg>
                     <p className="mt-4 text-lg font-semibold">Payment Methods</p>
                 </div>
-                {renderComponent()}
+                <div className="mb-6 border-2 bg-stone-50 px-4 py-4 text-sm leading-6 text-stone-700">
+                    Cards cannot be added manually right now.
+                    Saved payment methods will be supported through successful checkout.
+                    You can still pay with a card during checkout.
+                </div>
+                <PaymentMethodsList 
+                    paymentMethods={dbPaymentMethod}
+                    onPaymentMethodDeleted={async () => {
+                        window.location.reload();
+                    }}
+                />
             </div>
         </div>
     );

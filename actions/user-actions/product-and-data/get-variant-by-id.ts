@@ -45,6 +45,21 @@ interface RelatedVariant {
   image_url: string | null;
 }
 
+interface ShippingSummary {
+  minimum_base_fee: number | null;
+  methods: string[];
+}
+
+interface ReturnPolicySummary {
+  is_returnable: boolean;
+  return_window_days: number | null;
+  return_shipping_responsibility: {
+    brandPays?: boolean;
+    customerPays?: boolean;
+    dependsOnReason?: boolean;
+  } | null;
+}
+
 type TagRow = {
   tag_id:
     | {
@@ -76,6 +91,8 @@ interface VariantResponseData extends VariantRow {
   relatedVariants: RelatedVariant[];
   tags: Tag[] | null;
   sizes: Record<string, SizeDetails>;
+  shippingSummary: ShippingSummary | null;
+  returnPolicySummary: ReturnPolicySummary | null;
 }
 
 interface VariantResponse {
@@ -83,6 +100,22 @@ interface VariantResponse {
   data: VariantResponseData | null;
   error: string | null;
 }
+
+type ProductShippingFeeRow = {
+  method_type: string;
+  base_fee: number | null;
+  available: boolean;
+};
+
+type ReturnPolicyRow = {
+  is_returnable: boolean | null;
+  return_window_days: number | null;
+  return_shipping_responsibility: {
+    brandPays?: boolean;
+    customerPays?: boolean;
+    dependsOnReason?: boolean;
+  } | null;
+};
 
 type VariantLookupField = "id" | "slug";
 type VariantColorRow = {
@@ -133,7 +166,7 @@ async function getVariantByField(field: VariantLookupField, value: string): Prom
 
     const variant = data as VariantRow;
 
-    const [{ data: colorData }, { data: relatedVariants }, { data: tagData }, { data: sizes }] = await Promise.all([
+    const [{ data: colorData }, { data: relatedVariants }, { data: tagData }, { data: sizes }, { data: productShippingDetails }, { data: returnPolicyData }] = await Promise.all([
       supabase
         .from("product_variant_colors")
         .select("color_id(name, id, hex_code)")
@@ -167,7 +200,27 @@ async function getVariantByField(field: VariantLookupField, value: string): Prom
           )
         `)
         .eq("product_id", variant.id),
+      supabase
+        .from("product_shipping_details")
+        .select("id")
+        .eq("product_id", variant.main_product_id)
+        .maybeSingle(),
+      supabase
+        .from("product_return_policy")
+        .select("is_returnable, return_window_days, return_shipping_responsibility")
+        .eq("product_id", variant.main_product_id)
+        .eq("is_active", true)
+        .order("version", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
+
+    const { data: shippingFeeData } = productShippingDetails?.id
+      ? await supabase
+          .from("product_shipping_fees")
+          .select("method_type, base_fee, available")
+          .eq("product_shipping_id", productShippingDetails.id)
+      : { data: [] };
 
     const typedSizes = (sizes || []) as unknown as SizeData[];
     const variantColor = (colorData as VariantColorRow | null)?.color_id || null;
@@ -219,6 +272,34 @@ async function getVariantByField(field: VariantLookupField, value: string): Prom
       return acc;
     }, {} as Record<string, SizeDetails>);
 
+    const normalizedShippingFees = ((shippingFeeData || []) as ProductShippingFeeRow[]).filter(
+      (feeRow) => feeRow.available
+    );
+
+    const shippingSummary =
+      normalizedShippingFees.length > 0
+        ? {
+            minimum_base_fee: normalizedShippingFees.reduce<number | null>((minFee, feeRow) => {
+              if (feeRow.base_fee == null) {
+                return minFee;
+              }
+
+              if (minFee == null) {
+                return feeRow.base_fee;
+              }
+
+              return Math.min(minFee, feeRow.base_fee);
+            }, null),
+            methods: Array.from(
+              new Set(
+                normalizedShippingFees.map((feeRow) => feeRow.method_type)
+              )
+            ),
+          }
+        : null;
+
+    const activeReturnPolicy = (returnPolicyData || null) as ReturnPolicyRow | null;
+
     return successResponse({
       ...variant,
       color_id: variantColor,
@@ -226,6 +307,14 @@ async function getVariantByField(field: VariantLookupField, value: string): Prom
       relatedVariants: normalizedRelatedVariants,
       tags: normalizedTags.length > 0 ? normalizedTags : null,
       sizes: sizesStructured,
+      shippingSummary,
+      returnPolicySummary: activeReturnPolicy
+        ? {
+            is_returnable: activeReturnPolicy.is_returnable !== false,
+            return_window_days: activeReturnPolicy.return_window_days,
+            return_shipping_responsibility: activeReturnPolicy.return_shipping_responsibility,
+          }
+        : null,
     });
   } catch (error) {
     console.error("Error in variant lookup:", error);

@@ -16,13 +16,13 @@ interface PaymentMethodDetails {
 
 interface PaymentMethodsProps {
     paymentMethods: PaymentMethodDetails[];
-    onAddPaymentMethod: () => void;
     onPaymentMethodDeleted: () => void;
 }
 
-const PaymentMethodsList = ({ paymentMethods, onAddPaymentMethod, onPaymentMethodDeleted }: PaymentMethodsProps) => {
+const PaymentMethodsList = ({ paymentMethods, onPaymentMethodDeleted }: PaymentMethodsProps) => {
     const [methodToDelete, setMethodToDelete] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isUpdatingDefault, setIsUpdatingDefault] = useState<string | null>(null);
     const paymentMethodsLogos = [
         "/images/paymentMethods/afrigo.png",
         "/images/paymentMethods/verve.png",
@@ -65,18 +65,28 @@ const PaymentMethodsList = ({ paymentMethods, onAddPaymentMethod, onPaymentMetho
         setMethodToDelete(null);
     };
 
+    const handleSetDefault = async (paymentMethodId: string) => {
+        try {
+            setIsUpdatingDefault(paymentMethodId);
+            const response = await fetch("/api/set-default-payment-method", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ paymentMethodId }),
+            });
+
+            if (response.ok) {
+                onPaymentMethodDeleted();
+            }
+        } finally {
+            setIsUpdatingDefault(null);
+        }
+    };
+
     return (
         <div className="w-full">
             <div className="mb-6 space-y-3 flex flex-col justify-center">
-                <div>
-                    <Button
-                        className="px-4 py-2 text-white"
-                        onClick={onAddPaymentMethod}
-                    >
-                        Add New Payment Method
-                    </Button>
-                </div>
-
                 <div className="flex flex-row justify-center items-center space-x-2">
                     <p>We Accept:</p>
                     {paymentMethodsLogos.map((logoPath, index) => (
@@ -95,7 +105,7 @@ const PaymentMethodsList = ({ paymentMethods, onAddPaymentMethod, onPaymentMetho
 
             <div className="space-y-4">
                 {paymentMethods.length === 0 ? (
-                    <div className="border p-4 rounded shadow-md text-center">
+                    <div className="border-2 p-4 shadow-md text-center">
                         <p>No payment methods saved yet</p>
                     </div>
                 ) : (
@@ -117,11 +127,25 @@ const PaymentMethodsList = ({ paymentMethods, onAddPaymentMethod, onPaymentMetho
                                         />
                                     </div>
                                 )}
+                                {method.is_default && (
+                                    <span className="inline-flex w-fit border border-stone-900 px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-stone-900">
+                                        Default
+                                    </span>
+                                )}
                                 <p>Ending in {method.last_four}</p>
                                 <p>{method.card_holder}</p>
                                 <p>{method.expiry_month}/{method.expiry_year}</p>
                             </div>
                             <div className="flex space-x-2 self-end md:self-center">
+                                {!method.is_default && (
+                                    <Button
+                                        className="border-2"
+                                        onClick={() => handleSetDefault(method.id)}
+                                        disabled={isUpdatingDefault === method.id}
+                                    >
+                                        {isUpdatingDefault === method.id ? "Updating..." : "Set Default"}
+                                    </Button>
+                                )}
                                 <Button
                                     className="border-2"
                                     onClick={() => handleDeleteClick(method.id)}

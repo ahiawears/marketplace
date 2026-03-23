@@ -6,39 +6,40 @@ import { useSearchParams } from 'next/navigation';
 function PaymentConfirmationContent() {
     const [status, setStatus] = useState('loading');
     const [errorMessage, setErrorMessage] = useState('');
+    const [orderNumber, setOrderNumber] = useState('');
     const searchParams = useSearchParams();
 
     useEffect(() => {
         async function verifyTransaction() {
             try {
                 const responseParam = searchParams.get('response');
-                if (!responseParam) {
-                    setStatus('invalid');
-                    return;
+                let transactionId = searchParams.get('transactionId');
+                let flw_ref: string | null = null;
+                let tx_ref: string | null = null;
+
+                if (responseParam) {
+                    console.log('Encoded responseParam:', responseParam);
+
+                    let decodedResponse;
+                    try {
+                        decodedResponse = JSON.parse(decodeURIComponent(responseParam));
+                        console.log('Decoded response:', decodedResponse);
+                    } catch (error) {
+                        console.log('Decoding error:', error);
+                        setStatus('invalid');
+                        return;
+                    }
+
+                    flw_ref = decodedResponse.flwRef;
+                    tx_ref = decodedResponse.txRef;
+                    transactionId = String(decodedResponse.id ?? "");
                 }
-
-                console.log('Encoded responseParam:', responseParam);
-
-                // Decode and parse the response
-                let decodedResponse;
-                try {
-                    decodedResponse = JSON.parse(decodeURIComponent(responseParam));
-                    console.log('Decoded response:', decodedResponse);
-                } catch (error) {
-                    console.log('Decoding error:', error);
-                    setStatus('invalid');
-                    return;
-                }
-
-                const flw_ref = decodedResponse.flwRef;
-                const tx_ref = decodedResponse.txRef;
-                const transactionId = decodedResponse.id;
 
                 console.log('Flutterwave reference (flw_ref):', flw_ref);
                 console.log('Transaction reference (tx_ref):', tx_ref);
                 console.log('Transaction reference (tx_ref):', transactionId);
 
-                if (!flw_ref || !tx_ref) {
+                if (!transactionId) {
                     setStatus('invalid');
                     return;
                 }
@@ -52,23 +53,24 @@ function PaymentConfirmationContent() {
                         },
                     }
                 );
-
-                if (!response.ok) {
-                    throw new Error(`Server error: ${response.status}`);
-                }
-
                 const data = await response.json();
                 console.log(data);
 
+                if (!response.ok) {
+                    throw new Error(data.message || `Server error: ${response.status}`);
+                }
+
                 if (data.success) {
+                    setOrderNumber(data.orderNumber || '');
                     setStatus('success');
                 } else {
                     setStatus('failed');
-                    setErrorMessage(data.message || 'Unknown error');
+                    setErrorMessage(data.message || data.error || 'Unknown error');
                 }
             } catch (error) {
                 console.log('Error in verifyTransaction:', error);
                 setStatus('failed');
+                setErrorMessage(error instanceof Error ? error.message : 'Unknown error');
             }
         }
 
@@ -82,6 +84,7 @@ function PaymentConfirmationContent() {
                 <div className="text-green-600">
                     <h1 className="text-2xl font-bold">Payment Successful!</h1>
                     <p>Your transaction has been completed successfully.</p>
+                    {orderNumber ? <p>Your order number is {orderNumber}.</p> : null}
                 </div>
             )}
             {status === 'failed' && (

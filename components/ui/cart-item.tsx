@@ -20,7 +20,7 @@ interface CartItemData {
     variant_color: {
         name: string;
         hex: string;
-    };
+    } | null;
     size_name: string;
     quantity: number;
     price: number;
@@ -106,15 +106,17 @@ const CartItem: React.FC<CartItemProps> = ({ item, serverUserIdentifier, isAnony
                     <h3 className="font-medium text-lg cursor-pointer">{item.product_name}</h3>
                     
                     {/* Color with swatch */}
-                    <div className="flex items-center mt-2">
-                        <span className="text-sm text-gray-600 mr-2">Color:</span>
-                        <div 
-                            className="w-5 h-5 border-2 mr-2"
-                            style={{ backgroundColor: item.variant_color.hex }}
-                            title={item.variant_color.name}
-                        />
-                        <span className="text-sm">{item.variant_color.name}</span>
-                    </div>
+                    {item.variant_color ? (
+                        <div className="flex items-center mt-2">
+                            <span className="text-sm text-gray-600 mr-2">Color:</span>
+                            <div 
+                                className="w-5 h-5 border-2 mr-2"
+                                style={{ backgroundColor: item.variant_color.hex }}
+                                title={item.variant_color.name}
+                            />
+                            <span className="text-sm">{item.variant_color.name}</span>
+                        </div>
+                    ) : null}
                     
                     {/* Size */}
                     <div className="mt-1">

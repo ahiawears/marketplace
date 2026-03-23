@@ -236,19 +236,19 @@ export interface ShippingDetails {
         standardShipping: {
             available: boolean;
             estimatedDelivery: { 
-                domestic: { from: number; to: number; fee: number; }; 
-                regional: { from: number; to: number; fee: number;  }; 
-                sub_regional: { from: number; to: number; fee: number;  };
-                global: { from: number; to: number; fee: number;  }; 
+                domestic: { from: number; to: number; fee: number; additionalItemFee: number; }; 
+                regional: { from: number; to: number; fee: number; additionalItemFee: number;  }; 
+                sub_regional: { from: number; to: number; fee: number; additionalItemFee: number;  };
+                global: { from: number; to: number; fee: number; additionalItemFee: number;  }; 
             };
         };
         expressShipping: {
             available: boolean;
             estimatedDelivery: {
-                domestic: { from: number; to: number; fee: number; };
-                regional: { from: number; to: number; fee: number; };
-                sub_regional: { from: number; to: number; fee: number; };
-                global: { from: number; to: number; fee: number; };
+                domestic: { from: number; to: number; fee: number; additionalItemFee: number; };
+                regional: { from: number; to: number; fee: number; additionalItemFee: number; };
+                sub_regional: { from: number; to: number; fee: number; additionalItemFee: number; };
+                global: { from: number; to: number; fee: number; additionalItemFee: number; };
             };
         };
     };
@@ -274,6 +274,7 @@ export interface ShippingDetails {
         available: boolean;
         threshold: number; 
         applicableMethods: ("standard" | "express")[];
+        applicableZones: DeliveryZone[];
         excludedCountries?: string[];
     }
 } 
@@ -302,22 +303,26 @@ export const DEFAULT_SHIPPING_CONFIG: ShippingDetails = {
 				domestic: {
 					from: 2,
 					to: 5,
-					fee: 0
+					fee: 0,
+                    additionalItemFee: 0
 				},
 				regional: {
 					from: 4,
 					to: 8,
-					fee: 0
+					fee: 0,
+                    additionalItemFee: 0
 				},
 				sub_regional: {
 					from: 5,
 					to: 7,
-					fee: 0
+					fee: 0,
+                    additionalItemFee: 0
 				},
 				global: {
 					from: 8,
 					to: 14,
-					fee: 0
+					fee: 0,
+                    additionalItemFee: 0
 				}
 			}
 		},
@@ -327,22 +332,26 @@ export const DEFAULT_SHIPPING_CONFIG: ShippingDetails = {
 				domestic: {
 					from: 1,
 					to: 3,
-					fee: 0
+					fee: 0,
+                    additionalItemFee: 0
 				},
 				regional: {
 					from: 2,
 					to: 5,
-					fee: 0
+					fee: 0,
+                    additionalItemFee: 0
 				},
 				sub_regional: {
 					from: 5,
 					to: 7,
-					fee: 0
+					fee: 0,
+                    additionalItemFee: 0
 				},
 				global: {
 					from: 5,
 					to: 10,
-					fee: 0
+					fee: 0,
+                    additionalItemFee: 0
 				}
 			},
 		},
@@ -369,6 +378,7 @@ export const DEFAULT_SHIPPING_CONFIG: ShippingDetails = {
 		available: false,
 		threshold: 0,
 		applicableMethods: [],
+        applicableZones: [],
 		excludedCountries: [],
 	}
 }
@@ -395,19 +405,19 @@ export interface ShippingConfigDataProps {
       standardShipping: {
           available: boolean;
           estimatedDelivery: { 
-              domestic: { from: number; to: number; fee: number; }; 
-              regional: { from: number; to: number; fee: number;  }; 
-              sub_regional: { from: number; to: number; fee: number;  };
-              global: { from: number; to: number; fee: number;  }; 
+              domestic: { from: number; to: number; fee: number; additionalItemFee: number; }; 
+              regional: { from: number; to: number; fee: number; additionalItemFee: number;  }; 
+              sub_regional: { from: number; to: number; fee: number; additionalItemFee: number;  };
+              global: { from: number; to: number; fee: number; additionalItemFee: number;  }; 
           };
       };
       expressShipping: {
           available: boolean;
           estimatedDelivery: {
-              domestic: { from: number; to: number; fee: number; };
-              regional: { from: number; to: number; fee: number; };
-              sub_regional: { from: number; to: number; fee: number; };
-              global: { from: number; to: number; fee: number; };
+              domestic: { from: number; to: number; fee: number; additionalItemFee: number; };
+              regional: { from: number; to: number; fee: number; additionalItemFee: number; };
+              sub_regional: { from: number; to: number; fee: number; additionalItemFee: number; };
+              global: { from: number; to: number; fee: number; additionalItemFee: number; };
           };
       };
     
@@ -434,6 +444,7 @@ export interface ShippingConfigDataProps {
       available: boolean;
       threshold: number; 
       applicableMethods: ("standard" | "express")[];
+      applicableZones: DeliveryZone[];
       excludedCountries?: string[];
   }
 }
@@ -466,6 +477,7 @@ export type DeliveryZoneKey = 'domestic' | 'sub_regional' | 'regional' | 'global
 export interface ProductMethodZoneConfig {
   available?: boolean;
   fee?: number;
+  additionalItemFee?: number;
 }
 
 export interface ProductShippingDeliveryType {

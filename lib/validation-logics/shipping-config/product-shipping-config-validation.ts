@@ -27,6 +27,7 @@ export const RawShippingMethodDeliverySchema = z.object({
     delivery_from: z.number().nullable().optional(),
     delivery_to: z.number().nullable().optional(),
     fee: z.number().nullable().optional(),
+    additional_item_fee: z.number().nullable().optional(),
     method_type: z.enum(["standard", "express", "same_day"]),
 });
 
@@ -35,6 +36,9 @@ export const RawFreeShippingRuleSchema = z.object({
     available: z.boolean().nullable().optional(),
     threshold: z.number().nullable().optional(),
     method_type: z.enum(["standard", "express"]).nullable().optional(),
+    zone_type: z.enum(["domestic", "regional", "sub_regional", "global"]).nullable().optional(),
+    currency_code: z.string().nullable().optional(),
+    base_threshold: z.number().nullable().optional(),
 });
 
 export const RawSameDayCitySchema = z.object({
@@ -70,6 +74,7 @@ export interface RawShippingMethodDelivery {
     delivery_from: number | null;
     delivery_to: number | null;
     fee: number;
+    additional_item_fee?: number | null;
     method_type: "same_day" | "standard" | "express";
 }
 
@@ -91,6 +96,9 @@ export interface RawFreeShippingRule {
     available?: boolean;
     threshold?: number;
     method_type: string;
+    zone_type?: "domestic" | "regional" | "sub_regional" | "global" | null;
+    currency_code?: string | null;
+    base_threshold?: number | null;
 }
 
 export interface RawSameDayApplicableCity {

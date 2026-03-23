@@ -3,14 +3,51 @@
 import type { ShippingConfigDataProps } from "@/lib/types";
 import { createClient } from "@/supabase/server";
 
-interface ServerActionResponse {
-  success: boolean;
-  configId?: string;
-  message: string;
+type DeliveryEstimate = {
+  config_id: string;
+  method_type: "same_day" | "standard" | "express";
+  zone_type: "domestic" | "regional" | "sub_regional" | "global";
+  delivery_from: number;
+  delivery_to: number;
+  fee: number;
+  additional_item_fee: number;
+  calculation_strategy: "flat" | "base_incremental";
+  currency_code: string;
+  base_fee: number;
+};
+
+type RawDeliveryEstimate = Omit<DeliveryEstimate, "config_id" | "currency_code" | "base_fee">;
+
+function roundCurrencyAmount(amount: number) {
+  return Number(amount.toFixed(2));
 }
+
+async function convertToBaseCurrency(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  amount: number,
+  currencyCode: string
+) {
+  if (currencyCode === "USD") {
+    return roundCurrencyAmount(amount);
+  }
+
+  const { data, error } = await supabase
+    .from("exchange_rates")
+    .select("rate")
+    .eq("target_currency", currencyCode)
+    .single<{ rate: number }>();
+
+  if (error || !data?.rate || data.rate <= 0) {
+    throw new Error(`No valid exchange rate found for ${currencyCode}.`);
+  }
+
+  return roundCurrencyAmount(amount / data.rate);
+}
+
 export const updateBrandShippingConfig = async (
   data: ShippingConfigDataProps,
-  userId: string
+  userId: string,
+  brandCurrency: string
 ) => {  
  	const supabase = await createClient();
   	const { shippingMethods, shippingZones, handlingTime, freeShipping } = data;
@@ -24,6 +61,7 @@ export const updateBrandShippingConfig = async (
 				brand_id: userId,
 				handling_time_from: handlingTime.from,
 				handling_time_to: handlingTime.to,
+                default_shipping_strategy: "base_incremental",
 				updated_at: new Date().toISOString(),
 			},
 			{
@@ -80,37 +118,55 @@ export const updateBrandShippingConfig = async (
 					.eq("config_id", config.id);
 
 				// Prepare all delivery estimates
-				const deliveryEstimates = [
+				const rawDeliveryEstimates: RawDeliveryEstimate[] = [
 					// Same day delivery (domestic only)
 					{
-						config_id: config.id,
-						method_type: "same_day",
-						zone_type: "domestic",
+						method_type: "same_day" as const,
+						zone_type: "domestic" as const,
 						delivery_from: 0,
 						delivery_to: 1,
 						fee: shippingMethods.sameDayDelivery.fee,
+						additional_item_fee: 0,
+                        calculation_strategy: "flat",
 					},
 				
 					// Standard shipping
-					...Object.entries(shippingMethods.standardShipping.estimatedDelivery).map(([zone, details]) => ({
-						config_id: config.id,
-						method_type: "standard",
-						zone_type: zone,
+					...Object.entries(shippingMethods.standardShipping.estimatedDelivery).map((entry): RawDeliveryEstimate => {
+                        const [zone, details] = entry;
+                        return {
+						method_type: "standard" as const,
+						zone_type: zone as DeliveryEstimate["zone_type"],
 						delivery_from: details.from,
 						delivery_to: details.to,
 						fee: details.fee,
-					})),
+						additional_item_fee: details.additionalItemFee,
+                        calculation_strategy: "base_incremental",
+					    };
+                    }),
 				
 					// Express shipping
-					...Object.entries(shippingMethods.expressShipping.estimatedDelivery).map(([zone, details]) => ({
-						config_id: config.id,
-						method_type: "express",
-						zone_type: zone,
+					...Object.entries(shippingMethods.expressShipping.estimatedDelivery).map((entry): RawDeliveryEstimate => {
+                        const [zone, details] = entry;
+                        return {
+						method_type: "express" as const,
+						zone_type: zone as DeliveryEstimate["zone_type"],
 						delivery_from: details.from,
 						delivery_to: details.to,
 						fee: details.fee,
-					}))
+						additional_item_fee: details.additionalItemFee,
+                        calculation_strategy: "base_incremental",
+					    };
+                    })
 				];
+
+				const deliveryEstimates: DeliveryEstimate[] = await Promise.all(
+					rawDeliveryEstimates.map(async (estimate) => ({
+						config_id: config.id,
+						...estimate,
+						currency_code: brandCurrency,
+						base_fee: await convertToBaseCurrency(supabase, estimate.fee, brandCurrency),
+					}))
+				);
 
 				const { error } = await supabase
 					.from("shipping_method_delivery")
@@ -217,17 +273,22 @@ export const updateBrandShippingConfig = async (
 					.eq("config_id", config.id);
 
 				if (freeShipping?.available) {
+                    const selectedMethods = freeShipping.applicableMethods;
+                    const selectedZones = freeShipping.applicableZones ?? [];
+                    const baseThreshold = await convertToBaseCurrency(supabase, freeShipping.threshold, brandCurrency);
+
 					// Prepare all rules
-					const rules = [
-					// Applicable methods
-					...freeShipping.applicableMethods.map(method => ({
-						config_id: config.id,
-						available: true,
-						threshold: freeShipping.threshold,
-						method_type: method,
-					})),
-					
-					];
+					const rules = selectedMethods.flatMap((method) =>
+                        selectedZones.map((zone) => ({
+                            config_id: config.id,
+                            available: true,
+                            threshold: freeShipping.threshold,
+                            base_threshold: baseThreshold,
+                            currency_code: brandCurrency,
+                            method_type: method,
+                            zone_type: zone,
+                        }))
+                    );
 
 					if (rules.length > 0) {
 						const { error } = await supabase

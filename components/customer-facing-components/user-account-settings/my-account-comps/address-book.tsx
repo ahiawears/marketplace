@@ -1,10 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { UserAddressType } from "@/lib/types";
+import { useState } from "react";
 import AddressForm from "./address-form";
 import AddressList from "./address-list";
-import { toast } from "sonner";
 
 type ComponentItems = "addressList" | "addAddress";
 
@@ -32,27 +30,24 @@ const AddressBook: React.FC<AddressesProps> = ({ userAddressData }) => {
     const [currentComponent, setCurrentComponent] = useState<ComponentItems>("addressList");
     const [addressData, setAddressData] = useState<UserAddressDetails[]>(userAddressData);
 
-	const fetchUserAddresses = async () => {
-		try {
-			const response = await fetch('/api/getUserAddresses', {
-				cache: 'no-store',
-			});
-			const data = await response.json();
-			if (response.ok) {
-				setAddressData(data);
-			}
-		} catch (error) {
-			console.error("Failed to fetch addresses:", error);
-            toast.error("Failed to fetch addresses. Please refresh the page.");
-		}
-	};
+    const addAddressToList = (address: UserAddressDetails) => {
+        setAddressData((prevData) => {
+            if (address.is_default) {
+                return [address, ...prevData.map((item) => ({ ...item, is_default: false }))];
+            }
+
+            return [address, ...prevData];
+        });
+    };
 	const renderComponent = () => {
 		if (currentComponent === "addressList") {
 			return (
 				<AddressList
 					addresses={addressData}
 					onAddAddress={() => setCurrentComponent("addAddress")}
-					onAddressDeleted={fetchUserAddresses}
+					onAddressDeleted={async () => {
+                        window.location.reload();
+                    }}
 				/>
 			);
 		}
@@ -60,8 +55,8 @@ const AddressBook: React.FC<AddressesProps> = ({ userAddressData }) => {
 			return (
 				<AddressForm
 					onBack={() => setCurrentComponent("addressList")}
-					onAddressAdded={() => {
-						fetchUserAddresses();
+					onAddressAdded={async (address) => {
+                        addAddressToList(address);
 						setCurrentComponent("addressList");
 					}}
 				/>

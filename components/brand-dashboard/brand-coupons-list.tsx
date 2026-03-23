@@ -35,12 +35,20 @@ const ClientFormattedDate = ({ dateString }: { dateString: string }) => {
     return <>{formattedDate || '...'}</>;
 };
 
-const formatDiscount = (type: string, value: number, currency: string = "$") => {
+const formatDiscount = (type: string, value: number, currencyCode: string = "USD") => {
     switch (type) {
         case 'percentage':
             return `${value}% off`;
         case 'fixed':
-            return `${currency}${value.toFixed(2)} off`;
+            try {
+                return `${new Intl.NumberFormat("en-US", {
+                    style: "currency",
+                    currency: currencyCode,
+                    currencyDisplay: "symbol",
+                }).format(value)} off`;
+            } catch {
+                return `${currencyCode} ${value.toFixed(2)} off`;
+            }
         case 'free_shipping':
             return 'Free Shipping';
         default:
@@ -126,7 +134,7 @@ const BrandCouponList = ({ onAddCouponDetails, data, onUpdateCoupon, onUpdateCou
                                 <CardContent className="p-4 grid grid-cols-3 gap-4">
                                     <div className="col-span-1">
                                         <p className="text-sm font-medium text-gray-500">Discount</p>
-                                        <p className="text-lg font-semibold text-gray-800">{formatDiscount(coupon.discountType, coupon.discountValue)}</p>
+                                        <p className="text-lg font-semibold text-gray-800">{formatDiscount(coupon.discountType, coupon.discountValue, coupon.currencyCode || "USD")}</p>
                                     </div>
                                     <div className="col-span-1">
                                         <p className="text-sm font-medium text-gray-500">Validity</p>

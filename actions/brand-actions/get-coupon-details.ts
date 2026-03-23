@@ -61,7 +61,7 @@ export async function GetCouponDetails(couponId: string): Promise<GetCouponDetai
             discountType: coupon.discount_type,
             discountValue: coupon.discount_value ?? undefined,
             baseCurrencyDiscountValue: coupon.base_currency_discount_value,
-            currencyCode: coupon.currency_code, 
+            currencyCode: coupon.currency_code || "USD", 
             usageLimit: coupon.usage_limit,
             singleUsePerCustomer: coupon.single_use_per_customer ? "active" : "inactive",
             minOrderAmount: coupon.min_order_amount,

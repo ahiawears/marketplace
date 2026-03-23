@@ -1,5 +1,5 @@
 'use client';
-import { FC, useMemo, useState } from "react";
+import { FC, useEffect, useMemo, useState } from "react";
 import BrandCouponList from "./brand-coupons-list";
 import CouponStatsModal from "../modals/coupon-stats-modal";
 import { toast } from "sonner";
@@ -48,6 +48,7 @@ export type CouponListItem = {
     discountType: string;
     discountValue: number;
     baseCurrencyDiscountValue?: number;
+    currencyCode?: string;
     startDate: string;
     endDate: string;
     isActive: boolean;
@@ -68,66 +69,6 @@ export interface CouponClientProps {
     brandProducts: BrandProductListItem[];  
 }
 
-// Sample Data for demonstration
-const sampleCoupons = [
-    {
-        id: '1',
-        name: 'Summer Sale 20%',
-        code: 'SUMMER20',
-        discountType: 'percentage',
-        discountValue: 20,
-        startDate: '2024-06-01T00:00:00Z',
-        endDate: '2024-08-31T23:59:59Z',
-        isActive: true,
-        created_at: '2024-05-15T10:00:00Z',
-        stats: {
-            totalUses: 152,
-            totalRevenue: 4560.50,
-            avgOrderValue: 30.00,
-            recentOrders: [
-                { orderId: 'ORD-123', customerName: 'Jane Doe', date: '2024-07-20T10:00:00Z', amount: 50.00 },
-                { orderId: 'ORD-124', customerName: 'John Smith', date: '2024-07-20T11:30:00Z', amount: 25.50 },
-                { orderId: 'ORD-125', customerName: 'Alice Johnson', date: '2024-07-19T15:00:00Z', amount: 75.00 },
-                { orderId: 'ORD-126', customerName: 'Bob Brown', date: '2024-07-19T09:00:00Z', amount: 15.00 },
-            ]
-        }
-    },
-    {
-        id: '2',
-        name: '$10 Off First Order',
-        code: 'WELCOME10',
-        discountType: 'fixed',
-        discountValue: 10,
-        startDate: '2024-01-01T00:00:00Z',
-        endDate: '',
-        isActive: true,
-        created_at: '2024-01-01T09:00:00Z',
-        stats: {
-            totalUses: 540,
-            totalRevenue: 5400.00,
-            avgOrderValue: 10.00,
-            recentOrders: []
-        }
-    },
-    {
-        id: '3',
-        name: 'Free Shipping Weekend',
-        code: 'FREESHIP',
-        discountType: 'free_shipping',
-        discountValue: 0,
-        startDate: '2024-07-12T00:00:00Z',
-        endDate: '2024-07-14T23:59:59Z',
-        isActive: false,
-        created_at: '2024-07-10T11:00:00Z',
-        stats: {
-            totalUses: 88,
-            totalRevenue: 0,
-            avgOrderValue: 0,
-            recentOrders: []
-        }
-    },
-];
-
 const CouponClient: FC<CouponClientProps> = ({
     userId,
     currency,
@@ -136,12 +77,17 @@ const CouponClient: FC<CouponClientProps> = ({
     brandProducts,
 }) => {
     const [currentComponent, setCurrentComponent] = useState<ComponentItems>("couponList");
-    const [couponsList, setCouponsList] = useState<CouponClientProps["couponList"]>(couponList.length > 0 ? couponList : sampleCoupons);
+    const [couponsList, setCouponsList] = useState<CouponClientProps["couponList"]>(couponList);
     const [filter, setFilter] = useState<CouponFilterStatus>('active');
 
     const [couponToEdit, setCouponToEdit] = useState<CouponFormDetails | null>(null);
     const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
     const [couponForStats, setCouponForStats] = useState<typeof couponsList[0] | null>(null);
+
+    useEffect(() => {
+        setCouponsList(couponList);
+    }, [couponList]);
+
     const fetchCoupons = async () => {
         const toastId = toast.info("Refreshing coupon list...");
         

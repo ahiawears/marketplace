@@ -108,6 +108,7 @@ export type VariantDetailsSchemaType = z.infer<typeof VariantDetailsValidationSc
 
 const ProductMethodZoneConfigSchema = z.object({
     fee: z.number({ required_error: "Fee is required.", invalid_type_error: "Fee must be a number." }).positive("Fee must be a positive number."),
+    additionalItemFee: z.number({ invalid_type_error: "Additional item fee must be a number." }).min(0, "Additional item fee cannot be negative.").default(0),
     available: z.boolean(),
 });
 

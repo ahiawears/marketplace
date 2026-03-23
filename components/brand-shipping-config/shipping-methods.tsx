@@ -7,13 +7,15 @@ import { useEffect, useState } from "react";
 import { CountryData } from "@/lib/country-data";
 import { CountryState } from "@/lib/country-states";
 import { DeliveryZone } from "@/lib/types";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
+import { Info } from "lucide-react";
 
 // Define the structure for estimated delivery including fee per zone
 interface EstimatedDeliveryWithFees {
-    domestic?: { from: number; to: number; fee: number; };
-    regional?: { from: number; to: number; fee: number; };
-    sub_regional?: { from: number; to: number; fee: number; };
-    global?: { from: number; to: number; fee: number; };
+    domestic?: { from: number; to: number; fee: number; additionalItemFee: number; };
+    regional?: { from: number; to: number; fee: number; additionalItemFee: number; };
+    sub_regional?: { from: number; to: number; fee: number; additionalItemFee: number; };
+    global?: { from: number; to: number; fee: number; additionalItemFee: number; };
     // Keep cutOffTime/timeZone separate for same-day if needed, or integrate if structure changes
     cutOffTime?: string;
     timeZone?: string;
@@ -36,6 +38,7 @@ interface MethodToggleProps {
         value: number
     ) => void;
     onZoneFeeChange: (zone: DeliveryZone, value: number) => void; // New handler for zone-specific fees
+    onZoneAdditionalFeeChange: (zone: DeliveryZone, value: number) => void;
     cutOffTimeValue?: string;
     timeZoneValue?: string;   
     onSameDayInputChange?: (field: 'cutOffTime' | 'timeZone', value: string) => void; // Handler
@@ -44,7 +47,22 @@ interface MethodToggleProps {
     enabledZones?: DeliveryZone[]; // Add prop to receive enabled zones
 }
 
-const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, fee, onFeeChange, currency, country, estimatedDelivery, onDeliveryTimeChange, onZoneFeeChange, cutOffTimeValue, timeZoneValue, onSameDayInputChange, onCitiesChange, selectedCities = [], enabledZones = []}) => {
+const FieldHelp: React.FC<{ text: string }> = ({ text }) => (
+    <TooltipProvider>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button type="button" className="inline-flex items-center" aria-label="Field help">
+                    <Info size={14} className="cursor-help text-gray-500" />
+                </button>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p className="max-w-xs text-sm">{text}</p>
+            </TooltipContent>
+        </Tooltip>
+    </TooltipProvider>
+);
+
+const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, fee, onFeeChange, currency, country, estimatedDelivery, onDeliveryTimeChange, onZoneFeeChange, onZoneAdditionalFeeChange, cutOffTimeValue, timeZoneValue, onSameDayInputChange, onCitiesChange, selectedCities = [], enabledZones = []}) => {
     const [countryTimezones, setCountryTimezones] = useState<string[]>([]); // Store timezone names as strings
     const [selectedTimezoneName, setSelectedTimezoneName] = useState<string | null>(timeZoneValue || null); // Store selected name
 
@@ -118,8 +136,9 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
         return (
             <div className="w-full space-y-4">
                 <div className="flex items-center space-x-2 justify-between">
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 flex items-center gap-1">
                         Fee:
+                        <FieldHelp text="Use this for the full same-day delivery charge paid by the customer. This method does not use the extra-item shipping rule." />
                     </span>
                     <MoneyInput 
                         numericValue={fee}
@@ -134,7 +153,10 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
                     </span>
                 </div>
                 <div className="w-full"> {/* Ensure child takes full width */}
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cut-off time for same day delivery: </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        Cut-off time for same day delivery:
+                        <FieldHelp text="Orders placed before this time can still qualify for same-day dispatch or delivery, depending on your process." />
+                    </label>
                     <TimeScroller
                         // Use the value from props, provide a default if undefined/empty
                         value={cutOffTimeValue || "12:00"} // Default to 12:00 if no value
@@ -145,7 +167,10 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
                     />
                 </div>
                 <div className="w-full"> {/* Ensure child takes full width */}
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Time Zone: </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        Time Zone:
+                        <FieldHelp text="Set the timezone used for your same-day cut-off time so shoppers are evaluated against the correct local time." />
+                    </label>
                     <SearchableSelect
                         options={countryTimezones}
                         getOptionLabel={(timeZoneName: string) => timeZoneName} 
@@ -166,7 +191,10 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
                     }
                 </div>
                 <div className="w-full">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Applicable states:</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        Applicable states:
+                        <FieldHelp text="Limit same-day delivery to the places you can actually serve quickly. Customers outside these states will not see this method." />
+                    </label>
                     <SearchableSelect
                         options={sameDayStates}
                         onSelect={handleAddCity}
@@ -214,7 +242,10 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
                     Estimated Delivery Time:
                 </h2>
                 <div className="border-t pt-3 space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{zoneLabel} (Days)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
+                        {zoneLabel} (Days)
+                        <FieldHelp text="Set the expected delivery range for this zone. These values are shown to customers as the delivery estimate for this method." />
+                    </label>
                     <div className="flex items-center space-x-2 w-full justify-between">
                         <div className="flex-1">
                             <Input
@@ -240,8 +271,9 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
                     </div>
                     {/* Fee Input for the Zone */}
                     <div className="flex items-center space-x-2 justify-between">
-                        <span className="text-sm text-gray-600">
-                            Fee:
+                        <span className="text-sm text-gray-600 flex items-center gap-1">
+                            Base fee:
+                            <FieldHelp text="This is the first-item shipping charge for this zone and method. In the current model, checkout starts with this amount for the vendor group." />
                         </span>
                         <MoneyInput
                             numericValue={timeData.fee}
@@ -250,7 +282,20 @@ const MethodToggle: React.FC<MethodToggleProps> = ({ label, checked, onToggle, f
                             placeholder="0.00"
                         />
                         <span className="text-sm text-gray-600">{currency}</span>
-                    </div>                 
+                    </div>
+                    <div className="flex items-center space-x-2 justify-between">
+                        <span className="text-sm text-gray-600 flex items-center gap-1">
+                            Additional item:
+                            <FieldHelp text="This is the extra shipping amount added for each additional item from the same brand group when this method and zone are used." />
+                        </span>
+                        <MoneyInput
+                            numericValue={timeData.additionalItemFee}
+                            className="w-full border-2"
+                            onNumericChange={(value) => onZoneAdditionalFeeChange(zone, value)}
+                            placeholder="0.00"
+                        />
+                        <span className="text-sm text-gray-600">{currency}</span>
+                    </div>
                 </div>
             </>
             

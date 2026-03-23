@@ -35,6 +35,7 @@ interface Errors {
     billing_line2?: string;
     billing_postal_code?: string;
     billing_state?: string;
+    general?: string;
 }
 
 
@@ -46,7 +47,7 @@ const PaymentMethodForm = ({ onBack, onPaymentMethodAdded }: { onBack: () => voi
         expiry_year: '',
         cvv: '',
         billing_city: '',
-        billing_country: 'NG',
+        billing_country: '',
         billing_line1: '',
         billing_line2: '',
         billing_postal_code: '',
@@ -60,7 +61,10 @@ const PaymentMethodForm = ({ onBack, onPaymentMethodAdded }: { onBack: () => voi
     const selectedCountry = CountryData.find(c => c.iso2 === formData.billing_country);
 
     // This is the encryption key from Flutterwave. You should get this from your environment variables.
-    const encryptionKey = process.env.NEXT_PUBLIC_FLUTTERWAVE_ENCRYPTION_KEY_V4; 
+    const encryptionKey =
+        process.env.NEXT_PUBLIC_FLUTTERWAVE_ENCRYPTION_KEY_V4 ||
+        process.env.NEXT_PUBLIC_FLUTTERWAVE_ENCRYPTION_KEY ||
+        process.env.FLUTTERWAVE_ENCRYPTION_KEY; 
 
     // Helper to generate a 12-character random nonce
     const generateNonce = (): string => {
@@ -82,9 +86,13 @@ const PaymentMethodForm = ({ onBack, onPaymentMethodAdded }: { onBack: () => voi
     
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
+        const normalizedValue =
+            name === "card_number" ? value.replace(/\D/g, "").slice(0, 19) :
+            name === "expiry_month" || name === "expiry_year" || name === "cvv" ? value.replace(/\D/g, "") :
+            value;
         setFormData(prevData => ({
             ...prevData,
-            [name]: value
+            [name]: normalizedValue
         }));
         if (errors[name as keyof Errors]) {
             setErrors(prev => ({ ...prev, [name]: undefined }));
@@ -109,10 +117,11 @@ const PaymentMethodForm = ({ onBack, onPaymentMethodAdded }: { onBack: () => voi
         // Validation logic...
         const newErrors: Partial<PaymentMethodFormProps> = {};
         if (!formData.full_name.trim()) newErrors.full_name = 'Required';
-        if (!/^\d{16}$/.test(formData.card_number)) newErrors.card_number = 'Invalid card number';
+        if (!/^\d{12,19}$/.test(formData.card_number)) newErrors.card_number = 'Invalid card number';
         if (!/^\d{2}$/.test(formData.expiry_month)) newErrors.expiry_month = 'MM required';
         if (!/^\d{2}$/.test(formData.expiry_year)) newErrors.expiry_year = 'YY required';
         if (!/^\d{3,4}$/.test(formData.cvv)) newErrors.cvv = 'Invalid CVV';
+        if (!formData.billing_country.trim()) newErrors.billing_country = 'Required';
         if (!formData.billing_city.trim()) newErrors.billing_city = 'Required';
         if (!formData.billing_line1.trim()) newErrors.billing_line1 = 'Required';
         if (!formData.billing_postal_code.trim()) newErrors.billing_postal_code = 'Required';
@@ -139,8 +148,13 @@ const PaymentMethodForm = ({ onBack, onPaymentMethodAdded }: { onBack: () => voi
             const encrypted_card_number = await encryptAES(formData.card_number, encryptionKey, nonce);
             console.log("card number encrypted")
             const encrypted_expiry_month = await encryptAES(formData.expiry_month, encryptionKey, nonce);
+            console.log("expiry month encrypted")
             const encrypted_expiry_year = await encryptAES(formData.expiry_year, encryptionKey, nonce);
+            console.log("expiry year encrypted")
             const encrypted_cvv = await encryptAES(formData.cvv, encryptionKey, nonce);
+            console.log("cvv encrypted")
+
+            console.log("Encryption complete, preparing payload for API call")
 
             const payload = {
                 card: {
@@ -161,6 +175,7 @@ const PaymentMethodForm = ({ onBack, onPaymentMethodAdded }: { onBack: () => voi
                 },
                 type: 'card'
             };
+            console.log("Payload prepared, sending to API:", payload);
             
             // Send to your API endpoint
             const response = await fetch('/api/add-payment-method', {
@@ -193,7 +208,6 @@ const PaymentMethodForm = ({ onBack, onPaymentMethodAdded }: { onBack: () => voi
     };
 
     return (
-        // ... (Your form JSX remains the same) ...
         <div>
             <div className="space-y-2 my-2">
                 <Button
@@ -226,8 +240,8 @@ const PaymentMethodForm = ({ onBack, onPaymentMethodAdded }: { onBack: () => voi
                                 value={formData.card_number}
                                 autoComplete="false"
                                 onChange={handleInputChange}
-                                placeholder="4242 4242 4242 4242"
-                                maxLength={16}
+                                placeholder="4242424242424242"
+                                maxLength={19}
                                 className="border-2"
                             />
                             {errors.card_number && <p className="text-red-500 text-sm">{errors.card_number}</p>}
@@ -357,6 +371,12 @@ const PaymentMethodForm = ({ onBack, onPaymentMethodAdded }: { onBack: () => voi
                 <Button type="submit" disabled={isSubmitting} className="w-full">
                     {isSubmitting ? 'Saving...' : 'Save Payment Method'}
                 </Button>
+                {errors.general && (
+                    <p className="text-sm text-red-500">{errors.general}</p>
+                )}
+                {statusMessage && (
+                    <p className="text-sm text-stone-700">{statusMessage}</p>
+                )}
             </form>
         </div>
     );

@@ -133,6 +133,7 @@ const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfig
                     from: deliveryDetail?.delivery_from ?? existing.from,
                     to: deliveryDetail?.delivery_to ?? existing.to,
                     fee: deliveryDetail?.fee ?? existing.fee,
+                    additionalItemFee: deliveryDetail?.additional_item_fee ?? existing.additionalItemFee,
                 };
             }
         });
@@ -144,12 +145,12 @@ const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfig
     // 4. Free Shipping
     const freeRules = apiData.free_shipping_rules ?? [];
     if (freeRules.length > 0) {
-        // Take the first rule (you might want to handle multiple rules differently)
         const rule = freeRules[0];
         newConfig.freeShipping = {
             available: rule.available ?? true,
             threshold: rule.threshold ?? 0,
-            applicableMethods: rule.method_type ? [rule.method_type as "standard" | "express"] : [],
+            applicableMethods: Array.from(new Set(freeRules.map((freeRule) => freeRule.method_type).filter(Boolean))) as ("standard" | "express")[],
+            applicableZones: Array.from(new Set(freeRules.map((freeRule) => freeRule.zone_type).filter(Boolean))) as DeliveryZone[],
         };
     }
 
@@ -179,10 +180,10 @@ export async function GetShippingConfig(brandId?: string): Promise<ShippingConfi
 					"handling_time_from",
 					"handling_time_to",
 					"shipping_methods(id,method_type,available,cut_off_time,time_zone)",
-					"shipping_method_delivery(id,method_type,zone_type,delivery_from,delivery_to,fee)",
+					"shipping_method_delivery(id,method_type,zone_type,delivery_from,delivery_to,fee,additional_item_fee)",
 					"shipping_zones(id,zone_type,available)",
 					"zone_exclusions(id,zone_type,exclusion_type,value)",
-					"free_shipping_rules(id,available,threshold,method_type)",
+					"free_shipping_rules(id,available,threshold,base_threshold,currency_code,method_type,zone_type)",
 					"same_day_applicable_cities(city_name)",
 				].join(",")
 			)

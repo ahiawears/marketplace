@@ -30,6 +30,7 @@ interface AddressListProps {
 const AddressList = ({ addresses, onAddAddress, onAddressDeleted }: AddressListProps) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [addressIdToDelete, setAddressIdToDelete] = useState<string | null>(null);
+    const [isUpdatingDefault, setIsUpdatingDefault] = useState<string | null>(null);
 
     const handleDeleteClick = (addressId: string) => {
         setAddressIdToDelete(addressId);
@@ -55,6 +56,25 @@ const AddressList = ({ addresses, onAddAddress, onAddressDeleted }: AddressListP
     const handleCancel = () => {
         setIsModalOpen(false);
         setAddressIdToDelete(null);
+    };
+
+    const handleSetDefault = async (addressId: string) => {
+        try {
+            setIsUpdatingDefault(addressId);
+            const response = await fetch("/api/set-default-address", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ addressId }),
+            });
+
+            if (response.ok) {
+                onAddressDeleted();
+            }
+        } finally {
+            setIsUpdatingDefault(null);
+        }
     };
 
     return (
@@ -83,6 +103,11 @@ const AddressList = ({ addresses, onAddAddress, onAddressDeleted }: AddressListP
                                 <h3 className="font-medium text-lg">
                                     {address.first_name} {address.last_name}
                                 </h3>
+                                {address.is_default && (
+                                    <span className="inline-flex w-fit border border-stone-900 px-2 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-stone-900">
+                                        Default
+                                    </span>
+                                )}
                                 
                                 <div className="space-y-1">
                                     <p className="text-gray-800">{address.address}</p>
@@ -102,6 +127,15 @@ const AddressList = ({ addresses, onAddAddress, onAddressDeleted }: AddressListP
                             </div>
 
                             <div className="flex space-x-2 self-end md:self-center">
+                                {!address.is_default && (
+                                    <Button
+                                        className="border-2"
+                                        disabled={isUpdatingDefault === address.id}
+                                        onClick={() => handleSetDefault(address.id)}
+                                    >
+                                        {isUpdatingDefault === address.id ? "Updating..." : "Set Default"}
+                                    </Button>
+                                )}
                                 <Button
                                     className="border-2"
                                     onClick={() => handleDeleteClick(address.id)}

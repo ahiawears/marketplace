@@ -3,6 +3,7 @@
 import { Input } from "../../../ui/input";
 import { Select } from "../../../ui/select";
 import { Button } from "../../../ui/button";
+import { SearchableSelect } from "../../../ui/searchable-select";
 import { addUserAddress } from "@/actions/user-actions/my-account/add-user-address";
 import React, { useState, useEffect } from "react";
 import { trim } from "validator";
@@ -34,7 +35,24 @@ interface Errors {
     postCode?: string;
 }
 
-const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddressAdded: () => void; }) => {
+interface AddedAddress {
+    id: string;
+    user_id: string;
+    first_name: string;
+    last_name: string;
+    address: string;
+    city: string;
+    county: string;
+    region: string;
+    country: string;
+    post_code: string;
+    country_code: string;
+    mobile: string;
+    created_at: string;
+    is_default: boolean;
+}
+
+const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddressAdded: (address: AddedAddress) => Promise<void> | void; }) => {
     const [formData, setFormData] = useState<UserAddressProps>({
         firstName: '',
         lastName: '',
@@ -83,6 +101,16 @@ const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddress
         }));
         if (errors[name as keyof Errors]) {
             setErrors(prev => ({ ...prev, [name]: undefined }));
+        }
+    };
+
+    const handleCountrySelect = (country: CountryDataType) => {
+        setFormData(prevData => ({
+            ...prevData,
+            country: country.iso2,
+        }));
+        if (errors.country) {
+            setErrors(prev => ({ ...prev, country: undefined }));
         }
     };
 
@@ -181,10 +209,9 @@ const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddress
         try {
             const response = await addUserAddress(form);
 
-            if (response.success) {
+            if (response.success && response.address) {
                 setStatusMessage('Address added successfully!');
-                onAddressAdded();
-                setTimeout(() => onBack(), 1500);
+                await onAddressAdded(response.address);
             } else {
                 if (response.errors) {
                     const serverErrors: Errors = {};
@@ -259,20 +286,14 @@ const AddressForm = ({ onBack, onAddressAdded }: { onBack: () => void; onAddress
                     <label htmlFor="country" className="block text-sm font-bold text-gray-900 mb-1 w-fit">
                         Country:*
                     </label>
-                    <Select
-                        id="country"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleSelectChange}
-                        className="text-muted-foreground block border-2 bg-transparent"
-                    >
-                        <option value="">Select a country</option>
-                        {CountryData.map((country) => (
-                            <option key={country.iso2} value={country.iso2}>
-                                {`${country.emoji} ${country.name} (${country.iso2})`}
-                            </option>
-                        ))}
-                    </Select>
+                    <SearchableSelect
+                        options={CountryData}
+                        getOptionLabel={(country) => `${country.emoji} ${country.name} (${country.iso2})`}
+                        onSelect={handleCountrySelect}
+                        value={selectedCountry ? `${selectedCountry.emoji} ${selectedCountry.name} (${selectedCountry.iso2})` : ""}
+                        placeholder="Select a country"
+                        className="text-muted-foreground"
+                    />
                     {errors.country && <p className="text-red-500 text-sm mt-1">{errors.country}</p>}
                 </div>
 

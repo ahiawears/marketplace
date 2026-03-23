@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { Input } from "../ui/input";
 import { MoneyInput } from "../ui/money-input";
 import React from 'react';
+import { DeliveryZone } from "@/lib/types";
 
 interface FreeShippingSectionProps {
     label: string;
@@ -12,25 +13,37 @@ interface FreeShippingSectionProps {
     availableMethods: ("standard" | "express")[]; // Methods that *can* be selected
     selectedMethods: ("standard" | "express")[]; // Methods currently *selected*
     onSelectedMethodsChange: (methods: ("standard" | "express")[]) => void;
+    availableZones: DeliveryZone[];
+    selectedZones: DeliveryZone[];
+    onSelectedZonesChange: (zones: DeliveryZone[]) => void;
     excludedCountries: string[]; // Countries excluded based on zone settings
     currency: string; // For the threshold input
 }
 
-const FreeShippingSection: React.FC<FreeShippingSectionProps> = ({label, checked, onToggle, threshold, onThresholdChange, availableMethods, selectedMethods, onSelectedMethodsChange, excludedCountries, currency }) => {
-    const handleMethodClick = (method: "standard" | "express") => {
-        // Check if the clicked method is already the single selected method
-        const currentlySelected = selectedMethods.includes(method);
-        let newSelectedMethods: ("standard" | "express")[];
+const ZONE_LABELS: Record<DeliveryZone, string> = {
+    domestic: "Domestic",
+    sub_regional: "Sub-Region",
+    regional: "Continental",
+    global: "International",
+};
 
-        if (currentlySelected) {
-            // If it's already selected, deselect it by making the array empty
-            newSelectedMethods = [];
-        } else {
-            // If it's not selected, make it the only selected method
-            newSelectedMethods = [method];
-        }
+const FreeShippingSection: React.FC<FreeShippingSectionProps> = ({label, checked, onToggle, threshold, onThresholdChange, availableMethods, selectedMethods, onSelectedMethodsChange, availableZones, selectedZones, onSelectedZonesChange, excludedCountries, currency }) => {
+    const handleMethodClick = (method: "standard" | "express") => {
+        const currentlySelected = selectedMethods.includes(method);
+        const newSelectedMethods = currentlySelected
+            ? selectedMethods.filter((selectedMethod) => selectedMethod !== method)
+            : [...selectedMethods, method];
         onSelectedMethodsChange(newSelectedMethods);
     };
+
+    const handleZoneClick = (zone: DeliveryZone) => {
+        const currentlySelected = selectedZones.includes(zone);
+        const newSelectedZones = currentlySelected
+            ? selectedZones.filter((selectedZone) => selectedZone !== zone)
+            : [...selectedZones, zone];
+        onSelectedZonesChange(newSelectedZones);
+    };
+
     return (
         <div className="flex flex-col p-4 border-2 rounded-lg space-y-3">
             <label className="flex items-center space-x-3">
@@ -66,7 +79,7 @@ const FreeShippingSection: React.FC<FreeShippingSectionProps> = ({label, checked
                              <p className="text-xs text-gray-500 mt-1">Set the order total required to qualify for free shipping.</p>
                         </div>
                     </div>
-                     {/* Applicable Methods Selection */}
+                    {/* Applicable Methods Selection */}
                      {availableMethods.length > 0 && (
                          <div className="flex-1 mt-4">
                             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -87,7 +100,7 @@ const FreeShippingSection: React.FC<FreeShippingSectionProps> = ({label, checked
                                     </span>
                                 ))}
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">Select which of your active shipping methods should be free when the threshold is met.</p>
+                            <p className="text-xs text-gray-500 mt-1">Select which active shipping methods should become free when the threshold is met.</p>
                         </div>
                     )}
                     {availableMethods.length === 0 && (
@@ -95,6 +108,30 @@ const FreeShippingSection: React.FC<FreeShippingSectionProps> = ({label, checked
                             You need to enable 'Standard Shipping' or 'Express Shipping' in the 'Shipping Methods' section above before you can select them for free shipping.
                          </p>
                     )}
+                    {availableZones.length > 0 && (
+                        <div className="flex-1 mt-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Apply Free Shipping In:
+                            </label>
+                            <div className="flex flex-wrap gap-2">
+                                {availableZones.map((zone) => (
+                                    <span
+                                        key={zone}
+                                        onClick={() => handleZoneClick(zone)}
+                                        className={`px-3 py-1 text-sm cursor-pointer transition-colors duration-150 ease-in-out border-2
+                                            ${selectedZones.includes(zone)
+                                                ? "bg-black text-white ring-2 ring-offset-1 ring-black"
+                                                : "bg-gray-200 text-gray-700 hover:bg-gray-300"}
+                                            `}
+                                    >
+                                        {ZONE_LABELS[zone]}
+                                    </span>
+                                ))}
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">Choose the delivery zones where this free-shipping rule can apply.</p>
+                        </div>
+                    )}
+
                     {/* Display Excluded Countries (Informational) */}
                     {excludedCountries.length > 0 && (
                         <div className="mt-4">

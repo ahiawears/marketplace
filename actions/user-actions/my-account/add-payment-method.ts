@@ -12,6 +12,15 @@ export async function addPaymentMethod(flutterwaveResult: any, card_holder: stri
             throw new Error("Authentication required");
         }
 
+        const { count: existingMethodCount, error: countError } = await supabase
+            .from("payment_methods")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id);
+
+        if (countError) {
+            throw new Error("Failed to validate existing payment methods.");
+        }
+
         // Extract the non-sensitive card data from the Flutterwave response
         const cardData = flutterwaveResult?.data?.card;
         if (!cardData) {
@@ -29,6 +38,7 @@ export async function addPaymentMethod(flutterwaveResult: any, card_holder: stri
                 expiry_month: parseInt(cardData.expiry_month),
                 expiry_year: parseInt(cardData.expiry_year),
                 card_holder: card_holder,
+                is_default: (existingMethodCount ?? 0) === 0,
             })
             .select()
             .single();

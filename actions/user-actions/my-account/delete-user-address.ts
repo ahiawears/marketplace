@@ -14,6 +14,21 @@ const deleteUserAddress = async (id: string) => {
     }
 
     try {
+        const { data: addressToDelete, error: fetchError } = await supabase
+            .from("user_address")
+            .select("id, is_default")
+            .eq("id", id)
+            .eq("user_id", userId)
+            .maybeSingle();
+
+        if (fetchError) {
+            throw fetchError;
+        }
+
+        if (!addressToDelete) {
+            return { success: false, error: "Address not found" };
+        }
+
         const { error: deleteError } = await supabase
             .from("user_address")
             .delete()
@@ -22,6 +37,32 @@ const deleteUserAddress = async (id: string) => {
 
         if (deleteError) {
             throw deleteError;
+        }
+
+        if (addressToDelete.is_default) {
+            const { data: replacementAddress, error: replacementError } = await supabase
+                .from("user_address")
+                .select("id")
+                .eq("user_id", userId)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (replacementError) {
+                throw replacementError;
+            }
+
+            if (replacementAddress) {
+                const { error: promoteError } = await supabase
+                    .from("user_address")
+                    .update({ is_default: true })
+                    .eq("id", replacementAddress.id)
+                    .eq("user_id", userId);
+
+                if (promoteError) {
+                    throw promoteError;
+                }
+            }
         }
 
         console.log(`Removed address id: `, id);

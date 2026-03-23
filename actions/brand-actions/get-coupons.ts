@@ -115,6 +115,7 @@ export async function GetCoupons (): Promise<GetCouponResponse> {
                 discountType: coupon.discount_type,
                 discountValue: coupon.discount_value || 0,
                 baseCurrencyDiscountValue: coupon.base_currency_discount_value,
+                currencyCode: coupon.currency_code || "USD",
                 startDate: coupon.start_date,
                 endDate: coupon.end_date,
                 isActive: coupon.is_active,

@@ -23,6 +23,22 @@ interface UserAddressResults {
     success: boolean;
     message?: string;
     errors?: { [key: string]: string[] | undefined };
+    address?: {
+        id: string;
+        user_id: string;
+        first_name: string;
+        last_name: string;
+        address: string;
+        city: string;
+        county: string;
+        region: string;
+        country: string;
+        post_code: string;
+        country_code: string;
+        mobile: string;
+        created_at: string;
+        is_default: boolean;
+    };
 }
 
 export async function addUserAddress(formData: FormData): Promise<UserAddressResults> {
@@ -42,6 +58,16 @@ export async function addUserAddress(formData: FormData): Promise<UserAddressRes
         if (!user) {
             return { success: false, message: 'User not authenticated.' };
         }
+
+        const { count: existingAddressCount, error: countError } = await supabase
+            .from("user_address")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", user.id);
+
+        if (countError) {
+            console.error("Error counting user addresses:", countError);
+            return { success: false, message: "Could not validate existing addresses." };
+        }
         
         const { firstName, lastName, country, region, countryCode, mobile, postCode, county, city, address } = validation.data;
         
@@ -57,11 +83,29 @@ export async function addUserAddress(formData: FormData): Promise<UserAddressRes
             mobile: mobile,
             post_code: postCode,
             country_code: countryCode,
+            is_default: (existingAddressCount ?? 0) === 0,
         };
         
-        const { error } = await supabase
+        const { data: insertedAddress, error } = await supabase
             .from("user_address")
-            .insert(userData);
+            .insert(userData)
+            .select(`
+                id,
+                user_id,
+                first_name,
+                last_name,
+                address,
+                city,
+                county,
+                region,
+                country,
+                post_code,
+                country_code,
+                mobile,
+                created_at,
+                is_default
+            `)
+            .single();
 
         if (error) {
             console.error("Error inserting address:", error);
@@ -69,7 +113,7 @@ export async function addUserAddress(formData: FormData): Promise<UserAddressRes
         }
         
         revalidatePath("/my-account");
-        return { success: true, message: "Address saved successfully!" };
+        return { success: true, message: "Address saved successfully!", address: insertedAddress };
 
     } catch (error) {
         console.error("An unexpected error occurred:", error);

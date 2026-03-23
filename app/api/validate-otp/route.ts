@@ -3,12 +3,12 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { transaction_reference, otp } = body;
+        const { flw_ref, otp, transactionId } = body;
 
-        console.log("Received OTP and Reference:", { otp, transaction_reference });
+        console.log("Received OTP and Reference:", { otp, flw_ref });
 
-        if (!transaction_reference || !otp) {
-            return NextResponse.json({ status: "error", message: "Missing OTP or transaction reference" }, { status: 400 });
+        if (!flw_ref || !otp) {
+            return NextResponse.json({ status: "error", message: "Missing OTP or Flutterwave reference" }, { status: 400 });
         }
 
         const response = await fetch("https://api.flutterwave.com/v3/validate-charge", {
@@ -19,7 +19,7 @@ export async function POST(req: Request) {
             },
             body: JSON.stringify({
                 otp: otp.trim(),
-                transaction_reference: transaction_reference.trim(),
+                flw_ref: flw_ref.trim(),
             }),
         });
 
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
         console.log("Response from Flutterwave API:", data);
 
         if (data.status === "success") {
-            return NextResponse.json({ status: "success", message: data.message });
+            return NextResponse.json({ status: "success", message: data.message, transactionId });
         } else {
             return NextResponse.json({ status: "error", message: data.message }, { status: 400 });
         }

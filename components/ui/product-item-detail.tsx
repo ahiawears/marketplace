@@ -10,6 +10,7 @@ import { saveProduct } from '@/actions/user-actions/userSavedProductActions/save
 import { checkVariantStock } from '@/actions/user-actions/userCartActions/checkVariantStock';
 import { upsertCart } from '@/actions/user-actions/userCartActions/upsertCart';
 import { strictSerialize } from '@/lib/serialization';
+import ProductShippingReturnsDialog from './product-shipping-returns-dialog';
 
 interface Color {
   id: string;
@@ -45,6 +46,21 @@ interface RelatedVariant {
   image_url: string | null;
 }
 
+interface ShippingSummary {
+  minimum_base_fee: number | null;
+  methods: string[];
+}
+
+interface ReturnPolicySummary {
+  is_returnable: boolean;
+  return_window_days: number | null;
+  return_shipping_responsibility: {
+    brandPays?: boolean;
+    customerPays?: boolean;
+    dependsOnReason?: boolean;
+  } | null;
+}
+
 interface VariantData {
   id: string;
   main_product_id: string;
@@ -61,11 +77,14 @@ interface VariantData {
   relatedVariants: RelatedVariant[];
   sizes: Record<string, SizeDetails>;
   tags: Tag[] | null;
+  shippingSummary: ShippingSummary | null;
+  returnPolicySummary: ReturnPolicySummary | null;
 }
 
 interface ProductItemProps {
     variantData: VariantData;
     displayPriceFormatted: string;
+    shippingEstimateFormatted: string | null;
     selectedCurrency: string;
     initialIsSaved: boolean;
     serverUserIdentifier: string;
@@ -98,6 +117,7 @@ function deserializeVariantData(data: VariantData): VariantData {
 const ProductItem: React.FC<ProductItemProps> = ({ 
     variantData, 
     displayPriceFormatted,
+    shippingEstimateFormatted,
     selectedCurrency,
     initialIsSaved,
     serverUserIdentifier,
@@ -238,6 +258,14 @@ const ProductItem: React.FC<ProductItemProps> = ({
         return "Add to Cart";
     };
 
+    const shippingMethodLabels = processedVariantData.shippingSummary?.methods.map((method) => {
+        if (method === "same_day") return "Same day";
+        if (method === "standard") return "Standard";
+        if (method === "express") return "Express";
+        return method;
+    }) || [];
+
+    
     return (
         <div className="container mx-auto py-10">
             <div className="flex flex-col lg:flex-row gap-8">
@@ -365,6 +393,14 @@ const ProductItem: React.FC<ProductItemProps> = ({
                             </>
                         )}
 
+                        <div className="py-3">
+                            <ProductShippingReturnsDialog
+                                shippingEstimateFormatted={shippingEstimateFormatted}
+                                shippingMethodLabels={shippingMethodLabels}
+                                returnPolicySummary={processedVariantData.returnPolicySummary}
+                            />
+                        </div>
+
                         <div className="flex flex-row gap-2">
                             <div className="w-full">
                                 <Button
@@ -387,6 +423,7 @@ const ProductItem: React.FC<ProductItemProps> = ({
                                 )}
                             </button>
                         </div>
+                        
                     </div>
                 </div>
             </div>

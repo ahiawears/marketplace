@@ -5,6 +5,36 @@ import { createClient } from "@/supabase/server";
 import { CountryData } from "@/lib/country-data";
 import { revalidatePath } from "next/cache";
 
+function roundCurrencyAmount(amount: number) {
+    return Number(amount.toFixed(2));
+}
+
+async function convertToBaseCurrency(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    amount: number | null | undefined,
+    currencyCode: string
+) {
+    if (amount == null) {
+        return null;
+    }
+
+    if (currencyCode === "USD") {
+        return roundCurrencyAmount(amount);
+    }
+
+    const { data, error } = await supabase
+        .from("exchange_rates")
+        .select("rate")
+        .eq("target_currency", currencyCode)
+        .single<{ rate: number }>();
+
+    if (error || !data?.rate || data.rate <= 0) {
+        throw new Error(`No valid exchange rate found for ${currencyCode}.`);
+    }
+
+    return roundCurrencyAmount(amount / data.rate);
+}
+
 async function getProductIdsByNames(supabase: any, productNames: string[], brandId: string): Promise<string[]> {
     if (!productNames || productNames.length === 0) return [];
     const { data, error } = await supabase
@@ -42,20 +72,37 @@ export async function UpdateCoupon(formData: CouponFormDetails) {
     const couponId = formData.id;
 
     try {
+        const currencyCode = formData.currencyCode || "USD";
+        const normalizedCode = formData.code.trim().toUpperCase();
+        const baseCurrencyDiscountValue =
+            formData.discountType === "fixed"
+                ? await convertToBaseCurrency(
+                    supabase,
+                    formData.discountValue ?? null,
+                    currencyCode
+                )
+                : null;
+        const baseCurrencyMinOrderAmount = await convertToBaseCurrency(
+            supabase,
+            formData.minOrderAmount ?? null,
+            currencyCode
+        );
+
         // 1. Update the main coupon details
         const { error: couponUpdateError } = await supabase
             .from('coupons')
             .update({
                 name: formData.name,
-                code: formData.code,
+                code: normalizedCode,
                 description: formData.description,
                 discount_type: formData.discountType,
-                discount_value: formData.discountValue,
-                base_currency_discount_value: formData.baseCurrencyDiscountValue,
-                currency_code: formData.currencyCode,
+                discount_value: formData.discountType === 'free_shipping' ? null : formData.discountValue ?? null,
+                base_currency_discount_value: baseCurrencyDiscountValue,
+                currency_code: currencyCode,
                 usage_limit: formData.usageLimit,
                 single_use_per_customer: formData.singleUsePerCustomer === 'active',
                 min_order_amount: formData.minOrderAmount,
+                base_currency_min_order_amount: baseCurrencyMinOrderAmount,
                 start_date: formData.startDate,
                 end_date: formData.endDate || null,
                 is_active: formData.isActive === 'active',

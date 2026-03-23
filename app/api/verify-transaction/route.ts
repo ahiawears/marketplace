@@ -1,5 +1,31 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
+import { createClient } from "@/supabase/server";
+import { createOrderFromVerifiedPayment } from "@/actions/orders/create-order-from-verified-payment";
+
+interface FlutterwaveVerifyCustomer {
+    name?: string | null;
+    email?: string | null;
+}
+
+interface FlutterwaveVerifyData {
+    id?: number | string;
+    tx_ref?: string | null;
+    flw_ref?: string | null;
+    amount?: number | string | null;
+    currency?: string | null;
+    status?: string | null;
+    customer?: FlutterwaveVerifyCustomer | null;
+}
+
+interface FlutterwaveVerifyResponse {
+    status?: string;
+    message?: string;
+    data?: FlutterwaveVerifyData;
+}
+
+const getErrorMessage = (error: unknown) =>
+    error instanceof Error ? error.message : "An unexpected error occurred during verification.";
 
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
@@ -7,43 +33,81 @@ export async function GET(req: Request) {
 
     if (!transactionId) {
         return NextResponse.json(
-            { error: "Transaction ID is required" },
+            { success: false, message: "Transaction ID is required" },
             { status: 400 }
         );
     }
 
+    const secretKey = process.env.FLUTTERWAVE_SECRET_KEY;
+    if (!secretKey) {
+        return NextResponse.json(
+            { success: false, message: "FLUTTERWAVE_SECRET_KEY is not configured." },
+            { status: 500 }
+        );
+    }
+
     try {
-        const response = await axios.get(
+        const supabase = await createClient();
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !authData.user) {
+            return NextResponse.json(
+                { success: false, message: "You must be signed in to verify this checkout." },
+                { status: 401 }
+            );
+        }
+
+        const response = await axios.get<FlutterwaveVerifyResponse>(
             `https://api.flutterwave.com/v3/transactions/${transactionId}/verify`,
             {
                 headers: {
                     accept: "application/json",
-                    Authorization: `Bearer ${process.env.FLUTTERWAVE_SECRET_KEY}`,
+                    Authorization: `Bearer ${secretKey}`,
                     "Content-Type": "application/json",
                 },
             }
         );
 
-        const data = response.data;
-        console.log(data);
+        const verifyPayload = response.data;
+        const verifiedData = verifyPayload.data;
 
-        if (data.status === "success" && data.data.status === "successful") {
-            return NextResponse.json({
-                success: true,
-                status: data.data.status,
-                amount: data.data.amount,
-                currency: data.data.currency,
-            });
-        } else {
+        if (
+            verifyPayload.status !== "success" ||
+            !verifiedData ||
+            verifiedData.status !== "successful"
+        ) {
             return NextResponse.json(
-                { success: false, error: "Transaction verification failed" },
+                { success: false, message: "Transaction verification failed." },
                 { status: 400 }
             );
         }
-    } catch (error: any) {
-        console.error("Error verifying transaction:", error.message);
+
+        const orderResult = await createOrderFromVerifiedPayment(
+            authData.user.id,
+            verifiedData,
+            verifyPayload
+        );
+
+        if (!orderResult.success) {
+            return NextResponse.json(
+                { success: false, message: orderResult.error || "Verified payment could not be converted into an order." },
+                { status: 500 }
+            );
+        }
+
+        return NextResponse.json({
+            success: true,
+            status: verifiedData.status,
+            amount: verifiedData.amount,
+            currency: verifiedData.currency,
+            orderId: orderResult.orderId,
+            orderNumber: orderResult.orderNumber,
+            created: orderResult.created,
+        });
+    } catch (error) {
+        console.error("Error verifying transaction:", getErrorMessage(error));
         return NextResponse.json(
-            { success: false, error: "An error occurred during verification" },
+            { success: false, message: getErrorMessage(error) },
             { status: 500 }
         );
     }

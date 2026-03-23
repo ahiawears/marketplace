@@ -25,6 +25,7 @@ export const getDbPaymentDetails = async (): Promise<getDbPaymentDetails[]> => {
             .from("payment_methods")
             .select(`id, last_four, expiry_month, expiry_year, card_brand, flutterwave_id, is_default, card_holder`)
             .eq("user_id", user.id)
+            .order('is_default', { ascending: false })
             .order('created_at', { ascending: false });
 
         if (error) {

@@ -95,6 +95,16 @@ export const ValidateShippingConfig = (config: ShippingConfigDataProps): string[
                         errors.push(`${name} (${zoneNameForError}): Fee must be a non-negative number.`);
                         hasValidFees = false;
                     }
+
+                    if (
+                        deliveryInfo.additionalItemFee === undefined ||
+                        deliveryInfo.additionalItemFee === null ||
+                        isNaN(deliveryInfo.additionalItemFee) ||
+                        deliveryInfo.additionalItemFee < 0
+                    ) {
+                        errors.push(`${name} (${zoneNameForError}): Additional item fee must be a non-negative number.`);
+                        hasValidFees = false;
+                    }
                 }
             });
             

@@ -49,7 +49,8 @@ export const getUserAddress = async (): Promise<UserAddress[]> => {
                 is_default
             `)
             .eq("user_id", user.id)
-            .order('created_at', { ascending: false }); // Optional: sort by newest first
+            .order('is_default', { ascending: false })
+            .order('created_at', { ascending: false });
 
         if (error) {
             console.error('Supabase error:', error);

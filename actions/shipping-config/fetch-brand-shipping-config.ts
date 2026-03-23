@@ -30,6 +30,7 @@ interface RawShippingMethodDelivery {
     delivery_from: number;
     delivery_to: number;
     fee: number;
+    additional_item_fee?: number | null;
     config_id: string;
     method_type: "same_day" | "standard" | "express" | string; // Allow string
 }
@@ -56,10 +57,11 @@ interface RawFreeShippingRule {
     config_id: string;
     available?: boolean; // This field might not exist; presence of rule implies available
     threshold?: number;
-    applicable_methods?: string[]; // e.g., ["standard", "express"]
+    currency_code?: string | null;
+    base_threshold?: number | null;
+    zone_type?: "domestic" | "regional" | "sub_regional" | "global" | null;
     excluded_countries?: string[];
     method_type: string;
-    // Add other fields if present in your actual API response for free_shipping_rules
 }
 
 interface RawSameDayApplicableCity {
@@ -175,6 +177,7 @@ const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfig
                             from: deliveryDetailApi.delivery_from ?? newConfig.shippingMethods[frontendMethodKey].estimatedDelivery[zoneKey]!.from,
                             to: deliveryDetailApi.delivery_to ?? newConfig.shippingMethods[frontendMethodKey].estimatedDelivery[zoneKey]!.to,
                             fee: deliveryDetailApi.fee ?? newConfig.shippingMethods[frontendMethodKey].estimatedDelivery[zoneKey]!.fee,
+                            additionalItemFee: deliveryDetailApi.additional_item_fee ?? newConfig.shippingMethods[frontendMethodKey].estimatedDelivery[zoneKey]!.additionalItemFee,
                         };
                     }
                     // If deliveryDetailApi is not found for a zone, it retains default values.
@@ -193,7 +196,8 @@ const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfig
         newConfig.freeShipping = {
             available: rule.available !== undefined ? rule.available : true, // If rule exists, default to true
             threshold: rule.threshold ?? 0,
-            applicableMethods: rule.method_type ? [rule.method_type as "standard" | "express"] : [],
+            applicableMethods: Array.from(new Set(free_shipping_rules.map((freeRule) => freeRule.method_type).filter(Boolean))) as ("standard" | "express")[],
+            applicableZones: Array.from(new Set(free_shipping_rules.map((freeRule) => freeRule.zone_type).filter(Boolean))) as DeliveryZone[],
             excludedCountries: rule.excluded_countries ?? [],
         };
     } else {
@@ -202,6 +206,7 @@ const transformApiDataToShippingDetails = (apiData?: RawApiData): ShippingConfig
             available: false,
             threshold: 0,
             applicableMethods: [],
+            applicableZones: [],
             excludedCountries: [],
         };
     }

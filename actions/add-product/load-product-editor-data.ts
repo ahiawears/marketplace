@@ -97,6 +97,7 @@ type ShippingFeeRow = {
     method_type: string | null;
     zone_type: string | null;
     fee: number | null;
+    additional_item_fee: number | null;
     available: boolean | null;
 };
 type CareRow = {
@@ -193,7 +194,7 @@ export async function loadProductEditorData(
             .order("display_order", { ascending: true }),
         supabase
             .from("product_shipping_details")
-            .select("id, weight, height, width, length, dimension_unit")
+            .select("id, weight, height, width, length, dimension_unit, uses_brand_shipping_config, shipping_rule_source")
             .eq("product_id", productId)
             .maybeSingle(),
         supabase
@@ -244,7 +245,10 @@ export async function loadProductEditorData(
             ? supabase.from("product_sizes").select("id, product_id, quantity, size_id(name)").in("product_id", variantIds)
             : Promise.resolve({ data: [], error: null }),
         shippingData?.id
-            ? supabase.from("product_shipping_fees").select("method_type, zone_type, fee, available").eq("product_shipping_id", shippingData.id)
+            ? supabase
+                .from("product_shipping_fees")
+                .select("method_type, zone_type, fee, additional_item_fee, base_fee, currency_code, available, inherited_from_brand_config")
+                .eq("product_shipping_id", shippingData.id)
             : Promise.resolve({ data: [], error: null }),
     ]);
 
@@ -346,6 +350,7 @@ export async function loadProductEditorData(
             shippingMethods.sameDay = {
                 available: true,
                 fee: row.fee || 0,
+                additionalItemFee: 0,
             };
             continue;
         }
@@ -361,6 +366,7 @@ export async function loadProductEditorData(
             [zoneType]: {
                 available: Boolean(row.available),
                 fee: row.fee || 0,
+                additionalItemFee: row.additional_item_fee || 0,
             },
         };
     }

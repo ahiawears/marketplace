@@ -172,10 +172,32 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                         [zoneKey]: {
                             ...shippingDetails.methods?.[productMethodKey]?.[zoneKey],
                             fee: value,
+                            additionalItemFee: shippingDetails.methods?.[productMethodKey]?.[zoneKey]?.additionalItemFee ?? 0,
                             available: true
                         }
                     }
                     : shippingDetails.methods?.[productMethodKey]
+            }
+        });
+    };
+
+    const handleAdditionalItemFeeChange = (
+        productMethodKey: 'standard' | 'express',
+        zoneKey: DeliveryZoneKey,
+        value: number
+    ) => {
+        setShippingDetails({
+            methods: {
+                ...shippingDetails.methods,
+                [productMethodKey]: {
+                    ...shippingDetails.methods?.[productMethodKey],
+                    [zoneKey]: {
+                        ...shippingDetails.methods?.[productMethodKey]?.[zoneKey],
+                        fee: shippingDetails.methods?.[productMethodKey]?.[zoneKey]?.fee ?? 0,
+                        additionalItemFee: value,
+                        available: true,
+                    }
+                }
             }
         });
     };
@@ -193,7 +215,8 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
             } else if (shippingMethods.sameDayDelivery.available) {
                 currentMethods.sameDay = {
                     available: true,
-                    fee: shippingMethods.sameDayDelivery.fee
+                    fee: shippingMethods.sameDayDelivery.fee,
+                    additionalItemFee: 0,
                 };
             }
         } 
@@ -206,6 +229,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                     if (zoneDetails.available) {
                         currentMethods.standard![zoneKey as DeliveryZoneKey] = {
                             fee: shippingMethods.standardShipping.estimatedDelivery?.[zoneKey as DeliveryZoneKey]?.fee || 0,
+                            additionalItemFee: shippingMethods.standardShipping.estimatedDelivery?.[zoneKey as DeliveryZoneKey]?.additionalItemFee || 0,
                             available: true,
                         };
                     }
@@ -221,6 +245,7 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                     if (zoneDetails.available) {
                         currentMethods.express![zoneKey as DeliveryZoneKey] = {
                             fee: shippingMethods.expressShipping.estimatedDelivery?.[zoneKey as DeliveryZoneKey]?.fee || 0,
+                            additionalItemFee: shippingMethods.expressShipping.estimatedDelivery?.[zoneKey as DeliveryZoneKey]?.additionalItemFee || 0,
                             available: true,
                         };
                     }
@@ -543,6 +568,26 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     Est. Delivery: {shippingMethods.standardShipping.estimatedDelivery[zoneKey]?.from}-{shippingMethods.standardShipping.estimatedDelivery[zoneKey]?.to} days
                                                 </p>
+                                                <label className="mt-2 block text-sm font-medium mb-1">Additional Item Fee:</label>
+                                                <div className="flex items-center">
+                                                    <Input
+                                                        name="currencySymbol"
+                                                        type="text"
+                                                        value={currencySymbol}
+                                                        readOnly
+                                                        required
+                                                        placeholder="$"
+                                                        disabled
+                                                        className="text-center block border-none p-2 text-gray-900 bg-transparent w-1/5"
+                                                    />
+                                                    <MoneyInput
+                                                        numericValue={methodFees?.standard?.[zoneKey]?.additionalItemFee ?? shippingMethods.standardShipping.estimatedDelivery[zoneKey]?.additionalItemFee}
+                                                        onNumericChange={(value) => handleAdditionalItemFeeChange('standard', zoneKey, value)}
+                                                        className="w-1/2 border-2"
+                                                        placeholder="0.00"
+                                                    />
+                                                    <ApproxUSDDisplay fee={methodFees?.standard?.[zoneKey]?.additionalItemFee ?? shippingMethods.standardShipping.estimatedDelivery[zoneKey]?.additionalItemFee} />
+                                                </div>
                                             </div>
                                         )}
 
@@ -573,6 +618,26 @@ const ShippingDetailsForm: FC<ShippingDetailsPropss> = ({ currencySymbol, shippi
                                                 <p className="text-xs text-gray-500 mt-1">
                                                     Est. Delivery: {shippingMethods.expressShipping.estimatedDelivery[zoneKey]?.from}-{shippingMethods.expressShipping.estimatedDelivery[zoneKey]?.to} days
                                                 </p>
+                                                <label className="mt-2 block text-sm font-medium mb-1">Additional Item Fee:</label>
+                                                <div className="flex items-center">
+                                                    <Input
+                                                        name="currencySymbol"
+                                                        type="text"
+                                                        value={currencySymbol}
+                                                        readOnly
+                                                        required
+                                                        placeholder="$"
+                                                        disabled
+                                                        className="text-center block border-none p-2 text-gray-900 bg-transparent w-1/5"
+                                                    />
+                                                    <MoneyInput
+                                                        numericValue={methodFees?.express?.[zoneKey]?.additionalItemFee ?? shippingMethods.expressShipping.estimatedDelivery[zoneKey]?.additionalItemFee}
+                                                        onNumericChange={(value) => handleAdditionalItemFeeChange('express', zoneKey, value)}
+                                                        className="w-1/2 border-2"
+                                                        placeholder="0.00"
+                                                    />
+                                                    <ApproxUSDDisplay fee={methodFees?.express?.[zoneKey]?.additionalItemFee ?? shippingMethods.expressShipping.estimatedDelivery[zoneKey]?.additionalItemFee} />
+                                                </div>
                                             </div>
                                         )}
 

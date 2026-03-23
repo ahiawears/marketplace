@@ -65,7 +65,8 @@ function areShippingConfigsEqual(obj1: ShippingDetails, obj2: ShippingDetails): 
             const zoneDetails2 = obj2.shippingMethods[method].estimatedDelivery[zone];
             if (zoneDetails1?.from !== zoneDetails2?.from ||
                 zoneDetails1?.to !== zoneDetails2?.to ||
-                zoneDetails1?.fee !== zoneDetails2?.fee) {
+                zoneDetails1?.fee !== zoneDetails2?.fee ||
+                zoneDetails1?.additionalItemFee !== zoneDetails2?.additionalItemFee) {
                 return false;
             }
         }
@@ -93,6 +94,7 @@ function areShippingConfigsEqual(obj1: ShippingDetails, obj2: ShippingDetails): 
     if (obj1.freeShipping?.available !== obj2.freeShipping?.available ||
         obj1.freeShipping?.threshold !== obj2.freeShipping?.threshold ||
         JSON.stringify(obj1.freeShipping?.applicableMethods) !== JSON.stringify(obj2.freeShipping?.applicableMethods) ||
+        JSON.stringify(obj1.freeShipping?.applicableZones) !== JSON.stringify(obj2.freeShipping?.applicableZones) ||
         JSON.stringify(obj1.freeShipping?.excludedCountries) !== JSON.stringify(obj2.freeShipping?.excludedCountries)) {
         return false;
     }
@@ -189,10 +191,11 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
             return {
                 ...prev,
                 freeShipping: {
-                    ...(prev.freeShipping ?? { threshold: 0, applicableMethods: [], excludedCountries: [] }),
+                    ...(prev.freeShipping ?? { threshold: 0, applicableMethods: [], applicableZones: [], excludedCountries: [] }),
                     available: checked,
                     threshold: checked ? (prev.freeShipping?.threshold ?? 0) : 0,
                     applicableMethods: checked ? (prev.freeShipping?.applicableMethods ?? []) : [],
+                    applicableZones: checked ? (prev.freeShipping?.applicableZones ?? []) : [],
                     excludedCountries: combinedExcluded
                 }
             };
@@ -203,7 +206,7 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
         setConfig(prev => ({
             ...prev,
             freeShipping: {
-                ...(prev.freeShipping ?? { available: false, applicableMethods: [], excludedCountries: [] }), 
+                ...(prev.freeShipping ?? { available: false, applicableMethods: [], applicableZones: [], excludedCountries: [] }), 
                 threshold: value 
             }
         }));
@@ -213,8 +216,18 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
         setConfig(prev => ({
             ...prev,
             freeShipping: {
-                ...(prev.freeShipping ?? { available: false, threshold: 0, excludedCountries: [] }),
+                ...(prev.freeShipping ?? { available: false, threshold: 0, applicableZones: [], excludedCountries: [] }),
                 applicableMethods: methods
+            }
+        }));
+    };
+
+    const handleFreeShippingZonesChange = (zones: DeliveryZone[]) => {
+        setConfig(prev => ({
+            ...prev,
+            freeShipping: {
+                ...(prev.freeShipping ?? { available: false, threshold: 0, applicableMethods: [], excludedCountries: [] }),
+                applicableZones: zones,
             }
         }));
     };
@@ -245,6 +258,29 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
                     estimatedDelivery: {
                         ...prev.shippingMethods[method].estimatedDelivery,
                         [zone]: { ...prev.shippingMethods[method].estimatedDelivery[zone], fee: value }
+                    }
+                }
+            }
+        }));
+    };
+
+    const handleZoneAdditionalFeeChange = (
+        method: 'standardShipping' | 'expressShipping',
+        zone: DeliveryZone,
+        value: number
+    ) => {
+        setConfig(prev => ({
+            ...prev,
+            shippingMethods: {
+                ...prev.shippingMethods,
+                [method]: {
+                    ...prev.shippingMethods[method],
+                    estimatedDelivery: {
+                        ...prev.shippingMethods[method].estimatedDelivery,
+                        [zone]: {
+                            ...prev.shippingMethods[method].estimatedDelivery[zone],
+                            additionalItemFee: value,
+                        }
                     }
                 }
             }
@@ -320,7 +356,7 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
 
         try {
             setIsSaving(true);
-            const response = await updateBrandShippingConfig(config, userId);
+            const response = await updateBrandShippingConfig(config, userId, brandCurrency);
 
             if (response.success) {
                 toast.success(response.message);
@@ -352,6 +388,11 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
                 <p className="subtitle text-gray-500">
                     Configure how your orders are delivered — set shipping methods, fees, and delivery zones.
                 </p>
+                <div className="border-2 border-stone-200 bg-stone-50 p-3 text-sm text-stone-600">
+                    This page is currently using the <span className="font-semibold text-stone-900">base + incremental</span> shipping model.
+                    Base fee means the first item charge, and additional item fee means the extra amount for each extra item in the same brand shipment.
+                    Advanced strategy fields like minimum charge, base weight, and per-kilogram pricing are planned but are not yet editable here.
+                </div>
             </div>
 
             {/* Handling time selection */}
@@ -548,6 +589,7 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
                                         }));
                                     }}
                                     onZoneFeeChange={() => {}} // Dummy function for zone fee
+                                    onZoneAdditionalFeeChange={() => {}}
                                     selectedCities={config.shippingMethods.sameDayDelivery.conditions?.applicableCities}
                                 />
 
@@ -564,6 +606,7 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
                                     estimatedDelivery={config.shippingMethods.standardShipping.estimatedDelivery}
                                     onDeliveryTimeChange={(zone, field, value) => handleDeliveryTimeChange('standardShipping', zone as DeliveryZone, field, value)}
                                     onZoneFeeChange={(zone, value) => handleZoneFeeChange('standardShipping', zone as DeliveryZone, value)} // Pass zone fee handler
+                                    onZoneAdditionalFeeChange={(zone, value) => handleZoneAdditionalFeeChange('standardShipping', zone as DeliveryZone, value)}
                                     onSameDayInputChange={() => {}}
                                 />
 
@@ -580,6 +623,7 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
                                     estimatedDelivery={config.shippingMethods.expressShipping.estimatedDelivery}
                                     onDeliveryTimeChange={(zone, field, value) => handleDeliveryTimeChange('expressShipping', zone as DeliveryZone, field, value)}
                                     onZoneFeeChange={(zone, value) => handleZoneFeeChange('expressShipping', zone as DeliveryZone, value)} // Pass zone fee handler
+                                    onZoneAdditionalFeeChange={(zone, value) => handleZoneAdditionalFeeChange('expressShipping', zone as DeliveryZone, value)}
                                     onSameDayInputChange={() => {}}
                                 />
                             </div>
@@ -597,6 +641,20 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
                     }
                     if (config.shippingMethods.expressShipping.available) {
                         availableMethodsForFreeShipping.push("express");
+                    }
+
+                    const availableZonesForFreeShipping: DeliveryZone[] = [];
+                    if (config.shippingZones.domestic.available) {
+                        availableZonesForFreeShipping.push("domestic");
+                    }
+                    if (config.shippingZones.sub_regional.available) {
+                        availableZonesForFreeShipping.push("sub_regional");
+                    }
+                    if (config.shippingZones.regional.available) {
+                        availableZonesForFreeShipping.push("regional");
+                    }
+                    if (config.shippingZones.global.available) {
+                        availableZonesForFreeShipping.push("global");
                     }
 
                     // Get combined excluded countries from zones
@@ -621,6 +679,9 @@ const ShippingConfigurationForm: FC<ShippingConfigurationProps> = ({ userId, dat
                                 availableMethods={availableMethodsForFreeShipping} // Pass the *possible* methods
                                 selectedMethods={config.freeShipping?.applicableMethods ?? []} // Pass the *currently selected* methods
                                 onSelectedMethodsChange={handleFreeShippingMethodsChange}
+                                availableZones={availableZonesForFreeShipping}
+                                selectedZones={config.freeShipping?.applicableZones ?? []}
+                                onSelectedZonesChange={handleFreeShippingZonesChange}
                                 excludedCountries={combinedExcludedCountries} // Pass the combined list
                                 currency={brandCurrency} // Pass currency for threshold input
                             />

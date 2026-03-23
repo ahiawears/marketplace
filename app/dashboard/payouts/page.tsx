@@ -8,6 +8,24 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+type BrandOrderSettlementRow = {
+  id: string;
+  order_id: string | null;
+  settlement_status: string | null;
+  vendor_payable_customer_currency: number | null;
+  customer_currency: string | null;
+  return_window_ends_at: string | null;
+  payout_released_at: string | null;
+  created_at: string | null;
+};
+
+const formatAmount = (amount: number, currency: string) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(amount);
+
 function maskAccountNumber(accountNumber: string) {
   if (!accountNumber) {
     return "—";
@@ -31,27 +49,67 @@ export default async function PayoutsPage() {
   const beneficiaryResult = await GetBrandBeneficiaryDetails(user.id);
   const payoutAccounts = beneficiaryResult.data || [];
   const defaultAccount = payoutAccounts.find((account) => account.is_default) || null;
+  const { data: brandOrders } = await supabase
+    .from("brand_orders")
+    .select("id, order_id, settlement_status, vendor_payable_customer_currency, customer_currency, return_window_ends_at, payout_released_at, created_at")
+    .eq("brand_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(25);
+
+  const typedBrandOrders = (brandOrders || []) as BrandOrderSettlementRow[];
+  const heldOrders = typedBrandOrders.filter((order) => order.settlement_status === "held");
+  const eligibleOrders = typedBrandOrders.filter((order) => order.settlement_status === "eligible_for_release");
+  const releasedOrders = typedBrandOrders.filter((order) => order.settlement_status === "released");
+  const primaryCurrency =
+    typedBrandOrders.find((order) => order.customer_currency)?.customer_currency ||
+    defaultAccount?.currency ||
+    "USD";
+
+  const heldAmount = heldOrders.reduce(
+    (sum, order) => sum + Number(order.vendor_payable_customer_currency || 0),
+    0
+  );
+  const eligibleAmount = eligibleOrders.reduce(
+    (sum, order) => sum + Number(order.vendor_payable_customer_currency || 0),
+    0
+  );
+  const releasedAmount = releasedOrders.reduce(
+    (sum, order) => sum + Number(order.vendor_payable_customer_currency || 0),
+    0
+  );
+
+  const nextReleaseOrder = heldOrders
+    .filter((order) => order.return_window_ends_at)
+    .sort((a, b) => {
+      const aTime = new Date(a.return_window_ends_at || 0).getTime();
+      const bTime = new Date(b.return_window_ends_at || 0).getTime();
+      return aTime - bTime;
+    })[0] || null;
 
   const metrics = [
     {
-      label: "Payout accounts",
-      value: `${payoutAccounts.length}`,
+      label: "Held payouts",
+      value: formatAmount(heldAmount, primaryCurrency),
       description:
-        payoutAccounts.length > 0
-          ? "Your payout destination accounts are configured and ready for future settlement flows."
-          : "Add at least one payout account to prepare for settlements.",
+        heldOrders.length > 0
+          ? `${heldOrders.length} vendor orders are currently held until their return windows expire.`
+          : "No held vendor payouts right now.",
     },
     {
-      label: "Default account",
-      value: defaultAccount ? "Configured" : "Missing",
-      description: defaultAccount
-        ? `${defaultAccount.bank_name} ${maskAccountNumber(defaultAccount.account_number)}`
-        : "Choose a default payout account so future settlements know where to land.",
+      label: "Ready to release",
+      value: formatAmount(eligibleAmount, primaryCurrency),
+      description:
+        eligibleOrders.length > 0
+          ? `${eligibleOrders.length} vendor orders are ready for payout release once the release job runs.`
+          : "No vendor payouts are eligible for release yet.",
     },
     {
-      label: "Settlement history",
-      value: "0",
-      description: "Payout history and reconciliation events will populate here once live payout records exist.",
+      label: "Released payouts",
+      value: formatAmount(releasedAmount, primaryCurrency),
+      description:
+        releasedOrders.length > 0
+          ? `${releasedOrders.length} vendor orders have already been marked as released.`
+          : "No vendor payouts have been released yet.",
     },
   ];
 
@@ -60,15 +118,16 @@ export default async function PayoutsPage() {
       <section className="border-2 bg-white p-6 sm:p-8">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl space-y-3">
-            <Badge variant="outline" className="w-fit border-emerald-400 bg-emerald-50 text-emerald-800">
-              Shell Page
-            </Badge>
+              <Badge variant="outline" className="w-fit border-emerald-400 bg-emerald-50 text-emerald-800">
+              Live Settlement View
+              </Badge>
             <div className="space-y-2">
               <h1 className="text-3xl font-semibold tracking-tight text-stone-900">Finance & Payouts</h1>
               <p className="max-w-2xl text-sm leading-6 text-stone-600 sm:text-base">
                 This page becomes the home for payout readiness, settlement history, and finance operations. It already
-                reflects the real payout accounts you configured, while keeping payout history honest until real payout
-                events and reconciliation data are flowing.
+                now reflects real vendor-order payout holds and release readiness. Brands can see what money is still
+                held, what has cleared its return window, and which payout destination will be used once settlements
+                are released.
               </p>
             </div>
           </div>
@@ -111,8 +170,8 @@ export default async function PayoutsPage() {
               Payout readiness
             </CardTitle>
             <CardDescription>
-              The payout setup below is real. Settlement and reconciliation history should plug into this same page once
-              payout events are live.
+              The payout account setup below is real, and the settlement metrics above are now grounded in real
+              `brand_orders` records created at checkout.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -140,8 +199,8 @@ export default async function PayoutsPage() {
               ))
             ) : (
               <div className="border-2 border-dashed border-stone-300 bg-stone-50 p-6 text-sm leading-6 text-stone-600">
-                No payout accounts have been added yet. Use Payment Settings to add a bank account before real payouts
-                go live.
+                No payout accounts have been added yet. Use Payment Settings to add a bank account before released
+                settlements go live.
               </div>
             )}
           </CardContent>
@@ -157,13 +216,13 @@ export default async function PayoutsPage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm leading-6 text-stone-600">
               <div className="border-2 border-stone-200 p-4">
-                Settlement history, payout dates, processing states, and amounts tied to real order revenue.
+                Released payout runs, remittance references, and bank transfer outcomes tied to real vendor orders.
               </div>
               <div className="border-2 border-stone-200 p-4">
-                Reconciliation details between marketplace payments, fees, refunds, and bank payouts.
+                Reconciliation details between marketplace payments, held vendor balances, refunds, and bank payouts.
               </div>
               <div className="border-2 border-stone-200 p-4">
-                Operational alerts when payout accounts need attention or payout processing changes status.
+                Operational alerts when payout accounts need attention or a held settlement becomes eligible.
               </div>
             </CardContent>
           </Card>
@@ -177,16 +236,96 @@ export default async function PayoutsPage() {
             </CardHeader>
             <CardContent className="space-y-3 text-sm leading-6 text-stone-600">
               <p>
-                Real payouts require finished checkout, reliable payment confirmation, payout event tracking, and
-                webhook reconciliation.
+                Real payouts require finished checkout, reliable payment confirmation, webhook reconciliation, and a
+                release step that only moves vendor funds after the return window closes.
               </p>
               <p>
-                That is why this page is grounded in real payout setup now, while leaving settlement history for the
-                point where the money flow itself is genuinely live.
+                This page now tracks the hold state truthfully. The next step is automating eligible releases and then
+                recording the actual payout transfer references back onto the released vendor orders.
               </p>
             </CardContent>
           </Card>
         </div>
+      </section>
+
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)]">
+        <Card className="rounded-none border-2 shadow-none">
+          <CardHeader>
+            <CardTitle className="text-xl">Settlement Pipeline</CardTitle>
+            <CardDescription>
+              Recent vendor orders and where they currently sit in the held-to-release payout flow.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {typedBrandOrders.length > 0 ? (
+              typedBrandOrders.slice(0, 8).map((order) => (
+                <div key={order.id} className="border-2 border-stone-200 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold text-stone-900">
+                        Vendor order {order.order_id?.slice(0, 8) || order.id.slice(0, 8)}
+                      </p>
+                      <p className="text-sm text-stone-600">
+                        {formatAmount(Number(order.vendor_payable_customer_currency || 0), order.customer_currency || primaryCurrency)}
+                      </p>
+                      <p className="text-xs text-stone-500">
+                        Return window ends: {order.return_window_ends_at ? new Date(order.return_window_ends_at).toLocaleString() : "Not set"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-xs">
+                      <span className="border-2 border-stone-300 bg-white px-2 py-1 text-stone-700">
+                        {order.settlement_status || "unknown"}
+                      </span>
+                      {order.payout_released_at && (
+                        <span className="border-2 border-emerald-400 bg-emerald-50 px-2 py-1 font-medium text-emerald-800">
+                          Released {new Date(order.payout_released_at).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="border-2 border-dashed border-stone-300 bg-stone-50 p-6 text-sm leading-6 text-stone-600">
+                No vendor orders have been created yet, so there are no held or releasable settlements to show.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-none border-2 shadow-none">
+          <CardHeader>
+            <CardTitle className="text-xl">Next Release Window</CardTitle>
+            <CardDescription>
+              The next held vendor order expected to become eligible for payout release.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm leading-6 text-stone-600">
+            {nextReleaseOrder ? (
+              <>
+                <div className="border-2 border-stone-200 p-4">
+                  <p className="text-base font-semibold text-stone-900">
+                    {formatAmount(
+                      Number(nextReleaseOrder.vendor_payable_customer_currency || 0),
+                      nextReleaseOrder.customer_currency || primaryCurrency
+                    )}
+                  </p>
+                  <p>Eligible after: {new Date(nextReleaseOrder.return_window_ends_at as string).toLocaleString()}</p>
+                </div>
+                <p>
+                  Once the return window passes, the scheduled release job should move this vendor order from
+                  <span className="font-medium text-stone-900"> held </span>
+                  to
+                  <span className="font-medium text-stone-900"> eligible_for_release</span>.
+                </p>
+              </>
+            ) : (
+              <div className="border-2 border-dashed border-stone-300 bg-stone-50 p-6">
+                No held vendor orders are waiting on a return-window release right now.
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </section>
 
       <section className="rounded-none border-2 bg-white p-6">
@@ -197,8 +336,8 @@ export default async function PayoutsPage() {
               Next finance milestone
             </h2>
             <p className="text-sm leading-6 text-stone-600">
-              Once payouts are live, this page should absorb settlement timelines, payout notifications, and finance
-              reporting so brands can track cash movement without leaving the dashboard.
+              The next step is moving eligible vendor orders into a real payout run, then writing the payout reference
+              and release timestamp back onto each released vendor order.
             </p>
           </div>
           <Button asChild variant="outline">

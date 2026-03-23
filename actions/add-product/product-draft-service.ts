@@ -324,7 +324,29 @@ export async function saveShippingDraft(
     );
 
     await assertBrandOwnsProduct(supabase, brandId, validatedData.productId);
-    const shippingDetailsId = await createProductShippingDetails(supabase, validatedData);
+    const brandData = await GetBrandLegalDetails(brandId);
+    if (!brandData.success || !brandData.data) {
+        throw new ProductDraftServiceError("Brand legal details not found", 400);
+    }
+
+    const brandCurrency = getCurrencyByIso2(brandData.data.country_of_registration, CountryData);
+    if (!brandCurrency) {
+        throw new ProductDraftServiceError("Brand currency could not be determined", 400);
+    }
+
+    const exchangeRate = brandCurrency === "USD"
+        ? 1
+        : await GetExchangeRates("USD", brandCurrency);
+
+    if (!exchangeRate || exchangeRate <= 0) {
+        throw new ProductDraftServiceError(`No valid exchange rate found for ${brandCurrency}`, 400);
+    }
+
+    const shippingDetailsId = await createProductShippingDetails(supabase, validatedData, {
+        brandId,
+        brandCurrency,
+        exchangeRate,
+    });
 
     return {
         shippingDetailsId,

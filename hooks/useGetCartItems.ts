@@ -30,6 +30,68 @@ interface CartData {
     formattedTotalPrice: string;
     subtotalBase: number;
     subtotalCustomerCurrency: number;
+    groupedShippingEstimates: {
+        brandId: string;
+        brandName: string;
+        methodType: string;
+        zoneType: string;
+        shippingEstimateBase: number;
+        shippingEstimateCustomerCurrency: number;
+        formattedShippingEstimate: string;
+        shippingRuleSnapshot: {
+            strategy: string;
+            methodType: string;
+            zoneType: string;
+            shippingEstimateBase: number;
+            shippingEstimateCustomerCurrency: number;
+            currencyCode: string;
+            exchangeRateUsed: number;
+            destinationCountryCode: string | null;
+        };
+    }[];
+    groupedCouponDiscounts: {
+        brandId: string;
+        brandName: string;
+        couponId: string;
+        couponCode: string;
+        couponName: string;
+        discountType: string;
+        appliesTo: string;
+        discountBase: number;
+        discountCustomerCurrency: number;
+        formattedDiscount: string;
+        couponSnapshot: {
+            couponId: string;
+            code: string;
+            name: string;
+            discountType: string;
+            appliesTo: string;
+            discountBase: number;
+            discountCustomerCurrency: number;
+            currencyCode: string;
+        };
+    }[];
+    discountTotalBase: number;
+    discountTotalCustomerCurrency: number;
+    formattedDiscountTotal: string;
+    groupedReturnPolicies: {
+        brandId: string;
+        brandName: string;
+        isReturnable: boolean;
+        returnWindowDays: number | null;
+        responsibilityLabel: string;
+        policySummary: string;
+        returnPolicySnapshot: {
+            isReturnable: boolean;
+            returnWindowDays: number | null;
+            responsibilityLabel: string;
+            policySummary: string;
+        };
+    }[];
+    shippingTotalCustomerCurrency: number;
+    formattedShippingTotal: string;
+    grandTotalCustomerCurrency: number;
+    formattedGrandTotal: string;
 }
 
 export const useGetCartItems = () => {
